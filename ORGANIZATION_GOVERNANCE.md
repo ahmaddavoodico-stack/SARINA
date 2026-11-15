@@ -68,7 +68,6 @@ The Supabase backend foundation is in place. The connected GitHub repository cur
 
 Do not expose raw user tables or integration credentials to organization dashboards. Implement report projections and external-system connectors through narrowly scoped server-side endpoints.
 
-
 ## Farmer institutional services and official request routing
 
 Migrations applied:
@@ -108,3 +107,21 @@ User experience:
 5. SARINA creates a trackable request and routes it only through the configured official channel.
 6. Farmer sees the receipt/reference, timeline, required next action and official response when available.
 7. If jurisdiction is unclear or multiple agencies share responsibility, SARINA asks a minimal clarification or refers to the primary authority with a transparent explanation; it must not invent authority.
+
+## Runtime verification — 2026-11-16
+
+- Supabase migration history confirms migrations `028` through `031` are applied.
+- The four operational tables currently contain zero records: `organizations`, `organization_services`, `institutional_service_requests`, and `institutional_request_events`. The directory is therefore not yet populated for real farmer use.
+- RLS policies are present for the organization directory, farmer request creation/reading, and organization-scoped request/timeline reading.
+- The GitHub repository currently has no frontend source or Supabase client code; the README is only a project title/description. A usable UI cannot be truthfully claimed until application source is added.
+
+### RPC privilege hardening applied and verified
+
+- Revoked direct execution of `log_institutional_request_submission()` from `PUBLIC`, `anon`, and `authenticated`. The database trigger continues to invoke it automatically.
+- Revoked `anon`/public execution of `organization_update_institutional_request(...)`; explicitly granted execution to `authenticated` only. The function's internal organization capability/scope checks remain in force.
+- Changed both functions' search path to `pg_catalog` because their application objects are explicitly schema-qualified.
+- Verified with `has_function_privilege`: anonymous execution is false for both functions; authenticated execution is false for the trigger function and true for the authorized request-update RPC.
+
+### Outstanding security finding
+
+Supabase Security Advisors still reports `public.spatial_ref_sys` with RLS disabled. It was not changed automatically because enabling RLS without a deliberate read policy can break spatial reference lookups. Review and decide its read-only policy before changing it. The advisors also report other pre-existing SECURITY DEFINER RPCs and 19 RLS-enabled tables with no policies; these require a separate targeted review rather than blanket grants or blanket policies.
