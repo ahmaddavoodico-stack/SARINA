@@ -7,9 +7,10 @@ A lightweight, responsive, installable farmer-first web app connected to the SAR
 - Creates/updates the matching row in `public.users` using `auth_user_id`.
 - Lists the signed-in farmer's farms and creates a farm record.
 - Stores farmer-confirmed farm coordinates in the existing `farm_locations` table.
-- Retrieves current local model weather and a 7-day forecast from Open-Meteo for located farms, including temperature, apparent temperature, humidity, wind, rainfall and reference evapotranspiration.
-- Builds a normalized, timestamped weather context for downstream farm analysis and clearly labels provider model estimates separately from on-farm sensor readings.
-- Weather lookups are cached in memory for 15 minutes; no weather API response or authenticated request is cached by the service worker.
+- Retrieves farm-specific current weather and a 7-day forecast from Open-Meteo through the authenticated `farm-weather-context` Supabase Edge Function.
+- The Edge Function verifies the signed-in farmer's access to the farm and its confirmed coordinates before fetching weather; it stores the current model estimate and daily forecasts in the existing `weather_records` table.
+- Returns a normalized, timestamped analysis context with explicit model-data provenance, separate from local sensor observations. Weather alone never determines fertilizer or chemical rates.
+- The browser invokes the Edge Function with the active Supabase session; the service-role key remains server-side. The service worker never caches authenticated function responses.
 - Persian-first UI with English toggle; mobile-responsive PWA shell.
 - Uses only the Supabase publishable key in the browser. Never put a service-role/secret key in this app.
 - Service worker caches only same-origin static app assets; authenticated Supabase/API responses are never cached.
@@ -25,3 +26,9 @@ The repository root contains a redirect to `/app/`, so the existing root Vercel 
 
 ## Release scope
 This is the first usable farmer portal slice, not the complete product. Farm location/map, crop cycles, soil/water records, AI advisory and offline data sync are follow-on tasks.
+
+## Farm weather pipeline
+- Endpoint: `POST /functions/v1/farm-weather-context` (JWT required; body: `{ "farm_id": "<uuid>" }`).
+- Reads the farm and primary location under the caller's RLS permissions, retrieves Open-Meteo current conditions plus a 7-day forecast, and persists model estimates as `weather_records.data_kind = 'forecast'`.
+- Returns the normalized context for the farm analysis layer. Any future agricultural analysis request must carry this exact farm-scoped context; it must not substitute device location or another farm's weather.
+- Open-Meteo attribution: [Weather data by Open-Meteo.com](https://open-meteo.com/).
