@@ -91,7 +91,7 @@ function renderCropForm(farmId){
  select('planting_pattern','plantingPattern',[['unknown','unsure'],['regular','regular'],['irregular','irregular'],['mixed','mixedPattern']])+ 
  select('plant_position','plantPosition',[['unknown','unsure'],['ridge_top','ridgeTop'],['inside_furrow','furrow'],['furrow_edge','furrowEdge'],['offset_from_furrow','awayFromFurrow'],['flat_ground','flatGround']])+ 
  '<label class="crop-distance"><span>'+cw('furrowDistance')+'</span><input name="furrow_distance_m" type="number" min="0" max="100" step="0.01" placeholder="0.5"></label><p class="crop-hint">'+cw('furrowDistanceHint')+'</p>'+
- ''<div class="crop-production-section"><p class="crop-production-intro">'+cw('productionIntro')+'</p></div>'+
+ '<div class="crop-production-section"><p class="crop-production-intro">'+cw('productionIntro')+'</p></div>'+
  select('water_regime','waterRegime',[['unknown','unsure'],['rainfed','rainfed'],['irrigated','irrigated'],['mixed','mixedWater']])+
  select('irrigation_method','irrigationType',[['unknown','unsure'],['not_applicable','notApplicable'],['flood','floodIrrigation'],['furrow','furrowIrrigation'],['drip','dripIrrigation'],['sprinkler','sprinklerIrrigation'],['micro_sprinkler','microSprinkler'],['subsurface_drip','subsurfaceDrip'],['other','otherIrrigation']])+
  select('irrigation_equipment','irrigationEquipment',[['unknown','unsure'],['none','noEquipment'],['pump','pumpEquipment'],['filter','filterEquipment'],['drip_lines','dripLines'],['sprinkler_heads','sprinklerHeads'],['pipes_valves','pipesValves'],['flow_meter','flowMeter'],['other_mixed','equipmentOther']])+
