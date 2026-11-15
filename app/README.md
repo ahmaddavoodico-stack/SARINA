@@ -69,3 +69,9 @@ This is the first usable farmer portal slice, not the complete product. Farm loc
 - Records use farm_observations observation_type pond_asset and versioned SARINA_POND_ASSET_V1 payloads. Existing owner-scoped RLS is retained; no new table is introduced.
 - farm-land-context returns pond assets separately as pond_assets with provenance and count metadata. Farmer-entered values remain self-reported, not verified water tests.
 - Safety boundary: storage ponds are not assumed to be fertilizer-mixing tanks. Direct fertilizer addition to storage ponds is discouraged; fertigation recommendations require water/fertilizer compatibility checks and suitable separate mixing/injection equipment. Livestock or aquaculture suitability is never inferred from irrigation suitability.
+
+## Crop production, water regime and irrigation equipment (V2)
+- Each crop group now records its own water regime (rainfed, irrigated, mixed), irrigation method, equipment type and optional equipment notes.
+- Approximate harvest quantity, explicit unit and reporting period are captured separately, alongside a farmer-reported product-quality grade and optional notes.
+- Payload prefix remains SARINA_CROP_LAYOUT_V1 for backward compatibility; the payload schema is SARINA_CROP_LAYOUT_V2. Existing records remain readable.
+- Production quantity and quality are self-reported estimates, not verified yield measurements or laboratory grading. Unknown values can remain blank/unknown. Do not compare quantities across groups unless units and reporting periods are compatible.
