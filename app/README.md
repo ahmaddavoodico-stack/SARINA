@@ -111,3 +111,15 @@ This is the first usable farmer portal slice, not the complete product. Farm loc
 - Farmers can review their submitted expert cases, exchange text messages and read submitted expert reports in the farmer workspace. Expert identity is kept distinct from AI-generated recommendations.
 - Verification status is not writable through the expert profile UI. Credential documents are not uploaded in this pilot; only metadata is submitted for manual review.
 - End-to-end verification still requires authenticated farmer and verified-expert test accounts. Do not treat a successful static deployment as proof that a live case was exchanged.
+
+
+## Agricultural marketplace (first integrated slice)
+- Open the Marketplace workspace from the authenticated role navigation; it is available alongside farmer, expert, livestock and organization workspaces.
+- Two storefronts are separated by supply origin: farmer-produced goods and company/supplier agricultural inputs.
+- Seller applications are owner-scoped. Company seller profiles require an active membership in the linked SARINA organization. Seller verification is controlled outside the client.
+- Verified sellers can publish products; crop-protection and other regulated products additionally require regulatory review.
+- Buyers can browse/filter the two catalogs, add fixed-price products to a persistent cart, request quotes for quote-only products, and check out one seller at a time.
+- Checkout creates an order, item snapshots and a draft invoice atomically. Unpaid inventory is reserved for 30 minutes and can be released by buyer cancellation or expiry.
+- Payment is intentionally not live: no provider/webhook is configured and no client can mark an order paid. Shipment tracking can be recorded only after trusted payment confirmation.
+- Full product design and database boundaries: [Agricultural Marketplace](../docs/product/agricultural-marketplace.md).
+- The marketplace tables and policies were applied to the connected Supabase project in migrations 019-023. Keep the SQL migration source synchronized in the repository before replaying the database on a new environment.
