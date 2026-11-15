@@ -75,3 +75,13 @@ This is the first usable farmer portal slice, not the complete product. Farm loc
 - Approximate harvest quantity, explicit unit and reporting period are captured separately, alongside a farmer-reported product-quality grade and optional notes.
 - Payload prefix remains SARINA_CROP_LAYOUT_V1 for backward compatibility; the payload schema is SARINA_CROP_LAYOUT_V2. Existing records remain readable.
 - Production quantity and quality are self-reported estimates, not verified yield measurements or laboratory grading. Unknown values can remain blank/unknown. Do not compare quantities across groups unless units and reporting periods are compatible.
+
+## Farm operations and role-based learning (V1 foundation)
+- Farm cards include farmer-confirmed work plans with task, date, start/end time, assignee, role, priority, instructions and status.
+- Tasks use versioned SARINA_FARM_OPERATION_V1 payloads in existing farm_observations rows with observation_type = general. No new table or migration is introduced; existing owner-scoped RLS and authenticated grants are reused.
+- Assignment is by entered name only in this first slice; worker accounts, notifications, attendance, payroll and shift management are not included.
+- Task status can be changed to in progress, completed or blocked. Plans are farmer-entered, not autonomous AI recommendations.
+- Learning tracks introduce farmer, worker and age-appropriate supervised youth education, plus introductory compost/organic fertilizer and productivity guidance. Children must not handle chemicals, composting equipment or machinery.
+- Compost guidance is a cautious checklist, not a universal recipe. Feedstock suitability, carbon/nitrogen balance, moisture, aeration, temperature, maturity, salinity and pathogen risks require assessment before farm-specific recipes or application rates.
+- Automatic daily/hourly scheduling, weather/crop-stage optimization, reusable SOPs, worker logins, notifications, learning progress and measured productivity analytics remain future phases.
+- Provenance: farmer-entered plans remain distinct from sensor, laboratory, provider and model data. The UI states that a saved plan is not an expert-validated instruction. No physical action is triggered.
