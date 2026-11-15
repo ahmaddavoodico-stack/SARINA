@@ -4,22 +4,22 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#173f35">
-  <meta name="description" content="SARINA — دستیار هوشمند مدیریت مزرعه">
+  <meta name="description" content="SARINA — همراه هوشمند فعالیت‌های کشاورزی، دامداری و خدمات تخصصی">
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="stylesheet" href="./styles.css">
-  <title>SARINA | پنل کشاورز</title>
+  <title>SARINA | فضای کاری یکپارچه</title>
 </head>
 <body>
   <header class="topbar">
-    <a class="brand" href="./" aria-label="SARINA home"><span class="brand-mark">S</span><span>SARINA<small>Farmer workspace</small></span></a>
+    <a class="brand" href="./" aria-label="SARINA home"><span class="brand-mark">S</span><span>SARINA<small>Your workspace</small></span></a>
     <div class="top-actions"><button id="langToggle" class="quiet-btn" type="button">EN</button><button id="signOut" class="quiet-btn hidden" type="button" data-i18n="signOut">خروج</button></div>
   </header>
   <main class="shell">
     <section id="authView" class="auth-layout">
       <div class="welcome">
-        <span class="eyebrow" data-i18n="eyebrow">همراه هوشمند مزرعه شما</span>
-        <h1 data-i18n="headline">مزرعه‌تان را بهتر بشناسید.</h1>
-        <p data-i18n="intro">اطلاعات مزرعه را یک‌بار ثبت کنید؛ سارینا کمک می‌کند وضعیت، فعالیت‌ها و تصمیم‌های کشاورزی را منظم و قابل پیگیری نگه دارید.</p>
+        <span class="eyebrow" data-i18n="eyebrow">همراه هوشمند فعالیت‌های شما</span>
+        <h1 data-i18n="headline">همه فعالیت‌ها، یک حساب در سارینا.</h1>
+        <p data-i18n="intro">برای مدیریت فعالیت‌های کشاورزی، دامداری، تخصصی یا سازمانی خود وارد شوید. نوع فعالیت را پس از ورود انتخاب می‌کنید.</p>
         <div class="feature-row"><span>✦ <b data-i18n="feature1">مدیریت مزرعه</b></span><span>⌁ <b data-i18n="feature2">ثبت ساده اطلاعات</b></span><span>◎ <b data-i18n="feature3">پشتیبانی هوشمند</b></span></div>
       </div>
       <section class="panel auth-panel">
@@ -31,11 +31,14 @@
           <button class="primary-btn" id="authSubmit" type="submit" data-i18n="login">ورود</button>
         </form>
         <p id="authMessage" class="message" role="status"></p>
-        <p class="fineprint" data-i18n="privacy">اطلاعات هر کشاورز فقط برای حساب خودش قابل دسترسی است.</p>
+        <p class="fineprint" data-i18n="privacy">اطلاعات حساب و فعالیت‌های شما با دسترسی کنترل‌شده نگهداری می‌شود.</p>
       </section>
     </section>
 
     <section id="appView" class="hidden">
+      <section id="roleOnboarding" class="hidden"></section>
+      <div id="mainWorkspace" class="hidden">
+        <nav id="roleNavigation" class="role-navigation" aria-label="Activity workspaces"></nav>
       <div class="dashboard-heading"><div><span class="eyebrow" data-i18n="workspace">فضای کاری کشاورز</span><h1><span data-i18n="hello">سلام</span> <span id="farmerName">کشاورز</span> 👋</h1><p data-i18n="dashboardIntro">مزرعه‌ها و اطلاعات کشاورزی خود را از اینجا مدیریت کنید.</p></div><div class="dashboard-actions"><button id="expertWorkspaceToggle" class="quiet-btn" type="button">🧑‍🌾 پنل متخصصان</button><button id="addFarmTop" class="primary-btn" data-i18n="addFarm">＋ افزودن مزرعه</button></div></div>
       <div class="stat-grid"><article class="stat-card"><span data-i18n="farmCount">مزرعه‌های من</span><strong id="farmCount">۰</strong><small data-i18n="registered">ثبت‌شده در سارینا</small></article><article class="stat-card"><span data-i18n="dataStatus">وضعیت اطلاعات</span><strong data-i18n="starting">در حال شروع</strong><small data-i18n="dataStatusHint">با تکمیل اطلاعات دقیق‌تر می‌شود</small></article><article class="stat-card"><span data-i18n="nextStep">گام بعدی</span><strong data-i18n="completeFarm">تکمیل مزرعه</strong><small data-i18n="nextStepHint">ثبت زمین و محصولات</small></article></div>
       <section id="farmSectionHead" class="section-head"><div><h2 data-i18n="myFarms">مزرعه‌های من</h2><p data-i18n="myFarmsHint">هر مزرعه فضای اطلاعاتی مستقل خود را دارد.</p></div></section>
@@ -53,6 +56,9 @@
         <p id="farmMessage" class="message" role="status"></p>
       </section>
       <section id="expertWorkspace" class="hidden"></section>
+      <section id="livestockWorkspace" class="hidden panel role-placeholder"><h2>فضای کاری دامداری</h2><p>زیرساخت نقش دامدار ایجاد شده است.</p></section>
+      <section id="organizationWorkspace" class="hidden panel role-placeholder"><h2>فضای کاری شرکت و مؤسسه</h2><p>زیرساخت نقش سازمانی ایجاد شده است.</p></section>
+      </div>
     </section>
     <div id="globalMessage" class="toast" role="status"></div>
   </main>
