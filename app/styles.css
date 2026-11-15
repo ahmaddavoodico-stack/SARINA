@@ -47,3 +47,14 @@
 .expert-context pre{max-height:260px;overflow:auto;white-space:pre-wrap;word-break:break-word;font-size:10px;line-height:1.6;direction:ltr;text-align:left}
 .expert-report-view p{font-size:12px;line-height:1.8;white-space:pre-wrap}
 .farmer-case-message-form{display:grid;gap:8px;margin-top:10px}
+
+/* Unified SARINA account and multi-activity onboarding */
+.role-card{max-width:760px;margin:24px auto;padding:clamp(18px,4vw,30px);background:#fff;border:1px solid #dce8dc;border-radius:18px;box-shadow:0 10px 30px rgba(28,66,45,.06)}
+.role-card h2{margin:8px 0;color:#244d3b;font-size:clamp(20px,4vw,28px)}.role-card>p{font-size:13px;line-height:1.9;color:#63796a}
+.role-choice-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:20px 0}.role-choice{display:flex!important;align-items:center;gap:12px;padding:14px;border:1px solid #dce8dc;border-radius:13px;cursor:pointer;background:#fbfdfb}
+.role-choice:has(input:checked){border-color:#4d8965;background:#f0f7f0;box-shadow:inset 0 0 0 1px #4d8965}.role-choice input{width:18px;height:18px;accent-color:#315b45;flex:none}.role-choice-icon{font-size:26px}
+.role-choice b,.role-choice small{display:block}.role-choice b{font-size:13px;color:#294c39}.role-choice small{font-size:10px;color:#6b8071;margin-top:4px;line-height:1.7}
+#saveRolesButton{width:100%}.role-navigation{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:10px 0 20px}.role-nav-list{display:flex;gap:7px;flex-wrap:wrap}
+.role-nav-btn{border:1px solid #dce8dc;background:#fff;border-radius:22px;padding:9px 14px;color:#365b45;font:inherit;font-size:12px;cursor:pointer}.role-nav-btn.active{background:#315b45;border-color:#315b45;color:#fff}
+.role-edit-btn{font-size:11px}.role-placeholder{padding:22px;margin:18px 0}.role-placeholder h2{color:#315b45;margin-top:0}.role-placeholder p{font-size:13px;line-height:1.9;color:#60796a}
+@media(max-width:600px){.role-choice-grid{grid-template-columns:1fr}.role-navigation{align-items:stretch}.role-nav-list{width:100%}.role-nav-btn{flex:1}.role-edit-btn{width:100%}}
