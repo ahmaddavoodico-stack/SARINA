@@ -62,3 +62,10 @@ This is the first usable farmer portal slice, not the complete product. Farm loc
 - Records are saved as timestamped `farm_observations.observation_type = 'crop_layout'` with the versioned `SARINA_CROP_LAYOUT_V1` payload and farmer-self-report provenance. No new table or schema migration is required.
 - The farm-land-context endpoint now returns these separately under `crop_groups` and includes `crop_group_count` in data quality metadata, while preserving the existing `SARINA_FARM_LAND_CONTEXT_V1` contract.
 - Counts and distances are farmer-reported until independently verified. Unknown values remain blank/unknown and are not inferred.
+
+## Farm ponds and water assets
+- Each pond or reservoir is captured as an independent farm asset through a bilingual farmer-first form; multiple ponds can be recorded separately.
+- Captures structure type, current use, condition, water source and availability, dimensions/capacity, transfer method, aquaculture stock presence, water-test status and optional EC/pH/TDS, fertigation equipment, and future development interest.
+- Records use farm_observations observation_type pond_asset and versioned SARINA_POND_ASSET_V1 payloads. Existing owner-scoped RLS is retained; no new table is introduced.
+- farm-land-context returns pond assets separately as pond_assets with provenance and count metadata. Farmer-entered values remain self-reported, not verified water tests.
+- Safety boundary: storage ponds are not assumed to be fertilizer-mixing tanks. Direct fertilizer addition to storage ponds is discouraged; fertigation recommendations require water/fertilizer compatibility checks and suitable separate mixing/injection equipment. Livestock or aquaculture suitability is never inferred from irrigation suitability.
