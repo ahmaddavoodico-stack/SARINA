@@ -176,3 +176,17 @@ Before creating tables, compare these entities with existing SARINA schema and r
 - No recording of human calls by default.
 - No merging of provider accounts into SARINA identity.
 - No broad schema expansion before confirming existing tables and first UI use case.
+
+## Implementation status — voice-note slice
+
+The first media slice is implemented on `feature/sarina-communication-gateway`:
+
+- A private Supabase Storage bucket, `expert-voice-notes`, is provisioned with a 20 MiB object limit and an explicit audio MIME allowlist.
+- Storage INSERT/SELECT/DELETE policies restrict access to the farmer who opened the consultation and the currently assigned verified expert. Objects are stored under `<consultation_id>/<sarina_user_id>/<random_file>`.
+- Consultation messages now support either ordinary text (`content_parts = []`) or one audio attachment descriptor in `content_parts`; the existing participant checks remain in force.
+- Farmer and expert workspaces now expose audio-file upload and signed-URL playback controls. Audio URLs are short-lived and are never made public.
+- If message insertion fails after upload, the client attempts to remove the just-uploaded object; the DELETE policy permits cleanup of the sender's own object.
+
+This slice is upload/playback of an audio file selected or recorded on the device. In-app microphone recording, duration metadata, waveform UI, live WebRTC, AI voice, and regional messaging adapters are not yet implemented.
+
+Validation completed: migrations applied successfully; the private bucket and expected RLS policies were queried and confirmed. Browser/device end-to-end testing with two real participant sessions and deployment remain outstanding.
