@@ -122,4 +122,4 @@ This is the first usable farmer portal slice, not the complete product. Farm loc
 - Checkout creates an order, item snapshots and a draft invoice atomically. Unpaid inventory is reserved for 30 minutes and can be released by buyer cancellation or expiry.
 - Payment is intentionally not live: no provider/webhook is configured and no client can mark an order paid. Shipment tracking can be recorded only after trusted payment confirmation.
 - Full product design and database boundaries: [Agricultural Marketplace](../docs/product/agricultural-marketplace.md).
-- The marketplace tables and policies were applied to the connected Supabase project in migrations 019-026. Their SQL sources are tracked under database/migrations/019-026.
+- The marketplace tables and policies were applied to the connected Supabase project in migrations 019-027. Their SQL sources are tracked under database/migrations/019-027.
