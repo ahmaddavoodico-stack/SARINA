@@ -158,16 +158,22 @@ export function bindAdminWorkspace({root, supabase, getProfile, getLanguage}) {
         set('[data-admin-overall]', t.denied); set('[data-admin-message]', t.signedOut); return;
       }
       set('[data-admin-session]', t.connected);
-      const [{data:roles,error:roleError},{data:account,error:profileError}] = await Promise.all([
-        supabase.from('user_roles').select('roles(code)').eq('scope_type','global').is('scope_id',null),
-        supabase.from('users').select('id,email,full_name,account_status').eq('auth_user_id',userResult.user.id).maybeSingle()
-      ]);
+      const {data:account,error:profileError} = await supabase.from('users')
+        .select('id,email,full_name,account_status')
+        .eq('auth_user_id',userResult.user.id)
+        .maybeSingle();
       if (roleError) throw roleError;
       if (!account || profileError) {
         set('[data-admin-role]', t.unavailable); set('[data-admin-profile]', t.unavailable); set('[data-admin-overall]', t.denied);
         set('[data-admin-message]', t.profileMissing); return;
       }
       set('[data-admin-profile]', t.connected);
+      const {data:roles,error:roleError} = await supabase.from('user_roles')
+        .select('roles(code)')
+        .eq('user_id',account.id)
+        .eq('scope_type','global')
+        .is('scope_id',null);
+      if (roleError) throw roleError;
       const isAdmin = (roles || []).some(row => row.roles?.code === 'admin');
       if (!isAdmin) {
         set('[data-admin-role]', t.denied); set('[data-admin-overall]', t.denied); set('[data-admin-message]', t.roleMissing); return;
