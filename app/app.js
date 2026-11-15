@@ -1,6 +1,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.4';
 import { renderOperationsPanel, bindFarmOperations } from './operations.js';
 import { renderExpertWorkspace, renderFarmerExpertButton, bindFarmerExpertRequests, bindExpertWorkspace, renderFarmerCasesSection, bindFarmerCases } from './experts.js';
+import { renderFarmContracts, bindFarmContracts } from './contracts.js';
 
 
 const SUPABASE_URL = 'https://wwgkiclcpgpdktneovrx.supabase.co';
@@ -92,11 +93,12 @@ async function loadFarms(){
         weatherMarkup=renderWeather(context);
       }catch(error){console.warn('Farm weather unavailable',f.id,error);weatherMarkup='<div class="weather-note">'+t('weatherUnavailable')+'</div>'}
     }else { farmWeatherContexts.delete(f.id); weatherMarkup='<div class="weather-note">'+t('weatherMissingLocation')+'</div>'; }
-    return '<article class="farm-card" data-farm-card="'+f.id+'"><div class="farm-icon">🌿</div><h3>'+escapeHtml(f.farm_name)+'</h3><p>'+ (f.total_area?escapeHtml(String(f.total_area))+' '+escapeHtml(f.area_unit):'—') +' · '+escapeHtml(f.status)+'</p>'+weatherMarkup+'<button type="button" class="quiet-btn land-toggle" data-land-toggle="'+f.id+'">🌱 '+lw('landButton')+'</button><div class="land-panel hidden" id="land-'+f.id+'">'+renderLandForm(f.id)+'</div><button type="button" class="quiet-btn crop-toggle" data-crop-toggle="'+f.id+'">🌳 '+cw('cropButton')+'</button><div class="crop-panel hidden" id="crop-'+f.id+'">'+renderCropForm(f.id)+'</div><button type="button" class="quiet-btn pond-toggle" data-pond-toggle="'+f.id+'">💧 '+pw('pondButton')+'</button><div class="pond-panel hidden" id="pond-'+f.id+'">'+renderPondForm(f.id)+'</div><button type="button" class="quiet-btn greenhouse-toggle" data-greenhouse-toggle="'+f.id+'">🏡 '+gw('button')+'</button><div class="greenhouse-panel hidden" id="greenhouse-'+f.id+'">'+renderGreenhouseForm(f.id)+'</div>'+renderFarmerExpertButton(f.id,language)+renderOperationsPanel(f.id,language)+'</article>';
+    return '<article class="farm-card" data-farm-card="'+f.id+'"><div class="farm-icon">🌿</div><h3>'+escapeHtml(f.farm_name)+'</h3><p>'+ (f.total_area?escapeHtml(String(f.total_area))+' '+escapeHtml(f.area_unit):'—') +' · '+escapeHtml(f.status)+'</p>'+weatherMarkup+'<button type="button" class="quiet-btn land-toggle" data-land-toggle="'+f.id+'">🌱 '+lw('landButton')+'</button><div class="land-panel hidden" id="land-'+f.id+'">'+renderLandForm(f.id)+'</div><button type="button" class="quiet-btn crop-toggle" data-crop-toggle="'+f.id+'">🌳 '+cw('cropButton')+'</button><div class="crop-panel hidden" id="crop-'+f.id+'">'+renderCropForm(f.id)+'</div><button type="button" class="quiet-btn pond-toggle" data-pond-toggle="'+f.id+'">💧 '+pw('pondButton')+'</button><div class="pond-panel hidden" id="pond-'+f.id+'">'+renderPondForm(f.id)+'</div><button type="button" class="quiet-btn greenhouse-toggle" data-greenhouse-toggle="'+f.id+'">🏡 '+gw('button')+'</button><div class="greenhouse-panel hidden" id="greenhouse-'+f.id+'">'+renderGreenhouseForm(f.id)+'</div>'+renderFarmerExpertButton(f.id,language)+renderFarmContracts(f.id,language)+renderOperationsPanel(f.id,language)+'</article>';
   }));
   $('farmList').innerHTML=cards.join('');
   if(!$('farmerCasesMount').dataset.ready){$('farmerCasesMount').innerHTML=renderFarmerCasesSection(language);bindFarmerCases({root:$('farmerCasesMount'),supabase,getProfile:()=>profile,language});$('farmerCasesMount').dataset.ready='1';}else{$('refreshFarmerCases')?.click();}
   bindFarmOperations({root:$('farmList'),supabase,getProfile:()=>profile,getLanguage:()=>language});
+  bindFarmContracts({root:$('farmList'),supabase,getProfile:()=>profile,getLanguage:()=>language});
   if(!$('farmList').dataset.expertRequestsBound){bindFarmerExpertRequests({root:$('farmList'),supabase,getProfile:()=>profile,language});$('farmList').dataset.expertRequestsBound='1';}
 }
 function landOption(value,label,selected='unknown'){return '<option value="'+value+'"'+(value===selected?' selected':'')+'>'+lw(label)+'</option>';}
