@@ -199,6 +199,8 @@ WITH CHECK (
   )
 );
 
+REVOKE ALL ON public.job_profiles, public.job_listings, public.job_applications FROM anon, PUBLIC;
+
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.job_profiles TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.job_listings TO authenticated;
 GRANT SELECT, INSERT ON public.job_applications TO authenticated;
