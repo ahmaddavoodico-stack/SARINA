@@ -37,14 +37,21 @@ This is the first usable farmer portal slice, not the complete product. Farm loc
 - Each farm card now offers a short, bilingual, choice-based soil/land questionnaire with an explicit “I don't know” option.
 - Answers are stored as a timestamped `farm_observations.observation_type = 'soil_condition'` record under the existing owner-scoped RLS policy. The description carries the versioned `SARINA_FARM_PROFILE_V1` payload and is explicitly labelled as a farmer self-report, not a laboratory result or map-derived measurement.
 - Captures soil feel/texture, visible lime and salinity signs, post-irrigation water retention, slope, irrigation source, and irrigation method. No new tables or schema migrations are introduced.
-- Regional soil/map datasets are not yet connected. The app must show them as unavailable until a stable, licensed provider adapter is integrated; no SoilGrids API dependency or fabricated farm-level values are used.
+- Experimental ISRIC SoilGrids 2.0 point adapter is now called by the farm-land-context endpoint when primary farm coordinates exist. It requests pH, clay, sand, silt, organic carbon, CEC and total nitrogen for four depth intervals. The response is marked as a modelled regional 250 m pixel, never as a laboratory measurement. The adapter times out safely and reports provider unavailability without fabricating values.
 
 ## Farm land context endpoint
 - Endpoint: `POST /functions/v1/farm-land-context` (JWT required; body: `{ "farm_id": "<uuid>" }`).
 - Reads farm, confirmed primary location, fields, farmer soil/land observations, soil and water test records, and stored weather records using the caller's JWT and existing owner-scoped RLS policies.
-- Returns a versioned `SARINA_FARM_LAND_CONTEXT_V1` payload with explicit provenance and data-quality counts. Regional soil/geospatial context remains `not_connected` until a stable, licensed adapter is implemented; missing values stay missing.
+- Returns a versioned `SARINA_FARM_LAND_CONTEXT_V1` payload with explicit provenance and data-quality counts. SoilGrids REST v2.0 is used experimentally; because ISRIC currently reports the REST service paused, `provider_unavailable` is a valid result, not a workflow failure. ISRIC WCS is the planned fallback path if REST remains unavailable. Missing values stay missing.
 - Uses the publishable/anon key only and does not use service-role access.
 
 ## SIACP farm-context gate
 - Farm-scoped SIACP requests now require a fresh `SARINA_FARM_LAND_CONTEXT_V1` payload for the same `farm_id`, in addition to the existing weather-context requirement.
 - The bridge rejects missing, mismatched, stale, or provenance-incomplete land context. It remains a validation-only bridge and does not invoke a model or authorize physical actions.
+
+## SoilGrids experimental provider adapter
+- Provider: ISRIC SoilGrids 2.0, CC BY 4.0, modelled global soil maps at 250 m pixel resolution.
+- Properties requested: pH in water, clay, sand, silt, soil organic carbon, cation exchange capacity, and total nitrogen; depths 0–5, 5–15, 15–30, and 30–60 cm; mean prediction.
+- Current access path: REST API v2.0 point query. ISRIC's official status page currently says this REST API is temporarily paused; the function records a timeout/provider error and preserves the rest of the farm context. It does not replace missing values with guesses.
+- Planned fallback: ISRIC WCS (recommended by the provider for stable spatial subsets) or WebDAV raster ingestion. Provider adapters remain replaceable without changing the farmer questionnaire or SIACP context contract.
+- Official access docs: https://docs.isric.org/globaldata/soilgrids/SoilGrids_faqs_02.html and https://docs.isric.org/globaldata/soilgrids/wcs.html.
