@@ -104,3 +104,6 @@ Practical prioritization score: (Reach × Conversion lift × Strategic value × 
 - Unverified third-party endorsements.
 - Guaranteed income, guaranteed customer volume or guaranteed awards.
 - Publishing farmer/farm data without explicit consent.
+
+## Access-control hardening follow-up (migration 014)
+A follow-up migration explicitly revokes inherited/default table privileges from PUBLIC and anon, then grants only the intended authenticated access: owner-scoped draft evidence reads/inserts/updates (excluding delete) and owner-scoped award reads. Internal assessments remain inaccessible to client roles. RLS policies continue to enforce row ownership.
