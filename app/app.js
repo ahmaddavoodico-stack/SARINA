@@ -22,6 +22,8 @@ const cropWords = {
  en:{cropButton:'Add crop group & planting layout',unsure:'I don’t know',cropIntro:'Record each group of similar plants separately, e.g. Barhi date palms or banana. Leave unknown measurements blank.',cropName:'Tree or plant name',cropNameHint:'e.g. date palm, banana, citrus',cultivar:'Cultivar / product type',cultivarHint:'e.g. Barhi, Sayer; optional',treeCount:'Number of trees / plants',age:'Approximate age (years)',treeSpacing:'Spacing within row (m)',rowSpacing:'Spacing between rows (m)',plantingPattern:'Planting pattern',regular:'Regular',irregular:'Irregular',mixedPattern:'Mixed',plantPosition:'Position relative to ridge and furrow',ridgeTop:'Top of ridge',furrow:'Inside furrow',furrowEdge:'Furrow edge / ridge side',awayFromFurrow:'Offset from furrow',flatGround:'Flat ground / no furrows',furrowDistance:'Distance from furrow edge (m)',furrowDistanceHint:'For furrow edge or offset positions; optional',saveCrop:'Save crop group',cropSaved:'Crop group saved.',cropSaveError:'Could not save crop group. Please try again.',requiredCrop:'Enter the plant name and count.'}
 };
 function cw(key){return cropWords[language][key]||key;}
+const pondWords={fa:{pondButton:'ثبت استخر و مخزن آب',pondIntro:'هر استخر یا مخزن را جداگانه ثبت کنید.',pondName:'نام یا شناسه استخر',pondType:'نوع سازه',earthen:'خاکی',concrete:'بتنی',geomembrane:'ژئوممبران',metal:'فلزی',fiberglass:'فایبرگلاس',natural:'طبیعی',other:'سایر',pondUse:'کاربری فعلی',irrigationStorage:'ذخیره آب آبیاری',livestock:'آب دام',aquaculture:'پرورش آبزیان',rainwater:'ذخیره باران',multiPurpose:'چندمنظوره',unused:'بدون استفاده',condition:'وضعیت استخر',active:'فعال',seasonal:'فصلی',damaged:'نیازمند تعمیر',waterSource:'منبع آب',canal:'کانال',river:'رودخانه',well:'چاه',rain:'باران',runoff:'رواناب',mixed:'چند منبع',availability:'دسترسی به آب',permanent:'دائمی',intermittent:'متناوب',unknown:'نمی‌دانم',length:'طول (متر)',width:'عرض (متر)',depth:'عمق متوسط (متر)',capacity:'ظرفیت (مترمکعب)',connection:'روش انتقال آب',gravity:'ثقلی',pump:'پمپاژ',both:'هر دو',none:'ندارد',fish:'وجود آبزی',yes:'بله',no:'خیر',waterTest:'آزمایش کیفیت آب',tested:'آزمایش شده',notTested:'آزمایش نشده',ec:'EC آب',ph:'pH آب',tds:'TDS آب',testedAt:'تاریخ آزمایش',fertigation:'تجهیزات کودآبیاری',noSetup:'ندارد',separateTank:'مخزن جداگانه',injector:'تزریق‌کننده',futureInterest:'کاربرد توسعه‌ای',irrigationReserve:'ذخیره آب آبیاری',fertigationEquipment:'تجهیزات کودآبیاری',aquaculturePotential:'پرورش آبزیان',waterEfficiency:'بهره‌وری آب',noPlan:'فعلاً ندارد',pondSafety:'آب استخر را بدون آزمایش مناسب فرض نکنید. کود را مستقیماً داخل استخر ذخیره آب نریزید؛ کودآبیاری به مخزن و تجهیزات مستقل نیاز دارد.',savePond:'ذخیره استخر',pondSaved:'اطلاعات استخر ثبت شد.',pondSaveError:'ثبت اطلاعات استخر انجام نشد.',requiredPond:'نام و نوع استخر را وارد کنید.'},en:{pondButton:'Add pond / reservoir',pondIntro:'Record each pond separately.',pondName:'Pond name or ID',pondType:'Structure type',earthen:'Earthen',concrete:'Concrete',geomembrane:'Geomembrane',metal:'Metal',fiberglass:'Fiberglass',natural:'Natural',other:'Other',pondUse:'Current use',irrigationStorage:'Irrigation storage',livestock:'Livestock water',aquaculture:'Aquaculture',rainwater:'Rainwater storage',multiPurpose:'Multiple uses',unused:'Unused',condition:'Condition',active:'Active',seasonal:'Seasonal',damaged:'Needs repair',waterSource:'Water source',canal:'Canal',river:'River',well:'Well',rain:'Rain',runoff:'Runoff',mixed:'Multiple sources',availability:'Availability',permanent:'Permanent',intermittent:'Intermittent',unknown:'I don’t know',length:'Length (m)',width:'Width (m)',depth:'Average depth (m)',capacity:'Capacity (m³)',connection:'Water transfer',gravity:'Gravity',pump:'Pumped',both:'Both',none:'None',fish:'Aquatic stock present',yes:'Yes',no:'No',waterTest:'Water-quality test',tested:'Tested',notTested:'Not tested',ec:'Water EC',ph:'Water pH',tds:'Water TDS',testedAt:'Last test date',fertigation:'Fertigation equipment',noSetup:'None',separateTank:'Separate mixing tank',injector:'Injector',futureInterest:'Future interest',irrigationReserve:'Irrigation reserve',fertigationEquipment:'Fertigation equipment',aquaculturePotential:'Aquaculture',waterEfficiency:'Water efficiency',noPlan:'No current plan',pondSafety:'Do not assume water is suitable without testing. Never add fertilizer directly to a storage pond; fertigation requires separate suitable equipment.',savePond:'Save pond',pondSaved:'Pond details saved.',pondSaveError:'Could not save pond details.',requiredPond:'Enter pond name and type.'}};
+function pw(key){return pondWords[language][key]||key;}
 
 
 
@@ -60,7 +62,7 @@ async function loadFarms(){
         weatherMarkup=renderWeather(context);
       }catch(error){console.warn('Farm weather unavailable',f.id,error);weatherMarkup='<div class="weather-note">'+t('weatherUnavailable')+'</div>'}
     }else { farmWeatherContexts.delete(f.id); weatherMarkup='<div class="weather-note">'+t('weatherMissingLocation')+'</div>'; }
-    return '<article class="farm-card" data-farm-card="'+f.id+'"><div class="farm-icon">🌿</div><h3>'+escapeHtml(f.farm_name)+'</h3><p>'+ (f.total_area?escapeHtml(String(f.total_area))+' '+escapeHtml(f.area_unit):'—') +' · '+escapeHtml(f.status)+'</p>'+weatherMarkup+'<button type="button" class="quiet-btn land-toggle" data-land-toggle="'+f.id+'">🌱 '+lw('landButton')+'</button><div class="land-panel hidden" id="land-'+f.id+'">'+renderLandForm(f.id)+'</div><button type="button" class="quiet-btn crop-toggle" data-crop-toggle="'+f.id+'">🌳 '+cw('cropButton')+'</button><div class="crop-panel hidden" id="crop-'+f.id+'">'+renderCropForm(f.id)+'</div></article>';
+    return '<article class="farm-card" data-farm-card="'+f.id+'"><div class="farm-icon">🌿</div><h3>'+escapeHtml(f.farm_name)+'</h3><p>'+ (f.total_area?escapeHtml(String(f.total_area))+' '+escapeHtml(f.area_unit):'—') +' · '+escapeHtml(f.status)+'</p>'+weatherMarkup+'<button type="button" class="quiet-btn land-toggle" data-land-toggle="'+f.id+'">🌱 '+lw('landButton')+'</button><div class="land-panel hidden" id="land-'+f.id+'">'+renderLandForm(f.id)+'</div><button type="button" class="quiet-btn crop-toggle" data-crop-toggle="'+f.id+'">🌳 '+cw('cropButton')+'</button><div class="crop-panel hidden" id="crop-'+f.id+'">'+renderCropForm(f.id)+'</div><button type="button" class="quiet-btn pond-toggle" data-pond-toggle="'+f.id+'">💧 '+pw('pondButton')+'</button><div class="pond-panel hidden" id="pond-'+f.id+'">'+renderPondForm(f.id)+'</div></article>';
   }));
   $('farmList').innerHTML=cards.join('');
 }
@@ -90,6 +92,31 @@ function renderCropForm(farmId){
  select('plant_position','plantPosition',[['unknown','unsure'],['ridge_top','ridgeTop'],['inside_furrow','furrow'],['furrow_edge','furrowEdge'],['offset_from_furrow','awayFromFurrow'],['flat_ground','flatGround']])+ 
  '<label class="crop-distance"><span>'+cw('furrowDistance')+'</span><input name="furrow_distance_m" type="number" min="0" max="100" step="0.01" placeholder="0.5"></label><p class="crop-hint">'+cw('furrowDistanceHint')+'</p>'+
  '<button class="primary-btn crop-save" type="submit">'+cw('saveCrop')+'</button><p class="message crop-message" role="status"></p></form>';
+}
+function renderPondForm(farmId){
+ const select=(name,label,options)=>'<label><span>'+pw(label)+'</span><select name="'+name+'">'+options.map(([v,k])=>'<option value="'+v+'">'+pw(k)+'</option>').join('')+'</select></label>';
+ return '<div class="pond-form-head"><p>'+pw('pondIntro')+'</p></div><form class="pond-form" data-farm-id="'+farmId+'">'+
+ '<label><span>'+pw('pondName')+'</span><input name="pond_name" maxlength="120" required></label>'+
+ select('pond_type','pondType',[['unknown','unknown'],['earthen','earthen'],['concrete','concrete'],['geomembrane','geomembrane'],['metal','metal'],['fiberglass','fiberglass'],['natural','natural'],['other','other']])+
+ select('current_use','pondUse',[['unknown','unknown'],['irrigation_storage','irrigationStorage'],['livestock','livestock'],['aquaculture','aquaculture'],['rainwater','rainwater'],['multi_purpose','multiPurpose'],['unused','unused'],['other','other']])+
+ select('condition','condition',[['unknown','unknown'],['active','active'],['seasonal','seasonal'],['damaged','damaged'],['unused','unused']])+
+ select('water_source','waterSource',[['unknown','unknown'],['canal','canal'],['river','river'],['well','well'],['rainfall','rain'],['runoff','runoff'],['mixed','mixed'],['other','other']])+
+ select('water_availability','availability',[['unknown','unknown'],['permanent','permanent'],['seasonal','seasonal'],['intermittent','intermittent']])+
+ '<label><span>'+pw('length')+'</span><input name="length_m" type="number" min="0" step="0.1"></label>'+
+ '<label><span>'+pw('width')+'</span><input name="width_m" type="number" min="0" step="0.1"></label>'+
+ '<label><span>'+pw('depth')+'</span><input name="average_depth_m" type="number" min="0" step="0.1"></label>'+
+ '<label><span>'+pw('capacity')+'</span><input name="capacity_m3" type="number" min="0" step="0.1"></label>'+
+ select('farm_connection','connection',[['unknown','unknown'],['gravity','gravity'],['pump','pump'],['both','both'],['none','none']])+
+ select('aquatic_stock_present','fish',[['unknown','unknown'],['yes','yes'],['no','no']])+
+ select('water_test_status','waterTest',[['unknown','unknown'],['tested','tested'],['not_tested','notTested']])+
+ '<label><span>'+pw('ec')+'</span><input name="water_ec_ds_m" type="number" min="0" step="0.01"></label>'+
+ '<label><span>'+pw('ph')+'</span><input name="water_ph" type="number" min="0" max="14" step="0.1"></label>'+
+ '<label><span>'+pw('tds')+'</span><input name="water_tds_mg_l" type="number" min="0" step="1"></label>'+
+ '<label><span>'+pw('testedAt')+'</span><input name="water_tested_at" type="date"></label>'+
+ select('fertigation_setup','fertigation',[['unknown','unknown'],['none','noSetup'],['separate_tank','separateTank'],['injector','injector']])+
+ select('future_interest','futureInterest',[['unknown','unknown'],['irrigation_reserve','irrigationReserve'],['fertigation_equipment','fertigationEquipment'],['aquaculture_assessment','aquaculturePotential'],['water_efficiency','waterEfficiency'],['none','noPlan']])+
+ '<p class="pond-safety">'+pw('pondSafety')+'</p>'+
+ '<button class="primary-btn pond-save" type="submit">'+pw('savePond')+'</button><p class="message pond-message" role="status"></p></form>';
 }
 function renderSoilGridResult(context){
  const regional=context?.regional_context?.soilgrids||{};const status=regional.status||'not_requested';
@@ -151,7 +178,7 @@ $('farmForm').addEventListener('submit',async e=>{
  }
  say(latitude===null?t('farmCreated'):t('locationSaved'),'farmMessage');closeFarmForm();await loadFarms();
 });
-$('farmList').addEventListener('click',e=>{const toggle=e.target.closest('[data-land-toggle],[data-crop-toggle]');if(!toggle)return;const farmId=toggle.dataset.landToggle||toggle.dataset.cropToggle;const panel=$(toggle.hasAttribute('data-land-toggle')?'land-'+farmId:'crop-'+farmId);panel?.classList.toggle('hidden');});
+$('farmList').addEventListener('click',e=>{const toggle=e.target.closest('[data-land-toggle],[data-crop-toggle],[data-pond-toggle]');if(!toggle)return;const farmId=toggle.dataset.landToggle||toggle.dataset.cropToggle||toggle.dataset.pondToggle;const panel=$(toggle.hasAttribute('data-land-toggle')?'land-'+farmId:toggle.hasAttribute('data-crop-toggle')?'crop-'+farmId:'pond-'+farmId);panel?.classList.toggle('hidden');});
 $('farmList').addEventListener('submit',async e=>{
  const form=e.target.closest('.land-form');if(!form)return;e.preventDefault();
  const button=form.querySelector('button[type="submit"]');const message=form.querySelector('.land-message');button.disabled=true;message.textContent=t('loading');
@@ -185,3 +212,20 @@ const {data:{session}}=await supabase.auth.getSession();
 if(session?.user)await enterWorkspace(session.user);else showAuth();
 if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
 setLanguage('fa');
+$('farmList').addEventListener('submit',async e=>{
+ const form=e.target.closest('.pond-form');if(!form)return;e.preventDefault();
+ const button=form.querySelector('button[type="submit"]');const message=form.querySelector('.pond-message');
+ const values=Object.fromEntries(new FormData(form).entries());
+ if(!values.pond_name?.trim()||!values.pond_type||values.pond_type==='unknown'){message.textContent=pw('requiredPond');return;}
+ const numericFields=['length_m','width_m','average_depth_m','capacity_m3','water_ec_ds_m','water_ph','water_tds_mg_l'];
+ for(const key of numericFields){if(values[key]===''){delete values[key];continue;}values[key]=Number(values[key]);if(!Number.isFinite(values[key])||values[key]<0||(key==='water_ph'&&values[key]>14)){message.textContent=pw('requiredPond');return;}}
+ if(values.water_tested_at==='')delete values.water_tested_at;
+ button.disabled=true;message.textContent=t('loading');
+ const reportedAt=new Date().toISOString();
+ const payload={schema:'SARINA_POND_ASSET_V1',answers:values,source_type:'farmer_report',reported_at:reportedAt,confidence:'self_reported_not_verified',safety:{water_suitability_not_assumed:true,fertilizer_direct_dosing_into_storage_pond_not_recommended:true}};
+ const {error}=await supabase.from('farm_observations').insert({farm_id:form.dataset.farmId,observation_type:'pond_asset',observed_at:reportedAt,description:'SARINA_POND_ASSET_V1:'+JSON.stringify(payload),severity:'unknown',image_refs:[],reported_by:profile?.id||null});
+ button.disabled=false;if(error){console.error('Pond asset save failed',error);message.textContent=pw('pondSaveError');return;}
+ const {data:landResult,error:landError}=await supabase.functions.invoke('farm-land-context',{body:{farm_id:form.dataset.farmId}});
+ if(!landError&&landResult?.ok&&landResult.context?.farm?.id===form.dataset.farmId){farmLandContexts.set(form.dataset.farmId,landResult.context);message.textContent=pw('pondSaved');}
+ else{console.warn('Farm context refresh after pond save failed',landError||landResult);message.textContent=pw('pondSaved')+' · '+(language==='fa'?'به‌روزرسانی پرونده نیازمند تلاش دوباره است':'Context refresh can be retried');}
+});
