@@ -123,3 +123,14 @@ This is the first usable farmer portal slice, not the complete product. Farm loc
 - Payment is intentionally not live: no provider/webhook is configured and no client can mark an order paid. Shipment tracking can be recorded only after trusted payment confirmation.
 - Full product design and database boundaries: [Agricultural Marketplace](../docs/product/agricultural-marketplace.md).
 - The marketplace tables and policies were applied to the connected Supabase project in migrations 019-027. Their SQL sources are tracked under database/migrations/019-027.
+
+
+## Organization and agricultural support registration (V1)
+- The organization workspace now includes a bilingual registration application for companies, institutions, cooperatives, universities, research centers, laboratories, government bodies, NGOs, foundations, charities, professional associations, and agricultural support associations.
+- Captures legal/display names, organization type, registration identifier, country and city, address, work email/phone, website, mission/description, support areas, and service regions.
+- Applications are stored in `public.organization_applications` with a private `pending` status. The existing `organizations` directory is not populated and no public listing or organization privileges are activated before manual review.
+- The browser calls the JWT-protected `organization-registration` Edge Function. The function verifies the Auth user, resolves the matching SARINA profile, checks the global `organization` role, validates bounded input, and uses a server-side service-role client to create/read only that applicant's applications.
+- Direct `anon` and `authenticated` table privileges are revoked; RLS is enabled without client policies. The service-role key is never sent to the browser.
+- Schema migrations were applied to the connected project as `organization_registration_applications` and `organization_application_country_name`; the consolidated source is tracked as `database/migrations/028_organization_registration_applications.sql`.
+- Function source: `supabase/functions/organization-registration/index.ts`. The deployed function is JWT-verified.
+- This first slice supports submission and applicant-only status tracking. Document uploads, administrator review/approval actions, conversion into a verified `organizations` record, member invitations, and public directory publication remain follow-on work.
