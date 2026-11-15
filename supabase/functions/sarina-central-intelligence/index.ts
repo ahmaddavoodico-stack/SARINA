@@ -1,6 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
-import { isRecord, validateSciRequest } from "../_shared/sci-contract.ts";
+import { validateSciRequest } from "../_shared/sci-contract.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -53,7 +53,7 @@ Deno.serve(async (req: Request) => {
     ok: true,
     request_id: crypto.randomUUID(),
     status: "accepted_for_validation",
-    next_step: "context_assembly_and_si acp_signing_not_enabled_in_slice_a",
+    next_step: "context_assembly_and_SIACP_signing_not_enabled_in_slice_a",
     farm_access: "verified_under_caller_jwt_and_rls",
     model_invoked: false,
     provider_selected: false,
