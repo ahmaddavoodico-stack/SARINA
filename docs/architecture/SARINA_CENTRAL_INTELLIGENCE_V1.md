@@ -81,7 +81,10 @@ Recoverable non-success responses use ok: false, stable machine-readable code, a
 - body.task, body.question, body.inputs, body.required_output and body.constraints are mandatory.
 - body.inputs contains farm_id, farm_weather_context, farm_land_context, user question and explicit provenance metadata.
 - A result must match the request correlation and selected recipient, declare provider/model identity and result timestamp, and satisfy the requested output schema.
-- Do not invent a SIACP result type or signing scheme. Before dispatch is enabled, reconcile the exact TASK_RESULT, signature and key lifecycle requirements against the authoritative SIACP specification. If signing is mandatory and not configured, fail closed.
+- SIACP/1.1 requires a digital signature on messages. The authoritative project source (SIACP_1.1_R2_Rev34_source_export.md, §8.1 and Appendix A-6.2) defines canonical bytes as the complete message after removing only security.signature.value, canonicalized with RFC 8785; the signature is base64url without padding (T-8 remains an unapproved technical assumption). The registered key must bind kid, sender and algorithm. Do not treat a valid TLS connection or Supabase JWT as a substitute for the SIACP message signature.
+- The SIACP source gives a TASK_RESULT example with body.status, findings, recommendation, limitations and assumptions, but its own evaluation section says the schema/validator and cross-implementation RFC 8785 vectors have not yet been executed. Implement only a clearly versioned, tested subset; do not claim full protocol conformance.
+- The source Agent Card requires agent_id, provider/model identity, domain, responsibilities, out_of_scope, input/output schemas, supported languages, validated scope, limitations and autonomy level. The existing ai_providers/ai_models tables are provider/model configuration, not by themselves a complete Agent Card registry. Do not fabricate an agent identity or claim validation scope.
+- If signing is mandatory and no valid active key is registered, fail closed.
 
 ## 6. Evidence, confidence and safety policy
 
@@ -144,5 +147,7 @@ Failures must not be converted into fabricated agricultural recommendations. Ret
 - sarina-siacp-bridge currently validates a SIACP/1.1 TASK_REQUEST and farm context, then returns HTTP 202 with model_invoked: false.
 - Therefore the bridge is not yet a live AI dispatcher. This document does not claim otherwise.
 - The existing provider/model registry must be inspected and reused; no replacement registry or schema migration is authorized by this design.
-- Before Slice B, inspect the authoritative SIACP specification and the current registered provider/model record, then implement only the smallest compatible adapter.
+- Database inspection on 2026-11-15 found one OpenAI provider row and one model row (model_code gpt-6-luna). Both are inactive; provider configuration reports execution_scope=sandbox_only and connection_state=pending_credentials; model billing_guard=disabled_until_explicit_enable. No provider activation or billing change is authorized by this design.
+- The siacp_key_registry currently contains zero rows. Its current database constraint allows Ed25519 only, while the SIACP common schema lists Ed25519 and ES256. No signing key is available for a live signed SCI message today.
+- Before Slice B, implement/verify the SIACP signature and canonicalization test vectors, agree the exact Ed25519 key-registration path and sender identity for sci.core, complete an Agent Card for the selected model, and confirm the server-side provider secret. Do not enable dispatch while any of these are missing.
 - No database redesign, broad security audit or unrelated farmer-form expansion is part of this milestone.
