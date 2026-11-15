@@ -204,3 +204,17 @@ The first provider-neutral human-to-human live-audio slice is now present on `fe
 Validation completed: migration 036 applied; the call-session table's RLS and three participant policies were queried and confirmed; the identity-immutability trigger was confirmed; the two Realtime signaling policies were queried and confirmed.
 
 Not yet completed: two-device browser E2E tests, microphone permission testing, TURN provisioning, Realtime project-level enforcement of private-only channels, deployment, and merge. Treat this as an implementation slice for controlled testing, not a production-ready calling service.
+
+
+## Implementation readiness — TURN and Realtime project enforcement
+
+Assessment for the next controlled test:
+
+- The browser signaling channel is already created with `config: { private: true }`; the client-side requirement for private Realtime channels is present.
+- Database verification on 2026-11-16 confirmed: RLS is enabled on `public.expert_audio_sessions`, three participant-scoped policies exist on that table, two participant-scoped policies exist on `realtime.messages` for the SARINA call topic, and `expert_consultation_messages` is included in `supabase_realtime`.
+- Project-level enforcement is a separate dashboard setting and cannot be proven by database policies alone. In Supabase Dashboard → Realtime → Settings, disable **Allow public access** before treating private-channel enforcement as complete. This is a project-wide behavior change and should be checked by the project administrator.
+- Cloudflare Realtime TURN is a viable provider-neutral media transport candidate for the existing peer-to-peer WebRTC design. Its documented service endpoint supports UDP, TCP, and TLS. Cloudflare requires a long-lived TURN key and API token to remain server-side; the application backend must exchange them for short-lived ICE credentials and return only those expiring credentials to the browser.
+- Cloudflare documents TURN as free when used together with its Realtime SFU; standalone TURN is billed at USD 0.05 per real-time GB outbound from Cloudflare to the TURN client. This cost distinction must be considered before enabling it for SARINA's peer-to-peer calls.
+- No Cloudflare account credentials, TURN key, or billing approval have been supplied. Therefore no TURN key was created, no provider secret was stored, and the current STUN-only behavior remains unchanged.
+- Next implementation gate: provision a Cloudflare TURN key and narrowly scoped API token in the owner's Cloudflare account; store both as Supabase Edge Function secrets; implement an authenticated credential endpoint with short TTL and participant authorization; then pass the returned ICE server configuration to the browser. Never embed the long-lived key or API token in frontend code.
+- No merge, application deployment, or production activation was performed as part of this assessment.
