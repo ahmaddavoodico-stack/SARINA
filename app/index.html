@@ -26,9 +26,12 @@
       <section class="panel auth-panel">
         <div class="tabs"><button id="loginTab" class="tab active" data-i18n="login">ورود</button><button id="signupTab" class="tab" data-i18n="signup">ساخت حساب</button></div>
         <form id="authForm">
-          <label><span data-i18n="email">ایمیل</span><input id="email" type="email" autocomplete="email" required placeholder="name@example.com"></label>
+          <label id="phoneWrap"><span data-i18n="phone">شماره تلفن همراه</span><input id="phone" type="tel" inputmode="tel" autocomplete="tel" required placeholder="+98912…"></label>
           <label id="nameWrap" class="hidden"><span data-i18n="fullName">نام شما</span><input id="fullName" autocomplete="name" maxlength="180"></label>
-          <label><span data-i18n="password">رمز عبور</span><input id="password" type="password" autocomplete="current-password" minlength="8" required placeholder="••••••••"></label>
+          <div id="otpWrap" class="hidden">
+            <label><span data-i18n="otp">کد تأیید پیامکی</span><input id="otp" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="8" pattern="[0-9]{6,8}" placeholder="••••••"></label>
+            <button id="changePhone" class="quiet-btn" type="button" data-i18n="changeNumber">تغییر شماره</button>
+          </div>
           <button class="primary-btn" id="authSubmit" type="submit" data-i18n="login">ورود</button>
         </form>
         <p id="authMessage" class="message" role="status"></p>
