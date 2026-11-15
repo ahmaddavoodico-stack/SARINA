@@ -66,6 +66,6 @@ export function bindFarmContracts({root,supabase,getProfile,getLanguage}){
   const {error}=await supabase.from('service_contracts').insert(payload);
   btn.disabled=false;
   if(error){console.error(error);msg.textContent=l('failed');return}
-  msg.textContent=l('saved');form.reset();form.querySelector('[name="base_amount"]').value='0';await load(form.dataset.farmId);
+  msg.textContent=l('saved');form.reset();form.querySelector('[name="base_amount"]').value='0';form.querySelector('[name="base_amount"]').disabled=false;form.querySelector('.contract-expert-field').classList.remove('hidden');form.querySelector('[name="expert_profile_id"]').required=true;await load(form.dataset.farmId);
  });
 }
