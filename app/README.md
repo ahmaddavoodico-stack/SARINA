@@ -3,7 +3,9 @@
 A lightweight, responsive, installable farmer-first web app connected to the SARINA Supabase project.
 
 ## Current slice
-- Email/password sign-up and sign-in with Supabase Auth.
+- Phone-number sign-up and sign-in with Supabase Auth using SMS one-time passwords (OTP).
+- Phone numbers are entered in international E.164 format; email is optional and is not required for farmer or worker registration.
+- Production phone OTP requires enabling Phone Auth and configuring an SMS provider in the Supabase Auth settings before real SMS delivery can work.
 - Creates/updates the matching row in `public.users` using `auth_user_id`.
 - Lists the signed-in farmer's farms and creates a farm record.
 - Stores farmer-confirmed farm coordinates in the existing `farm_locations` table.
