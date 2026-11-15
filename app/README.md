@@ -85,3 +85,10 @@ This is the first usable farmer portal slice, not the complete product. Farm loc
 - Compost guidance is a cautious checklist, not a universal recipe. Feedstock suitability, carbon/nitrogen balance, moisture, aeration, temperature, maturity, salinity and pathogen risks require assessment before farm-specific recipes or application rates.
 - Automatic daily/hourly scheduling, weather/crop-stage optimization, reusable SOPs, worker logins, notifications, learning progress and measured productivity analytics remain future phases.
 - Provenance: farmer-entered plans remain distinct from sensor, laboratory, provider and model data. The UI states that a saved plan is not an expert-validated instruction. No physical action is triggered.
+
+## SARINA Central Intelligence (SCI) — V1 architecture baseline
+- Architecture and request lifecycle: [docs/architecture/SARINA_CENTRAL_INTELLIGENCE_V1.md](../docs/architecture/SARINA_CENTRAL_INTELLIGENCE_V1.md).
+- SCI is responsible for request authorization, farm-context assembly, provider-independent routing, SIACP task lifecycle, result validation, evidence/provenance assessment and farmer-safe response composition.
+- The first live milestone is deliberately limited to one authenticated farmer request and one registered specialist model.
+- The current SIACP bridge is validation-only and does not invoke a model. The architecture document records this explicitly; no live AI dispatch is claimed until the provider registry, authoritative SIACP result/signing contract and server-side provider secret are confirmed.
+- SCI remains advisory-only in V1. No irrigation, fertilizer, pesticide, machinery or worker action can be triggered.
