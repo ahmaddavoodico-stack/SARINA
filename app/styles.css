@@ -17,3 +17,26 @@
 
 /* Farm operations and role-based learning */
 .operations-toggle{width:100%;margin-top:8px}.operations-panel{margin-top:12px;padding:14px;border:1px solid #dce8dc;border-radius:13px;background:#f8fbf7}.operations-panel>p{font-size:11px;line-height:1.9;color:#60796a}.operations-form{display:grid;grid-template-columns:1fr 1fr;gap:0 10px;margin:12px 0}.operations-form label{font-size:11px;margin-bottom:10px}.operations-form input,.operations-form select,.operations-form textarea{width:100%;min-height:42px;border:1px solid #dce6dc;border-radius:10px;background:#fff;padding:8px;font:inherit;font-size:12px}.operations-wide{grid-column:1/-1}.operations-form button{width:100%}.operations-panel h4{font-size:13px;color:#315b45;margin:16px 0 8px}.operations-task,.learning-grid article{background:#fff;border:1px solid #e0e9df;border-radius:11px;padding:11px;margin:8px 0}.operations-task p,.learning-grid p{font-size:10px;line-height:1.9;color:#60796a;white-space:pre-wrap}.operations-actions{display:flex;gap:6px;flex-wrap:wrap}.operations-actions button{font-size:10px;padding:6px 9px}.learning-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.learning-grid article{margin:0}.learning-wide{grid-column:1/-1}.operations-safety{background:#fff8e9;border:1px solid #f0e1bd;border-radius:10px;padding:10px;color:#795c32!important}@media(max-width:760px){.operations-form,.learning-grid{grid-template-columns:1fr}.operations-wide,.learning-wide{grid-column:auto}}
+
+/* SARINA Experts workspace — first text-only pilot */
+.dashboard-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.expert-workspace{margin:20px 0}
+.expert-columns{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.expert-form,.expert-cases{padding:16px;margin-bottom:14px}
+.expert-form h3,.expert-cases h3{margin:0 0 12px;color:#315b45}
+.expert-form label,.expert-request-form label{display:block;font-size:12px;margin:9px 0;color:#405c4d}
+.expert-form input,.expert-form textarea,.expert-form select,.expert-request-form input,.expert-request-form textarea,.expert-request-form select,.expert-message-form textarea,.expert-report-form textarea{width:100%;box-sizing:border-box;border:1px solid #dce6dc;border-radius:10px;padding:10px;background:#fff;font:inherit;font-size:12px;margin-top:5px}
+.expert-status{display:inline-block;border:1px solid #dce8dc;border-radius:20px;padding:5px 10px;font-size:11px;color:#55705e;background:#f6faf5}
+.expert-case-card{border:1px solid #dce8dc;border-radius:13px;padding:14px;margin:10px 0;background:#fbfdfb}
+.expert-case-card h4{margin:0 0 5px}.expert-case-card p{font-size:12px;line-height:1.8;white-space:pre-wrap}
+.expert-case-actions,.expert-messages{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+.expert-messages{display:block;border-top:1px solid #e4ece3;padding-top:8px}
+.expert-message-form,.expert-report-form{display:grid;gap:8px;margin-top:12px}
+.expert-report-form{border-top:1px solid #e4ece3;padding-top:12px}
+.expert-report-form h5{margin:0;color:#315b45}
+.expert-request-panel{padding:12px;margin:8px 0;background:#f8fbf7;border:1px solid #dce8dc;border-radius:12px}
+.expert-request-form{display:grid;gap:8px}
+.expert-request-form .consent-row{display:flex;align-items:flex-start;gap:8px;line-height:1.8}
+.expert-request-form .consent-row input{width:auto;margin-top:6px}
+.farmer-expert-entry{margin-top:8px}
+@media(max-width:760px){.expert-columns{grid-template-columns:1fr}.dashboard-actions{width:100%}.dashboard-actions button{flex:1}}
