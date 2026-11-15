@@ -12,3 +12,5 @@
 
 /* Farm water assets: ponds and reservoirs */
 .pond-toggle{width:100%;margin-top:8px;text-align:center}.pond-panel{margin-top:12px;padding:13px;border:1px solid #dce8dc;border-radius:13px;background:#f8fbf7}.pond-form-head p{font-size:12px;line-height:1.8;color:#60796a;margin:0 0 8px}.pond-form{display:grid;grid-template-columns:1fr 1fr;gap:0 10px;margin-top:10px}.pond-form label{font-size:11px;margin-bottom:10px}.pond-form input,.pond-form select{height:42px;font-size:12px;padding:0 8px}.pond-safety,.pond-save,.pond-message{grid-column:1/-1}.pond-safety{font-size:10px;line-height:1.9;color:#785d35;background:#fff8e9;border:1px solid #f0e1bd;border-radius:10px;padding:10px;margin:2px 0 12px}.pond-save{width:100%;margin-top:4px}.pond-message{margin:6px 0 0}.pond-form .message{min-height:18px}@media(max-width:760px){.pond-form{grid-template-columns:1fr}.pond-safety,.pond-save,.pond-message{grid-column:auto}}
+
+.crop-production-section{grid-column:1/-1;border-top:1px solid #dce8dc;margin-top:8px;padding-top:8px}.crop-production-intro{font-size:11px;line-height:1.8;color:#60796a;margin:0 0 8px}.crop-form .crop-production-section~label{margin-bottom:10px}
