@@ -32,6 +32,10 @@ const copy = {
     phase2State: 'گام بعدی',
     phase3: 'مرحله ۳ · ثبت رویدادها و پایش سلامت سرویس‌ها',
     phase3State: 'پس از مرحله ۲',
+    phase4: 'مرحله ۴ · پایش هوش‌های تخصصی و هسته مرکزی',
+    phase4State: 'پس از اتصال رویدادها',
+    phase5: 'مرحله ۵ · پیشنهادهای مدیریتی مبتنی بر شواهد',
+    phase5State: 'پس از اعتبارسنجی داده‌ها',
     evidenceTitle: 'مرز دقت و شواهد',
     evidence: 'تا زمانی که رابط مدیریتیِ سمت سرور ساخته و آزمایش نشده، آمار کل کاربران، مزارع، سفارش‌ها، گزارش‌های امنیتی و سلامت سرویس‌ها نمایش داده نمی‌شود. دسترسی مرورگر به داده‌های شخصی کاربران یا دور زدن RLS مجاز نیست.',
     activityTitle: 'رویدادهای مدیریتی',
@@ -79,6 +83,10 @@ const copy = {
     phase2State: 'Next step',
     phase3: 'Phase 3 · Audit events and service health monitoring',
     phase3State: 'After phase 2',
+    phase4: 'Phase 4 · Specialist AI and central intelligence monitoring',
+    phase4State: 'After event integration',
+    phase5: 'Phase 5 · Evidence-based management recommendations',
+    phase5State: 'After data validation',
     evidenceTitle: 'Evidence and accuracy boundary',
     evidence: 'Until server-side admin interfaces are implemented and tested, platform-wide counts, orders, security events and service health are not displayed. The browser must not bypass RLS or expose other users’ private records.',
     activityTitle: 'Administrative events',
@@ -130,6 +138,8 @@ export function renderAdminWorkspace(lang = 'fa', profile = null) {
           <li class="is-done"><span>${t.phase1}</span><b>${t.phase1State}</b></li>
           <li class="is-next"><span>${t.phase2}</span><b>${t.phase2State}</b></li>
           <li><span>${t.phase3}</span><b>${t.phase3State}</b></li>
+          <li><span>${t.phase4}</span><b>${t.phase4State}</b></li>
+          <li><span>${t.phase5}</span><b>${t.phase5State}</b></li>
         </ol>
       </section>
       <section class="admin-lower-grid">
