@@ -38,7 +38,7 @@ export function renderFarmerExpertButton(farmId,lang='fa') {
  <button class="primary-btn" type="submit">${fa(lang)?'ثبت درخواست':'Submit request'}</button><p class="message"></p>
  </form></div></div>`;
 }
-export function bindFarmerExpertRequests({root,supabase,profile,language}) {
+export function bindFarmerExpertRequests({root,supabase,getProfile,language}) {
  const isFa=fa(language);
  root.addEventListener('click',async e=>{
   const btn=e.target.closest('[data-expert-request-toggle]'); if(!btn)return;
@@ -59,9 +59,11 @@ export function bindFarmerExpertRequests({root,supabase,profile,language}) {
   if(!v.consent){msg.textContent=isFa?'برای ثبت درخواست، رضایت لازم است.':'Consent is required.';return;}
   button.disabled=true;msg.textContent=isFa?'در حال ثبت…':'Submitting…';
   try{
+   const currentProfile=getProfile();
+   if(!currentProfile){throw new Error('Authentication required');}
    const now=new Date().toISOString();
    const {data:req,error}=await supabase.from('expert_requests').insert({
-    requester_user_id:profile.id,farm_id:form.dataset.farmId,assigned_expert_profile_id:v.expert_profile_id,
+    requester_user_id:currentProfile.id,farm_id:form.dataset.farmId,assigned_expert_profile_id:v.expert_profile_id,
     subject:v.subject.trim(),problem_description:v.problem_description.trim(),request_type:'general',
     priority:'normal',status:'submitted',preferred_language:language,requested_mode:'in_app_message',
     consent_at:now,consent_scope:{farm_profile:true,soil_water_crop_context:true,case_messages:true,limited_to_selected_expert:true}
