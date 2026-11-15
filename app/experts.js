@@ -49,6 +49,7 @@ export function renderExpertWorkspace(lang='fa') {
    </form>
   </section>
   <section class="panel expert-cases"><h3>${isFa?'پرونده‌های ارجاع‌شده':'Assigned cases'}</h3><div id="expertCasesList"><p class="fineprint">${isFa?'برای بارگذاری پرونده‌ها، پروفایل خود را ذخیره کنید.':'Save your profile to load assigned cases.'}</p></div></section>
+  <section class="panel expert-contracts"><h3>${isFa?'پیشنهادهای همکاری و قرارداد':'Service contract offers'}</h3><div id="expertContractsList"><p class="fineprint">${isFa?'پس از تأیید پروفایل، پیشنهادهای قرارداد نمایش داده می‌شوند.':'Contract offers appear after your expert profile is verified.'}</p></div></section>
  </section>`;
 }
 export function renderFarmerExpertButton(farmId,lang='fa') {
@@ -126,7 +127,7 @@ export async function bindExpertWorkspace({root,supabase,profile,language}) {
    root.querySelector('#expertStatus').textContent=({pending:isFa?'در انتظار تأیید':'Pending review',verified:isFa?'تأییدشده':'Verified',rejected:isFa?'نیازمند اصلاح':'Changes requested',suspended:isFa?'تعلیق‌شده':'Suspended'})[expert.verification_status]||expert.verification_status;
    const {data:sp}=await supabase.from('expert_specialties').select('expertise_category_id').eq('expert_profile_id',expert.id).maybeSingle();
    if(sp)cat.value=sp.expertise_category_id;
-   await loadPortfolio();await loadCases();
+   await loadPortfolio();await loadCases();await loadContracts();
   }else root.querySelector('#expertStatus').textContent=isFa?'هنوز پروفایل متخصص ندارید':'No expert profile yet';
  }
  async function loadPortfolio(){
@@ -142,6 +143,21 @@ export async function bindExpertWorkspace({root,supabase,profile,language}) {
   awards.innerHTML=ar.error?'<p class="message">'+esc(ar.error.message)+'</p>':(ar.data||[]).map(x=>'<article class="portfolio-item"><div class="section-head"><b>'+esc(x.title)+'</b><span class="expert-status">'+esc(x.status)+'</span></div><p>'+esc(x.citation)+'</p><small>'+esc(x.issuer_name)+' · '+esc(x.award_code)+'</small></article>').join('')||'<p class="fineprint">'+(isFa?'هنوز تقدیرنامه‌ای صادر نشده است.':'No awards issued yet.')+'</p>';
   root.dataset.cvCredentials=JSON.stringify(cr.data||[]);root.dataset.cvImpacts=JSON.stringify(ir.data||[]);root.dataset.cvAwards=JSON.stringify((ar.data||[]).filter(x=>x.status==='issued'));
  }
+ async function loadContracts(){
+  const list=root.querySelector('#expertContractsList');
+  if(!expert||expert.verification_status!=='verified'){list.textContent=isFa?'برای پذیرش قرارداد، پروفایل باید تأیید شده باشد.':'Your profile must be verified to accept contracts.';return;}
+  const {data,error}=await supabase.from('service_contracts').select('id,contract_code,title,description,status,pricing_model,base_amount,currency_code,farmer_accepted_at,expert_accepted_at,created_at').eq('expert_profile_id',expert.id).in('status',['proposed','accepted']).order('created_at',{ascending:false}).limit(30);
+  if(error){list.textContent=error.message;return;}
+  if(!data?.length){list.textContent=isFa?'فعلاً پیشنهاد قراردادی ندارید.':'No contract offers yet.';return;}
+  list.innerHTML=data.map(c=>'<article class="expert-case-card"><div class="section-head"><b>'+esc(c.title)+'</b><span class="expert-status">'+esc(c.status)+'</span></div><p>'+esc(c.description||'')+'</p><p>'+esc(c.base_amount)+' '+esc(c.currency_code)+' · '+esc(c.pricing_model)+'</p>'+(c.status==='proposed'&&!c.expert_accepted_at?'<button type="button" class="primary-btn" data-expert-contract-action="accept" data-contract-id="'+esc(c.id)+'">'+(isFa?'پذیرش قرارداد':'Accept contract')+'</button><button type="button" class="quiet-btn" data-expert-contract-action="cancel" data-contract-id="'+esc(c.id)+'">'+(isFa?'رد / لغو پیشنهاد':'Decline offer')+'</button>':c.status==='accepted'?'<p>'+(isFa?'قرارداد با تأیید هر دو طرف پذیرفته شده است.':'Both parties accepted this contract.')+'</p>':'<p>'+(isFa?'در انتظار تأیید کشاورز':'Waiting for farmer acceptance')+'</p>')+'</article>').join('');
+ }
+ root.addEventListener('click',async e=>{
+  const button=e.target.closest('[data-expert-contract-action]');if(!button)return;
+  button.disabled=true;
+  const {data,error}=await supabase.functions.invoke('sarina-contract-workflow',{body:{contract_id:button.dataset.contractId,action:button.dataset.expertContractAction}});
+  if(error||!data?.ok){console.error('Expert contract action failed',error||data);button.disabled=false;button.textContent=isFa?'عملیات ناموفق بود':'Action failed';return;}
+  await loadContracts();
+ });
  async function loadCases(){
   const list=root.querySelector('#expertCasesList');
   const {data:requests,error}=await supabase.from('expert_requests').select('id,subject,problem_description,status,created_at,requester_user_id,assigned_expert_profile_id,consented_context_snapshot').eq('assigned_expert_profile_id',expert.id).order('created_at',{ascending:false}).limit(30);
