@@ -263,3 +263,11 @@ The current `expert_requests.status` constraint already supports: `draft`, `subm
 5. Test cross-farm, cross-user, unverified-expert and non-member organization access denials before enabling the UI.
 
 The database currently contains no expert profile, request, consultation or message records (all inspected expert tables reported zero rows at inspection time). The schema is therefore a foundation, not a working expert service yet.
+
+
+### Additional live configuration findings
+
+- The inspected expert, organization and membership tables grant broad table privileges to both `anon` and `authenticated`, while RLS is enabled and no matching policies were found. RLS currently blocks row access, but the table grants are broader than necessary. The access migration must revoke `anon` privileges and grant only the minimum required operations to `authenticated`; RLS policies then define row-level access.
+- The project currently has no seeded rows in `roles` or `permissions`. Do not assume an `expert_admin` role already exists. The first pilot's credential approval must use a controlled operations path; role-based admin tooling can follow once the role lifecycle is explicitly defined.
+- No Storage buckets were returned by the live inspection. Therefore, credential uploads and case attachments are not available yet. The first pilot should begin with credential metadata entered through a controlled review process and text-only case messages. Add a private bucket and its access policies only when upload support is implemented.
+- The inspected expert tables contained zero records. Existing schema should be treated as unused foundation until a real authenticated farmer/expert flow is tested.
