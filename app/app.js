@@ -17,6 +17,12 @@ const landWords = {
  en:{landButton:'Soil & land profile',landIntro:'Choose a few simple options. If you are unsure, leave “I don’t know”.',soilTexture:'What does your soil feel like?',clayey:'Sticky and clayey',sandy:'Loose and sandy',loamy:'Soft and mixed',cracked:'Hard and cracked',mixed:'Mixed',calcareous:'Do you see white lime-like deposits?',yes:'Yes',no:'No',unsure:'Not sure',salinity:'Do you notice signs of salinity?',salinityNone:'No visible signs',whiteCrust:'White crust on soil',leafBurn:'Leaf burn or yellowing',some:'Sometimes / mild',drainage:'How long does water remain after irrigation?',fast:'Drains quickly',sameDay:'A few hours / same day',nextDay:'Until the next day',longer:'More than one day',slope:'How steep is the land?',flat:'Almost flat',slight:'Slight slope',moderate:'Moderate slope',steep:'Steep',waterSource:'Where does irrigation water come from?',canal:'Canal / ditch',river:'River',well:'Well',dam:'Reservoir',rainfed:'Rain only',other:'Other source',irrigation:'How do you irrigate?',flood:'Flood',furrow:'Furrow',drip:'Drip',sprinkler:'Sprinkler',saveLand:'Save answers',landSaved:'Land information saved.',landSaveError:'Could not save the information. Please try again.',farmerReported:'Farmer report · not a soil test',unknown:'I don’t know'}
 };
 function lw(key){return landWords[language][key]||key;}
+const cropWords = {
+ fa:{cropButton:'ثبت گروه کشت و الگوی کاشت',cropIntro:'هر گروه از گیاهان مشابه را جداگانه ثبت کنید؛ مثلاً خرمای برحی یا موز. اگر مقداری را نمی‌دانید خالی بگذارید.',cropName:'نام درخت یا گیاه',cropNameHint:'مثلاً خرما، موز، مرکبات',cultivar:'رقم یا نوع محصول',cultivarHint:'مثلاً برحی، استعمران؛ اختیاری',treeCount:'تعداد درختان / گیاهان',age:'سن تقریبی (سال)',treeSpacing:'فاصله روی ردیف (متر)',rowSpacing:'فاصله بین ردیف‌ها (متر)',plantingPattern:'الگوی کاشت',regular:'منظم',irregular:'نامنظم',mixedPattern:'ترکیبی',plantPosition:'محل استقرار نسبت به جوی و پشته',ridgeTop:'بالای پشته',furrow:'داخل جوی',furrowEdge:'کنار جوی / لبه پشته',awayFromFurrow:'با فاصله از جوی',flatGround:'زمین مسطح / بدون جوی',furrowDistance:'فاصله از لبه جوی (متر)',furrowDistanceHint:'برای کنار جوی یا با فاصله از جوی؛ اختیاری',saveCrop:'ذخیره گروه کشت',cropSaved:'گروه کشت ثبت شد.',cropSaveError:'ثبت گروه کشت انجام نشد؛ دوباره تلاش کنید.',requiredCrop:'نام درخت و تعداد را وارد کنید.'},
+ en:{cropButton:'Add crop group & planting layout',cropIntro:'Record each group of similar plants separately, e.g. Barhi date palms or banana. Leave unknown measurements blank.',cropName:'Tree or plant name',cropNameHint:'e.g. date palm, banana, citrus',cultivar:'Cultivar / product type',cultivarHint:'e.g. Barhi, Sayer; optional',treeCount:'Number of trees / plants',age:'Approximate age (years)',treeSpacing:'Spacing within row (m)',rowSpacing:'Spacing between rows (m)',plantingPattern:'Planting pattern',regular:'Regular',irregular:'Irregular',mixedPattern:'Mixed',plantPosition:'Position relative to ridge and furrow',ridgeTop:'Top of ridge',furrow:'Inside furrow',furrowEdge:'Furrow edge / ridge side',awayFromFurrow:'Offset from furrow',flatGround:'Flat ground / no furrows',furrowDistance:'Distance from furrow edge (m)',furrowDistanceHint:'For furrow edge or offset positions; optional',saveCrop:'Save crop group',cropSaved:'Crop group saved.',cropSaveError:'Could not save crop group. Please try again.',requiredCrop:'Enter the plant name and count.'}
+};
+function cw(key){return cropWords[language][key]||key;}
+
 
 
 const words = {
@@ -54,7 +60,7 @@ async function loadFarms(){
         weatherMarkup=renderWeather(context);
       }catch(error){console.warn('Farm weather unavailable',f.id,error);weatherMarkup='<div class="weather-note">'+t('weatherUnavailable')+'</div>'}
     }else { farmWeatherContexts.delete(f.id); weatherMarkup='<div class="weather-note">'+t('weatherMissingLocation')+'</div>'; }
-    return '<article class="farm-card" data-farm-card="'+f.id+'"><div class="farm-icon">🌿</div><h3>'+escapeHtml(f.farm_name)+'</h3><p>'+ (f.total_area?escapeHtml(String(f.total_area))+' '+escapeHtml(f.area_unit):'—') +' · '+escapeHtml(f.status)+'</p>'+weatherMarkup+'<button type="button" class="quiet-btn land-toggle" data-land-toggle="'+f.id+'">🌱 '+lw('landButton')+'</button><div class="land-panel hidden" id="land-'+f.id+'">'+renderLandForm(f.id)+'</div></article>';
+    return '<article class="farm-card" data-farm-card="'+f.id+'"><div class="farm-icon">🌿</div><h3>'+escapeHtml(f.farm_name)+'</h3><p>'+ (f.total_area?escapeHtml(String(f.total_area))+' '+escapeHtml(f.area_unit):'—') +' · '+escapeHtml(f.status)+'</p>'+weatherMarkup+'<button type="button" class="quiet-btn land-toggle" data-land-toggle="'+f.id+'">🌱 '+lw('landButton')+'</button><div class="land-panel hidden" id="land-'+f.id+'">'+renderLandForm(f.id)+'</div><button type="button" class="quiet-btn crop-toggle" data-crop-toggle="'+f.id+'">🌳 '+cw('cropButton')+'</button><div class="crop-panel hidden" id="crop-'+f.id+'">'+renderCropForm(f.id)+'</div></article>';
   }));
   $('farmList').innerHTML=cards.join('');
 }
@@ -70,6 +76,20 @@ function renderLandForm(farmId){
  select('water_source','waterSource',[['unknown','unknown'],['canal','canal'],['river','river'],['well','well'],['dam','dam'],['rainfed','rainfed'],['other','other']])+ 
  select('irrigation_method','irrigation',[['unknown','unknown'],['flood','flood'],['furrow','furrow'],['drip','drip'],['sprinkler','sprinkler'],['rainfed','rainfed'],['other','other']])+ 
  '<button class="primary-btn land-save" type="submit">'+lw('saveLand')+'</button><p class="message land-message" role="status"></p></form>';
+}
+function renderCropForm(farmId){
+ const select=(name,label,options)=>'<label><span>'+cw(label)+'</span><select name="'+name+'">'+options.map(([v,k])=>'<option value="'+v+'">'+cw(k)+'</option>').join('')+'</select></label>';
+ return '<div class="crop-form-head"><p>'+cw('cropIntro')+'</p></div><form class="crop-form" data-farm-id="'+farmId+'">'+
+ '<label><span>'+cw('cropName')+'</span><input name="plant_name" maxlength="120" required placeholder="'+cw('cropNameHint')+'"></label>'+
+ '<label><span>'+cw('cultivar')+'</span><input name="cultivar" maxlength="120" placeholder="'+cw('cultivarHint')+'"></label>'+
+ '<label><span>'+cw('treeCount')+'</span><input name="plant_count" type="number" min="1" step="1" required></label>'+
+ '<label><span>'+cw('age')+'</span><input name="age_years" type="number" min="0" max="200" step="0.5"></label>'+
+ '<label><span>'+cw('treeSpacing')+'</span><input name="in_row_spacing_m" type="number" min="0" max="100" step="0.01"></label>'+
+ '<label><span>'+cw('rowSpacing')+'</span><input name="between_row_spacing_m" type="number" min="0" max="100" step="0.01"></label>'+
+ select('planting_pattern','plantingPattern',[['unknown','unsure'],['regular','regular'],['irregular','irregular'],['mixed','mixedPattern']])+ 
+ select('plant_position','plantPosition',[['unknown','unsure'],['ridge_top','ridgeTop'],['inside_furrow','furrow'],['furrow_edge','furrowEdge'],['offset_from_furrow','awayFromFurrow'],['flat_ground','flatGround']])+ 
+ '<label class="crop-distance"><span>'+cw('furrowDistance')+'</span><input name="furrow_distance_m" type="number" min="0" max="100" step="0.01" placeholder="0.5"></label><p class="crop-hint">'+cw('furrowDistanceHint')+'</p>'+
+ '<button class="primary-btn crop-save" type="submit">'+cw('saveCrop')+'</button><p class="message crop-message" role="status"></p></form>';
 }
 function renderSoilGridResult(context){
  const regional=context?.regional_context?.soilgrids||{};const status=regional.status||'not_requested';
@@ -131,7 +151,7 @@ $('farmForm').addEventListener('submit',async e=>{
  }
  say(latitude===null?t('farmCreated'):t('locationSaved'),'farmMessage');closeFarmForm();await loadFarms();
 });
-$('farmList').addEventListener('click',e=>{const toggle=e.target.closest('[data-land-toggle]');if(!toggle)return;const panel=$('land-'+toggle.dataset.landToggle);panel?.classList.toggle('hidden');});
+$('farmList').addEventListener('click',e=>{const toggle=e.target.closest('[data-land-toggle],[data-crop-toggle]');if(!toggle)return;const farmId=toggle.dataset.landToggle||toggle.dataset.cropToggle;const panel=$(toggle.hasAttribute('data-land-toggle')?'land-'+farmId:'crop-'+farmId);panel?.classList.toggle('hidden');});
 $('farmList').addEventListener('submit',async e=>{
  const form=e.target.closest('.land-form');if(!form)return;e.preventDefault();
  const button=form.querySelector('button[type="submit"]');const message=form.querySelector('.land-message');button.disabled=true;message.textContent=t('loading');
@@ -142,6 +162,22 @@ $('farmList').addEventListener('submit',async e=>{
  const {data:landResult,error:landError}=await supabase.functions.invoke('farm-land-context',{body:{farm_id:form.dataset.farmId}});
  if(!landError&&landResult?.ok&&landResult.context?.farm?.id===form.dataset.farmId){farmLandContexts.set(form.dataset.farmId,landResult.context);message.textContent=lw('landSaved');form.insertAdjacentHTML('beforeend',renderSoilGridResult(landResult.context));}
  else{console.warn('Farm land context refresh failed',landError||landResult);message.textContent=lw('landSaved')+' · '+(language==='fa'?'بازیابی پرونده نیازمند تلاش دوباره است':'Profile refresh can be retried');}
+});
+$('farmList').addEventListener('submit',async e=>{
+ const form=e.target.closest('.crop-form');if(!form)return;e.preventDefault();
+ const button=form.querySelector('button[type="submit"]');const message=form.querySelector('.crop-message');
+ const values=Object.fromEntries(new FormData(form).entries());
+ if(!values.plant_name?.trim()||!Number.isInteger(Number(values.plant_count))||Number(values.plant_count)<1){message.textContent=cw('requiredCrop');return;}
+ const numericFields=['plant_count','age_years','in_row_spacing_m','between_row_spacing_m','furrow_distance_m'];
+ for(const key of numericFields){if(values[key]===''){delete values[key];continue;}values[key]=Number(values[key]);if(!Number.isFinite(values[key])||values[key]<0){message.textContent=cw('requiredCrop');return;}}
+ button.disabled=true;message.textContent=t('loading');
+ const reportedAt=new Date().toISOString();
+ const payload={schema:'SARINA_CROP_LAYOUT_V1',answers:values,source_type:'farmer_report',reported_at:reportedAt,confidence:'self_reported_not_verified'};
+ const {error}=await supabase.from('farm_observations').insert({farm_id:form.dataset.farmId,observation_type:'crop_layout',observed_at:reportedAt,description:'SARINA_CROP_LAYOUT_V1:'+JSON.stringify(payload),severity:'unknown',image_refs:[],reported_by:profile?.id||null});
+ button.disabled=false;if(error){console.error('Crop layout save failed',error);message.textContent=cw('cropSaveError');return;}
+ const {data:landResult,error:landError}=await supabase.functions.invoke('farm-land-context',{body:{farm_id:form.dataset.farmId}});
+ if(!landError&&landResult?.ok&&landResult.context?.farm?.id===form.dataset.farmId){farmLandContexts.set(form.dataset.farmId,landResult.context);message.textContent=cw('cropSaved');}
+ else{console.warn('Farm context refresh after crop save failed',landError||landResult);message.textContent=cw('cropSaved')+' · '+(language==='fa'?'به‌روزرسانی پرونده نیازمند تلاش دوباره است':'Context refresh can be retried');}
 });
 $('signOut').addEventListener('click',async()=>{await supabase.auth.signOut();profile=null;showAuth()});
 supabase.auth.onAuthStateChange((event)=>{if(event==='SIGNED_OUT'){profile=null;showAuth()}});
