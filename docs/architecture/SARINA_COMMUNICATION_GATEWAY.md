@@ -190,3 +190,17 @@ The first media slice is implemented on `feature/sarina-communication-gateway`:
 This slice supports in-app microphone recording where the browser exposes MediaRecorder and microphone permission, plus audio-file selection as a fallback, upload, and signed-URL playback. Duration metadata, waveform UI, live WebRTC, AI voice, and regional messaging adapters are not yet implemented.
 
 Validation completed: migrations applied successfully; the private bucket and expected RLS policies were queried and confirmed. Browser/device end-to-end testing with two real participant sessions and deployment remain outstanding.
+
+## Implementation status — first live-audio slice
+
+The first provider-neutral human-to-human live-audio slice is now present on `feature/sarina-communication-gateway`:
+
+- `public.expert_audio_sessions` records call initiation, accepted/rejected/ended/missed status, expiry, and timestamps. RLS limits reads and writes to the farmer requester and the assigned verified expert after the assignment is accepted.
+- Supabase Realtime private topic `consultation:<consultation_id>:call` carries only signaling events (invite, SDP answer, ICE candidates, reject, end). Realtime RLS policies restrict receive/send to those same accepted participants.
+- The farmer and expert consultation panels expose start, accept, decline, and end controls. Browser microphone access is requested only when starting or accepting a call.
+- WebRTC audio is peer-to-peer; no audio recording or media relay is implemented. Early ICE candidates are buffered during call setup, and unanswered invitations expire after 90 seconds.
+- The default client ICE configuration currently contains a public STUN server. An optional `SARINA_WEBRTC_ICE_SERVERS` runtime configuration hook is available for a later TURN configuration; production reliability across restrictive NATs/firewalls requires a TURN service and tested short-lived credentials.
+
+Validation completed: migration 036 applied; the call-session table's RLS and three participant policies were queried and confirmed; the identity-immutability trigger was confirmed; the two Realtime signaling policies were queried and confirmed.
+
+Not yet completed: two-device browser E2E tests, microphone permission testing, TURN provisioning, Realtime project-level enforcement of private-only channels, deployment, and merge. Treat this as an implementation slice for controlled testing, not a production-ready calling service.
