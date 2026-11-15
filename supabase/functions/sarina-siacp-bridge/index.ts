@@ -98,6 +98,35 @@ Deno.serve(async (req: Request) => {
     }
   }
 
+  // A farm-scoped agricultural task must also carry the normalized land context
+  // retrieved for this exact farm. Farmer reports, lab results, weather models and
+  // regional datasets remain separate provenance classes.
+  if (isRecord(msg.body.inputs) && typeof msg.body.inputs.farm_id === "string") {
+    const inputs = msg.body.inputs;
+    const land = inputs.farm_land_context;
+    if (!isRecord(land)) {
+      return reply(422, { ok: false, code: "FARM_LAND_CONTEXT_REQUIRED", field: "inputs.farm_land_context" });
+    }
+    const retrievedAt = typeof land.retrieved_at === "string" ? Date.parse(land.retrieved_at) : NaN;
+    const farm = land.farm;
+    if (
+      land.schema !== "SARINA_FARM_LAND_CONTEXT_V1" ||
+      !isRecord(farm) || farm.id !== inputs.farm_id ||
+      !Number.isFinite(retrievedAt) ||
+      Date.now() - retrievedAt > 24 * 60 * 60 * 1000 ||
+      retrievedAt - Date.now() > 5 * 60 * 1000 ||
+      !Array.isArray(land.farmer_reports) ||
+      !Array.isArray(land.soil_tests) ||
+      !Array.isArray(land.water_tests) ||
+      !isRecord(land.regional_context) ||
+      !isRecord(land.safety) ||
+      land.safety.distinguish_farmer_report_from_lab_and_model_data !== true ||
+      land.safety.missing_values_must_remain_missing !== true
+    ) {
+      return reply(422, { ok: false, code: "INVALID_OR_STALE_FARM_LAND_CONTEXT" });
+    }
+  }
+
   // This first deployment is a fail-closed transport/schema bridge only.
   // It deliberately does not call a model, sign a TASK_RESULT, write to domain tables,
   // invoke safety gates, or authorize physical actions.
