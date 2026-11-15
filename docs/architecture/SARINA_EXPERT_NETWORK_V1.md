@@ -216,3 +216,50 @@ Events should be versioned and provider-independent, e.g. `EXPERT_CASE_SUBMITTED
 ## 12. First implementation decision
 
 Start with the smallest complete human-support loop: verified expert profile + specialty + expert case + assignment + text messages + final report. Keep organization support in the domain model, but do not block the first pilot on complex organization administration. Do not introduce payment, real-time video or field-visit scheduling before the basic case loop is proven.
+
+
+## 13. Alignment with the existing SARINA database (live schema inspection)
+
+A live schema inspection was performed against the connected project after this blueprint was first drafted. The project already contains substantial human-expert tables. These existing structures take precedence over the provisional logical names in Sections 4 and 8. Do not create duplicate `expert_cases`, `expert_profiles`, `expert_messages` or organization identity tables.
+
+### Existing structures to reuse
+
+| Existing table | Role in the Experts V1 domain | Known current limitations |
+|---|---|---|
+| `expert_profiles` | Human expert profile linked one-to-one to `public.users`; includes public name, biography, country, verification status, experience, languages, consultation modes and visibility. | No service area, schedule/capacity, organization association or richer public contact policy. |
+| `expertise_categories` | Shared specialty taxonomy with parent-child hierarchy. | Taxonomy content and governance still need review. |
+| `expert_specialties` | Many-to-many expert-to-specialty mapping. | Only an experience note; no crop focus or independently verified specialty flag. |
+| `expert_credentials` | Credential metadata and verification state; includes document reference. | Evidence storage/access policy and reviewer audit fields need validation. |
+| `expert_requests` | Existing Expert Case aggregate; farmer requester, optional farm/field/crop-cycle, assigned expert, subject, description, category, priority, status and language. | Single assigned expert only; no explicit consent snapshot, requested service mode, assignment history or structured closure report. |
+| `expert_consultations` | Consultation/session associated one-to-one with a request; mode, status, times and external session reference. | Does not itself provide scheduling workflow or provider integration. |
+| `expert_consultation_messages` | Existing case conversation messages. | Attachment policy and participant authorization must be verified. |
+| `expert_reviews` | Farmer review linked to a consultation. | One review per consultation; rating is not a credential or technical-quality verification. |
+| `organizations` and `organization_members` | Existing organization and membership foundation. | Need a clear rule for which organization members may act as experts and which cases they may access. |
+| `user_roles`, `roles`, `permissions`, `role_permissions` | Existing role/permission foundation. | Must be reviewed before granting expert/admin capabilities; never trust user-editable metadata for authorization. |
+
+The live schema inspection confirmed RLS is enabled on the expert and organization tables. A query of `pg_policies` for the inspected expert/organization tables returned no policies. This means authenticated Data API access is currently denied by default on those tables; it is not a reason to disable RLS or grant broad access. Before enabling the workflow, define and test narrow owner/participant/admin policies.
+
+### Minimal additions likely required after policy design
+
+Do not add these until the exact live columns, constraints, grants and RLS policies are reviewed in the migration plan.
+
+1. **Case consent** — purpose-specific consent snapshot and shared-context references attached to `expert_requests`; record who consented, when, and what was shared.
+2. **Assignment history** — a child table such as `expert_request_assignments` to retain invitations, offers, acceptance, decline, reassignment, response deadlines and actor timestamps. Keep `assigned_expert_profile_id` as the current active assignee for compatibility.
+3. **Case events** — append-only `expert_request_events` for lifecycle history and auditability.
+4. **Structured expert report** — versioned `expert_request_reports` with findings, recommendations, limitations, evidence references, author and submitted timestamp. Do not overwrite prior submitted reports.
+5. **Service capability metadata** — add service-area, availability and offering structures only when needed for matching. Do not collect private home addresses; use service coverage areas.
+6. **Optional request fields** — requested consultation mode and timezone-aware farmer preference may be added to `expert_requests` after compatibility review.
+
+### Existing lifecycle compatibility
+
+The current `expert_requests.status` constraint already supports: `draft`, `submitted`, `assigned`, `in_progress`, `waiting_user`, `resolved`, `closed`, `cancelled`. The first human-support loop should map to these existing states rather than replacing the status model prematurely. Add new states only if an implemented workflow requires them and a migration plus transition validator is ready.
+
+### Immediate implementation order
+
+1. Inspect the full live RLS policies, grants and storage configuration for the existing expert tables.
+2. Define farmer, expert, organization member and operations-admin access matrices.
+3. Add only the missing consent, assignment-history, event and report structures with explicit RLS and server-validated transitions.
+4. Implement one verified expert pilot: farmer submits a request linked to a farm; one expert is assigned; both exchange in-app messages; expert submits a report; farmer sees the report and closes the request.
+5. Test cross-farm, cross-user, unverified-expert and non-member organization access denials before enabling the UI.
+
+The database currently contains no expert profile, request, consultation or message records (all inspected expert tables reported zero rows at inspection time). The schema is therefore a foundation, not a working expert service yet.
