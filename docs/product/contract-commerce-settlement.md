@@ -75,11 +75,11 @@ Migration 016 links each contract to its farm and optionally to the originating 
 
 
 ## Initial launch revenue policy (migration 018)
-- SARINA AI guidance and analysis are free to farmers during the initial launch stage. AI-only service contracts must have a zero base amount and cannot generate invoices.
+- SARINA AI guidance and analysis remain free to farmers until the required knowledge base is complete and the quality of its guidance is demonstrated to exceed qualified human experts in representative real-world evaluations. This is an explicit readiness gate, not a calendar-based pricing change. AI-only service contracts must have a zero base amount and cannot generate invoices.
 - Hybrid contracts may bill only the explicitly agreed human-expert service fee. The AI component remains free.
 - SARINA platform fees and commissions are zero for all initial-stage service contracts (`platform_fee_model='none'`, rate 0). This is enforced by database constraints and the farmer draft-insert policy.
 - When a paid human-expert, hybrid or field-service contract is fully accepted by all required parties, the server atomically creates one draft invoice for the agreed human/field service amount. Duplicate open invoices are prevented.
 - The invoice has a line-item record. Tax status is `not_configured`; tax amount remains zero only as an unassessed draft placeholder, not as a claim of tax exemption. It must not be issued or paid until the applicable jurisdiction and tax treatment are reviewed.
-- No payment provider is selected or integrated yet. No payment is marked successful, no payout is executed and SARINA collects no commission at this stage.
+- No payment provider is selected or integrated yet. No payment is marked successful, no payout is executed and SARINA collects no commission at this stage. The zero-fee database constraints must only be relaxed through a separately reviewed migration after the knowledge-base and expert-benchmark readiness gate has been met and publicly communicated.
 - Initial business revenue is planned through independent channels such as the user's agricultural products/fertilizer business and banana farm. These are separate from farmer charges for SARINA AI guidance.
 - Result-based expert shares are not invoiced automatically in this first pass; they require a documented outcome assessment and a later settlement step.
