@@ -1,5 +1,39 @@
 const esc = (v='') => String(v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fa = (lang) => lang === 'fa';
+const VOICE_BUCKET = 'expert-voice-notes';
+const VOICE_MAX_BYTES = 20 * 1024 * 1024;
+const VOICE_MIME_TYPES = ['audio/webm','audio/ogg','audio/mp4','audio/mpeg','audio/wav','audio/x-wav','audio/aac','audio/3gpp','audio/3gpp2','audio/flac'];
+const voiceFormMarkup = (consultationId, isFa, role) => `<form class="${role}-voice-form" data-consultation-id="${esc(consultationId)}"><label>${isFa?'پیام صوتی':'Voice note'} <input type="file" name="voice_file" accept="audio/*" required></label><button class="quiet-btn" type="submit">${isFa?'ارسال صدا':'Send audio'}</button><small class="fineprint">${isFa?'حداکثر ۲۰ مگابایت؛ فایل صوتی خصوصی است.':'Up to 20 MB; audio is private.'}</small><p class="message" role="status"></p></form>`;
+async function renderConsultationMessages({supabase,messages,viewerId,isFa}) {
+ const items = await Promise.all((messages||[]).map(async m => {
+  const voice = Array.isArray(m.content_parts) ? m.content_parts.find(p => p?.type === 'audio' && p.storage_path) : null;
+  let audio = '';
+  if (voice) {
+   const {data,error} = await supabase.storage.from(VOICE_BUCKET).createSignedUrl(voice.storage_path, 3600);
+   if (!error && data?.signedUrl) audio = '<audio controls preload="none" src="'+esc(data.signedUrl)+'"></audio>';
+  }
+  return '<div class="expert-message-item"><b>'+(m.sender_user_id===viewerId?(isFa?'شما':'You'):(isFa?'طرف مقابل':'Other participant'))+':</b> '+esc(m.message_text||'')+audio+'</div>';
+ }));
+ return items.join('') || '<p class="fineprint">'+(isFa?'هنوز پیامی وجود ندارد.':'No messages yet.')+'</p>';
+}
+async function uploadConsultationVoice({supabase,consultationId,userId,file}) {
+ if (!file) throw new Error('Choose an audio file.');
+ const mimeType = String(file.type||'').split(';')[0].toLowerCase();
+ if (!VOICE_MIME_TYPES.includes(mimeType)) throw new Error('Unsupported audio format.');
+ if (!file.size || file.size > VOICE_MAX_BYTES) throw new Error('Audio file must be 20 MB or smaller.');
+ const extByMime = {'audio/webm':'webm','audio/ogg':'ogg','audio/mp4':'m4a','audio/mpeg':'mp3','audio/wav':'wav','audio/x-wav':'wav','audio/aac':'aac','audio/3gpp':'3gp','audio/3gpp2':'3g2','audio/flac':'flac'};
+ const objectPath = consultationId+'/'+userId+'/'+crypto.randomUUID()+'.'+extByMime[mimeType];
+ const {error:uploadError} = await supabase.storage.from(VOICE_BUCKET).upload(objectPath,file,{contentType:mimeType,upsert:false});
+ if (uploadError) throw uploadError;
+ const {error:messageError} = await supabase.from('expert_consultation_messages').insert({
+  consultation_id:consultationId,sender_user_id:userId,message_text:null,
+  content_parts:[{type:'audio',storage_path:objectPath,mime_type:mimeType,size_bytes:file.size}]
+ });
+ if (messageError) {
+  await supabase.storage.from(VOICE_BUCKET).remove([objectPath]);
+  throw messageError;
+ }
+}
 export function renderExpertWorkspace(lang='fa') {
  const isFa=fa(lang);
  return `
@@ -172,11 +206,11 @@ export async function bindExpertWorkspace({root,supabase,profile,language}) {
   for(const r of requests){
    const {data:assignment}=await supabase.from('expert_request_assignments').select('id,assignment_status').eq('request_id',r.id).eq('expert_profile_id',expert.id).maybeSingle();
    const {data:consult}=await supabase.from('expert_consultations').select('id').eq('request_id',r.id).maybeSingle();
-   const {data:messages}=consult?.id?await supabase.from('expert_consultation_messages').select('id,sender_user_id,message_text,created_at').eq('consultation_id',consult.id).order('created_at').limit(30):{data:[]};
-   cards.push(`<article class="expert-case-card" data-case="${esc(r.id)}"><div class="section-head"><div><h4>${esc(r.subject)}</h4><p>${esc(r.problem_description)}</p></div><span class="expert-status">${esc(assignment?.assignment_status||r.status)}</span></div>
+   const {data:messages}=consult?.id?await supabase.from('expert_consultation_messages').select('id,sender_user_id,message_text,content_parts,created_at').eq('consultation_id',consult.id).order('created_at').limit(30):{data:[]};
+   const messageHtml = await renderConsultationMessages({supabase,messages,viewerId:profile.id,isFa});\n   cards.push(`<article class="expert-case-card" data-case="${esc(r.id)}"><div class="section-head"><div><h4>${esc(r.subject)}</h4><p>${esc(r.problem_description)}</p></div><span class="expert-status">${esc(assignment?.assignment_status||r.status)}</span></div>
    <details class="expert-context"><summary>${isFa?'پرونده مزرعه‌ای که کشاورز با رضایت به اشتراک گذاشته':'Farm context shared with consent'}</summary><pre>${esc(JSON.stringify(r.consented_context_snapshot||{},null,2))}</pre></details><div class="expert-case-actions">${assignment?.assignment_status==='offered'?'<button type="button" class="quiet-btn" data-assignment-action="accepted" data-assignment-id="'+esc(assignment.id)+'">'+(isFa?'پذیرش':'Accept')+'</button><button type="button" class="quiet-btn" data-assignment-action="declined" data-assignment-id="'+esc(assignment.id)+'">'+(isFa?'رد درخواست':'Decline')+'</button>':''}</div>
-   <div class="expert-messages">${(messages||[]).map(m=>'<p><b>'+(m.sender_user_id===profile.id?(isFa?'شما':'You'):(isFa?'کشاورز':'Farmer'))+':</b> '+esc(m.message_text||'')+'</p>').join('')||'<p class="fineprint">'+(isFa?'هنوز پیامی ثبت نشده است.':'No messages yet.')+'</p>'}</div>
-   ${consult?.id&&assignment?.assignment_status==='accepted'?'<form class="expert-message-form" data-consultation-id="'+esc(consult.id)+'"><textarea name="message_text" rows="2" maxlength="6000" required placeholder="'+(isFa?'پاسخ شما…':'Your reply…')+'"></textarea><button class="primary-btn" type="submit">'+(isFa?'ارسال پیام':'Send message')+'</button></form><form class="expert-report-form" data-request-id="'+esc(r.id)+'" data-consultation-id="'+esc(consult.id)+'"><h5>'+(isFa?'گزارش کارشناسی':'Expert report')+'</h5><textarea name="summary" rows="3" minlength="10" maxlength="12000" required placeholder="'+(isFa?'خلاصه ارزیابی کارشناسی':'Assessment summary')+'"></textarea><textarea name="recommendations" rows="2" placeholder="'+(isFa?'پیشنهادها':'Recommendations')+'"></textarea><textarea name="limitations" rows="2" placeholder="'+(isFa?'محدودیت‌ها و موارد نیازمند بررسی':'Limitations / follow-up')+'"></textarea><button class="quiet-btn" type="submit">'+(isFa?'ثبت گزارش':'Submit report')+'</button><p class="message"></p></form>' :'<p class="fineprint">'+(isFa?'پس از پذیرش ارجاع، گفت‌وگو و ثبت گزارش فعال می‌شود.':'Accept the assignment to start messaging and submit a report.')+'</p>'}</article>`);
+   <div class="expert-messages">${messageHtml}</div>
+   ${consult?.id&&assignment?.assignment_status==='accepted'?'<form class="expert-message-form" data-consultation-id="'+esc(consult.id)+'"><textarea name="message_text" rows="2" maxlength="6000" required placeholder="'+(isFa?'پاسخ شما…':'Your reply…')+'"></textarea><button class="primary-btn" type="submit">'+(isFa?'ارسال پیام':'Send message')+'</button></form>${voiceFormMarkup(consult.id,isFa,'expert')}<form class="expert-report-form" data-request-id="'+esc(r.id)+'" data-consultation-id="'+esc(consult.id)+'"><h5>'+(isFa?'گزارش کارشناسی':'Expert report')+'</h5><textarea name="summary" rows="3" minlength="10" maxlength="12000" required placeholder="'+(isFa?'خلاصه ارزیابی کارشناسی':'Assessment summary')+'"></textarea><textarea name="recommendations" rows="2" placeholder="'+(isFa?'پیشنهادها':'Recommendations')+'"></textarea><textarea name="limitations" rows="2" placeholder="'+(isFa?'محدودیت‌ها و موارد نیازمند بررسی':'Limitations / follow-up')+'"></textarea><button class="quiet-btn" type="submit">'+(isFa?'ثبت گزارش':'Submit report')+'</button><p class="message"></p></form>' :'<p class="fineprint">'+(isFa?'پس از پذیرش ارجاع، گفت‌وگو و ثبت گزارش فعال می‌شود.':'Accept the assignment to start messaging and submit a report.')+'</p>'}</article>`);
   }
   list.innerHTML=cards.join('');
  }
@@ -230,7 +264,7 @@ export async function bindExpertWorkspace({root,supabase,profile,language}) {
   if(error){say('expertStatus',error.message);b.disabled=false;}else await loadCases();
  });
  root.addEventListener('submit',async e=>{
-  const msgForm=e.target.closest('.expert-message-form');if(msgForm){e.preventDefault();const v=Object.fromEntries(new FormData(msgForm).entries());const {error}=await supabase.from('expert_consultation_messages').insert({consultation_id:msgForm.dataset.consultationId,sender_user_id:profile.id,message_text:v.message_text.trim(),content_parts:[]});if(error)alert(error.message);else await loadCases();return;}
+  const voiceForm=e.target.closest('.expert-voice-form');if(voiceForm){e.preventDefault();const button=voiceForm.querySelector('button[type=submit]'),status=voiceForm.querySelector('.message'),file=voiceForm.elements.voice_file.files?.[0];button.disabled=true;status.textContent=isFa?'در حال ارسال فایل صوتی…':'Uploading voice note…';try{await uploadConsultationVoice({supabase,consultationId:voiceForm.dataset.consultationId,userId:profile.id,file});voiceForm.reset();status.textContent=isFa?'پیام صوتی ارسال شد.':'Voice note sent.';await loadCases();}catch(err){status.textContent=(isFa?'ارسال ناموفق بود: ':'Upload failed: ')+err.message;}finally{button.disabled=false;}return;}\n  const msgForm=e.target.closest('.expert-message-form');if(msgForm){e.preventDefault();const v=Object.fromEntries(new FormData(msgForm).entries());const {error}=await supabase.from('expert_consultation_messages').insert({consultation_id:msgForm.dataset.consultationId,sender_user_id:profile.id,message_text:v.message_text.trim(),content_parts:[]});if(error)alert(error.message);else await loadCases();return;}
   const report=e.target.closest('.expert-report-form');if(report){e.preventDefault();const v=Object.fromEntries(new FormData(report).entries()),button=report.querySelector('button[type=submit]');button.disabled=true;const {error}=await supabase.from('expert_request_reports').insert({request_id:report.dataset.requestId,consultation_id:report.dataset.consultationId,author_user_id:profile.id,summary:v.summary.trim(),recommendations:v.recommendations||null,limitations:v.limitations||null,evidence_notes:[]});report.querySelector('.message').textContent=error?error.message:(isFa?'گزارش ثبت شد.':'Report submitted.');button.disabled=false;}
  });
  await load();
@@ -257,11 +291,11 @@ export function bindFarmerCases({root,supabase,getProfile,language}) {
   for(const r of requests){
    const {data:consult}=await supabase.from('expert_consultations').select('id').eq('request_id',r.id).maybeSingle();
    const {data:expert}=await supabase.from('expert_profiles').select('public_name').eq('id',r.assigned_expert_profile_id).maybeSingle();
-   const {data:messages}=consult?.id?await supabase.from('expert_consultation_messages').select('sender_user_id,message_text,created_at').eq('consultation_id',consult.id).order('created_at').limit(30):{data:[]};
+   const {data:messages}=consult?.id?await supabase.from('expert_consultation_messages').select('sender_user_id,message_text,content_parts,created_at').eq('consultation_id',consult.id).order('created_at').limit(30):{data:[]};
    const {data:reports}=await supabase.from('expert_request_reports').select('summary,recommendations,limitations,created_at').eq('request_id',r.id).order('created_at',{ascending:false});
-   cards.push(`<article class="expert-case-card"><div class="section-head"><div><h4>${esc(r.subject)}</h4><p>${esc(r.problem_description)}</p><small>${isFa?'متخصص: ':'Expert: '}${esc(expert?.public_name||'—')}</small></div><span class="expert-status">${esc(r.status)}</span></div>
-   <div class="expert-messages">${(messages||[]).map(x=>'<p><b>'+(x.sender_user_id===current.id?(isFa?'شما':'You'):(isFa?'متخصص':'Expert'))+':</b> '+esc(x.message_text||'')+'</p>').join('')||'<p class="fineprint">'+(isFa?'هنوز پیامی وجود ندارد.':'No messages yet.')+'</p>'}</div>
-   ${consult?.id?'<form class="farmer-case-message-form" data-consultation-id="'+esc(consult.id)+'"><textarea name="message_text" rows="2" maxlength="6000" required placeholder="'+(isFa?'پیام شما به متخصص…':'Message the expert…')+'"></textarea><button class="quiet-btn" type="submit">'+(isFa?'ارسال پیام':'Send message')+'</button></form>':''}
+   const messageHtml = await renderConsultationMessages({supabase,messages,viewerId:current.id,isFa});\n   cards.push(`<article class="expert-case-card"><div class="section-head"><div><h4>${esc(r.subject)}</h4><p>${esc(r.problem_description)}</p><small>${isFa?'متخصص: ':'Expert: '}${esc(expert?.public_name||'—')}</small></div><span class="expert-status">${esc(r.status)}</span></div>
+   <div class="expert-messages">${messageHtml}</div>
+   ${consult?.id?'<form class="farmer-case-message-form" data-consultation-id="'+esc(consult.id)+'"><textarea name="message_text" rows="2" maxlength="6000" required placeholder="'+(isFa?'پیام شما به متخصص…':'Message the expert…')+'"></textarea><button class="quiet-btn" type="submit">'+(isFa?'ارسال پیام':'Send message')+'</button></form>'+voiceFormMarkup(consult.id,isFa,'farmer'):''}
    ${(reports||[]).map(x=>'<details class="expert-report-view"><summary>'+(isFa?'گزارش کارشناسی':'Expert report')+'</summary><p><b>'+(isFa?'خلاصه: ':'Summary: ')+'</b>'+esc(x.summary)+'</p>'+(x.recommendations?'<p><b>'+(isFa?'پیشنهادها: ':'Recommendations: ')+'</b>'+esc(x.recommendations)+'</p>':'')+(x.limitations?'<p><b>'+(isFa?'محدودیت‌ها: ':'Limitations: ')+'</b>'+esc(x.limitations)+'</p>':'')+'</details>').join('')||'<p class="fineprint">'+(isFa?'گزارش نهایی هنوز ثبت نشده است.':'No expert report yet.')+'</p>'}
    </article>`);
   }
@@ -269,7 +303,7 @@ export function bindFarmerCases({root,supabase,getProfile,language}) {
  }
  root.querySelector('#refreshFarmerCases')?.addEventListener('click',load);
  root.addEventListener('submit',async e=>{
-  const form=e.target.closest('.farmer-case-message-form');if(!form)return;e.preventDefault();
+  const voiceForm=e.target.closest('.farmer-voice-form');if(voiceForm){e.preventDefault();const current=getProfile(),button=voiceForm.querySelector('button[type=submit]'),status=voiceForm.querySelector('.message'),file=voiceForm.elements.voice_file.files?.[0];button.disabled=true;status.textContent=isFa?'در حال ارسال فایل صوتی…':'Uploading voice note…';try{await uploadConsultationVoice({supabase,consultationId:voiceForm.dataset.consultationId,userId:current.id,file});voiceForm.reset();status.textContent=isFa?'پیام صوتی ارسال شد.':'Voice note sent.';await load();}catch(err){status.textContent=(isFa?'ارسال ناموفق بود: ':'Upload failed: ')+err.message;}finally{button.disabled=false;}return;}\n  const form=e.target.closest('.farmer-case-message-form');if(!form)return;e.preventDefault();
   const current=getProfile(),v=Object.fromEntries(new FormData(form).entries());
   const {error}=await supabase.from('expert_consultation_messages').insert({consultation_id:form.dataset.consultationId,sender_user_id:current.id,message_text:v.message_text.trim(),content_parts:[]});
   if(error)alert(error.message);else await load();
