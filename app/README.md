@@ -6,6 +6,10 @@ A lightweight, responsive, installable farmer-first web app connected to the SAR
 - Email/password sign-up and sign-in with Supabase Auth.
 - Creates/updates the matching row in `public.users` using `auth_user_id`.
 - Lists the signed-in farmer's farms and creates a farm record.
+- Stores farmer-confirmed farm coordinates in the existing `farm_locations` table.
+- Retrieves current local model weather and a 7-day forecast from Open-Meteo for located farms, including temperature, apparent temperature, humidity, wind, rainfall and reference evapotranspiration.
+- Builds a normalized, timestamped weather context for downstream farm analysis and clearly labels provider model estimates separately from on-farm sensor readings.
+- Weather lookups are cached in memory for 15 minutes; no weather API response or authenticated request is cached by the service worker.
 - Persian-first UI with English toggle; mobile-responsive PWA shell.
 - Uses only the Supabase publishable key in the browser. Never put a service-role/secret key in this app.
 - Service worker caches only same-origin static app assets; authenticated Supabase/API responses are never cached.
