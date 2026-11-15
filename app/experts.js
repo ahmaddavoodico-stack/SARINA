@@ -234,6 +234,12 @@ export async function bindExpertWorkspace({root,supabase,profile,language}) {
   const report=e.target.closest('.expert-report-form');if(report){e.preventDefault();const v=Object.fromEntries(new FormData(report).entries()),button=report.querySelector('button[type=submit]');button.disabled=true;const {error}=await supabase.from('expert_request_reports').insert({request_id:report.dataset.requestId,consultation_id:report.dataset.consultationId,author_user_id:profile.id,summary:v.summary.trim(),recommendations:v.recommendations||null,limitations:v.limitations||null,evidence_notes:[]});report.querySelector('.message').textContent=error?error.message:(isFa?'گزارش ثبت شد.':'Report submitted.');button.disabled=false;}
  });
  await load();
+ if(profile?.id && !root.dataset.expertMessageRealtime){
+  root.dataset.expertMessageRealtime='1';
+  supabase.channel('sarina-expert-messages-'+profile.id)
+   .on('postgres_changes',{event:'INSERT',schema:'public',table:'expert_consultation_messages'},()=>loadCases())
+   .subscribe();
+ }
 }
 
 export function renderFarmerCasesSection(lang='fa') {
@@ -268,5 +274,12 @@ export function bindFarmerCases({root,supabase,getProfile,language}) {
   const {error}=await supabase.from('expert_consultation_messages').insert({consultation_id:form.dataset.consultationId,sender_user_id:current.id,message_text:v.message_text.trim(),content_parts:[]});
   if(error)alert(error.message);else await load();
  });
+ const initialProfile=getProfile();
+ if(initialProfile?.id && !root.dataset.farmerMessageRealtime){
+  root.dataset.farmerMessageRealtime='1';
+  supabase.channel('sarina-farmer-messages-'+initialProfile.id)
+   .on('postgres_changes',{event:'INSERT',schema:'public',table:'expert_consultation_messages'},()=>load())
+   .subscribe();
+ }
  load();
 }
