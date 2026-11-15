@@ -61,12 +61,16 @@ export function bindFarmerExpertRequests({root,supabase,getProfile,language}) {
   try{
    const currentProfile=getProfile();
    if(!currentProfile){throw new Error('Authentication required');}
+   const {data:landResult,error:landError}=await supabase.functions.invoke('farm-land-context',{body:{farm_id:form.dataset.farmId}});
+   if(landError||!landResult?.ok||landResult.context?.farm?.id!==form.dataset.farmId)throw new Error(isFa?'بازیابی پرونده مزرعه برای اشتراک‌گذاری امن انجام نشد.':'Could not retrieve the farm context for consented sharing.');
+   const ctx=landResult.context;
+   const consentedSnapshot={schema:ctx.schema,retrieved_at:ctx.retrieved_at,farm:ctx.farm,location:ctx.location,fields:ctx.fields,soil_tests:ctx.soil_tests,water_tests:ctx.water_tests,farmer_reports:ctx.farmer_reports,crop_groups:ctx.crop_groups,pond_assets:ctx.pond_assets,data_quality:ctx.data_quality,safety:ctx.safety};
    const now=new Date().toISOString();
    const {data:req,error}=await supabase.from('expert_requests').insert({
     requester_user_id:currentProfile.id,farm_id:form.dataset.farmId,assigned_expert_profile_id:v.expert_profile_id,
     subject:v.subject.trim(),problem_description:v.problem_description.trim(),request_type:'general',
     priority:'normal',status:'submitted',preferred_language:language,requested_mode:'in_app_message',
-    consent_at:now,consent_scope:{farm_profile:true,soil_water_crop_context:true,case_messages:true,limited_to_selected_expert:true}
+    consent_at:now,consent_scope:{farm_profile:true,soil_water_crop_context:true,case_messages:true,limited_to_selected_expert:true},consented_context_snapshot:consentedSnapshot
    }).select('id').single();
    if(error)throw error;
    const {error:assignmentError}=await supabase.from('expert_request_assignments').insert({request_id:req.id,expert_profile_id:v.expert_profile_id,assignment_status:'offered'});
@@ -105,7 +109,7 @@ export function bindExpertWorkspace({root,supabase,profile,language}) {
  }
  async function loadCases(){
   const list=root.querySelector('#expertCasesList');
-  const {data:requests,error}=await supabase.from('expert_requests').select('id,subject,problem_description,status,created_at,requester_user_id,assigned_expert_profile_id').eq('assigned_expert_profile_id',expert.id).order('created_at',{ascending:false}).limit(30);
+  const {data:requests,error}=await supabase.from('expert_requests').select('id,subject,problem_description,status,created_at,requester_user_id,assigned_expert_profile_id,consented_context_snapshot').eq('assigned_expert_profile_id',expert.id).order('created_at',{ascending:false}).limit(30);
   if(error){list.textContent=error.message;return;}
   if(!requests?.length){list.innerHTML='<p class="fineprint">'+(isFa?'هنوز پرونده‌ای به شما ارجاع نشده است.':'No cases assigned yet.')+'</p>';return;}
   const cards=[];
@@ -114,7 +118,7 @@ export function bindExpertWorkspace({root,supabase,profile,language}) {
    const {data:consult}=await supabase.from('expert_consultations').select('id').eq('request_id',r.id).maybeSingle();
    const {data:messages}=consult?.id?await supabase.from('expert_consultation_messages').select('id,sender_user_id,message_text,created_at').eq('consultation_id',consult.id).order('created_at').limit(30):{data:[]};
    cards.push(`<article class="expert-case-card" data-case="${esc(r.id)}"><div class="section-head"><div><h4>${esc(r.subject)}</h4><p>${esc(r.problem_description)}</p></div><span class="expert-status">${esc(assignment?.assignment_status||r.status)}</span></div>
-   <div class="expert-case-actions">${assignment?.assignment_status==='offered'?'<button type="button" class="quiet-btn" data-assignment-action="accepted" data-assignment-id="'+esc(assignment.id)+'">'+(isFa?'پذیرش':'Accept')+'</button><button type="button" class="quiet-btn" data-assignment-action="declined" data-assignment-id="'+esc(assignment.id)+'">'+(isFa?'رد درخواست':'Decline')+'</button>':''}</div>
+   <details class="expert-context"><summary>Farm context shared with consent</summary><pre>\${esc(JSON.stringify(r.consented_context_snapshot||{},null,2))}</pre></details><div class="expert-case-actions">${assignment?.assignment_status==='offered'?'<button type="button" class="quiet-btn" data-assignment-action="accepted" data-assignment-id="'+esc(assignment.id)+'">'+(isFa?'پذیرش':'Accept')+'</button><button type="button" class="quiet-btn" data-assignment-action="declined" data-assignment-id="'+esc(assignment.id)+'">'+(isFa?'رد درخواست':'Decline')+'</button>':''}</div>
    <div class="expert-messages">${(messages||[]).map(m=>'<p><b>'+(m.sender_user_id===profile.id?(isFa?'شما':'You'):(isFa?'کشاورز':'Farmer'))+':</b> '+esc(m.message_text||'')+'</p>').join('')||'<p class="fineprint">'+(isFa?'هنوز پیامی ثبت نشده است.':'No messages yet.')+'</p>'}</div>
    ${consult?.id?'<form class="expert-message-form" data-consultation-id="'+esc(consult.id)+'"><textarea name="message_text" rows="2" maxlength="6000" required placeholder="'+(isFa?'پاسخ شما…':'Your reply…')+'"></textarea><button class="primary-btn" type="submit">'+(isFa?'ارسال پیام':'Send message')+'</button></form><form class="expert-report-form" data-request-id="'+esc(r.id)+'" data-consultation-id="'+esc(consult.id)+'"><h5>'+(isFa?'گزارش کارشناسی':'Expert report')+'</h5><textarea name="summary" rows="3" minlength="10" maxlength="12000" required placeholder="'+(isFa?'خلاصه ارزیابی کارشناسی':'Assessment summary')+'"></textarea><textarea name="recommendations" rows="2" placeholder="'+(isFa?'پیشنهادها':'Recommendations')+'"></textarea><textarea name="limitations" rows="2" placeholder="'+(isFa?'محدودیت‌ها و موارد نیازمند بررسی':'Limitations / follow-up')+'"></textarea><button class="quiet-btn" type="submit">'+(isFa?'ثبت گزارش':'Submit report')+'</button><p class="message"></p></form>':'<p class="fineprint">'+(isFa?'گفت‌وگو هنوز ایجاد نشده است.':'Conversation is not available yet.')+'</p>'}</article>`);
   }
