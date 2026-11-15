@@ -1,5 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.4';
 import { renderOperationsPanel, bindFarmOperations } from './operations.js';
+import { renderExpertWorkspace, renderFarmerExpertButton, bindFarmerExpertRequests, bindExpertWorkspace } from './experts.js';
 
 
 const SUPABASE_URL = 'https://wwgkiclcpgpdktneovrx.supabase.co';
@@ -63,10 +64,11 @@ async function loadFarms(){
         weatherMarkup=renderWeather(context);
       }catch(error){console.warn('Farm weather unavailable',f.id,error);weatherMarkup='<div class="weather-note">'+t('weatherUnavailable')+'</div>'}
     }else { farmWeatherContexts.delete(f.id); weatherMarkup='<div class="weather-note">'+t('weatherMissingLocation')+'</div>'; }
-    return '<article class="farm-card" data-farm-card="'+f.id+'"><div class="farm-icon">🌿</div><h3>'+escapeHtml(f.farm_name)+'</h3><p>'+ (f.total_area?escapeHtml(String(f.total_area))+' '+escapeHtml(f.area_unit):'—') +' · '+escapeHtml(f.status)+'</p>'+weatherMarkup+'<button type="button" class="quiet-btn land-toggle" data-land-toggle="'+f.id+'">🌱 '+lw('landButton')+'</button><div class="land-panel hidden" id="land-'+f.id+'">'+renderLandForm(f.id)+'</div><button type="button" class="quiet-btn crop-toggle" data-crop-toggle="'+f.id+'">🌳 '+cw('cropButton')+'</button><div class="crop-panel hidden" id="crop-'+f.id+'">'+renderCropForm(f.id)+'</div><button type="button" class="quiet-btn pond-toggle" data-pond-toggle="'+f.id+'">💧 '+pw('pondButton')+'</button><div class="pond-panel hidden" id="pond-'+f.id+'">'+renderPondForm(f.id)+'</div>'+renderOperationsPanel(f.id,language)+'</article>';
+    return '<article class="farm-card" data-farm-card="'+f.id+'"><div class="farm-icon">🌿</div><h3>'+escapeHtml(f.farm_name)+'</h3><p>'+ (f.total_area?escapeHtml(String(f.total_area))+' '+escapeHtml(f.area_unit):'—') +' · '+escapeHtml(f.status)+'</p>'+weatherMarkup+'<button type="button" class="quiet-btn land-toggle" data-land-toggle="'+f.id+'">🌱 '+lw('landButton')+'</button><div class="land-panel hidden" id="land-'+f.id+'">'+renderLandForm(f.id)+'</div><button type="button" class="quiet-btn crop-toggle" data-crop-toggle="'+f.id+'">🌳 '+cw('cropButton')+'</button><div class="crop-panel hidden" id="crop-'+f.id+'">'+renderCropForm(f.id)+'</div><button type="button" class="quiet-btn pond-toggle" data-pond-toggle="'+f.id+'">💧 '+pw('pondButton')+'</button><div class="pond-panel hidden" id="pond-'+f.id+'">'+renderPondForm(f.id)+'</div>'+renderFarmerExpertButton(f.id,language)+renderOperationsPanel(f.id,language)+'</article>';
   }));
   $('farmList').innerHTML=cards.join('');
   bindFarmOperations({root:$('farmList'),supabase,getProfile:()=>profile,getLanguage:()=>language});
+  if(!$('farmList').dataset.expertRequestsBound){bindFarmerExpertRequests({root:$('farmList'),supabase,getProfile:()=>profile,language});$('farmList').dataset.expertRequestsBound='1';}
 }
 function landOption(value,label,selected='unknown'){return '<option value="'+value+'"'+(value===selected?' selected':'')+'>'+lw(label)+'</option>';}
 function renderLandForm(farmId){
@@ -171,6 +173,23 @@ $('authForm').addEventListener('submit',async e=>{
  finally{$('authSubmit').disabled=false}
 });
 $('addFarmTop').addEventListener('click',openFarmForm);
+
+$('expertWorkspaceToggle').addEventListener('click',()=>{
+ const panel=$('expertWorkspace'),opening=panel.classList.contains('hidden');
+ panel.classList.toggle('hidden',!opening);
+ $('farmList').classList.toggle('hidden',opening);
+ $('farmSectionHead').classList.toggle('hidden',opening);
+ document.querySelector('.stat-grid').classList.toggle('hidden',opening);
+ $('farmFormPanel').classList.add('hidden');
+ $('addFarmTop').classList.toggle('hidden',opening);
+ $('expertWorkspaceToggle').textContent=opening?'← بازگشت به فضای کشاورز':'🧑‍🌾 پنل متخصصان';
+ if(opening&&!panel.dataset.ready){
+  panel.innerHTML=renderExpertWorkspace(language);
+  bindExpertWorkspace({root:panel,supabase,profile,language});
+  panel.dataset.ready='1';
+ }
+});
+
 $('closeFarmForm').addEventListener('click',closeFarmForm);
 $('farmForm').addEventListener('submit',async e=>{
  e.preventDefault();if(!profile){say(t('authRequired'),'farmMessage');return}
