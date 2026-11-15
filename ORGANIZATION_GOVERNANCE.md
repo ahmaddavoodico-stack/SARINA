@@ -67,3 +67,44 @@ The Supabase backend foundation is in place. The connected GitHub repository cur
 6. Add scoped farmer/expert directory projections and report endpoints before exposing broader personal or farm data.
 
 Do not expose raw user tables or integration credentials to organization dashboards. Implement report projections and external-system connectors through narrowly scoped server-side endpoints.
+
+
+## Farmer institutional services and official request routing
+
+Migrations applied:
+- `030_farmer_institutional_service_requests`
+- `031_authority_registry_and_request_timeline`
+
+Farmers can discover active institutional services and submit requests to the verified organization/service record. SARINA should explain the institution's published remit, jurisdiction, eligibility, required documents, official submission channel and whether the institution is the legally responsible authority or only a supporting/referral body.
+
+Extended `organization_services` fields:
+- `service_category`
+- `is_official_authority` (central-admin governed; never self-declared by an organization)
+- `authority_scope`
+- `legal_basis`
+- `eligibility_rules`
+- `required_documents`
+- `submission_mode` (`sarina_assisted`, `official_portal`, `api`, `email`, `in_person`, `information_only`)
+- `official_service_url`, `official_contact`, `external_service_code`
+- `public_description`, `response_sla_days`
+
+New tables:
+- `institutional_service_requests`: farmer request, farm context, explicit consent, target organization/service, status, official reference and external tracking reference.
+- `institutional_request_events`: auditable status timeline with farmer-visible event flag.
+
+Security and workflow:
+- Farmers can read their own requests and submit only against an active service belonging to a verified organization.
+- Organization members can read only requests addressed to their organization and within their granted capability and geographic/user/farm scope.
+- Organization status changes are performed through `organization_update_institutional_request`, which checks authorization and records an event.
+- Active service directory entries are readable by authenticated farmers.
+- Only central SARINA admins can configure the official authority registry, legal remit and official routing metadata.
+- Initial request submission is recorded in SARINA. Actual external filing, government API integration, portal automation, and verified status callbacks are not live until a specific official channel is configured and tested. For link-out/email/in-person services, SARINA must clearly tell the farmer that submission happens outside SARINA and must not imply that an official application has been filed.
+
+User experience:
+1. Farmer describes the need in plain language or chooses a guided service category.
+2. SARINA matches the request against the verified service/authority registry and jurisdiction.
+3. SARINA explains why the selected authority is responsible, what it can/cannot do, eligibility and documents.
+4. Farmer reviews the destination and explicitly consents to share the selected data.
+5. SARINA creates a trackable request and routes it only through the configured official channel.
+6. Farmer sees the receipt/reference, timeline, required next action and official response when available.
+7. If jurisdiction is unclear or multiple agencies share responsibility, SARINA asks a minimal clarification or refers to the primary authority with a transparent explanation; it must not invent authority.
