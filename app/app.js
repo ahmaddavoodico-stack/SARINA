@@ -1,6 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.4';
 import { renderOperationsPanel, bindFarmOperations } from './operations.js';
-import { renderExpertWorkspace, renderFarmerExpertButton, bindFarmerExpertRequests, bindExpertWorkspace } from './experts.js';
+import { renderExpertWorkspace, renderFarmerExpertButton, bindFarmerExpertRequests, bindExpertWorkspace, renderFarmerCasesSection, bindFarmerCases } from './experts.js';
 
 
 const SUPABASE_URL = 'https://wwgkiclcpgpdktneovrx.supabase.co';
@@ -67,6 +67,8 @@ async function loadFarms(){
     return '<article class="farm-card" data-farm-card="'+f.id+'"><div class="farm-icon">🌿</div><h3>'+escapeHtml(f.farm_name)+'</h3><p>'+ (f.total_area?escapeHtml(String(f.total_area))+' '+escapeHtml(f.area_unit):'—') +' · '+escapeHtml(f.status)+'</p>'+weatherMarkup+'<button type="button" class="quiet-btn land-toggle" data-land-toggle="'+f.id+'">🌱 '+lw('landButton')+'</button><div class="land-panel hidden" id="land-'+f.id+'">'+renderLandForm(f.id)+'</div><button type="button" class="quiet-btn crop-toggle" data-crop-toggle="'+f.id+'">🌳 '+cw('cropButton')+'</button><div class="crop-panel hidden" id="crop-'+f.id+'">'+renderCropForm(f.id)+'</div><button type="button" class="quiet-btn pond-toggle" data-pond-toggle="'+f.id+'">💧 '+pw('pondButton')+'</button><div class="pond-panel hidden" id="pond-'+f.id+'">'+renderPondForm(f.id)+'</div>'+renderFarmerExpertButton(f.id,language)+renderOperationsPanel(f.id,language)+'</article>';
   }));
   $('farmList').innerHTML=cards.join('');
+  $('farmerCasesMount').innerHTML=renderFarmerCasesSection(language);
+  bindFarmerCases({root:$('farmerCasesMount'),supabase,getProfile:()=>profile,language});
   bindFarmOperations({root:$('farmList'),supabase,getProfile:()=>profile,getLanguage:()=>language});
   if(!$('farmList').dataset.expertRequestsBound){bindFarmerExpertRequests({root:$('farmList'),supabase,getProfile:()=>profile,language});$('farmList').dataset.expertRequestsBound='1';}
 }
@@ -178,6 +180,7 @@ $('expertWorkspaceToggle').addEventListener('click',()=>{
  const panel=$('expertWorkspace'),opening=panel.classList.contains('hidden');
  panel.classList.toggle('hidden',!opening);
  $('farmList').classList.toggle('hidden',opening);
+ $('farmerCasesMount').classList.toggle('hidden',opening);
  $('farmSectionHead').classList.toggle('hidden',opening);
  document.querySelector('.stat-grid').classList.toggle('hidden',opening);
  $('farmFormPanel').classList.add('hidden');
