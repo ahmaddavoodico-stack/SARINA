@@ -67,8 +67,7 @@ async function loadFarms(){
     return '<article class="farm-card" data-farm-card="'+f.id+'"><div class="farm-icon">🌿</div><h3>'+escapeHtml(f.farm_name)+'</h3><p>'+ (f.total_area?escapeHtml(String(f.total_area))+' '+escapeHtml(f.area_unit):'—') +' · '+escapeHtml(f.status)+'</p>'+weatherMarkup+'<button type="button" class="quiet-btn land-toggle" data-land-toggle="'+f.id+'">🌱 '+lw('landButton')+'</button><div class="land-panel hidden" id="land-'+f.id+'">'+renderLandForm(f.id)+'</div><button type="button" class="quiet-btn crop-toggle" data-crop-toggle="'+f.id+'">🌳 '+cw('cropButton')+'</button><div class="crop-panel hidden" id="crop-'+f.id+'">'+renderCropForm(f.id)+'</div><button type="button" class="quiet-btn pond-toggle" data-pond-toggle="'+f.id+'">💧 '+pw('pondButton')+'</button><div class="pond-panel hidden" id="pond-'+f.id+'">'+renderPondForm(f.id)+'</div>'+renderFarmerExpertButton(f.id,language)+renderOperationsPanel(f.id,language)+'</article>';
   }));
   $('farmList').innerHTML=cards.join('');
-  $('farmerCasesMount').innerHTML=renderFarmerCasesSection(language);
-  bindFarmerCases({root:$('farmerCasesMount'),supabase,getProfile:()=>profile,language});
+  if(!$('farmerCasesMount').dataset.ready){$('farmerCasesMount').innerHTML=renderFarmerCasesSection(language);bindFarmerCases({root:$('farmerCasesMount'),supabase,getProfile:()=>profile,language});$('farmerCasesMount').dataset.ready='1';}else{$('refreshFarmerCases')?.click();}
   bindFarmOperations({root:$('farmList'),supabase,getProfile:()=>profile,getLanguage:()=>language});
   if(!$('farmList').dataset.expertRequestsBound){bindFarmerExpertRequests({root:$('farmList'),supabase,getProfile:()=>profile,language});$('farmList').dataset.expertRequestsBound='1';}
 }
@@ -152,7 +151,7 @@ function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':
 function openFarmForm(){$('farmFormPanel').classList.remove('hidden');$('farmName').focus()}
 function closeFarmForm(){$('farmFormPanel').classList.add('hidden');$('farmForm').reset();$('farmMessage').textContent=''}
 async function enterWorkspace(user){
-  try{$('expertWorkspace').innerHTML='';$('expertWorkspace').dataset.ready='';$('expertWorkspace').classList.add('hidden');$('farmList').classList.remove('hidden');$('farmerCasesMount').classList.remove('hidden');$('farmSectionHead').classList.remove('hidden');document.querySelector('.stat-grid').classList.remove('hidden');$('addFarmTop').classList.remove('hidden');$('expertWorkspaceToggle').textContent='🧑‍🌾 پنل متخصصان';await ensureProfile(user);showApp();await loadFarms()}
+  try{$('expertWorkspace').innerHTML='';$('expertWorkspace').dataset.ready='';$('expertWorkspace').classList.add('hidden');$('farmList').classList.remove('hidden');$('farmerCasesMount').classList.remove('hidden');$('farmerCasesMount').dataset.ready='';$('farmerCasesMount').innerHTML='';$('farmSectionHead').classList.remove('hidden');document.querySelector('.stat-grid').classList.remove('hidden');$('addFarmTop').classList.remove('hidden');$('expertWorkspaceToggle').textContent='🧑‍🌾 پنل متخصصان';await ensureProfile(user);showApp();await loadFarms()}
   catch(error){console.error(error);showAuth();say(t('profileMissing'),'authMessage')}
 }
 $('loginTab').addEventListener('click',()=>{mode='login';renderAuthMode()});
