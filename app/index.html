@@ -46,6 +46,7 @@
           <label class="wide"><span data-i18n="farmName">نام مزرعه</span><input id="farmName" required maxlength="180" placeholder="مثلاً مزرعه شماره یک"></label>
           <label><span data-i18n="farmArea">مساحت کل</span><input id="farmArea" type="number" min="0" step="0.0001" placeholder="اختیاری"></label>
           <label><span data-i18n="unit">واحد مساحت</span><select id="farmUnit"><option value="hectare" data-i18n="hectare">هکتار</option><option value="acre" data-i18n="acre">ایکر</option><option value="sqm" data-i18n="sqm">متر مربع</option></select></label>
+          <div class="wide coordinate-block"><p data-i18n="coordHint">مختصات را از نقشه یا GPS وارد کنید؛ هر دو مقدار لازم‌اند.</p><label><span data-i18n="latitude">عرض جغرافیایی</span><input id="farmLatitude" type="number" min="-90" max="90" step="any" placeholder="مثلاً 30.45"></label><label><span data-i18n="longitude">طول جغرافیایی</span><input id="farmLongitude" type="number" min="-180" max="180" step="any" placeholder="مثلاً 48.38"></label></div>
           <button class="primary-btn wide" type="submit" data-i18n="saveFarm">ذخیره مزرعه</button>
         </form>
         <p id="farmMessage" class="message" role="status"></p>
