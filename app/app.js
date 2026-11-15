@@ -152,7 +152,7 @@ function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':
 function openFarmForm(){$('farmFormPanel').classList.remove('hidden');$('farmName').focus()}
 function closeFarmForm(){$('farmFormPanel').classList.add('hidden');$('farmForm').reset();$('farmMessage').textContent=''}
 async function enterWorkspace(user){
-  try{await ensureProfile(user);showApp();await loadFarms()}
+  try{$('expertWorkspace').innerHTML='';$('expertWorkspace').dataset.ready='';$('expertWorkspace').classList.add('hidden');$('farmList').classList.remove('hidden');$('farmerCasesMount').classList.remove('hidden');$('farmSectionHead').classList.remove('hidden');document.querySelector('.stat-grid').classList.remove('hidden');$('addFarmTop').classList.remove('hidden');$('expertWorkspaceToggle').textContent='🧑‍🌾 پنل متخصصان';await ensureProfile(user);showApp();await loadFarms()}
   catch(error){console.error(error);showAuth();say(t('profileMissing'),'authMessage')}
 }
 $('loginTab').addEventListener('click',()=>{mode='login';renderAuthMode()});
