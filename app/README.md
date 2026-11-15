@@ -55,3 +55,10 @@ This is the first usable farmer portal slice, not the complete product. Farm loc
 - Current access path: REST API v2.0 point query. ISRIC's official status page currently says this REST API is temporarily paused; the function records a timeout/provider error and preserves the rest of the farm context. It does not replace missing values with guesses.
 - Planned fallback: ISRIC WCS (recommended by the provider for stable spatial subsets) or WebDAV raster ingestion. Provider adapters remain replaceable without changing the farmer questionnaire or SIACP context contract.
 - Official access docs: https://docs.isric.org/globaldata/soilgrids/SoilGrids_faqs_02.html and https://docs.isric.org/globaldata/soilgrids/wcs.html.
+
+## Farmer crop groups and planting layout
+- Each farm card now includes a separate bilingual form for recording one crop group at a time, so mixed orchards and intercropping can be represented without blending species or cultivars.
+- Captures plant/tree name, cultivar or product type, count, approximate age, within-row spacing, between-row spacing, planting pattern, position relative to ridge/furrow (ridge top, inside furrow, furrow edge, offset from furrow, or flat ground), and optional distance from the furrow edge.
+- Records are saved as timestamped `farm_observations.observation_type = 'crop_layout'` with the versioned `SARINA_CROP_LAYOUT_V1` payload and farmer-self-report provenance. No new table or schema migration is required.
+- The farm-land-context endpoint now returns these separately under `crop_groups` and includes `crop_group_count` in data quality metadata, while preserving the existing `SARINA_FARM_LAND_CONTEXT_V1` contract.
+- Counts and distances are farmer-reported until independently verified. Unknown values remain blank/unknown and are not inferred.
