@@ -86,7 +86,7 @@ async function enterWorkspace(user){
 }
 $('loginTab').addEventListener('click',()=>{mode='login';renderAuthMode()});
 $('signupTab').addEventListener('click',()=>{mode='signup';renderAuthMode()});
-$('langToggle').addEventListener('click',()=>setLanguage(language==='fa'?'en':'fa'));
+$('langToggle').addEventListener('click',()=>{setLanguage(language==='fa'?'en':'fa');if(profile&&!$('appView').classList.contains('hidden'))loadFarms()});
 $('authForm').addEventListener('submit',async e=>{
  e.preventDefault();$('authSubmit').disabled=true;$('authMessage').textContent=t('loading');
  const email=$('email').value.trim();const password=$('password').value;
