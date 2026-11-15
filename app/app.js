@@ -196,8 +196,8 @@ $('authForm').addEventListener('submit',async e=>{
  e.preventDefault();$('authSubmit').disabled=true;$('authMessage').textContent=t('loading');
  try{
   if(!otpStage){
-   const phone=$('phone').value.trim().replace(/[\\s()-]/g,'');
-   if(!/^\\+[1-9]\\d{7,14}$/.test(phone))throw new Error('INVALID_PHONE');
+   const phone=$('phone').value.trim().replace(/[\s()-]/g,'');
+   if(!/^\+[1-9]\d{7,14}$/.test(phone))throw new Error('INVALID_PHONE');
    pendingPhone=phone;
    const options={shouldCreateUser:mode==='signup'};
    if(mode==='signup')options.data={full_name:$('fullName').value.trim()};
@@ -206,7 +206,7 @@ $('authForm').addEventListener('submit',async e=>{
    otpStage=true;$('phoneWrap').classList.add('hidden');$('otpWrap').classList.remove('hidden');$('otp').required=true;$('authSubmit').textContent=t('verifyCode');$('authMessage').textContent=t('otpSent');$('otp').focus();
   }else{
    const token=$('otp').value.trim();
-   if(!/^\\d{6,8}$/.test(token))throw new Error('INVALID_OTP');
+   if(!/^\d{6,8}$/.test(token))throw new Error('INVALID_OTP');
    const {data,error}=await supabase.auth.verifyOtp({phone:pendingPhone,token,type:'sms'});
    if(error)throw error;
    if(!data.user)throw new Error('OTP_USER_MISSING');
