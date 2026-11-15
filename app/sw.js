@@ -1,4 +1,4 @@
-const CACHE = 'sarina-farmer-v5';
+const CACHE = 'sarina-farmer-v6';
 const CORE = ['./', './index.html', './styles.css', './app.js', './weather.js', './manifest.webmanifest', './icon.svg'];
 const STATIC_PATHS = new Set(CORE.map(path => new URL(path, self.registration.scope).pathname));
 
