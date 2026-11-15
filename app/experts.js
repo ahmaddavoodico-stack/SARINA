@@ -156,3 +156,38 @@ export function bindExpertWorkspace({root,supabase,profile,language}) {
  });
  await load();
 }
+
+export function renderFarmerCasesSection(lang='fa') {
+ const isFa=fa(lang);
+ return `<section id="farmerExpertCases" class="panel farmer-expert-cases"><div class="section-head"><div><h2>${isFa?'درخواست‌های مشاوره من':'My expert consultations'}</h2><p>${isFa?'پیام‌ها و گزارش‌های متخصصان را از اینجا پیگیری کنید.':'Track expert messages and reports here.'}</p></div><button type="button" class="quiet-btn" id="refreshFarmerCases">${isFa?'به‌روزرسانی':'Refresh'}</button></div><div id="farmerExpertCasesList"><p class="fineprint">${isFa?'در حال بارگذاری…':'Loading…'}</p></div></section>`;
+}
+export function bindFarmerCases({root,supabase,getProfile,language}) {
+ const isFa=fa(language), list=root.querySelector('#farmerExpertCasesList');
+ async function load(){
+  const current=getProfile();if(!current){list.textContent=isFa?'ابتدا وارد شوید.':'Sign in first.';return;}
+  const {data:requests,error}=await supabase.from('expert_requests').select('id,subject,problem_description,status,created_at,assigned_expert_profile_id').eq('requester_user_id',current.id).order('created_at',{ascending:false}).limit(30);
+  if(error){list.textContent=error.message;return;}
+  if(!requests?.length){list.innerHTML='<p class="fineprint">'+(isFa?'هنوز درخواست مشاوره‌ای ثبت نکرده‌اید.':'You have not submitted an expert request yet.')+'</p>';return;}
+  const cards=[];
+  for(const r of requests){
+   const {data:consult}=await supabase.from('expert_consultations').select('id').eq('request_id',r.id).maybeSingle();
+   const {data:expert}=await supabase.from('expert_profiles').select('public_name').eq('id',r.assigned_expert_profile_id).maybeSingle();
+   const {data:messages}=consult?.id?await supabase.from('expert_consultation_messages').select('sender_user_id,message_text,created_at').eq('consultation_id',consult.id).order('created_at').limit(30):{data:[]};
+   const {data:reports}=await supabase.from('expert_request_reports').select('summary,recommendations,limitations,created_at').eq('request_id',r.id).order('created_at',{ascending:false});
+   cards.push(`<article class="expert-case-card"><div class="section-head"><div><h4>${esc(r.subject)}</h4><p>${esc(r.problem_description)}</p><small>${isFa?'متخصص: ':'Expert: '}${esc(expert?.public_name||'—')}</small></div><span class="expert-status">${esc(r.status)}</span></div>
+   <div class="expert-messages">${(messages||[]).map(x=>'<p><b>'+(x.sender_user_id===current.id?(isFa?'شما':'You'):(isFa?'متخصص':'Expert'))+':</b> '+esc(x.message_text||'')+'</p>').join('')||'<p class="fineprint">'+(isFa?'هنوز پیامی وجود ندارد.':'No messages yet.')+'</p>'}</div>
+   ${consult?.id?'<form class="farmer-case-message-form" data-consultation-id="'+esc(consult.id)+'"><textarea name="message_text" rows="2" maxlength="6000" required placeholder="'+(isFa?'پیام شما به متخصص…':'Message the expert…')+'"></textarea><button class="quiet-btn" type="submit">'+(isFa?'ارسال پیام':'Send message')+'</button></form>':''}
+   ${(reports||[]).map(x=>'<details class="expert-report-view"><summary>'+(isFa?'گزارش کارشناسی':'Expert report')+'</summary><p><b>'+(isFa?'خلاصه: ':'Summary: ')+'</b>'+esc(x.summary)+'</p>'+(x.recommendations?'<p><b>'+(isFa?'پیشنهادها: ':'Recommendations: ')+'</b>'+esc(x.recommendations)+'</p>':'')+(x.limitations?'<p><b>'+(isFa?'محدودیت‌ها: ':'Limitations: ')+'</b>'+esc(x.limitations)+'</p>':'')+'</details>').join('')||'<p class="fineprint">'+(isFa?'گزارش نهایی هنوز ثبت نشده است.':'No expert report yet.')+'</p>'}
+   </article>`);
+  }
+  list.innerHTML=cards.join('');
+ }
+ root.querySelector('#refreshFarmerCases')?.addEventListener('click',load);
+ root.addEventListener('submit',async e=>{
+  const form=e.target.closest('.farmer-case-message-form');if(!form)return;e.preventDefault();
+  const current=getProfile(),v=Object.fromEntries(new FormData(form).entries());
+  const {error}=await supabase.from('expert_consultation_messages').insert({consultation_id:form.dataset.consultationId,sender_user_id:current.id,message_text:v.message_text.trim(),content_parts:[]});
+  if(error)alert(error.message);else await load();
+ });
+ load();
+}
