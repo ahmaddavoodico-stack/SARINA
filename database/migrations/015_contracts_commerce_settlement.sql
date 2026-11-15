@@ -51,6 +51,7 @@ CREATE POLICY service_contracts_farmer_draft_insert ON public.service_contracts 
   farmer_user_id = public.current_sarina_user_id()
   AND status='draft' AND farmer_accepted_at IS NULL AND expert_accepted_at IS NULL
   AND proposed_at IS NULL AND completed_at IS NULL AND cancelled_at IS NULL
+  AND (expert_profile_id IS NULL OR EXISTS (SELECT 1 FROM public.expert_profiles ep WHERE ep.id=service_contracts.expert_profile_id AND ep.verification_status='verified'))
  );
 REVOKE ALL PRIVILEGES ON TABLE public.service_contracts FROM PUBLIC,anon,authenticated;
 GRANT SELECT,INSERT ON TABLE public.service_contracts TO authenticated;
