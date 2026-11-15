@@ -123,10 +123,12 @@ export function bindExpertWorkspace({root,supabase,profile,language}) {
  profileForm.addEventListener('submit',async e=>{
   e.preventDefault();const v=Object.fromEntries(new FormData(profileForm).entries()),button=profileForm.querySelector('button[type=submit]');button.disabled=true;
   try{
-   const payload={user_id:profile.id,public_name:v.public_name.trim(),biography:v.biography.trim()||null,years_experience:v.years_experience?Number(v.years_experience):null,languages:v.languages.split(',').map(x=>x.trim()).filter(Boolean),consultation_modes:['in_app_message'],profile_visibility:'private'};
+   const payload={public_name:v.public_name.trim(),biography:v.biography.trim()||null,years_experience:v.years_experience?Number(v.years_experience):null,languages:v.languages.split(',').map(x=>x.trim()).filter(Boolean),consultation_modes:['in_app_message'],profile_visibility:'private'};
    if(expert){const {error}=await supabase.from('expert_profiles').update(payload).eq('id',expert.id);if(error)throw error;}
-   else {const {data,error}=await supabase.from('expert_profiles').insert(payload).select('*').single();if(error)throw error;expert=data;}
-   const {error:specErr}=await supabase.from('expert_specialties').upsert({expert_profile_id:expert.id,expertise_category_id:v.expertise_category_id},{onConflict:'expert_profile_id,expertise_category_id'});
+   else {const {data,error}=await supabase.from('expert_profiles').insert({...payload,user_id:profile.id}).select('*').single();if(error)throw error;expert=data;}
+   const {error:deleteSpecialtyError}=await supabase.from('expert_specialties').delete().eq('expert_profile_id',expert.id);
+   if(deleteSpecialtyError)throw deleteSpecialtyError;
+   const {error:specErr}=await supabase.from('expert_specialties').insert({expert_profile_id:expert.id,expertise_category_id:v.expertise_category_id});
    if(specErr)throw specErr;
    say('expertProfileMessage',isFa?'پروفایل ذخیره شد و برای بررسی آماده است.':'Profile saved and ready for review.');await load();
   }catch(err){console.error(err);say('expertProfileMessage',(isFa?'خطا: ':'Error: ')+err.message);}
