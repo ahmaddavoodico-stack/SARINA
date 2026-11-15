@@ -40,3 +40,10 @@
 .expert-request-form .consent-row input{width:auto;margin-top:6px}
 .farmer-expert-entry{margin-top:8px}
 @media(max-width:760px){.expert-columns{grid-template-columns:1fr}.dashboard-actions{width:100%}.dashboard-actions button{flex:1}}
+
+.farmer-expert-cases{margin:18px 0;padding:15px}
+.expert-context,.expert-report-view{margin:10px 0;padding:10px;border:1px solid #e1e9df;border-radius:10px;background:#fff}
+.expert-context summary,.expert-report-view summary{cursor:pointer;font-size:12px;color:#315b45;font-weight:600}
+.expert-context pre{max-height:260px;overflow:auto;white-space:pre-wrap;word-break:break-word;font-size:10px;line-height:1.6;direction:ltr;text-align:left}
+.expert-report-view p{font-size:12px;line-height:1.8;white-space:pre-wrap}
+.farmer-case-message-form{display:grid;gap:8px;margin-top:10px}
