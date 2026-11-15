@@ -71,6 +71,14 @@ function renderLandForm(farmId){
  select('irrigation_method','irrigation',[['unknown','unknown'],['flood','flood'],['furrow','furrow'],['drip','drip'],['sprinkler','sprinkler'],['rainfed','rainfed'],['other','other']])+ 
  '<button class="primary-btn land-save" type="submit">'+lw('saveLand')+'</button><p class="message land-message" role="status"></p></form>';
 }
+function renderSoilGridResult(context){
+ const regional=context?.regional_context?.soilgrids||{};const status=regional.status||'not_requested';
+ const fa=status==='available'?'داده SoilGrids دریافت شد':status==='waiting_for_confirmed_coordinates'?'برای دریافت داده، موقعیت مزرعه لازم است':status==='provider_unavailable'?'سرویس SoilGrids فعلاً پاسخ‌گو نیست':'داده SoilGrids هنوز دریافت نشده';
+ const en=status==='available'?'SoilGrids data received':status==='waiting_for_confirmed_coordinates'?'A farm location is required':'SoilGrids is temporarily unavailable';
+ const label=language==='fa'?fa:en;
+ const note=language==='fa'?'مدل منطقه‌ای با تفکیک مکانی حدود ۲۵۰ متر؛ نتیجه آزمایش خاک مزرعه نیست.':'Regional model at about 250 m resolution; not a farm soil test.';
+ return '<section class="soilgrid-result"><strong>🌍 ISRIC SoilGrids 2.0</strong><p>'+escapeHtml(label)+'</p><small>'+escapeHtml(note)+'</small><small class="soilgrid-meta">'+escapeHtml(String(regional.access_method||'REST API v2.0 experimental adapter'))+' · '+escapeHtml(String(regional.license||'CC BY 4.0'))+'</small></section>';
+}
 function renderWeather(context){
   const c=context.current,d=context.forecast.slice(0,3);
   const number=(v)=>v==null?'—':new Intl.NumberFormat(language==='fa'?'fa-IR':'en',{maximumFractionDigits:1}).format(v);
@@ -132,7 +140,7 @@ $('farmList').addEventListener('submit',async e=>{
  const {error}=await supabase.from('farm_observations').insert({farm_id:form.dataset.farmId,observation_type:'soil_condition',observed_at:payload.reported_at,description:'SARINA_FARM_PROFILE_V1:'+JSON.stringify(payload),severity:'unknown',image_refs:[],reported_by:profile?.id||null});
  button.disabled=false;if(error){message.textContent=lw('landSaveError');console.error('Farm profile save failed',error);return;}
  const {data:landResult,error:landError}=await supabase.functions.invoke('farm-land-context',{body:{farm_id:form.dataset.farmId}});
- if(!landError&&landResult?.ok&&landResult.context?.farm?.id===form.dataset.farmId){farmLandContexts.set(form.dataset.farmId,landResult.context);message.textContent=lw('landSaved');}
+ if(!landError&&landResult?.ok&&landResult.context?.farm?.id===form.dataset.farmId){farmLandContexts.set(form.dataset.farmId,landResult.context);message.textContent=lw('landSaved');form.insertAdjacentHTML('beforeend',renderSoilGridResult(landResult.context));}
  else{console.warn('Farm land context refresh failed',landError||landResult);message.textContent=lw('landSaved')+' · '+(language==='fa'?'بازیابی پرونده نیازمند تلاش دوباره است':'Profile refresh can be retried');}
 });
 $('signOut').addEventListener('click',async()=>{await supabase.auth.signOut();profile=null;showAuth()});
