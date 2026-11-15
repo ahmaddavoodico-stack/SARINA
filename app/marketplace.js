@@ -48,7 +48,7 @@ export function renderMarketplaceWorkspace(language='fa'){
  '<nav class="market-tabs"><button type="button" data-market-tab="farmer_products" class="active">'+w.farmer+'</button><button type="button" data-market-tab="company_supplies">'+w.company+'</button><button type="button" data-market-tab="cart">'+w.cart+' <b data-cart-count>0</b></button><button type="button" data-market-tab="orders">'+w.orders+'</button><button type="button" data-market-tab="seller">'+w.seller+'</button></nav>'+
  '<div class="market-content" data-market-content><p>'+w.intro+'</p></div></section>';
 }
-export function bindMarketplaceWorkspace({root,supabase,getProfile,getLanguage}){
+export async function bindMarketplaceWorkspace({root,supabase,getProfile,getLanguage}){
  if(root.dataset.marketBound)return;root.dataset.marketBound='1';
  let activeTab='farmer_products',categories=[],sellerProfiles=[],cartRows=[];
  const w=()=>getLanguage()==='fa'?fa:en, lang=()=>getLanguage();
