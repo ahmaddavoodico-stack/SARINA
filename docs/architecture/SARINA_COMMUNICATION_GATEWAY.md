@@ -187,6 +187,6 @@ The first media slice is implemented on `feature/sarina-communication-gateway`:
 - Farmer and expert workspaces now expose audio-file upload and signed-URL playback controls. Audio URLs are short-lived and are never made public.
 - If message insertion fails after upload, the client attempts to remove the just-uploaded object; the DELETE policy permits cleanup of the sender's own object.
 
-This slice is upload/playback of an audio file selected or recorded on the device. In-app microphone recording, duration metadata, waveform UI, live WebRTC, AI voice, and regional messaging adapters are not yet implemented.
+This slice supports in-app microphone recording where the browser exposes MediaRecorder and microphone permission, plus audio-file selection as a fallback, upload, and signed-URL playback. Duration metadata, waveform UI, live WebRTC, AI voice, and regional messaging adapters are not yet implemented.
 
 Validation completed: migrations applied successfully; the private bucket and expected RLS policies were queried and confirmed. Browser/device end-to-end testing with two real participant sessions and deployment remain outstanding.
