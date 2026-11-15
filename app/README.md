@@ -32,3 +32,9 @@ This is the first usable farmer portal slice, not the complete product. Farm loc
 - Reads the farm and primary location under the caller's RLS permissions, retrieves Open-Meteo current conditions plus a 7-day forecast, and persists model estimates as `weather_records.data_kind = 'forecast'`.
 - Returns the normalized context for the farm analysis layer. Any future agricultural analysis request must carry this exact farm-scoped context; it must not substitute device location or another farm's weather.
 - Open-Meteo attribution: [Weather data by Open-Meteo.com](https://open-meteo.com/).
+
+## Farmer-first soil and land profile (first capture slice)
+- Each farm card now offers a short, bilingual, choice-based soil/land questionnaire with an explicit “I don't know” option.
+- Answers are stored as a timestamped `farm_observations.observation_type = 'soil_condition'` record under the existing owner-scoped RLS policy. The description carries the versioned `SARINA_FARM_PROFILE_V1` payload and is explicitly labelled as a farmer self-report, not a laboratory result or map-derived measurement.
+- Captures soil feel/texture, visible lime and salinity signs, post-irrigation water retention, slope, irrigation source, and irrigation method. No new tables or schema migrations are introduced.
+- Regional soil/map datasets are not yet connected. The app must show them as unavailable until a stable, licensed provider adapter is integrated; no SoilGrids API dependency or fabricated farm-level values are used.
