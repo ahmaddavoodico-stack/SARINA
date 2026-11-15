@@ -92,3 +92,11 @@ This is the first usable farmer portal slice, not the complete product. Farm loc
 - The first live milestone is deliberately limited to one authenticated farmer request and one registered specialist model.
 - The current SIACP bridge is validation-only and does not invoke a model. The architecture document records this explicitly; no live AI dispatch is claimed until the provider registry, authoritative SIACP result/signing contract and server-side provider secret are confirmed.
 - SCI remains advisory-only in V1. No irrigation, fertilizer, pesticide, machinery or worker action can be triggered.
+
+
+## SARINA Central Intelligence — Slice A gateway
+- New authenticated endpoint: `POST /functions/v1/sarina-central-intelligence` with `farm_id`, `question`, optional `language` (`fa` or `en`) and optional bounded reference IDs.
+- The gateway validates the request, verifies the caller session, and confirms farm access using the caller JWT and existing RLS. It does not accept client-selected provider/model IDs or client-supplied trusted farm context.
+- Slice A is intentionally a validation-only intake: it returns `accepted_for_validation` and explicitly reports `model_invoked: false`, `provider_selected: false`, and `physical_action_authorized: false`. Context assembly, SIACP signing and provider dispatch remain disabled until their prerequisites are validated.
+- Shared deterministic validators cover request shape, context freshness/farm matching, SIACP TASK_REQUEST structural subset, and TASK_RESULT correlation/recipient/schema checks. Tests: `deno test supabase/functions/_shared/sci-contract.test.ts`.
+- Important limitation: the SIACP validator checks the structural subset only; it does not implement cryptographic signature verification or RFC 8785 canonicalization. No full SIACP conformance or live model invocation is claimed.
