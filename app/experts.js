@@ -150,6 +150,11 @@ export async function bindExpertWorkspace({root,supabase,profile,language}) {
   if(error){list.textContent=error.message;return;}
   if(!data?.length){list.textContent=isFa?'فعلاً پیشنهاد قراردادی ندارید.':'No contract offers yet.';return;}
   list.innerHTML=data.map(c=>'<article class="expert-case-card"><div class="section-head"><b>'+esc(c.title)+'</b><span class="expert-status">'+esc(c.status)+'</span></div><p>'+esc(c.description||'')+'</p><p>'+esc(c.base_amount)+' '+esc(c.currency_code)+' · '+esc(c.pricing_model)+'</p>'+(c.status==='proposed'&&!c.expert_accepted_at?'<button type="button" class="primary-btn" data-expert-contract-action="accept" data-contract-id="'+esc(c.id)+'">'+(isFa?'پذیرش قرارداد':'Accept contract')+'</button><button type="button" class="quiet-btn" data-expert-contract-action="cancel" data-contract-id="'+esc(c.id)+'">'+(isFa?'رد / لغو پیشنهاد':'Decline offer')+'</button>':c.status==='accepted'?'<p>'+(isFa?'قرارداد با تأیید هر دو طرف پذیرفته شده است.':'Both parties accepted this contract.')+'</p>':'<p>'+(isFa?'در انتظار تأیید کشاورز':'Waiting for farmer acceptance')+'</p>')+'</article>').join('');
+  const contractIds=data.map(c=>c.id);
+  const {data:invoices, error:invoiceError}=await supabase.from('contract_invoices').select('id,contract_id,invoice_number,status,currency_code,total_amount,tax_status').in('contract_id',contractIds).order('created_at',{ascending:false});
+  if(!invoiceError&&invoices?.length){
+   list.insertAdjacentHTML('beforeend','<section class="expert-case-card"><b>'+(isFa?'پیش‌نویس صورتحساب‌ها':'Invoice drafts')+'</b>'+invoices.map(i=>'<p>'+esc(i.invoice_number)+' · '+esc(i.total_amount)+' '+esc(i.currency_code)+' · '+esc(i.status)+'</p><small>'+(isFa?'وضعیت مالیات هنوز بررسی نشده است.':'Tax treatment has not been reviewed.')+'</small>').join('')+'</section>');
+  }
  }
  root.addEventListener('click',async e=>{
   const button=e.target.closest('[data-expert-contract-action]');if(!button)return;
