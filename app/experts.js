@@ -22,7 +22,8 @@ async function uploadConsultationVoice({supabase,consultationId,userId,file}) {
  if (!VOICE_MIME_TYPES.includes(mimeType)) throw new Error('Unsupported audio format.');
  if (!file.size || file.size > VOICE_MAX_BYTES) throw new Error('Audio file must be 20 MB or smaller.');
  const extByMime = {'audio/webm':'webm','audio/ogg':'ogg','audio/mp4':'m4a','audio/mpeg':'mp3','audio/wav':'wav','audio/x-wav':'wav','audio/aac':'aac','audio/3gpp':'3gp','audio/3gpp2':'3g2','audio/flac':'flac'};
- const objectPath = consultationId+'/'+userId+'/'+crypto.randomUUID()+'.'+extByMime[mimeType];
+ const objectId = globalThis.crypto?.randomUUID ? globalThis.crypto.randomUUID() : (Date.now().toString(36)+'-'+Math.random().toString(36).slice(2));
+ const objectPath = consultationId+'/'+userId+'/'+objectId+'.'+extByMime[mimeType];
  const {error:uploadError} = await supabase.storage.from(VOICE_BUCKET).upload(objectPath,file,{contentType:mimeType,upsert:false});
  if (uploadError) throw uploadError;
  const {error:messageError} = await supabase.from('expert_consultation_messages').insert({
