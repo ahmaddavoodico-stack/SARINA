@@ -24,20 +24,21 @@ Deno.serve(async(req:Request)=>{
    client.from("farm_fields").select("id,field_name,area,area_unit,soil_description,created_at").eq("farm_id",farmId).order("created_at",{ascending:true}),
    client.from("soil_tests").select("id,field_id,sampled_at,laboratory_name,test_method,soil_texture,ph,ec_ds_m,organic_matter_pct,calcium_carbonate_pct,nitrogen_mg_kg,phosphorus_mg_kg,potassium_mg_kg,cec_cmol_kg,data_source,notes,report_file_ref").eq("farm_id",farmId).order("sampled_at",{ascending:false}).limit(10),
    client.from("water_tests").select("id,sampled_at,water_source,laboratory_name,test_method,ph,ec_ds_m,tds_mg_l,sodium_mg_l,calcium_mg_l,magnesium_mg_l,chloride_mg_l,bicarbonate_mg_l,sar,boron_mg_l,data_source,notes,report_file_ref").eq("farm_id",farmId).order("sampled_at",{ascending:false}).limit(10),
-   client.from("farm_observations").select("id,observation_type,observed_at,description,severity,image_refs").eq("farm_id",farmId).in("observation_type",["soil_condition","crop_layout"]).order("observed_at",{ascending:false}).limit(40),
+   client.from("farm_observations").select("id,observation_type,observed_at,description,severity,image_refs").eq("farm_id",farmId).in("observation_type",["soil_condition","crop_layout","pond_asset"]).order("observed_at",{ascending:false}).limit(40),
    client.from("weather_records").select("observed_at,temperature_c,feels_like_c,relative_humidity_pct,precipitation_mm,wind_speed_m_s,data_kind,raw_payload").eq("farm_id",farmId).order("observed_at",{ascending:false}).limit(8)
   ]);
   if(farmResult.error||!farmResult.data)return reply(404,{ok:false,code:"FARM_NOT_FOUND"});
   for(const result of [locationResult,fieldsResult,soilResult,waterResult,observationResult,weatherResult]){if(result.error){console.error("Farm context read failed",result.error);return reply(500,{ok:false,code:"FARM_CONTEXT_READ_FAILED"});}}
   const parsedObservations=(observationResult.data??[]).map((row:Record<string,unknown>)=>{
    const description=typeof row.description==="string"?row.description:"";
-   const prefixes=["SARINA_FARM_PROFILE_V1:","SARINA_CROP_LAYOUT_V1:"];
+   const prefixes=["SARINA_FARM_PROFILE_V1:","SARINA_CROP_LAYOUT_V1:","SARINA_POND_ASSET_V1:"];
    const prefix=prefixes.find((candidate)=>description.startsWith(candidate));let payload:unknown=null;
    if(prefix){try{payload=JSON.parse(description.slice(prefix.length));}catch{payload=null;}}
    return {id:row.id,observation_type:row.observation_type,observed_at:row.observed_at,source_type:"farmer_report",verification:"self_reported_not_verified",payload,raw_description:payload?undefined:description,images:row.image_refs??[]};
   });
   const farmerReports=parsedObservations.filter((row)=>row.observation_type==="soil_condition");
   const cropGroups=parsedObservations.filter((row)=>row.observation_type==="crop_layout");
+  const pondAssets=parsedObservations.filter((row)=>row.observation_type==="pond_asset");
   const location=locationResult.data??null;
 
   // Experimental SoilGrids adapter. One point request per farm-context refresh.
@@ -78,12 +79,12 @@ Deno.serve(async(req:Request)=>{
   }
 
   const context={
-   schema:"SARINA_FARM_LAND_CONTEXT_V1",farm:farmResult.data,location,fields:fieldsResult.data??[],farmer_reports:farmerReports,crop_groups:cropGroups,
+   schema:"SARINA_FARM_LAND_CONTEXT_V1",farm:farmResult.data,location,fields:fieldsResult.data??[],farmer_reports:farmerReports,crop_groups:cropGroups,pond_assets:pondAssets,
    soil_tests:(soilResult.data??[]).map((row:Record<string,unknown>)=>({...row,provenance:row.data_source==="laboratory"?"laboratory_record":"recorded_source"})),
    water_tests:(waterResult.data??[]).map((row:Record<string,unknown>)=>({...row,provenance:row.data_source==="laboratory"?"laboratory_record":"recorded_source"})),
    weather_records:(weatherResult.data??[]).map((row:Record<string,unknown>)=>({...row,provenance:row.data_kind==="forecast"?"weather_provider_model_estimate":"stored_weather_record"})),
    regional_context:{status:soilGrids.status,provider:"ISRIC SoilGrids 2.0",soilgrids:soilGrids,values:soilGrids.status==="available"?soilGrids.raw:null,do_not_infer_farm_level_soil_measurements:true,do_not_use_as_lab_test:true},
-   data_quality:{farmer_report_count:farmerReports.length,crop_group_count:cropGroups.length,soil_test_count:(soilResult.data??[]).length,water_test_count:(waterResult.data??[]).length,regional_dataset_available:soilGrids.status==="available",soilgrids_status:soilGrids.status,location_confirmed_by_farmer:location?.confirmed_by_user===true},
+   data_quality:{farmer_report_count:farmerReports.length,crop_group_count:cropGroups.length,pond_asset_count:pondAssets.length,soil_test_count:(soilResult.data??[]).length,water_test_count:(waterResult.data??[]).length,regional_dataset_available:soilGrids.status==="available",soilgrids_status:soilGrids.status,location_confirmed_by_farmer:location?.confirmed_by_user===true},
    retrieved_at:new Date().toISOString(),safety:{distinguish_farmer_report_from_lab_and_model_data:true,never_present_regional_estimates_as_farm_measurements:true,missing_values_must_remain_missing:true}
   };
   return reply(200,{ok:true,context});
