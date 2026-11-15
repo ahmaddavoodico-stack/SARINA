@@ -44,3 +44,7 @@ This is the first usable farmer portal slice, not the complete product. Farm loc
 - Reads farm, confirmed primary location, fields, farmer soil/land observations, soil and water test records, and stored weather records using the caller's JWT and existing owner-scoped RLS policies.
 - Returns a versioned `SARINA_FARM_LAND_CONTEXT_V1` payload with explicit provenance and data-quality counts. Regional soil/geospatial context remains `not_connected` until a stable, licensed adapter is implemented; missing values stay missing.
 - Uses the publishable/anon key only and does not use service-role access.
+
+## SIACP farm-context gate
+- Farm-scoped SIACP requests now require a fresh `SARINA_FARM_LAND_CONTEXT_V1` payload for the same `farm_id`, in addition to the existing weather-context requirement.
+- The bridge rejects missing, mismatched, stale, or provenance-incomplete land context. It remains a validation-only bridge and does not invoke a model or authorize physical actions.
