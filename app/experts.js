@@ -105,7 +105,7 @@ export function bindFarmerExpertRequests({root,supabase,getProfile,language}) {
   finally{button.disabled=false;}
  });
 }
-export function bindExpertWorkspace({root,supabase,profile,language}) {
+export async function bindExpertWorkspace({root,supabase,profile,language}) {
  const isFa=fa(language), profileForm=root.querySelector('#expertProfileForm'), credForm=root.querySelector('#expertCredentialForm');
  let expert=null;
  const say=(id,msg)=>{const el=root.querySelector('#'+id);if(el)el.textContent=msg;};
