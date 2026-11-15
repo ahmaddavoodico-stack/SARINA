@@ -201,6 +201,8 @@ WITH CHECK (
 
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.job_profiles TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.job_listings TO authenticated;
-GRANT SELECT, INSERT, UPDATE ON public.job_applications TO authenticated;
+GRANT SELECT, INSERT ON public.job_applications TO authenticated;
+REVOKE UPDATE ON public.job_applications FROM authenticated;
+GRANT UPDATE (status) ON public.job_applications TO authenticated;
 
 COMMIT;
