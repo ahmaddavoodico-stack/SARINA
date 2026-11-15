@@ -100,3 +100,13 @@ This is the first usable farmer portal slice, not the complete product. Farm loc
 - Slice A is intentionally a validation-only intake: it returns `accepted_for_validation` and explicitly reports `model_invoked: false`, `provider_selected: false`, and `physical_action_authorized: false`. Context assembly, SIACP signing and provider dispatch remain disabled until their prerequisites are validated.
 - Shared deterministic validators cover request shape, context freshness/farm matching, SIACP TASK_REQUEST structural subset, and TASK_RESULT correlation/recipient/schema checks. Tests: `deno test supabase/functions/_shared/sci-contract.test.ts`.
 - Important limitation: the SIACP validator checks the structural subset only; it does not implement cryptographic signature verification or RFC 8785 canonicalization. No full SIACP conformance or live model invocation is claimed.
+
+## SARINA Experts — Human support pilot (V1)
+- A separate expert workspace is available from the farmer dashboard. It supports expert profile registration, specialty selection, credential metadata submission, assigned case review, assignment acceptance/decline, text messages, and expert reports.
+- Farmers can start a case from an individual farm card by selecting a verified directory expert, describing the issue, and explicitly consenting to share the selected farm context for that case.
+- The first pilot is text-only. Credential file uploads, payment, video calls, automated scheduling, field-service dispatch, and the SARINA admin verification dashboard are not enabled.
+- Expert profiles remain private by default. Only manually verified profiles explicitly marked `directory` or `public` appear in the farmer's expert selector. The current pilot therefore requires controlled administrative verification before the first expert can receive a farmer case.
+- Database migration: `database/migrations/008_human_expert_support.sql`. It reuses the existing expert tables and adds request assignments and expert reports with participant-scoped RLS. The identity helper is SECURITY INVOKER; no service-role key is exposed to the browser.
+- Farmer consent is recorded per request. Only the selected expert and the farmer can read the case conversation and report. Expert identity is kept distinct from AI-generated recommendations.
+- Verification status is not writable through the expert profile UI. Credential documents are not uploaded in this pilot; only metadata is submitted for manual review.
+- End-to-end verification still requires authenticated farmer and verified-expert test accounts. Do not treat a successful static deployment as proof that a live case was exchanged.
