@@ -11,6 +11,12 @@ let profile = null;
 let language = 'fa';
 // Canonical, farm-specific weather payloads retained for the analysis orchestration layer.
 const farmWeatherContexts = new Map();
+const landWords = {
+ fa:{landButton:'شناخت خاک و زمین',landIntro:'چند گزینه ساده انتخاب کنید؛ اگر نمی‌دانید، همان گزینه «نمی‌دانم» را بگذارید.',soilTexture:'خاک زمین بیشتر چه حالتی دارد؟',clayey:'چسبنده و رسی',sandy:'دانه‌دانه و شنی',loamy:'نرم و مخلوط',cracked:'سفت و ترک‌خورده',mixed:'ترکیبی',calcareous:'رسوب یا آهک سفید دیده می‌شود؟',yes:'بله',no:'خیر',unsure:'مطمئن نیستم',salinity:'نشانه‌ای از شوری می‌بینید؟',salinityNone:'خیر، نشانه‌ای ندیده‌ام',whiteCrust:'سفیدی روی خاک',leafBurn:'سوختگی یا زردی گیاه',some:'گاهی / کم',drainage:'بعد از آبیاری آب چه مدت روی زمین می‌ماند؟',fast:'زود خارج می‌شود',sameDay:'چند ساعت تا همان روز',nextDay:'تا روز بعد',longer:'بیشتر از یک روز',slope:'زمین چه شیبی دارد؟',flat:'تقریباً صاف',slight:'شیب کم',moderate:'شیب متوسط',steep:'شیب زیاد',waterSource:'آب آبیاری از کجا می‌آید؟',canal:'کانال یا نهر',river:'رودخانه',well:'چاه',dam:'سد یا مخزن',rainfed:'فقط باران',other:'منبع دیگر',irrigation:'روش آبیاری چیست؟',flood:'غرقابی',furrow:'جوی و پشته',drip:'قطره‌ای',sprinkler:'بارانی',saveLand:'ذخیره پاسخ‌ها',landSaved:'اطلاعات زمین ثبت شد.',landSaveError:'ذخیره اطلاعات انجام نشد؛ دوباره تلاش کنید.',farmerReported:'اظهار کشاورز · نه آزمایش خاک',unknown:'نمی‌دانم'},
+ en:{landButton:'Soil & land profile',landIntro:'Choose a few simple options. If you are unsure, leave “I don’t know”.',soilTexture:'What does your soil feel like?',clayey:'Sticky and clayey',sandy:'Loose and sandy',loamy:'Soft and mixed',cracked:'Hard and cracked',mixed:'Mixed',calcareous:'Do you see white lime-like deposits?',yes:'Yes',no:'No',unsure:'Not sure',salinity:'Do you notice signs of salinity?',salinityNone:'No visible signs',whiteCrust:'White crust on soil',leafBurn:'Leaf burn or yellowing',some:'Sometimes / mild',drainage:'How long does water remain after irrigation?',fast:'Drains quickly',sameDay:'A few hours / same day',nextDay:'Until the next day',longer:'More than one day',slope:'How steep is the land?',flat:'Almost flat',slight:'Slight slope',moderate:'Moderate slope',steep:'Steep',waterSource:'Where does irrigation water come from?',canal:'Canal / ditch',river:'River',well:'Well',dam:'Reservoir',rainfed:'Rain only',other:'Other source',irrigation:'How do you irrigate?',flood:'Flood',furrow:'Furrow',drip:'Drip',sprinkler:'Sprinkler',saveLand:'Save answers',landSaved:'Land information saved.',landSaveError:'Could not save the information. Please try again.',farmerReported:'Farmer report · not a soil test',unknown:'I don’t know'}
+};
+function lw(key){return landWords[language][key]||key;}
+
 
 const words = {
  fa:{signOut:'خروج',eyebrow:'همراه هوشمند مزرعه شما',headline:'مزرعه‌تان را بهتر بشناسید.',intro:'اطلاعات مزرعه را یک‌بار ثبت کنید؛ سارینا کمک می‌کند وضعیت، فعالیت‌ها و تصمیم‌های کشاورزی را منظم و قابل پیگیری نگه دارید.',feature1:'مدیریت مزرعه',feature2:'ثبت ساده اطلاعات',feature3:'پشتیبانی هوشمند',login:'ورود',signup:'ساخت حساب',email:'ایمیل',fullName:'نام شما',password:'رمز عبور',privacy:'اطلاعات هر کشاورز فقط برای حساب خودش قابل دسترسی است.',workspace:'فضای کاری کشاورز',hello:'سلام',dashboardIntro:'مزرعه‌ها و اطلاعات کشاورزی خود را از اینجا مدیریت کنید.',addFarm:'＋ افزودن مزرعه',farmCount:'مزرعه‌های من',registered:'ثبت‌شده در سارینا',dataStatus:'وضعیت اطلاعات',starting:'در حال شروع',dataStatusHint:'با تکمیل اطلاعات دقیق‌تر می‌شود',nextStep:'گام بعدی',completeFarm:'تکمیل مزرعه',nextStepHint:'ثبت زمین و محصولات',myFarms:'مزرعه‌های من',myFarmsHint:'هر مزرعه فضای اطلاعاتی مستقل خود را دارد.',newFarm:'ثبت مزرعه جدید',farmFormHint:'فعلاً فقط اطلاعات ضروری را وارد کنید؛ جزئیات را بعداً می‌توانید تکمیل کنید.',farmName:'نام مزرعه',farmArea:'مساحت کل',unit:'واحد مساحت',hectare:'هکتار',acre:'ایکر',sqm:'متر مربع',saveFarm:'ذخیره مزرعه',footer:'پیچیدگی در هسته مرکزی؛ سادگی برای کشاورز.',emptyTitle:'هنوز مزرعه‌ای ثبت نکرده‌اید',emptyText:'اولین مزرعه را ثبت کنید تا فضای مدیریت آن ساخته شود.',farmCreated:'مزرعه با موفقیت ثبت شد.',confirmEmail:'حساب ساخته شد. برای فعال‌سازی، ایمیل خود را تأیید کنید و سپس وارد شوید.',profileMissing:'ساخت پروفایل کامل نشد. دوباره وارد شوید.',loading:'در حال بارگذاری…',loginError:'ورود انجام نشد. ایمیل و رمز عبور را بررسی کنید.',signupError:'ساخت حساب انجام نشد.',farmError:'ذخیره مزرعه انجام نشد.',weatherTitle:'وضعیت آب‌وهوا',weatherLoading:'دریافت داده‌های هواشناسی…',weatherUnavailable:'داده آب‌وهوا فعلاً در دسترس نیست.',weatherMissingLocation:'برای دریافت آب‌وهوا مختصات مزرعه را ثبت کنید.',weatherCurrent:'دمای فعلی',apparent:'دمای احساسی',humidity:'رطوبت',wind:'باد',forecast:'پیش‌بینی ۳ روز آینده',high:'بیشینه',low:'کمینه',weatherUpdated:'به‌روزرسانی',latitude:'عرض جغرافیایی',longitude:'طول جغرافیایی',coordHint:'مختصات را از نقشه یا GPS وارد کنید؛ هر دو مقدار لازم‌اند.',locationSaved:'مزرعه و موقعیت آن ثبت شد.',locationError:'مزرعه ثبت شد، اما ذخیره موقعیت انجام نشد.',coordsPairError:'برای ثبت موقعیت، هر دو مختصات را وارد کنید.',authRequired:'برای ادامه ابتدا وارد حساب شوید.'},
@@ -47,9 +53,22 @@ async function loadFarms(){
         weatherMarkup=renderWeather(context);
       }catch(error){console.warn('Farm weather unavailable',f.id,error);weatherMarkup='<div class="weather-note">'+t('weatherUnavailable')+'</div>'}
     }else { farmWeatherContexts.delete(f.id); weatherMarkup='<div class="weather-note">'+t('weatherMissingLocation')+'</div>'; }
-    return '<article class="farm-card"><div class="farm-icon">🌿</div><h3>'+escapeHtml(f.farm_name)+'</h3><p>'+ (f.total_area?escapeHtml(String(f.total_area))+' '+escapeHtml(f.area_unit):'—') +' · '+escapeHtml(f.status)+'</p>'+weatherMarkup+'</article>';
+    return '<article class="farm-card" data-farm-card="'+f.id+'"><div class="farm-icon">🌿</div><h3>'+escapeHtml(f.farm_name)+'</h3><p>'+ (f.total_area?escapeHtml(String(f.total_area))+' '+escapeHtml(f.area_unit):'—') +' · '+escapeHtml(f.status)+'</p>'+weatherMarkup+'<button type="button" class="quiet-btn land-toggle" data-land-toggle="'+f.id+'">🌱 '+lw('landButton')+'</button><div class="land-panel hidden" id="land-'+f.id+'">'+renderLandForm(f.id)+'</div></article>';
   }));
   $('farmList').innerHTML=cards.join('');
+}
+function landOption(value,label,selected='unknown'){return '<option value="'+value+'"'+(value===selected?' selected':'')+'>'+lw(label)+'</option>';}
+function renderLandForm(farmId){
+ const select=(name,label,options)=>'<label><span>'+lw(label)+'</span><select name="'+name+'">'+options.map(([v,k])=>landOption(v,k)).join('')+'</select></label>';
+ return '<div class="land-form-head"><p>'+lw('landIntro')+'</p><small>📝 '+lw('farmerReported')+'</small></div><form class="land-form" data-farm-id="'+farmId+'">'+
+ select('soil_texture','soilTexture',[['unknown','unknown'],['clayey','clayey'],['sandy','sandy'],['loamy','loamy'],['cracked_hard','cracked'],['mixed','mixed']])+ 
+ select('calcareous_signs','calcareous',[['unknown','unknown'],['yes','yes'],['no','no']])+ 
+ select('salinity_signs','salinity',[['unknown','unknown'],['none','salinityNone'],['white_crust','whiteCrust'],['leaf_burn','leafBurn'],['some','some']])+ 
+ select('water_retention','drainage',[['unknown','unknown'],['drains_fast','fast'],['same_day','sameDay'],['next_day','nextDay'],['more_than_day','longer']])+ 
+ select('slope','slope',[['unknown','unknown'],['flat','flat'],['slight','slight'],['moderate','moderate'],['steep','steep']])+ 
+ select('water_source','waterSource',[['unknown','unknown'],['canal','canal'],['river','river'],['well','well'],['dam','dam'],['rainfed','rainfed'],['other','other']])+ 
+ select('irrigation_method','irrigation',[['unknown','unknown'],['flood','flood'],['furrow','furrow'],['drip','drip'],['sprinkler','sprinkler'],['rainfed','rainfed'],['other','other']])+ 
+ '<button class="primary-btn land-save" type="submit">'+lw('saveLand')+'</button><p class="message land-message" role="status"></p></form>';
 }
 function renderWeather(context){
   const c=context.current,d=context.forecast.slice(0,3);
@@ -102,6 +121,15 @@ $('farmForm').addEventListener('submit',async e=>{
    if(locationError){console.error(locationError);say(t('locationError'),'farmMessage');closeFarmForm();await loadFarms();return}
  }
  say(latitude===null?t('farmCreated'):t('locationSaved'),'farmMessage');closeFarmForm();await loadFarms();
+});
+$('farmList').addEventListener('click',e=>{const toggle=e.target.closest('[data-land-toggle]');if(!toggle)return;const panel=$('land-'+toggle.dataset.landToggle);panel?.classList.toggle('hidden');});
+$('farmList').addEventListener('submit',async e=>{
+ const form=e.target.closest('.land-form');if(!form)return;e.preventDefault();
+ const button=form.querySelector('button[type="submit"]');const message=form.querySelector('.land-message');button.disabled=true;message.textContent=t('loading');
+ const answers=Object.fromEntries(new FormData(form).entries());
+ const payload={schema:'SARINA_FARM_PROFILE_V1',answers,source_type:'farmer_report',reported_at:new Date().toISOString(),confidence:'self_reported_not_verified'};
+ const {error}=await supabase.from('farm_observations').insert({farm_id:form.dataset.farmId,observation_type:'soil_condition',observed_at:payload.reported_at,description:'SARINA_FARM_PROFILE_V1:'+JSON.stringify(payload),severity:'unknown',image_refs:[],reported_by:profile?.id||null});
+ button.disabled=false;message.textContent=error?lw('landSaveError'):lw('landSaved');if(error)console.error('Farm profile save failed',error);
 });
 $('signOut').addEventListener('click',async()=>{await supabase.auth.signOut();profile=null;showAuth()});
 supabase.auth.onAuthStateChange((event)=>{if(event==='SIGNED_OUT'){profile=null;showAuth()}});
