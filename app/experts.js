@@ -26,6 +26,28 @@ export function renderExpertWorkspace(lang='fa') {
     <button class="primary-btn" type="submit">${isFa?'ثبت مدرک برای بررسی':'Submit for review'}</button><p class="message" id="expertCredentialMessage"></p>
    </form>
   </div>
+  <section class="panel expert-portfolio">
+   <div class="section-head"><div><h3>${isFa?'رزومه و دستاوردهای حرفه‌ای':'Professional portfolio & achievements'}</h3><p>${isFa?'سوابق، نتایج مستند، نوآوری‌ها و افتخارات خود را در یک پرونده حرفه‌ای جمع کنید.':'Bring your credentials, documented outcomes, innovations and recognition into one professional record.'}</p></div><button type="button" class="quiet-btn" id="downloadExpertCv" ${''}>${isFa?'دریافت رزومه':'Download CV'}</button></div>
+   <div class="expert-portfolio-grid">
+    <section class="expert-portfolio-block"><h4>${isFa?'مدارک و صلاحیت‌ها':'Credentials'}</h4><div id="expertCredentialsList"><p class="fineprint">${isFa?'در حال بارگذاری…':'Loading…'}</p></div></section>
+    <section class="expert-portfolio-block"><h4>${isFa?'تقدیرنامه‌ها و نشان‌ها':'Awards & recognition'}</h4><div id="expertAwardsList"><p class="fineprint">${isFa?'در حال بارگذاری…':'Loading…'}</p></div></section>
+   </div>
+   <section class="expert-portfolio-block"><div class="section-head"><div><h4>${isFa?'پرونده‌های اثرگذاری و نوآوری':'Impact & innovation records'}</h4><p>${isFa?'نتایج واقعی را همراه با وضعیت اولیه، نتیجه پس از اقدام و سهم خود ثبت کنید.':'Record real outcomes with baseline, follow-up and your own contribution.'}</p></div></div><div id="expertImpactList"><p class="fineprint">${isFa?'برای مشاهده سوابق، ابتدا پروفایل را ذخیره کنید.':'Save your profile to view your records.'}</p></div></section>
+   <form id="expertImpactForm" class="expert-impact-form">
+    <h4>${isFa?'ثبت دستاورد یا نوآوری جدید':'Add an impact or innovation record'}</h4>
+    <label>${isFa?'نوع دستاورد':'Record type'}<select name="record_kind" required><option value="case_outcome">${isFa?'نتیجه یک پرونده یا اقدام':'Case outcome'}</option><option value="innovation">${isFa?'نوآوری و راهکار خلاقانه':'Innovation'}</option></select></label>
+    <label>${isFa?'عنوان':'Title'}<input name="title" required minlength="3" maxlength="180"></label>
+    <label>${isFa?'شرح مسئله و نتیجه':'Problem and outcome summary'}<textarea name="summary" required minlength="10" maxlength="5000" rows="3"></textarea></label>
+    <label>${isFa?'وضعیت اولیه (JSON اختیاری)':'Baseline metrics (optional JSON)'}<textarea name="baseline_metrics" rows="2" placeholder='{"yield_t_per_ha": 2.1}'></textarea></label>
+    <label>${isFa?'نتیجه پس از اقدام (JSON اختیاری)':'Outcome metrics (optional JSON)'}<textarea name="outcome_metrics" rows="2" placeholder='{"yield_t_per_ha": 2.8}'></textarea></label>
+    <label>${isFa?'سهم و اقدام مشخص شما':'Your specific contribution'}<textarea name="expert_contribution" rows="2" maxlength="3000"></textarea></label>
+    <label>${isFa?'جزئیات نوآوری (JSON اختیاری)':'Innovation details (optional JSON)'}<textarea name="innovation_details" rows="2" placeholder='{"method":"...","novelty":"..."}'></textarea></label>
+    <label>${isFa?'ارجاع شواهد (هر مورد در یک خط؛ فعلاً شناسه یا نشانی متنی)':'Evidence references (one per line; text references for now)'}<textarea name="evidence_refs" rows="2" maxlength="2000"></textarea></label>
+    <label class="consent-row"><input type="checkbox" name="beneficiary_consent"><span>${isFa?'رضایت بهره‌بردار برای استفاده از این دستاورد در رزومه عمومی را دریافت کرده‌ام.':'I have obtained beneficiary consent for using this achievement in a public portfolio.'}</span></label>
+    <p class="fineprint">${isFa?'این ثبت فعلاً پیش‌نویس خصوصی است. فایل شواهد و ارسال برای ارزیابی انسانی در مرحله بعد اضافه می‌شود. اطلاعات هویتی کشاورز را در متن یا شواهد وارد نکنید.':'This is a private draft for now. Evidence uploads and human-review submission will follow. Do not include identifying farmer details.'}</p>
+    <button class="primary-btn" type="submit">${isFa?'ذخیره پیش‌نویس دستاورد':'Save impact draft'}</button><p class="message" id="expertImpactMessage" role="status"></p>
+   </form>
+  </section>
   <section class="panel expert-cases"><h3>${isFa?'پرونده‌های ارجاع‌شده':'Assigned cases'}</h3><div id="expertCasesList"><p class="fineprint">${isFa?'برای بارگذاری پرونده‌ها، پروفایل خود را ذخیره کنید.':'Save your profile to load assigned cases.'}</p></div></section>
  </section>`;
 }
@@ -104,8 +126,21 @@ export function bindExpertWorkspace({root,supabase,profile,language}) {
    root.querySelector('#expertStatus').textContent=({pending:isFa?'در انتظار تأیید':'Pending review',verified:isFa?'تأییدشده':'Verified',rejected:isFa?'نیازمند اصلاح':'Changes requested',suspended:isFa?'تعلیق‌شده':'Suspended'})[expert.verification_status]||expert.verification_status;
    const {data:sp}=await supabase.from('expert_specialties').select('expertise_category_id').eq('expert_profile_id',expert.id).maybeSingle();
    if(sp)cat.value=sp.expertise_category_id;
-   await loadCases();
+   await loadPortfolio();await loadCases();
   }else root.querySelector('#expertStatus').textContent=isFa?'هنوز پروفایل متخصص ندارید':'No expert profile yet';
+ }
+ async function loadPortfolio(){
+  const credentials=root.querySelector('#expertCredentialsList'), impacts=root.querySelector('#expertImpactList'), awards=root.querySelector('#expertAwardsList');
+  if(!expert){const note=isFa?'پس از ذخیره پروفایل متخصص، این بخش فعال می‌شود.':'Save your expert profile to activate this section.';credentials.textContent=note;impacts.textContent=note;awards.textContent=note;return;}
+  const [cr,ir,ar]=await Promise.all([
+   supabase.from('expert_credentials').select('credential_type,issuing_body,credential_ref,issued_on,expires_on,verification_status,created_at').eq('expert_profile_id',expert.id).order('created_at',{ascending:false}),
+   supabase.from('expert_impact_records').select('id,record_kind,title,summary,baseline_metrics,outcome_metrics,expert_contribution,innovation_details,evidence_refs,status,created_at').eq('expert_profile_id',expert.id).order('created_at',{ascending:false}),
+   supabase.from('expert_recognition_awards').select('award_code,award_level,title,citation,issuer_type,issuer_name,status,issued_at,public_verification_token').eq('expert_profile_id',expert.id).order('created_at',{ascending:false})
+  ]);
+  credentials.innerHTML=cr.error?'<p class="message">'+esc(cr.error.message)+'</p>':(cr.data||[]).map(x=>'<article class="portfolio-item"><b>'+esc(x.credential_type)+'</b><span class="expert-status">'+esc(x.verification_status)+'</span><p>'+esc(x.issuing_body||'—')+' · '+esc(x.credential_ref||'—')+'</p><small>'+esc(x.issued_on||'')+'</small></article>').join('')||'<p class="fineprint">'+(isFa?'هنوز مدرکی ثبت نشده است.':'No credentials submitted yet.')+'</p>';
+  impacts.innerHTML=ir.error?'<p class="message">'+esc(ir.error.message)+'</p>':(ir.data||[]).map(x=>'<article class="portfolio-item"><div class="section-head"><b>'+esc(x.title)+'</b><span class="expert-status">'+esc(x.status)+'</span></div><small>'+esc(x.record_kind==='innovation'?(isFa?'نوآوری':'Innovation'):(isFa?'نتیجه پرونده':'Case outcome'))+'</small><p>'+esc(x.summary)+'</p><details><summary>'+(isFa?'جزئیات و شواهد':'Metrics & evidence')+'</summary><pre>'+esc(JSON.stringify({baseline:x.baseline_metrics,outcome:x.outcome_metrics,contribution:x.expert_contribution,evidence_refs:x.evidence_refs},null,2))+'</pre></details></article>').join('')||'<p class="fineprint">'+(isFa?'هنوز دستاوردی ثبت نشده است.':'No impact records yet.')+'</p>';
+  awards.innerHTML=ar.error?'<p class="message">'+esc(ar.error.message)+'</p>':(ar.data||[]).map(x=>'<article class="portfolio-item"><div class="section-head"><b>'+esc(x.title)+'</b><span class="expert-status">'+esc(x.status)+'</span></div><p>'+esc(x.citation)+'</p><small>'+esc(x.issuer_name)+' · '+esc(x.award_code)+'</small></article>').join('')||'<p class="fineprint">'+(isFa?'هنوز تقدیرنامه‌ای صادر نشده است.':'No awards issued yet.')+'</p>';
+  root.dataset.cvCredentials=JSON.stringify(cr.data||[]);root.dataset.cvImpacts=JSON.stringify(ir.data||[]);root.dataset.cvAwards=JSON.stringify((ar.data||[]).filter(x=>x.status==='issued'));
  }
  async function loadCases(){
   const list=root.querySelector('#expertCasesList');
@@ -124,6 +159,29 @@ export function bindExpertWorkspace({root,supabase,profile,language}) {
   }
   list.innerHTML=cards.join('');
  }
+ root.querySelector('#expertImpactForm').addEventListener('submit',async e=>{
+  e.preventDefault();const form=e.currentTarget,button=form.querySelector('button[type=submit]'),v=Object.fromEntries(new FormData(form).entries());
+  if(!expert){say('expertImpactMessage',isFa?'ابتدا پروفایل متخصص را ذخیره کنید.':'Save your expert profile first.');return;}
+  const parseObject=(raw,label)=>{if(!raw.trim())return {};let value;try{value=JSON.parse(raw);}catch{throw new Error((isFa?'ساختار JSON نامعتبر در بخش ':'Invalid JSON in ')+label);}if(!value||Array.isArray(value)||typeof value!=='object')throw new Error((isFa?'مقدار باید یک شیء JSON باشد: ':'Expected a JSON object: ')+label);return value;};
+  let baseline,outcome,innovation;
+  try{baseline=parseObject(v.baseline_metrics,isFa?'وضعیت اولیه':'baseline');outcome=parseObject(v.outcome_metrics,isFa?'نتیجه':'outcome');innovation=parseObject(v.innovation_details,isFa?'نوآوری':'innovation details');}catch(err){say('expertImpactMessage',err.message);return;}
+  button.disabled=true;say('expertImpactMessage',isFa?'در حال ذخیره…':'Saving…');
+  const payload={expert_profile_id:expert.id,record_kind:v.record_kind,title:v.title.trim(),summary:v.summary.trim(),baseline_metrics:baseline,outcome_metrics:outcome,expert_contribution:v.expert_contribution.trim()||null,innovation_details:innovation,evidence_refs:v.evidence_refs.split('\n').map(x=>x.trim()).filter(Boolean),beneficiary_consent_at:v.beneficiary_consent?'now':null,status:'draft'};
+  if(payload.beneficiary_consent_at==='now')payload.beneficiary_consent_at=new Date().toISOString();
+  const {error}=await supabase.from('expert_impact_records').insert(payload);
+  button.disabled=false;
+  if(error){console.error(error);say('expertImpactMessage',(isFa?'ذخیره انجام نشد: ':'Could not save: ')+error.message);return;}
+  form.reset();say('expertImpactMessage',isFa?'پیش‌نویس خصوصی دستاورد ذخیره شد.':'Private impact draft saved.');await loadPortfolio();
+ });
+ root.querySelector('#downloadExpertCv').addEventListener('click',()=>{
+  if(!expert){say('expertProfileMessage',isFa?'ابتدا پروفایل را ذخیره کنید.':'Save your profile first.');return;}
+  const creds=JSON.parse(root.dataset.cvCredentials||'[]'),items=JSON.parse(root.dataset.cvImpacts||'[]'),awards=JSON.parse(root.dataset.cvAwards||'[]');
+  const specialty=root.querySelector('#expertCategory').selectedOptions[0]?.textContent||'';
+  const status=expert.verification_status==='verified'?(isFa?'تأییدشده':'Verified'):expert.verification_status==='pending'?(isFa?'در انتظار بررسی':'Pending review'):(isFa?'وضعیت: ':'Status: ')+expert.verification_status;
+  const escCv=esc;
+  const html='<!doctype html><html lang="'+(isFa?'fa':'en')+'" dir="'+(isFa?'rtl':'ltr')+'"><meta charset="utf-8"><title>SARINA Expert CV</title><style>body{font-family:Arial,sans-serif;max-width:850px;margin:40px auto;padding:0 24px;line-height:1.8;color:#18372f}h1,h2{color:#17483b}small{color:#64766d}.item{border-bottom:1px solid #ddd;padding:10px 0}</style><h1>'+escCv(expert.public_name)+'</h1><p>'+escCv(specialty)+' · '+escCv(status)+'</p><p>'+escCv(expert.biography||'')+'</p><p>'+(isFa?'سابقه: ':'Experience: ')+escCv(expert.years_experience??'—')+'</p><p>'+(isFa?'زبان‌ها: ':'Languages: ')+escCv((expert.languages||[]).join(', '))+'</p><h2>'+(isFa?'مدارک':'Credentials')+'</h2>'+creds.map(x=>'<div class="item"><b>'+escCv(x.credential_type)+'</b> · '+escCv(x.issuing_body||'')+' · '+escCv(x.verification_status)+'</div>').join('')+'<h2>'+(isFa?'دستاوردهای ثبت‌شده':'Recorded achievements')+'</h2>'+items.map(x=>'<div class="item"><b>'+escCv(x.title)+'</b> <small>('+escCv(x.status)+')</small><p>'+escCv(x.summary)+'</p></div>').join('')+'<h2>'+(isFa?'افتخارات صادرشده':'Issued recognition')+'</h2>'+awards.map(x=>'<div class="item"><b>'+escCv(x.title)+'</b><p>'+escCv(x.citation)+'</p><small>'+escCv(x.issuer_name)+' · '+escCv(x.award_code)+'</small></div>').join('')+'<footer><small>SARINA · '+(isFa?'این خروجی شامل وضعیت فعلی مدارک و سوابق ثبت‌شده است؛ پیش‌نویس‌ها به‌عنوان دستاورد تأییدشده معرفی نشده‌اند.':'This export reflects current credential and record statuses; drafts are not represented as verified achievements.')+'</small></footer></html>';
+  const url=URL.createObjectURL(new Blob([html],{type:'text/html;charset=utf-8'})),a=document.createElement('a');a.href=url;a.download='SARINA-Expert-CV.html';document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);
+ });
  profileForm.addEventListener('submit',async e=>{
   e.preventDefault();const v=Object.fromEntries(new FormData(profileForm).entries()),button=profileForm.querySelector('button[type=submit]');button.disabled=true;
   try{
