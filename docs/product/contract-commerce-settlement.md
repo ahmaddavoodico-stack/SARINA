@@ -57,3 +57,8 @@ A result-based clause must define baseline, measurement window, metric, evidence
 
 ## Release boundary
 Migration 015 is a database foundation, not a live payment integration. Payment provider onboarding, signed webhooks, trusted acceptance endpoints, invoice generation, settlement execution, tax/legal templates and country-specific payment rails remain gated follow-up work. Do not claim that a contract is legally signed or money transferred until the relevant trusted process confirms it.
+
+## Farmer workspace pilot UI
+The farm card now exposes a bilingual contract panel. A farmer can create a private draft for a verified human expert or a SARINA AI service, choose a pricing model, currency and base amount, and optionally describe an outcome-based clause. Drafts are listed by farm. This UI deliberately does not offer acceptance, invoice issuance, payment confirmation or payout controls; those actions require trusted server-side workflows.
+
+Migration 016 links each contract to its farm and optionally to the originating expert request. The insert policy checks that the signed-in farmer owns the linked farm and that a selected human expert is verified.
