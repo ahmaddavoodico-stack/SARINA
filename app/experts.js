@@ -3,7 +3,65 @@ const fa = (lang) => lang === 'fa';
 const VOICE_BUCKET = 'expert-voice-notes';
 const VOICE_MAX_BYTES = 20 * 1024 * 1024;
 const VOICE_MIME_TYPES = ['audio/webm','audio/ogg','audio/mp4','audio/mpeg','audio/wav','audio/x-wav','audio/aac','audio/3gpp','audio/3gpp2','audio/flac'];
-const voiceFormMarkup = (consultationId, isFa, role) => `<form class="${role}-voice-form" data-consultation-id="${esc(consultationId)}"><label>${isFa?'پیام صوتی':'Voice note'} <input type="file" name="voice_file" accept="audio/*" required></label><button class="quiet-btn" type="submit">${isFa?'ارسال صدا':'Send audio'}</button><small class="fineprint">${isFa?'حداکثر ۲۰ مگابایت؛ فایل صوتی خصوصی است.':'Up to 20 MB; audio is private.'}</small><p class="message" role="status"></p></form>`;
+const voiceFormMarkup = (consultationId, isFa, role) => `<form class="${role}-voice-form" data-consultation-id="${esc(consultationId)}"><label>${isFa?'انتخاب فایل صوتی':'Choose audio file'} <input type="file" name="voice_file" accept="audio/*" required></label><button type="button" class="quiet-btn" data-voice-record>${isFa?'ضبط پیام صوتی':'Record voice note'}</button><button class="quiet-btn" type="submit">${isFa?'ارسال صدا':'Send audio'}</button><small class="fineprint">${isFa?'حداکثر ۲۰ مگابایت؛ فایل صوتی خصوصی است.':'Up to 20 MB; audio is private.'}</small><p class="message" role="status"></p></form>`;
+function bindVoiceRecorder(root,isFa) {
+ if (root.dataset.voiceRecorderBound) return;
+ root.dataset.voiceRecorderBound = '1';
+ root.addEventListener('click', async e => {
+  const button = e.target.closest('[data-voice-record]');
+  if (!button) return;
+  e.preventDefault();
+  const form = button.closest('form');
+  const status = form?.querySelector('.message');
+  const input = form?.elements.voice_file;
+  if (!form || !input) return;
+  const active = form._voiceRecorder;
+  if (active) {
+   button.disabled = true;
+   active.recorder.stop();
+   return;
+  }
+  if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') {
+   if (status) status.textContent = isFa ? 'ضبط مستقیم در این مرورگر پشتیبانی نمی‌شود؛ فایل صوتی را انتخاب کنید.' : 'Recording is not supported here; choose an audio file instead.';
+   return;
+  }
+  button.disabled = true;
+  let stream;
+  try {
+   stream = await navigator.mediaDevices.getUserMedia({audio:true});
+   const candidates = ['audio/webm;codecs=opus','audio/ogg;codecs=opus','audio/mp4','audio/webm'];
+   const preferred = candidates.find(type => MediaRecorder.isTypeSupported(type));
+   const recorder = preferred ? new MediaRecorder(stream,{mimeType:preferred}) : new MediaRecorder(stream);
+   const chunks = [];
+   recorder.addEventListener('dataavailable', event => { if (event.data?.size) chunks.push(event.data); });
+   recorder.addEventListener('stop', () => {
+    stream.getTracks().forEach(track => track.stop());
+    const mime = (recorder.mimeType || 'audio/webm').split(';')[0].toLowerCase();
+    const extension = {'audio/webm':'webm','audio/ogg':'ogg','audio/mp4':'m4a'}[mime] || 'webm';
+    const blob = new Blob(chunks,{type:recorder.mimeType || mime});
+    const file = new File([blob],'voice-note-'+Date.now()+'.'+extension,{type:recorder.mimeType || mime});
+    const transfer = new DataTransfer();
+    transfer.items.add(file);
+    input.files = transfer.files;
+    form._voiceRecorder = null;
+    button.dataset.recording = 'false';
+    button.disabled = false;
+    button.textContent = isFa ? 'ضبط دوباره' : 'Record again';
+    if (status) status.textContent = isFa ? 'ضبط پایان یافت؛ برای ارسال، دکمه ارسال صدا را بزنید.' : 'Recording ready; press Send audio to upload it.';
+   });
+   form._voiceRecorder = {recorder,stream};
+   recorder.start();
+   button.dataset.recording = 'true';
+   button.textContent = isFa ? 'پایان ضبط' : 'Stop recording';
+   button.disabled = false;
+   if (status) status.textContent = isFa ? 'در حال ضبط…' : 'Recording…';
+  } catch (error) {
+   stream?.getTracks().forEach(track => track.stop());
+   button.disabled = false;
+   if (status) status.textContent = (isFa ? 'دسترسی به میکروفون ممکن نشد: ' : 'Microphone unavailable: ') + error.message;
+  }
+ });
+}
 async function renderConsultationMessages({supabase,messages,viewerId,isFa}) {
  const items = await Promise.all((messages||[]).map(async m => {
   const voice = Array.isArray(m.content_parts) ? m.content_parts.find(p => p?.type === 'audio' && p.storage_path) : null;
@@ -143,6 +201,7 @@ export function bindFarmerExpertRequests({root,supabase,getProfile,language}) {
 }
 export async function bindExpertWorkspace({root,supabase,profile,language}) {
  const isFa=fa(language), profileForm=root.querySelector('#expertProfileForm'), credForm=root.querySelector('#expertCredentialForm');
+ bindVoiceRecorder(root,isFa);
  let expert=null;
  const say=(id,msg)=>{const el=root.querySelector('#'+id);if(el)el.textContent=msg;};
  async function load(){
@@ -285,6 +344,7 @@ export function renderFarmerCasesSection(lang='fa') {
 }
 export function bindFarmerCases({root,supabase,getProfile,language}) {
  const isFa=fa(language), list=root.querySelector('#farmerExpertCasesList');
+ bindVoiceRecorder(root,isFa);
  async function load(){
   const current=getProfile();if(!current){list.textContent=isFa?'ابتدا وارد شوید.':'Sign in first.';return;}
   const {data:requests,error}=await supabase.from('expert_requests').select('id,subject,problem_description,status,created_at,assigned_expert_profile_id').eq('requester_user_id',current.id).order('created_at',{ascending:false}).limit(30);
