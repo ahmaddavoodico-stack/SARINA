@@ -62,3 +62,13 @@ Migration 015 is a database foundation, not a live payment integration. Payment 
 The farm card now exposes a bilingual contract panel. A farmer can create a private draft for a verified human expert or a SARINA AI service, choose a pricing model, currency and base amount, and optionally describe an outcome-based clause. Drafts are listed by farm. This UI deliberately does not offer acceptance, invoice issuance, payment confirmation or payout controls; those actions require trusted server-side workflows.
 
 Migration 016 links each contract to its farm and optionally to the originating expert request. The insert policy checks that the signed-in farmer owns the linked farm and that a selected human expert is verified.
+
+
+## Contract acceptance workflow (migration 017)
+- A farmer can move their own draft to `proposed`; the offer records the current immutable `terms_snapshot` and version in the audit trail.
+- For human-expert and hybrid contracts, the assigned verified expert and farmer each accept independently. The contract becomes `accepted` only after both accept the same stored version.
+- For SARINA AI-only contracts, farmer acceptance is sufficient because there is no human expert counterparty.
+- Either required party may cancel a draft or proposed offer. The transition is atomic under a row lock and writes an audit event.
+- All transitions are performed by the authenticated `sarina-contract-workflow` Edge Function. The database RPC is executable only by `service_role`; clients cannot update contract lifecycle columns directly.
+- Farmer workspace exposes propose/accept/cancel actions. The verified expert workspace lists offers and exposes accept/decline (recorded as cancellation).
+- Invoice creation and payment are intentionally not triggered by acceptance yet. They remain a separate next stage, after contract acceptance is validated in a real browser session.
