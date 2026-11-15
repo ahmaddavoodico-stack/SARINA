@@ -70,7 +70,7 @@ $('farmForm').addEventListener('submit',async e=>{
  say(t('farmCreated'),'farmMessage');closeFarmForm();await loadFarms();
 });
 $('signOut').addEventListener('click',async()=>{await supabase.auth.signOut();profile=null;showAuth()});
-supabase.auth.onAuthStateChange((event,session)=>{if(event==='SIGNED_IN'&&session?.user&&$('appView').classList.contains('hidden'))enterWorkspace(session.user);if(event==='SIGNED_OUT'){profile=null;showAuth()}});
+supabase.auth.onAuthStateChange((event)=>{if(event==='SIGNED_OUT'){profile=null;showAuth()}});
 const {data:{session}}=await supabase.auth.getSession();
 if(session?.user)await enterWorkspace(session.user);else showAuth();
 if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
