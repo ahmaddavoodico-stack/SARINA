@@ -63,7 +63,7 @@ export async function bindMarketplaceSalesWorkspace({root,supabase,getProfile,ge
  }
  function productOptions(products,selected=''){return '<option value="">'+esc(w().selectProduct)+'</option>'+products.map(x=>'<option value="'+x.id+'" '+(selected===x.id?'selected':'')+'>'+esc(x.name)+'</option>').join('');}
  function sellerOptions(sellers){return sellers.map(s=>'<option value="'+s.id+'">'+esc(s.display_name)+'</option>').join('');}
- let sellers=[],products=[],leads=[],tasks=[],links=[],needs=[],providers=[];
+ let sellers=[],products=[],leads=[],tasks=[],links=[],needs=[],providers=[],selectedSellerId=null;
  async function load(){
   const host=content();if(!host)return;
   const profile=p();if(!profile?.id){host.textContent=w().noSeller;return;}
@@ -86,9 +86,9 @@ export async function bindMarketplaceSalesWorkspace({root,supabase,getProfile,ge
   const orgs=orgIds.length?await supabase.from('organizations').select('id,display_name,city').in('id',orgIds):{data:[]};
   const om=new Map((orgs.data||[]).map(x=>[x.id,x]));
   providers=(sv.data||[]).map(x=>({...x,org:om.get(x.organization_id)}));
-  const seller=sellers[0], sellerId=seller.id, ownProducts=products.filter(x=>x.seller_id===sellerId);
+  const seller=sellers.find(x=>x.id===selectedSellerId)||sellers[0], sellerId=seller.id;selectedSellerId=sellerId;const ownProducts=products.filter(x=>x.seller_id===sellerId);
   const productSelect=productOptions(ownProducts);
-  const sellerSelect=sellerOptions(sellers);
+  const sellerSelect=sellerOptions(sellers,sellerId);
   const queued=readQueue().length;
   const taskLabel=(t)=>lang()==='fa'?(taskNames[t]||t):({market_research:'Market research',pricing:'Pricing',buyer_outreach:'Buyer outreach',follow_up:'Follow-up',quality_check:'Quality check',standard_certification:'Standards',grading:'Grading',packaging:'Packaging',storage:'Storage',transport:'Transport',export_documents:'Export documents',contract:'Contract',delivery:'Delivery',other:'Other'}[t]||t);
   host.innerHTML=
@@ -115,7 +115,7 @@ export async function bindMarketplaceSalesWorkspace({root,supabase,getProfile,ge
    const result=await persist(table,payload);setMessage(form,result.error?result.error.message:result.queued?w().queued:w().saved);if(!result.error){form.reset();await load();}
   });
   root.addEventListener('change',async e=>{
-   const sellerSelect=e.target.closest('[data-sales-seller]');if(sellerSelect){await load();return;}
+   const sellerSelect=e.target.closest('[data-sales-seller]');if(sellerSelect){selectedSellerId=sellerSelect.value;await load();return;}
    const lead=e.target.closest('[data-lead-stage]');if(lead){const {error}=await supabase.from('marketplace_sales_leads').update({stage:lead.value}).eq('id',lead.dataset.leadStage);if(error)alert(error.message);else await load();return;}
    const task=e.target.closest('[data-task-status]');if(task){const {error}=await supabase.from('marketplace_sales_tasks').update({status:task.value}).eq('id',task.dataset.taskStatus);if(error)alert(error.message);else await load();}
   });
