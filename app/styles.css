@@ -124,3 +124,30 @@
 .communication-actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:10px}
 .communication-actions button{flex:1}
 @media(max-width:760px){.communication-layout{grid-template-columns:1fr;gap:10px;min-height:0}.communication-panel{max-width:none;justify-self:stretch;padding:18px}.communication-channel-grid{grid-template-columns:1fr 1fr}.communication-actions{flex-direction:column}.communication-actions button{width:100%}}
+
+
+/* SARINA flexible weekly farm work planner */
+.planner-week-nav{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:14px 0;padding:10px;border:1px solid var(--line,#dce6df);border-radius:12px;background:var(--surface-soft,#f7faf7)}
+.planner-week-nav strong{font-size:12px;color:var(--text,#294638);text-align:center}
+.planner-week-nav button{font-size:11px;padding:7px 9px}
+.planner-crops,.planner-progress{margin:12px 0;padding:12px;border:1px solid var(--line,#dce6df);border-radius:12px;background:var(--surface,#fff)}
+.planner-crops h4,.operations-panel>h4{margin:4px 0 10px;color:var(--heading,#315b45);font-size:13px}
+.planner-crop-card{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:9px 0;border-top:1px solid #edf1ed;font-size:12px}
+.planner-crop-card span{font-size:11px;color:var(--muted,#687c70);text-align:end}
+.planner-progress-head{display:flex;justify-content:space-between;gap:8px;font-size:12px}
+.planner-progress-head span{color:var(--muted,#687c70);font-variant-numeric:tabular-nums}
+.planner-progress-track{height:8px;background:#e9efe9;border-radius:20px;overflow:hidden;margin:9px 0}
+.planner-progress-track span{display:block;height:100%;width:0;background:#43865d;border-radius:20px;transition:width .2s}
+.planner-progress>p,.planner-review-hint{font-size:11px;line-height:1.8;color:var(--muted,#687c70);margin:8px 0 0}
+.planner-task-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.planner-priority{font-size:10px;border-radius:20px;padding:4px 8px;background:#edf2ed;color:#526c59}
+.planner-priority-high{background:#fff4dc;color:#8a6424}.planner-priority-urgent{background:#fae9e6;color:#9a4035}
+.planner-add{margin:14px 0;padding:11px;border:1px solid var(--line,#dce6df);border-radius:12px}
+.planner-add summary{cursor:pointer;font-weight:700;color:var(--heading,#315b45);font-size:13px}
+.operations-form{display:grid;grid-template-columns:1fr 1fr;gap:0 10px;margin-top:12px}
+.operations-form label{display:flex;flex-direction:column;gap:6px;margin-bottom:10px;font-size:11px;color:var(--muted,#687c70)}
+.operations-form input,.operations-form select,.operations-form textarea{box-sizing:border-box;width:100%;min-width:0;border:1px solid var(--line,#dce6df);border-radius:9px;padding:9px;background:var(--surface,#fff);font:inherit;font-size:12px}
+.operations-wide{grid-column:1/-1}
+.operations-actions{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
+.operations-actions button{font-size:10px;padding:6px 9px}
+@media(max-width:600px){.planner-week-nav{flex-wrap:wrap}.planner-week-nav strong{order:-1;width:100%}.planner-crop-card{align-items:flex-start;flex-direction:column}.planner-crop-card span{text-align:start}.operations-form{grid-template-columns:1fr}.operations-wide{grid-column:auto}}
