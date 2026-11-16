@@ -36,6 +36,12 @@ const copy = {
     phase4State: 'پس از اتصال رویدادها',
     phase5: 'مرحله ۵ · پیشنهادهای مدیریتی مبتنی بر شواهد',
     phase5State: 'پس از اعتبارسنجی داده‌ها',
+    diagnosticsTitle: 'عیب‌یابی و سلامت عملیاتی',
+    diagnosticsIntro: 'بررسی‌های کم‌خطر و فقط‌خواندنی برای شناسایی مشکلات قابل مشاهده در مرورگر و نشست فعلی.',
+    diagnosticsRun: 'اجرای بررسی‌ها',
+    diagnosticLabels: {network:'اتصال شبکه',storage:'ذخیره‌سازی محلی',worker:'سرویس‌ورکر',shell:'ساختار رابط',auth:'احراز هویت',admin:'پروفایل و نقش مدیر'},
+    diagnosticStates: {pass:'موفق',warn:'نیازمند بررسی',fail:'ناموفق'},
+    diagnosticNote: 'این بررسی‌ها سلامت کامل سرور، دیتابیس یا همه مسیرهای کاربر را اثبات نمی‌کنند و جایگزین پایش سمت سرور نیستند.',
     evidenceTitle: 'مرز دقت و شواهد',
     evidence: 'تا زمانی که رابط مدیریتیِ سمت سرور ساخته و آزمایش نشده، آمار کل کاربران، مزارع، سفارش‌ها، گزارش‌های امنیتی و سلامت سرویس‌ها نمایش داده نمی‌شود. دسترسی مرورگر به داده‌های شخصی کاربران یا دور زدن RLS مجاز نیست.',
     activityTitle: 'رویدادهای مدیریتی',
@@ -87,6 +93,12 @@ const copy = {
     phase4State: 'After event integration',
     phase5: 'Phase 5 · Evidence-based management recommendations',
     phase5State: 'After data validation',
+    diagnosticsTitle: 'Diagnostics and operational health',
+    diagnosticsIntro: 'Low-risk, read-only checks for issues visible in this browser and session.',
+    diagnosticsRun: 'Run checks',
+    diagnosticLabels: {network:'Network connectivity',storage:'Local storage',worker:'Service worker',shell:'Interface structure',auth:'Authentication',admin:'Admin profile and role'},
+    diagnosticStates: {pass:'Passed',warn:'Needs review',fail:'Failed'},
+    diagnosticNote: 'These checks do not prove full server, database or end-to-end health and do not replace server-side monitoring.',
     evidenceTitle: 'Evidence and accuracy boundary',
     evidence: 'Until server-side admin interfaces are implemented and tested, platform-wide counts, orders, security events and service health are not displayed. The browser must not bypass RLS or expose other users’ private records.',
     activityTitle: 'Administrative events',
@@ -155,6 +167,25 @@ export function bindAdminWorkspace({root, supabase, getProfile, getLanguage}) {
   if (!root || root.dataset.adminBound === '1') return;
   root.dataset.adminBound = '1';
 
+  const runDiagnostics = async () => {
+    const lang=getLanguage(), t=copy[lang]||copy.en, host=root.querySelector('[data-admin-diagnostic-results]');
+    if(!host) return;
+    host.textContent=lang==='fa'?'در حال اجرای بررسی‌ها…':'Running checks…';
+    const results=[];
+    const add=(key,status,detail)=>results.push({key,status,detail});
+    try { add('network',navigator.onLine?'pass':'warn',navigator.onLine?(lang==='fa'?'مرورگر اتصال شبکه را گزارش می‌کند.':'Browser reports network connectivity.'):(lang==='fa'?'مرورگر آفلاین است؛ سرویس‌های ابری قابل تأیید نیستند.':'Browser is offline; cloud services cannot be verified.')); } catch(e){add('network','warn',String(e.message||e));}
+    try { const k='sarina.diag.probe';localStorage.setItem(k,'ok');const ok=localStorage.getItem(k)==='ok';localStorage.removeItem(k);add('storage',ok?'pass':'fail',ok?(lang==='fa'?'خواندن و نوشتن آزمایشی موفق بود.':'Temporary read/write succeeded.'):(lang==='fa'?'خواندن مقدار آزمایشی ناموفق بود.':'Probe read failed.')); } catch(e){add('storage','fail',String(e.message||e));}
+    try { const supported='serviceWorker' in navigator;const reg=supported?await navigator.serviceWorker.getRegistration():null;add('worker',reg?'pass':'warn',reg?(lang==='fa'?'ثبت سرویس‌ورکر پیدا شد.':'Service worker registration found.'):(lang==='fa'?'ثبت سرویس‌ورکر پیدا نشد؛ HTTPS یا localhost را بررسی کنید.':'No service worker registration; check HTTPS or localhost.')); } catch(e){add('worker','warn',String(e.message||e));}
+    try { const ids=['mainWorkspace','adminWorkspace','farmList','roleNavigation'];const missing=ids.filter(id=>!document.getElementById(id));add('shell',missing.length?'fail':'pass',missing.length?(lang==='fa'?'شناسه‌های مفقود: ':'Missing IDs: ')+missing.join(', '):(lang==='fa'?'اجزای اصلی رابط پیدا شدند.':'Core interface elements found.')); } catch(e){add('shell','warn',String(e.message||e));}
+    try { const {data,error}=await supabase.auth.getUser();if(error||!data?.user)add('auth','fail',error?.message||(lang==='fa'?'نشست کاربر تأیید نشد.':'User session not verified.'));else add('auth','pass',lang==='fa'?'نشست احراز هویت پاسخ معتبر داد.':'Authentication returned a valid session.'); } catch(e){add('auth','fail',String(e.message||e));}
+    try { const {data:u,error:ue}=await supabase.auth.getUser();if(ue||!u?.user)throw ue||new Error('No authenticated user');const {data:a,error:ae}=await supabase.from('users').select('id').eq('auth_user_id',u.user.id).maybeSingle();if(ae)throw ae;if(!a)throw new Error(lang==='fa'?'پروفایل پیدا نشد.':'Profile not found.');const {data:roles,error:re}=await supabase.from('user_roles').select('roles(code)').eq('user_id',a.id).eq('scope_type','global').is('scope_id',null);if(re)throw re;const ok=(roles||[]).some(x=>x.roles?.code==='admin');add('admin',ok?'pass':'fail',ok?(lang==='fa'?'پروفایل و نقش مدیر تأیید شد.':'Admin profile and role verified.'):(lang==='fa'?'نقش مدیر سیستم تأیید نشد.':'System admin role was not verified.')); } catch(e){add('admin','fail',String(e.message||e));}
+    host.innerHTML=results.map(x=>'<article class="admin-diagnostic-card is-'+x.status+'"><div><b>'+esc(t.diagnosticLabels[x.key])+'</b><span>'+esc(t.diagnosticStates[x.status])+'</span></div><p>'+esc(x.detail)+'</p></article>').join('');
+    const failed=results.filter(x=>x.status==='fail').length,warned=results.filter(x=>x.status==='warn').length;
+    const summary=document.createElement('p');summary.className='admin-diagnostic-summary';summary.textContent=failed?(lang==='fa'?failed+' خطای قابل مشاهده و '+warned+' هشدار':' '+failed+' visible failures and '+warned+' warnings'):warned?(lang==='fa'?'خطای قطعی پیدا نشد؛ '+warned+' هشدار نیازمند بررسی است.': 'No confirmed failures; '+warned+' warnings need review.'):(lang==='fa'?'همه بررسی‌های انجام‌شده موفق بودند.':'All performed checks passed.');
+    host.prepend(summary);
+    if(failed){const message=root.querySelector('[data-admin-message]');if(message)message.textContent=lang==='fa'?'عیب‌یابی خطای قابل مشاهده پیدا کرد.':'Diagnostics found a visible failure.';}
+  };
+
   const refresh = async () => {
     const lang = getLanguage();
     const t = copy[lang] || copy.en;
@@ -201,7 +232,7 @@ export function bindAdminWorkspace({root, supabase, getProfile, getLanguage}) {
   };
 
   root.addEventListener('click', event => {
-    if (event.target.closest('[data-admin-refresh]')) refresh();
+    if (event.target.closest('[data-admin-refresh]')) refresh();\n    if (event.target.closest('[data-admin-diagnostics]')) runDiagnostics();
   });
   refresh();
 }
