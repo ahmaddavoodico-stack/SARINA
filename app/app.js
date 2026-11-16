@@ -137,6 +137,11 @@ function renderCropForm(farmId){
  '<label><span>'+cw('cultivar')+'</span><input name="cultivar" maxlength="120" placeholder="'+cw('cultivarHint')+'"></label>'+
  '<label><span>'+cw('treeCount')+'</span><input name="plant_count" type="number" min="1" step="1" required></label>'+
  '<label><span>'+cw('age')+'</span><input name="age_years" type="number" min="0" max="200" step="0.5"></label>'+
+ '<label><span>'+(language==='fa'?'تاریخ کاشت (اختیاری)':'Planting date (optional)')+'</span><input name="planting_date" type="date"></label>'+
+ select('growth_stage','growthStage',[['unknown','unsure'],['establishment','establishment'],['vegetative','vegetative'],['flowering','flowering'],['fruit_development','fruitDevelopment'],['maturity','maturity'],['post_harvest','postHarvest']])+
+ '<div class="crop-production-section"><p>'+(language==='fa'?'زمان تقریبی برداشت (اختیاری؛ بازه بهتر از تاریخ قطعی است)':'Expected harvest window (optional; a range is better than a fixed date)')+'</p></div>'+
+ '<label><span>'+(language==='fa'?'شروع بازه برداشت':'Expected harvest from')+'</span><input name="expected_harvest_start" type="date"></label>'+
+ '<label><span>'+(language==='fa'?'پایان بازه برداشت':'Expected harvest to')+'</span><input name="expected_harvest_end" type="date"></label>'+
  '<label><span>'+cw('treeSpacing')+'</span><input name="in_row_spacing_m" type="number" min="0" max="100" step="0.01"></label>'+
  '<label><span>'+cw('rowSpacing')+'</span><input name="between_row_spacing_m" type="number" min="0" max="100" step="0.01"></label>'+
  select('planting_pattern','plantingPattern',[['unknown','unsure'],['regular','regular'],['irregular','irregular'],['mixed','mixedPattern']])+ 
