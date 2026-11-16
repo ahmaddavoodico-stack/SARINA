@@ -97,7 +97,7 @@ Private helper functions in the private schema are used by RLS policies. Public 
 - Create operations are queued in user-scoped browser local storage while offline and retried after reconnection. Status edits currently require connectivity; authenticated API responses are not cached.
 - This is a workflow/data foundation, not yet autonomous global buyer discovery. Leads are currently entered by the seller or recorded from external research; source provenance and verification status are retained. Automated public-market research, buyer matching, live price feeds, AI-generated marketing copy, outreach messaging and contract execution remain later phases.
 - Service provider suggestions are limited to active services already registered in SARINA. A missing directory entry is not treated as proof that no provider exists in the real market.
-- Weekly sales tasks are currently managed in this marketplace workspace. Merging them into the farmer's unified farm-work planner, with shared weekly workload balancing, is a follow-on integration.
+- Weekly sales tasks can be linked to a farmer-owned farm and appear alongside agricultural work in the unified weekly planner. Cross-task workload balancing and automatic scheduling remain future work.
 - Payment remains unconfigured and no order is represented as paid. No buyer is contacted, no offer is sent, and no booking/contract is created automatically.
 
 
@@ -106,3 +106,8 @@ Private helper functions in the private schema are used by RLS policies. Public 
 - Linked sales tasks with a due date appear alongside agricultural work in the existing farm weekly planner. Farmers can start, complete, defer or cancel them from the same weekly view.
 - Tasks without a linked farm or due date remain available in the Marketing & Sales workspace and do not appear in a farm-specific weekly plan.
 - The sales planner and farm planner use separate records and status vocabularies, but now share the same weekly view. Full workload optimization and automatic scheduling are not yet enabled.
+
+
+### Database hardening follow-up
+- Migration 040 adds child-side indexes for the new product/service foreign keys and consolidates external-link SELECT authorization into one policy. This keeps owner access to private links while allowing anonymous reads only for links explicitly marked public on published products from verified sellers.
+- The new sales-intelligence tables have RLS enabled. The current security advisor run reports no new security findings for these tables. Performance advisor still reports the new indexes as unused because the tables are not yet populated/queried in live seller sessions; they are retained for the expected access paths.
