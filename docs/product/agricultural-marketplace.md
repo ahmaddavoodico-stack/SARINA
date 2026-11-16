@@ -85,3 +85,17 @@ Private helper functions in the private schema are used by RLS policies. Public 
 - Security advisors still report authenticated execution of the three intentionally exposed SECURITY DEFINER marketplace RPCs. They validate auth.uid(), resolve the active SARINA profile, and restrict operations to that buyer's own cart/order. This is a deliberate server-enforced transaction boundary; do not weaken the checks to silence the lint.
 - Existing unrelated project advisor findings (including legacy RLS-without-policy tables, PostGIS extension placement, and spatial_ref_sys) were not changed as part of this marketplace work.
 - Browser sign-in, seller verification, real checkout, payment-provider webhooks and end-to-end delivery have not yet been tested. The current Vercel preview may not include this branch's latest changes because of the previously reported build rate limit.
+
+
+## SARINA Marketing & Sales Intelligence — first implementation slice
+- The marketplace now has a dedicated **Marketing & Sales** workspace connected to each seller profile and its products.
+- Seller-owned sales leads capture prospective buyer/center, buyer category, destination, product fit, required quantity, indicative price, public source URL, optional contact details, source type, verification state, sales stage and next follow-up.
+- Sales tasks capture weekly commercial work such as market research, pricing, buyer outreach, follow-up, quality checks, standards, grading, packaging, storage, transport, export documents, contracts and delivery.
+- Product external links support websites, social pages, product pages and catalogs. Public display is opt-in per link and is restricted by RLS to published products from verified sellers.
+- Product-specific service needs cover laboratory testing, inspection, certification, grading, packaging, storage, domestic/international transport, customs, export documents, insurance and processing. The UI reuses active `organization_services` entries rather than creating a duplicate provider directory.
+- RLS is enabled on all four new tables. Sales leads, tasks and service needs are private to the seller owner. External links are private by default; public reads require explicit `is_public`, a published product and a verified seller.
+- Create operations are queued in user-scoped browser local storage while offline and retried after reconnection. Status edits currently require connectivity; authenticated API responses are not cached.
+- This is a workflow/data foundation, not yet autonomous global buyer discovery. Leads are currently entered by the seller or recorded from external research; source provenance and verification status are retained. Automated public-market research, buyer matching, live price feeds, AI-generated marketing copy, outreach messaging and contract execution remain later phases.
+- Service provider suggestions are limited to active services already registered in SARINA. A missing directory entry is not treated as proof that no provider exists in the real market.
+- Weekly sales tasks are currently managed in this marketplace workspace. Merging them into the farmer's unified farm-work planner, with shared weekly workload balancing, is a follow-on integration.
+- Payment remains unconfigured and no order is represented as paid. No buyer is contacted, no offer is sent, and no booking/contract is created automatically.
