@@ -16,7 +16,38 @@
     <div class="top-actions"><button id="langToggle" class="quiet-btn" type="button">EN</button><button id="signOut" class="quiet-btn hidden" type="button" data-i18n="signOut">خروج</button></div>
   </header>
   <main class="shell">
-    <section id="authView" class="auth-layout">
+    <section id="localeView" class="locale-layout">
+      <div class="welcome">
+        <span class="eyebrow">SARINA</span>
+        <h1 id="localeWelcomeTitle">به سارینا خوش آمدید</h1>
+        <p id="localeWelcomeIntro">برای شروع، کشور خود را انتخاب کنید.</p>
+      </div>
+      <section class="panel locale-panel">
+        <label><span id="countryLabel">کشور محل فعالیت</span>
+          <select id="countrySelect">
+            <option value="IR" data-official-language="fa">ایران</option>
+            <option value="US" data-official-language="en">United States</option>
+            <option value="GB" data-official-language="en">United Kingdom</option>
+            <option value="CA" data-official-language="en">Canada</option>
+            <option value="AU" data-official-language="en">Australia</option>
+          </select>
+        </label>
+        <div class="locale-question">
+          <h2 id="localeQuestion">دوست دارید با سارینا به چه زبانی صحبت کنید؟</h2>
+          <p id="localeHint">زبان رسمی کشور ابتدا نمایش داده می‌شود؛ شما می‌توانید زبان گفتگو را تغییر دهید.</p>
+        </div>
+        <label><span id="conversationLanguageLabel">زبان گفتگو با سارینا</span>
+          <select id="conversationLanguageSelect">
+            <option value="fa">فارسی</option>
+            <option value="en">English</option>
+          </select>
+        </label>
+        <button id="localeContinue" class="primary-btn" type="button">ادامه</button>
+        <p id="localeMessage" class="message" role="status"></p>
+        <p class="fineprint" id="localePrivacy">انتخاب کشور و زبان مستقل از یکدیگر ذخیره می‌شوند و بعداً قابل تغییر هستند.</p>
+      </section>
+    </section>
+    <section id="authView" class="auth-layout hidden">
       <div class="welcome">
         <span class="eyebrow" data-i18n="eyebrow">همراه هوشمند فعالیت‌های شما</span>
         <h1 data-i18n="headline">همه فعالیت‌ها، یک حساب در سارینا.</h1>
