@@ -15,6 +15,15 @@ const $ = (id) => document.getElementById(id);
 let mode = 'login';
 let profile = null;
 let language = 'fa';
+let localeComplete = false;
+let selectedCountry = 'IR';
+const localeCopy = {
+ fa:{welcome:'به سارینا خوش آمدید',intro:'برای شروع، کشور خود را انتخاب کنید.',country:'کشور محل فعالیت',question:'دوست دارید با سارینا به چه زبانی صحبت کنید؟',hint:'ابتدا پرسش‌ها به زبان رسمی کشور نمایش داده می‌شوند؛ شما می‌توانید زبان گفتگو را انتخاب کنید.',language:'زبان گفتگو با سارینا',continue:'ادامه',privacy:'انتخاب کشور و زبان مستقل از یکدیگر ذخیره می‌شوند و بعداً قابل تغییر هستند.',required:'کشور و زبان گفتگو را انتخاب کنید.'},
+ en:{welcome:'Welcome to SARINA',intro:'To get started, choose your country.',country:'Country of operation',question:'Which language would you like to use with SARINA?',hint:'The first prompts use the country’s official language. You can choose a different conversation language.',language:'Conversation language',continue:'Continue',privacy:'Your country and language are stored separately and can be changed later.',required:'Choose a country and conversation language.'}
+};
+function renderLocalePrompt(){const official=$('countrySelect')?.selectedOptions?.[0]?.dataset.officialLanguage||'en';const copy=localeCopy[official]||localeCopy.en;document.documentElement.lang=official;document.documentElement.dir=official==='fa'?'rtl':'ltr';$('localeWelcomeTitle').textContent=copy.welcome;$('localeWelcomeIntro').textContent=copy.intro;$('countryLabel').textContent=copy.country;$('localeQuestion').textContent=copy.question;$('localeHint').textContent=copy.hint;$('conversationLanguageLabel').textContent=copy.language;$('localeContinue').textContent=copy.continue;$('localePrivacy').textContent=copy.privacy;$('localeMessage').textContent='';}
+function restoreLocale(){try{const saved=JSON.parse(localStorage.getItem('sarina.locale.v1')||'null');if(saved?.country&&saved?.conversationLanguage){selectedCountry=saved.country;language=saved.conversationLanguage;localeComplete=true;return saved;}}catch(error){console.warn('Saved locale preferences could not be read',error)}return null;}
+function completeLocale(){const country=$('countrySelect').value,conversationLanguage=$('conversationLanguageSelect').value;if(!country||!conversationLanguage){$('localeMessage').textContent=localeCopy[language].required;return;}selectedCountry=country;language=conversationLanguage;try{localStorage.setItem('sarina.locale.v1',JSON.stringify({version:1,country,officialLanguage:$('countrySelect').selectedOptions[0].dataset.officialLanguage,conversationLanguage,updatedAt:new Date().toISOString()}));}catch(error){console.warn('Locale preferences could not be saved locally',error)}localeComplete=true;$('localeView').classList.add('hidden');$('authView').classList.remove('hidden');setLanguage(language);}
 // Canonical, farm-specific weather payloads retained for the analysis orchestration layer.
 const farmWeatherContexts = new Map();
 const farmLandContexts = new Map();
@@ -72,7 +81,7 @@ function say(message, target='globalMessage'){const el=$(target);el.textContent=
 function setLanguage(next){language=next;document.documentElement.lang=next;document.documentElement.dir=next==='fa'?'rtl':'ltr';$('langToggle').textContent=next==='fa'?'EN':'فا';document.querySelectorAll('[data-i18n]').forEach(el=>{const key=el.dataset.i18n;if(words[language][key])el.textContent=t(key)});renderAuthMode();if($('roleNavigation')?.children.length)renderRoleNavigation();if(activeWorkspaceCode==='marketplace'&&!$('marketplaceWorkspace').classList.contains('hidden')){$('marketplaceWorkspace').dataset.marketReady='';$('marketplaceWorkspace').innerHTML=renderMarketplaceWorkspace(language);bindMarketplaceWorkspace({root:$('marketplaceWorkspace'),supabase,getProfile:()=>profile,getLanguage:()=>language});$('marketplaceWorkspace').dataset.marketReady='1';}if(!$('roleOnboarding').classList.contains('hidden'))renderRoleOnboarding(currentRoleCodes);if(activeWorkspaceCode==='organization'&&!$('organizationWorkspace').classList.contains('hidden')){$('organizationWorkspace').dataset.orgBound='';$('organizationWorkspace').innerHTML=renderOrganizationWorkspace(language);bindOrganizationWorkspace({root:$('organizationWorkspace'),supabase,getLanguage:()=>language});$('organizationWorkspace').dataset.orgReady='1';}if(!$('adminWorkspace').classList.contains('hidden')){$('adminWorkspace').dataset.adminBound='';$('adminWorkspace').innerHTML=renderAdminWorkspace(language,profile);bindAdminWorkspace({root:$('adminWorkspace'),supabase,getProfile:()=>profile,getLanguage:()=>language});}}
 function renderAuthMode(){const signup=mode==='signup';$('nameWrap').classList.toggle('hidden',!signup);$('fullName').required=signup;$('loginTab').classList.toggle('active',!signup);$('signupTab').classList.toggle('active',signup);$('authSubmit').textContent=t(signup?'signup':'login');$('password').autocomplete=signup?'new-password':'current-password'}
 function showApp(){ $('authView').classList.add('hidden');$('appView').classList.remove('hidden');$('signOut').classList.remove('hidden');$('farmerName').textContent=profile?.full_name||profile?.email?.split('@')[0]||t('hello');}
-function showAuth(){ $('authView').classList.remove('hidden');$('appView').classList.add('hidden');$('signOut').classList.add('hidden');$('adminWorkspace').classList.add('hidden');}
+function showAuth(){ $('authView').classList.toggle('hidden',!localeComplete);$('localeView').classList.toggle('hidden',localeComplete);$('appView').classList.add('hidden');$('signOut').classList.add('hidden');$('adminWorkspace').classList.add('hidden');}
 async function ensureProfile(user){
   const payload={auth_user_id:user.id,email:user.email||null,full_name:user.user_metadata?.full_name||user.email?.split('@')[0]||'SARINA User',preferred_language:language,account_status:'active'};
   const {data,error}=await supabase.from('users').upsert(payload,{onConflict:'auth_user_id'}).select('id,email,full_name,preferred_language').single();
@@ -186,7 +195,9 @@ function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':
 function openFarmForm(){$('farmFormPanel').classList.remove('hidden');$('farmName').focus()}
 function closeFarmForm(){$('farmFormPanel').classList.add('hidden');$('farmForm').reset();$('farmMessage').textContent=''}
 async function enterWorkspace(user){try{$('expertWorkspace').innerHTML='';$('expertWorkspace').dataset.ready='';$('farmerCasesMount').dataset.ready='';$('farmerCasesMount').innerHTML='';$('expertWorkspace').classList.add('hidden');$('livestockWorkspace').classList.add('hidden');$('organizationWorkspace').classList.add('hidden');await ensureProfile(user);await loadRoleCodes();showApp();if(currentRoleCodes.includes('admin')){$('roleOnboarding').classList.add('hidden');$('mainWorkspace').classList.add('hidden');const adminRoot=$('adminWorkspace');adminRoot.classList.remove('hidden');adminRoot.innerHTML=renderAdminWorkspace(language,profile);bindAdminWorkspace({root:adminRoot,supabase,getProfile:()=>profile,getLanguage:()=>language});}else if(!currentRoleCodes.length){$('mainWorkspace').classList.add('hidden');$('roleOnboarding').classList.remove('hidden');renderRoleOnboarding([]);}else{$('roleOnboarding').classList.add('hidden');$('mainWorkspace').classList.remove('hidden');renderRoleNavigation();const first=['farmer','livestock_keeper','expert','organization'].find(c=>currentRoleCodes.includes(c));if(first)await activateWorkspace(first);}}catch(error){console.error(error);showAuth();say(t('profileMissing'),'authMessage')}}
-$('loginTab').addEventListener('click',()=>{mode='login';renderAuthMode()});
+$('countrySelect').addEventListener('change',()=>{const official=$('countrySelect').selectedOptions[0]?.dataset.officialLanguage||'en';$('conversationLanguageSelect').value=official==='fa'?'fa':'en';renderLocalePrompt()});
+ $('localeContinue').addEventListener('click',completeLocale);
+ $('loginTab').addEventListener('click',()=>{mode='login';renderAuthMode()});
 $('signupTab').addEventListener('click',()=>{mode='signup';renderAuthMode()});
 $('langToggle').addEventListener('click',()=>{setLanguage(language==='fa'?'en':'fa');if(profile&&!$('appView').classList.contains('hidden'))loadFarms()});
 $('authForm').addEventListener('submit',async e=>{
@@ -276,7 +287,10 @@ $('farmList').addEventListener('submit',async e=>{
 $('signOut').addEventListener('click',async()=>{await supabase.auth.signOut();profile=null;showAuth()});
 supabase.auth.onAuthStateChange((event)=>{if(event==='SIGNED_OUT'){profile=null;showAuth()}});
 const {data:{session}}=await supabase.auth.getSession();
-if(session?.user)await enterWorkspace(session.user);else showAuth();
+const savedLocale=restoreLocale();
+ if(savedLocale){$('countrySelect').value=savedLocale.country;$('conversationLanguageSelect').value=savedLocale.conversationLanguage;localeComplete=true;setLanguage(savedLocale.conversationLanguage);$('localeView').classList.add('hidden');}
+ else{localeComplete=false;renderLocalePrompt();}
+ if(session?.user){if(!localeComplete){localeComplete=true;}await enterWorkspace(session.user);}else showAuth();
 if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
 setLanguage('fa');
 
