@@ -203,8 +203,8 @@ export function bindAdminWorkspace({root, supabase, getProfile, getLanguage}) {
         .select('id,email,full_name,account_status')
         .eq('auth_user_id',userResult.user.id)
         .maybeSingle();
-      if (roleError) throw roleError;
-      if (!account || profileError) {
+      if (profileError) throw profileError;
+      if (!account) {
         set('[data-admin-role]', t.unavailable); set('[data-admin-profile]', t.unavailable); set('[data-admin-overall]', t.denied);
         set('[data-admin-message]', t.profileMissing); return;
       }
@@ -232,7 +232,8 @@ export function bindAdminWorkspace({root, supabase, getProfile, getLanguage}) {
   };
 
   root.addEventListener('click', event => {
-    if (event.target.closest('[data-admin-refresh]')) refresh();\n    if (event.target.closest('[data-admin-diagnostics]')) runDiagnostics();
+    if (event.target.closest('[data-admin-refresh]')) refresh();
+    if (event.target.closest('[data-admin-diagnostics]')) runDiagnostics();
   });
   refresh();
 }
