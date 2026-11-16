@@ -17,6 +17,7 @@ let profile = null;
 let language = 'fa';
 let localeComplete = false;
 let selectedCountry = 'IR';
+let pendingSessionUser = null;
 const localeCopy = {
  fa:{welcome:'به سارینا خوش آمدید',intro:'برای شروع، کشور خود را انتخاب کنید.',country:'کشور محل فعالیت',question:'دوست دارید با سارینا به چه زبانی صحبت کنید؟',hint:'ابتدا پرسش‌ها به زبان رسمی کشور نمایش داده می‌شوند؛ شما می‌توانید زبان گفتگو را انتخاب کنید.',language:'زبان گفتگو با سارینا',continue:'ادامه',privacy:'انتخاب کشور و زبان مستقل از یکدیگر ذخیره می‌شوند و بعداً قابل تغییر هستند.',required:'کشور و زبان گفتگو را انتخاب کنید.'},
  en:{welcome:'Welcome to SARINA',intro:'To get started, choose your country.',country:'Country of operation',question:'Which language would you like to use with SARINA?',hint:'The first prompts use the country’s official language. You can choose a different conversation language.',language:'Conversation language',continue:'Continue',privacy:'Your country and language are stored separately and can be changed later.',required:'Choose a country and conversation language.'}
@@ -290,7 +291,7 @@ const {data:{session}}=await supabase.auth.getSession();
 const savedLocale=restoreLocale();
  if(savedLocale){$('countrySelect').value=savedLocale.country;$('conversationLanguageSelect').value=savedLocale.conversationLanguage;localeComplete=true;setLanguage(savedLocale.conversationLanguage);$('localeView').classList.add('hidden');}
  else{localeComplete=false;renderLocalePrompt();}
- if(session?.user){if(!localeComplete){localeComplete=true;}await enterWorkspace(session.user);}else showAuth();
+ if(session?.user){if(!localeComplete){pendingSessionUser=session.user;showAuth();}else await enterWorkspace(session.user);}else showAuth();
 if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
 setLanguage('fa');
 
