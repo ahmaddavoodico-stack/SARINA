@@ -170,3 +170,14 @@ This is the first usable farmer portal slice, not the complete product. Farm loc
 - Checks browser-reported online status, temporary localStorage read/write, service-worker registration, required shell element presence, authenticated user lookup, and the signed-in account's global admin role using existing RLS-protected reads.
 - Results distinguish passed, warning and failed checks; details are escaped before rendering. No diagnostic writes to application tables, no user-private cross-account reads, no automatic repair and no physical action are performed.
 - This is a client/session-level diagnostic slice only. It does not claim database-wide, server, edge-function, deployment, security-log or end-to-end health. Those require trusted server-side probes and event sources.
+
+
+## Marketplace marketing and sales workspace
+- The marketplace includes a dedicated Marketing & Sales tab in `app/marketplace.js`, implemented in `app/marketplace-sales.js`.
+- Sellers can record buyer prospects with source/provenance, destination, need, indicative quantity/price, contact details, verification status, sales stage and follow-up.
+- Weekly sales tasks cover research, pricing, buyer outreach, standards, grading, packaging, storage, transport, export documents, contracts and delivery.
+- Product social pages, websites, product pages and catalogs can be attached as external links. Public visibility is opt-in and subject to the product being published by a verified seller.
+- Product service needs reuse the active SARINA `organization_services` directory. They do not create duplicate provider records.
+- New inserts are queued in user-scoped local storage when offline and retried after reconnection. Status updates currently require an active connection.
+- Migrations `037_marketplace_sales_intelligence_foundation` and `038_marketplace_external_link_public_read` are applied to the connected project and tracked under `database/migrations/`.
+- Current limits: autonomous buyer discovery, live market-price intelligence, AI-generated product marketing content, outbound messaging, and unified display inside the farm work planner are not yet implemented. No buyer is contacted and no commercial commitment is created automatically.
