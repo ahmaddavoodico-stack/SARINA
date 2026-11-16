@@ -24,7 +24,7 @@ const localeCopy = {
 };
 function renderLocalePrompt(){const official=$('countrySelect')?.selectedOptions?.[0]?.dataset.officialLanguage||'en';const copy=localeCopy[official]||localeCopy.en;document.documentElement.lang=official;document.documentElement.dir=official==='fa'?'rtl':'ltr';$('localeWelcomeTitle').textContent=copy.welcome;$('localeWelcomeIntro').textContent=copy.intro;$('countryLabel').textContent=copy.country;$('localeQuestion').textContent=copy.question;$('localeHint').textContent=copy.hint;$('conversationLanguageLabel').textContent=copy.language;$('localeContinue').textContent=copy.continue;$('localePrivacy').textContent=copy.privacy;$('localeMessage').textContent='';}
 function restoreLocale(){try{const saved=JSON.parse(localStorage.getItem('sarina.locale.v1')||'null');if(saved?.country&&saved?.conversationLanguage){selectedCountry=saved.country;language=saved.conversationLanguage;localeComplete=true;return saved;}}catch(error){console.warn('Saved locale preferences could not be read',error)}return null;}
-function completeLocale(){const country=$('countrySelect').value,conversationLanguage=$('conversationLanguageSelect').value;if(!country||!conversationLanguage){$('localeMessage').textContent=localeCopy[language].required;return;}selectedCountry=country;language=conversationLanguage;try{localStorage.setItem('sarina.locale.v1',JSON.stringify({version:1,country,officialLanguage:$('countrySelect').selectedOptions[0].dataset.officialLanguage,conversationLanguage,updatedAt:new Date().toISOString()}));}catch(error){console.warn('Locale preferences could not be saved locally',error)}localeComplete=true;$('localeView').classList.add('hidden');$('authView').classList.remove('hidden');setLanguage(language);}
+function completeLocale(){const country=$('countrySelect').value,conversationLanguage=$('conversationLanguageSelect').value;if(!country||!conversationLanguage){$('localeMessage').textContent=localeCopy[language].required;return;}selectedCountry=country;language=conversationLanguage;try{localStorage.setItem('sarina.locale.v1',JSON.stringify({version:1,country,officialLanguage:$('countrySelect').selectedOptions[0].dataset.officialLanguage,conversationLanguage,updatedAt:new Date().toISOString()}));}catch(error){console.warn('Locale preferences could not be saved locally',error)}localeComplete=true;$('localeView').classList.add('hidden');$('langToggle').classList.remove('hidden');setLanguage(language);if(pendingSessionUser){const user=pendingSessionUser;pendingSessionUser=null;enterWorkspace(user);}else $('authView').classList.remove('hidden');}
 // Canonical, farm-specific weather payloads retained for the analysis orchestration layer.
 const farmWeatherContexts = new Map();
 const farmLandContexts = new Map();
@@ -293,7 +293,7 @@ const savedLocale=restoreLocale();
  else{localeComplete=false;renderLocalePrompt();}
  if(session?.user){if(!localeComplete){pendingSessionUser=session.user;showAuth();}else await enterWorkspace(session.user);}else showAuth();
 if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
-setLanguage('fa');
+if(!localeComplete)renderLocalePrompt();
 
 $('farmList').addEventListener('submit',async e=>{
  const form=e.target.closest('.greenhouse-form');if(!form)return;e.preventDefault();
