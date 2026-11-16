@@ -179,5 +179,14 @@ This is the first usable farmer portal slice, not the complete product. Farm loc
 - Product social pages, websites, product pages and catalogs can be attached as external links. Public visibility is opt-in and subject to the product being published by a verified seller.
 - Product service needs reuse the active SARINA `organization_services` directory. They do not create duplicate provider records.
 - New inserts are queued in user-scoped local storage when offline and retried after reconnection. Status updates currently require an active connection. Sales tasks can be linked to a farmer-owned farm and then appear alongside farm work in the existing weekly planner.
-- Migrations `037_marketplace_sales_intelligence_foundation` through `040_marketplace_sales_fk_indexes_and_link_policy` are applied to the connected project and tracked under `database/migrations/`.
+- Migrations `037_marketplace_sales_intelligence_foundation` through `042_marketplace_trade_planning_fk_indexes` are applied to the connected project and tracked under `database/migrations/`.
 - Current limits: autonomous buyer discovery, live market-price intelligence, AI-generated product marketing content, outbound messaging, and unified display inside the farm work planner are not yet implemented. No buyer is contacted and no commercial commitment is created automatically.
+
+
+### Market pricing and export readiness
+- Marketing & Sales now supports private dated price observations with a source URL/name, destination market, currency, unit and trade basis. These are user-entered records, not live price feeds.
+- A per-unit cost model calculates cost plus a risk reserve and divides by the remaining share after the target sales fee and margin. Inputs and assumptions are stored; the result is an estimate, not a market guarantee.
+- Destination routes create an initial 10-item readiness checklist covering buyer requirements, product rules, tests, certificates where applicable, quality, packaging, storage, transport, customs and delivery/insurance.
+- Checklist prompts must be checked against current destination-country official requirements; they are not automatic legal determinations.
+- The service worker static cache now includes the marketplace and sales modules. Authenticated data and API responses remain uncached. New price/cost/route inserts use the existing user-scoped local queue; status changes still require connectivity.
+- Institutional pilot discussion material is in docs/partnership/jahad-agriculture-pilot-proposal-fa.md. It is a draft request for technical review, not evidence of government approval or partnership.
