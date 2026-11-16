@@ -152,3 +152,14 @@ This is the first usable farmer portal slice, not the complete product. Farm loc
 - Notification consent is separate by category: essential account/security, agricultural guidance/reminders, and optional marketing. Marketing is off by default.
 - Preferences are stored in `public.users.communication_preferences` as a versioned JSONB payload, protected by the existing owner-scoped users RLS policies. No messaging provider credentials or delivery integrations are stored in the browser.
 - This is preference capture only. WhatsApp, Telegram, SMS, email delivery, and phone calls are not connected or activated by this UI. SMS OTP/phone authentication remains a separate future task.
+
+
+## Flexible weekly farm work planner (V1)
+- Farm cards now expose a weekly operations planner that reuses existing `farm_observations` records; no new table or migration is introduced.
+- The planner reads crop-group records (`observation_type = crop_layout`, `SARINA_CROP_LAYOUT_V1`) and existing farm-operation records (`observation_type = general`, `SARINA_FARM_OPERATION_V1`). Crop groups remain separate; the planner does not merge mixed crops into a single crop cycle.
+- Crop-group capture now optionally includes planting date, current growth stage, and an expected harvest date or range. These are farmer estimates and are not independently verified. Existing crop records remain readable; missing dates stay unknown.
+- The weekly view shows recorded crop groups and their harvest outlook, tasks scheduled within the selected Monday–Sunday week, and a simple completion count. Users can move between weeks.
+- Tasks can be recorded with a date and optional times/assignee, then marked planned, in progress, completed, blocked, or deferred. Deferred tasks remain in their original week history and can be scheduled again as a new task; the UI does not silently change their original date.
+- The planner is a tracking and prioritization foundation, not an AI-generated agronomic prescription. It does not infer required treatments, invent harvest dates, or autonomously create field tasks. Priority is entered by the farmer; expert/weather/crop-stage prioritization is a later phase.
+- Flexibility is explicit: farmers may leave optional time/assignee blank, record notes, review prior/next weeks, and defer non-urgent work. Urgent or time-sensitive work should not be deferred without assessing risk.
+- Offline queueing, reminders/notifications, worker assignment accounts, automatic rescheduling, AI recommendations, and measured yield/harvest prediction remain future work.
