@@ -103,3 +103,24 @@
 @media(max-width:760px){.org-registration-form{grid-template-columns:1fr}.org-wide,.org-subheading,.org-area-grid,.org-review-note,.org-submit,.org-message{grid-column:auto}.org-area-grid{grid-template-columns:1fr}.org-application-card{align-items:flex-start;flex-direction:column}}
 
 .locale-layout{display:grid;grid-template-columns:1.15fr .85fr;gap:50px;align-items:center;min-height:560px}.locale-panel{max-width:440px;width:100%;justify-self:end}.locale-question{padding:14px 0 8px}.locale-question h2{font-size:19px;line-height:1.8;color:#234b3b;margin:0 0 8px}.locale-question p{font-size:12px;line-height:1.9;color:#718579;margin:0}.locale-panel .primary-btn{width:100%;margin-top:8px}@media(max-width:760px){.locale-layout{grid-template-columns:1fr;gap:16px;min-height:0}.locale-panel{justify-self:stretch;max-width:none}}
+
+/* SARINA communication preferences */
+.communication-layout{display:grid;grid-template-columns:1fr 1fr;gap:38px;align-items:center;min-height:520px}
+.communication-panel{width:100%;max-width:560px;justify-self:end}
+.communication-panel h2{font-size:15px;color:#315b45;margin:18px 0 12px}
+.communication-region-note{padding:10px 12px;border:1px solid #dce8dc;border-radius:11px;background:#f4f8f2;color:#61776a;font-size:11px;line-height:1.9}
+.communication-channel-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.communication-channel{display:flex;align-items:center;gap:10px;padding:11px;border:1px solid #e0e9df;border-radius:12px;background:#fbfdfb;cursor:pointer;margin:0!important}
+.communication-channel input,.communication-consent input{width:17px;height:17px;flex:0 0 auto;accent-color:#28664e}
+.communication-channel span{display:flex;flex-direction:column;gap:3px}
+.communication-channel strong{font-size:12px;color:#315b45}
+.communication-channel small{font-size:10px;color:#8a9a8e}
+.communication-primary-label{display:flex;flex-direction:column;gap:7px;margin:16px 0 8px;color:#466457;font-size:12px;font-weight:600}
+.communication-primary-label select{height:44px}
+.communication-consents{margin-top:18px;padding-top:12px;border-top:1px solid #e4ece3}
+.communication-consents h3{font-size:13px;color:#315b45;margin:0 0 10px}
+.communication-consent{display:flex;align-items:flex-start;gap:9px;margin:9px 0!important;font-size:11px;line-height:1.7}
+.communication-consent input{margin-top:3px}
+.communication-actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:10px}
+.communication-actions button{flex:1}
+@media(max-width:760px){.communication-layout{grid-template-columns:1fr;gap:10px;min-height:0}.communication-panel{max-width:none;justify-self:stretch;padding:18px}.communication-channel-grid{grid-template-columns:1fr 1fr}.communication-actions{flex-direction:column}.communication-actions button{width:100%}}
