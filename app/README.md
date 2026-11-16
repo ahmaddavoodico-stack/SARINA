@@ -143,3 +143,12 @@ This is the first usable farmer portal slice, not the complete product. Farm loc
 - Schema migrations were applied to the connected project as `organization_registration_applications` and `organization_application_country_name`; the consolidated source is tracked as `database/migrations/028_organization_registration_applications.sql`.
 - Function source: `supabase/functions/organization-registration/index.ts`. The deployed function is JWT-verified.
 - This first slice supports submission and applicant-only status tracking. Document uploads, administrator review/approval actions, conversion into a verified `organizations` record, member invitations, and public directory publication remain follow-on work.
+
+ 
+## Communication preferences onboarding
+- After a user signs in and their profile is resolved, first-time users see a communication-preferences step before entering the workspace. It is positioned so the same step can follow phone OTP verification when phone authentication is implemented.
+- Users can select multiple channels, choose one primary channel, and keep the other selected channels as fallbacks. Deferring the choice is allowed.
+- Channel suggestions are a versioned, country-specific launch catalog for the currently enabled countries (IR, US, GB, CA, AU). The catalog is explicitly provisional: actual availability and adoption vary by location and time, so users must select only channels they can access. It does not claim to verify local popularity or app installation.
+- Notification consent is separate by category: essential account/security, agricultural guidance/reminders, and optional marketing. Marketing is off by default.
+- Preferences are stored in `public.users.communication_preferences` as a versioned JSONB payload, protected by the existing owner-scoped users RLS policies. No messaging provider credentials or delivery integrations are stored in the browser.
+- This is preference capture only. WhatsApp, Telegram, SMS, email delivery, and phone calls are not connected or activated by this UI. SMS OTP/phone authentication remains a separate future task.
