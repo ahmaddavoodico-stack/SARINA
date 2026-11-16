@@ -15,6 +15,15 @@ A lightweight, responsive, installable farmer-first web app connected to the SAR
 - Uses only the Supabase publishable key in the browser. Never put a service-role/secret key in this app.
 - Service worker caches only same-origin static app assets; authenticated Supabase/API responses are never cached.
 
+## First-run country and language onboarding
+- First-time visitors are shown a country selector before the existing authentication screen.
+- The initial question is displayed in the selected country's official language for the currently enabled launch-country set (Iran/Persian and English-language markets).
+- The user explicitly chooses the conversation/UI language; country and language are stored as separate values in the versioned local preference `sarina.locale.v1`.
+- The selected language is also written to the existing `users.preferred_language` field when the profile is created/updated. No database migration is required for this first slice.
+- Existing authenticated sessions also pass through the first-run locale step if no locale preference exists.
+- Current limitation: this is the locale-selection foundation, not full multilingual coverage. The app currently ships Persian and English UI dictionaries; additional official/local languages must be translated and enabled before being offered as supported conversation languages. Country choices are intentionally limited to the currently supported language set.
+- Current limitation: authentication remains the existing email/password flow. Phone-number OTP is not enabled by this change; it requires verifying/configuring Supabase Phone Auth and an SMS provider before replacing the current sign-in flow.
+
 ## Run locally
 Serve this directory from a local static web server (ES modules and service workers do not work reliably from `file://`). For example: `python -m http.server 8000` from this directory.
 
