@@ -224,6 +224,7 @@ export function bindAdminWorkspace({root, supabase, getProfile, getLanguage}) {
       set('[data-admin-name]', account.full_name || account.email || getProfile()?.full_name || '—');
       set('[data-admin-updated]', timeLabel(lang, new Date()));
       set('[data-admin-message]', t.verified);
+      await runDiagnostics();
     } catch (error) {
       console.error('SARINA admin access verification failed:', error);
       set('[data-admin-session]', t.unavailable); set('[data-admin-role]', t.unavailable); set('[data-admin-profile]', t.unavailable);
