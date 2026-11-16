@@ -1,6 +1,7 @@
+import { renderMarketplaceSalesWorkspace, bindMarketplaceSalesWorkspace } from './marketplace-sales.js';
 const fa = {
  title:'بازارگاه کشاورزی سارینا', intro:'محصولات تولیدکنندگان و نهاده‌های تأمین‌کنندگان را در یک بازارگاه پیدا کنید.',
- farmer:'محصولات کشاورزان', company:'فروشگاه شرکت‌ها', cart:'سبد خرید', orders:'سفارش‌های من', seller:'پنل فروشنده',
+ farmer:'محصولات کشاورزان', company:'فروشگاه شرکت‌ها', cart:'سبد خرید', orders:'سفارش‌های من', seller:'پنل فروشنده', sales:'بازاریابی و فروش',
  farmerHint:'محصول برداشت‌شده و تولیدی کشاورزان؛ از فروش محلی تا عرضه عمده.',
  companyHint:'کود، سم، بذر، نهال، تجهیزات آبیاری، ماشین‌آلات و فناوری کشاورزی.',
  search:'جست‌وجوی محصول یا فروشنده', all:'همه دسته‌ها', addCart:'افزودن به سبد', quote:'درخواست قیمت', noProducts:'هنوز محصول تأییدشده‌ای برای نمایش وجود ندارد.',
@@ -21,7 +22,7 @@ const fa = {
 };
 const en = {
  title:'SARINA Agricultural Marketplace',intro:'Find farm produce and agricultural supplies in one marketplace.',
- farmer:'Farmers’ products',company:'Company store',cart:'Cart',orders:'My orders',seller:'Seller workspace',
+ farmer:'Farmers’ products',company:'Company store',cart:'Cart',orders:'My orders',seller:'Seller workspace',sales:'Marketing & Sales',
  farmerHint:'Harvested and farm-produced goods, from local sales to wholesale supply.',
  companyHint:'Fertilizers, crop protection, seeds, seedlings, irrigation, machinery and ag-tech.',
  search:'Search products or sellers',all:'All categories',addCart:'Add to cart',quote:'Request a quote',noProducts:'No verified published products are available yet.',
@@ -45,7 +46,7 @@ const money = (v,cur,lang) => v==null ? '—' : new Intl.NumberFormat(lang==='fa
 export function renderMarketplaceWorkspace(language='fa'){
  const w=language==='fa'?fa:en;
  return '<section class="marketplace-workspace"><div class="marketplace-heading"><div><span class="eyebrow">SARINA MARKETPLACE</span><h1>'+w.title+'</h1><p>'+w.intro+'</p></div><span class="marketplace-mark">🛒</span></div>'+
- '<nav class="market-tabs"><button type="button" data-market-tab="farmer_products" class="active">'+w.farmer+'</button><button type="button" data-market-tab="company_supplies">'+w.company+'</button><button type="button" data-market-tab="cart">'+w.cart+' <b data-cart-count>0</b></button><button type="button" data-market-tab="orders">'+w.orders+'</button><button type="button" data-market-tab="seller">'+w.seller+'</button></nav>'+
+ '<nav class="market-tabs"><button type="button" data-market-tab="farmer_products" class="active">'+w.farmer+'</button><button type="button" data-market-tab="company_supplies">'+w.company+'</button><button type="button" data-market-tab="cart">'+w.cart+' <b data-cart-count>0</b></button><button type="button" data-market-tab="orders">'+w.orders+'</button><button type="button" data-market-tab="seller">'+w.seller+'</button><button type="button" data-market-tab="sales">'+w.sales+'</button></nav>'+
  '<div class="market-content" data-market-content><p>'+w.intro+'</p></div></section>';
 }
 export async function bindMarketplaceWorkspace({root,supabase,getProfile,getLanguage}){
@@ -134,6 +135,7 @@ export async function bindMarketplaceWorkspace({root,supabase,getProfile,getLang
   else if(tab==='cart')await loadCart();
   else if(tab==='orders')await loadOrders();
   else if(tab==='seller')await loadSeller();
+  else if(tab==='sales'){content().innerHTML=renderMarketplaceSalesWorkspace(lang());await bindMarketplaceSalesWorkspace({root:content(),supabase,getProfile,getLanguage});}
  }
  root.addEventListener('click',async e=>{
   const tab=e.target.closest('[data-market-tab]');if(tab){openTab(tab.dataset.marketTab);return;}
