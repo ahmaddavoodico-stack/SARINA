@@ -111,3 +111,17 @@ Private helper functions in the private schema are used by RLS policies. Public 
 ### Database hardening follow-up
 - Migration 040 adds child-side indexes for the new product/service foreign keys and consolidates external-link SELECT authorization into one policy. This keeps owner access to private links while allowing anonymous reads only for links explicitly marked public on published products from verified sellers.
 - The new sales-intelligence tables have RLS enabled. The current security advisor run reports no new security findings for these tables. Performance advisor still reports the new indexes as unused because the tables are not yet populated/queried in live seller sessions; they are retained for the expected access paths.
+
+
+### Market price evidence and export route planning
+- Sellers can privately record dated market price observations with destination market, source name/link, currency, unit and trade basis. Observations are seller-entered evidence, not a live market feed; source verification remains explicit.
+- The unit-cost calculator includes farm/purchase cost, grading, packaging, testing/certification, storage, inland and international transport, customs, insurance, other costs, risk reserve, platform fee and target margin. It stores the calculation assumptions and distinguishes the resulting estimate from an observed market quote.
+- Each destination route stores destination country, target buyer segment, shipment mode, optional Incoterm and HS code, target quantity and notes.
+- Route creation seeds a checklist for buyer requirements, destination product rules, tests/certificates, phytosanitary requirements where applicable, grading, packaging/labeling, storage/cold chain, transport, customs documents, insurance and delivery terms. Items begin as “to check”; they are prompts for verification, not declarations that every item is legally required.
+- Checklist status can be updated by the seller. Country-specific legal, phytosanitary, customs, tax, tariff, currency and Incoterm details must be confirmed against current official sources and qualified service providers.
+- These features are integrated into the existing Marketing & Sales workspace. New records can be queued locally while offline and synced after reconnection; seller data remains private under RLS.
+
+### Institutional pilot preparation
+- A Persian-language, non-official pilot proposal is maintained at docs/partnership/jahad-agriculture-pilot-proposal-fa.md.
+- It requests an initial technical review and a small voluntary pilot, not a pre-assumed endorsement. It defines possible roles, evaluation indicators, data safeguards, deliverables and a first-meeting agenda.
+- Any use of an institution's name, logo, or endorsement language requires prior written permission. No government organization is represented as a SARINA partner until formally approved.
