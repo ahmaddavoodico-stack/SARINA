@@ -163,3 +163,14 @@ This is the first usable farmer portal slice, not the complete product. Farm loc
 - The planner is a tracking and prioritization foundation, not an AI-generated agronomic prescription. It does not infer required treatments, invent harvest dates, or autonomously create field tasks. Priority is entered by the farmer; expert/weather/crop-stage prioritization is a later phase.
 - Flexibility is explicit: farmers may leave optional time/assignee blank, record notes, review prior/next weeks, and defer non-urgent work. Urgent or time-sensitive work should not be deferred without assessing risk.
 - Offline queueing, reminders/notifications, worker assignment accounts, automatic rescheduling, AI recommendations, and measured yield/harvest prediction remain future work.
+
+
+## SARINA Farm Work Planner (MVP)
+- Extends the existing farm operations panel; it does not create a parallel farm or crop registry.
+- Reuses owner-scoped `farm_observations` records for farmer-entered crop timelines (`crop_schedule`), work items (`general`, versioned `SARINA_FARM_OPERATION_V2` payload), and weekly reviews (`weekly_review`). No database migration is required for this MVP.
+- Captures planting/transplant date, current growth stage, an estimated harvest window, and farmer-entered confidence. Harvest dates are explicitly estimates, not guarantees or agronomic recommendations.
+- Weekly work items support planned, in-progress, partially completed, completed, deferred and cancelled states, with an optional reason when partially completed, deferred or cancelled. Priorities are urgent, important and flexible.
+- The weekly view includes current-week and overdue unfinished tasks. Farmers can record personal/unavailable days and a short end-of-week review; the plan is guidance, not a mandatory schedule.
+- If a work-item insert is attempted while offline, it is queued in browser local storage and retried when connectivity returns. Authenticated Supabase/API responses are not cached by the service worker. Offline crop timeline edits and status updates are not yet queued.
+- Existing crop-layout observations are surfaced as crop names for reference; the farmer may add a crop timeline separately. The MVP does not infer planting dates, growth stages or harvest windows from crop names alone.
+- This is a first functional slice; browser/device testing and live multi-user verification remain required before production release.
