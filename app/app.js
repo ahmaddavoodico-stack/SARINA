@@ -324,6 +324,7 @@ $('farmList').addEventListener('submit',async e=>{
  const form=e.target.closest('.crop-form');if(!form)return;e.preventDefault();
  const button=form.querySelector('button[type="submit"]');const message=form.querySelector('.crop-message');
  const values=Object.fromEntries(new FormData(form).entries());
+ if(values.expected_harvest_start&&values.expected_harvest_end&&values.expected_harvest_end<values.expected_harvest_start){message.textContent=language==='fa'?'پایان بازه برداشت نمی‌تواند پیش از شروع آن باشد.':'Harvest window end cannot be before its start.';return;}
  if(!values.plant_name?.trim()||!Number.isInteger(Number(values.plant_count))||Number(values.plant_count)<1){message.textContent=cw('requiredCrop');return;}
  const numericFields=['plant_count','age_years','in_row_spacing_m','between_row_spacing_m','furrow_distance_m','yield_amount'];
  for(const key of numericFields){if(values[key]===''){delete values[key];continue;}values[key]=Number(values[key]);if(!Number.isFinite(values[key])||values[key]<0){message.textContent=cw('requiredCrop');return;}}
