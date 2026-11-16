@@ -163,3 +163,10 @@ This is the first usable farmer portal slice, not the complete product. Farm loc
 - Work-item inserts attempted offline are queued in browser local storage under a user-scoped key and retried when connectivity returns. Crop timeline edits, weekly reviews and status updates are not yet queued offline. Authenticated Supabase/API responses are not cached by the service worker.
 - The MVP records and organizes farmer-entered work; it does not yet generate crop-specific agronomic actions or autonomously assign priorities. The plan is guidance, not a mandatory schedule. Expert/weather/crop-stage decision support, reminders, worker accounts and automatic rescheduling remain future work.
 - Browser/device testing and live multi-user verification are still required before production release.
+
+
+## Central admin diagnostics (read-only first slice)
+- The central admin workspace includes a bilingual, manually repeatable diagnostics panel.
+- Checks browser-reported online status, temporary localStorage read/write, service-worker registration, required shell element presence, authenticated user lookup, and the signed-in account's global admin role using existing RLS-protected reads.
+- Results distinguish passed, warning and failed checks; details are escaped before rendering. No diagnostic writes to application tables, no user-private cross-account reads, no automatic repair and no physical action are performed.
+- This is a client/session-level diagnostic slice only. It does not claim database-wide, server, edge-function, deployment, security-log or end-to-end health. Those require trusted server-side probes and event sources.
