@@ -154,23 +154,12 @@ This is the first usable farmer portal slice, not the complete product. Farm loc
 - This is preference capture only. WhatsApp, Telegram, SMS, email delivery, and phone calls are not connected or activated by this UI. SMS OTP/phone authentication remains a separate future task.
 
 
-## Flexible weekly farm work planner (V1)
-- Farm cards now expose a weekly operations planner that reuses existing `farm_observations` records; no new table or migration is introduced.
-- The planner reads crop-group records (`observation_type = crop_layout`, `SARINA_CROP_LAYOUT_V1`) and existing farm-operation records (`observation_type = general`, `SARINA_FARM_OPERATION_V1`). Crop groups remain separate; the planner does not merge mixed crops into a single crop cycle.
-- Crop-group capture now optionally includes planting date, current growth stage, and an expected harvest date or range. These are farmer estimates and are not independently verified. Existing crop records remain readable; missing dates stay unknown.
-- The weekly view shows recorded crop groups and their harvest outlook, tasks scheduled within the selected Monday–Sunday week, and a simple completion count. Users can move between weeks.
-- Tasks can be recorded with a date and optional times/assignee, then marked planned, in progress, completed, blocked, or deferred. Deferred tasks remain in their original week history and can be scheduled again as a new task; the UI does not silently change their original date.
-- The planner is a tracking and prioritization foundation, not an AI-generated agronomic prescription. It does not infer required treatments, invent harvest dates, or autonomously create field tasks. Priority is entered by the farmer; expert/weather/crop-stage prioritization is a later phase.
-- Flexibility is explicit: farmers may leave optional time/assignee blank, record notes, review prior/next weeks, and defer non-urgent work. Urgent or time-sensitive work should not be deferred without assessing risk.
-- Offline queueing, reminders/notifications, worker assignment accounts, automatic rescheduling, AI recommendations, and measured yield/harvest prediction remain future work.
-
-
 ## SARINA Farm Work Planner (MVP)
-- Extends the existing farm operations panel; it does not create a parallel farm or crop registry.
-- Reuses owner-scoped `farm_observations` records for farmer-entered crop timelines (`crop_schedule`), work items (`general`, versioned `SARINA_FARM_OPERATION_V2` payload), and weekly reviews (`weekly_review`). No database migration is required for this MVP.
-- Captures planting/transplant date, current growth stage, an estimated harvest window, and farmer-entered confidence. Harvest dates are explicitly estimates, not guarantees or agronomic recommendations.
-- Weekly work items support planned, in-progress, partially completed, completed, deferred and cancelled states, with an optional reason when partially completed, deferred or cancelled. Priorities are urgent, important and flexible.
-- The weekly view includes current-week and overdue unfinished tasks. Farmers can record personal/unavailable days and a short end-of-week review; the plan is guidance, not a mandatory schedule.
-- If a work-item insert is attempted while offline, it is queued in browser local storage and retried when connectivity returns. Authenticated Supabase/API responses are not cached by the service worker. Offline crop timeline edits and status updates are not yet queued.
-- Existing crop-layout observations are surfaced as crop names for reference; the farmer may add a crop timeline separately. The MVP does not infer planting dates, growth stages or harvest windows from crop names alone.
-- This is a first functional slice; browser/device testing and live multi-user verification remain required before production release.
+- Extends the existing farm operations panel and reuses owner-scoped `farm_observations`; no new database table or migration is required.
+- Reuses crop-group observations (`crop_layout` / `SARINA_CROP_LAYOUT_V1`), separate farmer-entered crop timelines (`crop_schedule` / `SARINA_CROP_SCHEDULE_V1`), work items (`general` / `SARINA_FARM_OPERATION_V2`) and weekly reviews (`weekly_review` / `SARINA_WEEKLY_REVIEW_V1`).
+- Crop timelines capture planting/transplant date, current growth stage, estimated harvest window and farmer-entered confidence. The crop profile also accepts optional planting date, growth stage and harvest window. These are estimates, not guaranteed dates or expert recommendations; existing crop names are not used to invent missing dates.
+- Weekly work items support planned, in-progress, partially completed, completed, deferred and cancelled states, with a reason/note for partial completion, deferral or cancellation. Priorities are urgent, important and flexible. Farmers can navigate previous/current/next weeks; the current view also surfaces overdue unfinished tasks.
+- The end-of-week review captures what happened, what remains and personal/unavailable days. These entries do not automatically reschedule tasks; the farmer remains in control.
+- Work-item inserts attempted offline are queued in browser local storage under a user-scoped key and retried when connectivity returns. Crop timeline edits, weekly reviews and status updates are not yet queued offline. Authenticated Supabase/API responses are not cached by the service worker.
+- The MVP records and organizes farmer-entered work; it does not yet generate crop-specific agronomic actions or autonomously assign priorities. The plan is guidance, not a mandatory schedule. Expert/weather/crop-stage decision support, reminders, worker accounts and automatic rescheduling remain future work.
+- Browser/device testing and live multi-user verification are still required before production release.
