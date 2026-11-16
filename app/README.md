@@ -179,5 +179,5 @@ This is the first usable farmer portal slice, not the complete product. Farm loc
 - Product social pages, websites, product pages and catalogs can be attached as external links. Public visibility is opt-in and subject to the product being published by a verified seller.
 - Product service needs reuse the active SARINA `organization_services` directory. They do not create duplicate provider records.
 - New inserts are queued in user-scoped local storage when offline and retried after reconnection. Status updates currently require an active connection. Sales tasks can be linked to a farmer-owned farm and then appear alongside farm work in the existing weekly planner.
-- Migrations `037_marketplace_sales_intelligence_foundation` and `038_marketplace_external_link_public_read` are applied to the connected project and tracked under `database/migrations/`.
+- Migrations `037_marketplace_sales_intelligence_foundation` through `040_marketplace_sales_fk_indexes_and_link_policy` are applied to the connected project and tracked under `database/migrations/`.
 - Current limits: autonomous buyer discovery, live market-price intelligence, AI-generated product marketing content, outbound messaging, and unified display inside the farm work planner are not yet implemented. No buyer is contacted and no commercial commitment is created automatically.
