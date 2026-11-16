@@ -67,6 +67,34 @@
       </section>
     </section>
 
+    <section id="communicationView" class="hidden communication-layout">
+      <div class="welcome">
+        <span class="eyebrow">SARINA</span>
+        <h1 id="communicationTitle">راه ارتباطی دلخواهتان را انتخاب کنید</h1>
+        <p id="communicationIntro">راه‌هایی را انتخاب کنید که در کشور و منطقه شما در دسترس و برایتان راحت‌تر هستند.</p>
+      </div>
+      <section class="panel communication-panel">
+        <div class="communication-region-note" id="communicationRegionNote" role="status"></div>
+        <h2 id="communicationChannelsTitle">از چه راه‌هایی می‌توانیم با شما در ارتباط باشیم؟</h2>
+        <div id="communicationChannels" class="communication-channel-grid"></div>
+        <label class="communication-primary-label"><span id="communicationPrimaryLabel">روش اصلی ارتباط</span>
+          <select id="communicationPrimary"></select>
+        </label>
+        <p class="fineprint" id="communicationFallbackHint">روش‌های انتخاب‌شده دیگر، در صورت نیاز می‌توانند راه جایگزین باشند.</p>
+        <div class="communication-consents">
+          <h3 id="communicationConsentTitle">نوع پیام‌هایی که مایلید دریافت کنید</h3>
+          <label class="communication-consent"><input id="communicationEssential" type="checkbox" checked><span id="communicationEssentialLabel">پیام‌های ضروری حساب و امنیت</span></label>
+          <label class="communication-consent"><input id="communicationAdvisory" type="checkbox"><span id="communicationAdvisoryLabel">راهنمایی‌ها و یادآوری‌های کشاورزی</span></label>
+          <label class="communication-consent"><input id="communicationMarketing" type="checkbox"><span id="communicationMarketingLabel">خبرها و پیشنهادهای تجاری و تبلیغاتی</span></label>
+        </div>
+        <p class="fineprint" id="communicationPrivacy">انتخاب پیام‌های تبلیغاتی اختیاری است. هیچ پیام‌رسانی بدون اتصال فنی و رضایت شما فعال نمی‌شود.</p>
+        <p id="communicationMessage" class="message" role="status"></p>
+        <div class="communication-actions">
+          <button id="communicationSave" class="primary-btn" type="button">ذخیره و ادامه</button>
+          <button id="communicationSkip" class="quiet-btn" type="button">فعلاً بعداً انتخاب می‌کنم</button>
+        </div>
+      </section>
+    </section>
     <section id="appView" class="hidden">
       <section id="roleOnboarding" class="hidden"></section>
       <section id="adminWorkspace" class="hidden"></section>
