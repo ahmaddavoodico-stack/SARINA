@@ -147,7 +147,7 @@ This is the first usable farmer portal slice, not the complete product. Farm loc
  
 ## Communication preferences onboarding
 - After a user signs in and their profile is resolved, first-time users see a communication-preferences step before entering the workspace. It is positioned so the same step can follow phone OTP verification when phone authentication is implemented.
-- Users can select multiple channels, choose one primary channel, and keep the other selected channels as fallbacks. Deferring the choice is allowed.
+- Users can select multiple channels, choose one primary channel, and keep the other selected channels as fallbacks. Deferring the choice is allowed; a deferred user is prompted again on their next sign-in.
 - Channel suggestions are a versioned, country-specific launch catalog for the currently enabled countries (IR, US, GB, CA, AU). The catalog is explicitly provisional: actual availability and adoption vary by location and time, so users must select only channels they can access. It does not claim to verify local popularity or app installation.
 - Notification consent is separate by category: essential account/security, agricultural guidance/reminders, and optional marketing. Marketing is off by default.
 - Preferences are stored in `public.users.communication_preferences` as a versioned JSONB payload, protected by the existing owner-scoped users RLS policies. No messaging provider credentials or delivery integrations are stored in the browser.
