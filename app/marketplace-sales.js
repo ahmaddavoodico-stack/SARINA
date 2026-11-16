@@ -62,10 +62,40 @@ export async function bindMarketplaceSalesWorkspace({root,supabase,getProfile,ge
   if(error){if(!navigator.onLine||/fetch|network|offline/i.test(error.message||'')){const q=readQueue();q.push({id:'local-'+Date.now()+'-'+Math.random().toString(36).slice(2),table,payload,queued_at:new Date().toISOString()});writeQueue(q);return {queued:true};}return {error};}
   return {saved:true};
  }
+ async function seedChecklist(routeId,payload){
+  const labels=[
+   ['buyer_requirements','commercial','buyer_requirements'],
+   ['product_rules','regulatory','product_rules'],
+   ['lab_tests','quality','lab_tests'],
+   ['phytosanitary','regulatory','phytosanitary'],
+   ['quality_grade','quality','quality_grade'],
+   ['packaging_label','packaging','packaging_label'],
+   ['storage_chain','logistics','storage_chain'],
+   ['transport_route','logistics','transport_route'],
+   ['customs_docs','documents','customs_docs'],
+   ['insurance_contract','commercial','insurance_contract']
+  ];
+  const rows=labels.map(([item_code,category,key])=>({route_id:routeId,seller_id:payload.seller_id,category,item_code,title:w()[key],status:'to_check'}));
+  return await supabase.from('marketplace_trade_checklist_items').insert(rows);
+ }
+ function calculateCostModel(form){
+  const n=name=>Math.max(0,Number(form.elements[name]?.value||0));
+  const base=['farmgate_cost','grading_cost','packaging_cost','certification_cost','storage_cost','inland_transport_cost','international_freight_cost','customs_cost','insurance_cost','other_cost'].reduce((sum,key)=>sum+n(key),0);
+  const cost=base*(1+n('contingency_percent')/100);
+  const divisor=1-(n('platform_fee_percent')+n('target_margin_percent'))/100;
+  const result=form.querySelector('[data-price-result]');
+  if(result)result.textContent=divisor>0?w().calculatedCost+': '+cost.toFixed(4)+' · '+w().suggestedPrice+': '+(cost/divisor).toFixed(4):w().invalidMargin;
+  return divisor>0?{cost,price:cost/divisor}:null;
+ }
  async function syncQueue(){
   if(!navigator.onLine)return;
   const q=readQueue(),remaining=[];
-  for(const item of q){const {error}=await supabase.from(item.table).insert(item.payload);if(error)remaining.push(item);}
+  for(const item of q){
+   if(item.table==='marketplace_trade_routes'){
+    const {data,error}=await supabase.from(item.table).insert(item.payload).select('id').single();
+    if(error)remaining.push(item);else{const seeded=await seedChecklist(data.id,item.payload);if(seeded.error)console.error('Trade checklist seed failed',seeded.error);}
+   }else{const {error}=await supabase.from(item.table).insert(item.payload);if(error)remaining.push(item);}
+  }
   writeQueue(remaining);
   if(q.length!==remaining.length)await load();
  }
@@ -127,14 +157,35 @@ export async function bindMarketplaceSalesWorkspace({root,supabase,getProfile,ge
    if(type==='task'){table='marketplace_sales_tasks';payload={seller_id:sellerId,title:v.title.trim(),task_type:v.task_type,due_at:v.due_at?new Date(v.due_at).toISOString():null,priority:v.priority,status:'planned',product_id:v.product_id||null,farm_id:v.farm_id||null,notes:v.notes||null};}
    if(type==='link'){table='marketplace_product_external_links';if(!v.product_id){setMessage(form,w().selectProductRequired);return;}if(!safeUrl(v.url)){setMessage(form,w().badUrl);return;}payload={seller_id:sellerId,product_id:v.product_id,link_type:v.link_type,label:v.label.trim(),url:v.url.trim(),is_public:form.querySelector('[name="is_public"]').checked};}
    if(type==='service'){table='marketplace_product_service_needs';payload={seller_id:sellerId,product_id:v.product_id||null,service_code:v.service_code,urgency:v.urgency,target_date:v.target_date||null,description:v.description||null,organization_service_id:v.organization_service_id||null};}
+   if(type==='price'){
+    table='marketplace_price_observations';
+    payload={seller_id:sellerId,product_id:v.product_id,destination_country:v.destination_country.trim(),market_region:v.market_region||null,source_name:v.source_name.trim(),source_url:v.source_url||null,observed_at:v.observed_at,price_min:Number(v.price_min),price_max:Number(v.price_max),currency:v.currency.toUpperCase(),unit_label:v.unit_label.trim(),trade_basis:v.trade_basis,notes:v.notes||null};
+    if(payload.source_url&&!safeUrl(payload.source_url)){setMessage(form,w().badUrl);return;}
+    if(payload.price_max<payload.price_min){setMessage(form,w().maxPrice+' ≥ '+w().minPrice);return;}
+   }
+   if(type==='cost'){
+    table='marketplace_trade_cost_models';const result=calculateCostModel(form);if(!result){setMessage(form,w().invalidMargin);return;}
+    const number=k=>Number(v[k]||0);
+    payload={seller_id:sellerId,product_id:v.product_id,destination_country:v.destination_country.trim(),currency:v.currency.toUpperCase(),unit_label:v.unit_label.trim(),
+     farmgate_cost:number('farmgate_cost'),grading_cost:number('grading_cost'),packaging_cost:number('packaging_cost'),certification_cost:number('certification_cost'),storage_cost:number('storage_cost'),inland_transport_cost:number('inland_transport_cost'),international_freight_cost:number('international_freight_cost'),customs_cost:number('customs_cost'),insurance_cost:number('insurance_cost'),other_cost:number('other_cost'),contingency_percent:number('contingency_percent'),platform_fee_percent:number('platform_fee_percent'),target_margin_percent:number('target_margin_percent'),calculated_unit_cost:Number(result.cost.toFixed(4)),suggested_unit_price:Number(result.price.toFixed(4)),assumptions:{method:'unit_cost_with_risk_reserve_divided_by_one_minus_fee_and_margin',fx_verified:false,destination_rules_verified:false},notes:null};
+   }
+   if(type==='route'){
+    payload={seller_id:sellerId,product_id:v.product_id,destination_country:v.destination_country.trim(),target_buyer_type:v.target_buyer_type,shipment_mode:v.shipment_mode,incoterm:v.incoterm||null,hs_code:v.hs_code||null,target_quantity:v.target_quantity?Number(v.target_quantity):null,unit_label:v.unit_label||null,status:'researching',notes:v.notes||null};
+    if(!navigator.onLine){const queuedResult=await persist('marketplace_trade_routes',payload);setMessage(form,queuedResult.queued?w().queued:queuedResult.error?.message||w().saved);if(queuedResult.queued){form.reset();await load();}return;}
+    const {data,error}=await supabase.from('marketplace_trade_routes').insert(payload).select('id').single();
+    if(error){setMessage(form,error.message);return;}
+    const seeded=await seedChecklist(data.id,payload);setMessage(form,seeded.error?seeded.error.message:w().routeCreated);form.reset();await load();return;
+   }
    const result=await persist(table,payload);setMessage(form,result.error?result.error.message:result.queued?w().queued:w().saved);if(!result.error){form.reset();await load();}
   });
   root.addEventListener('change',async e=>{
    const sellerSelect=e.target.closest('[data-sales-seller]');if(sellerSelect){selectedSellerId=sellerSelect.value;await load();return;}
    const lead=e.target.closest('[data-lead-stage]');if(lead){const {error}=await supabase.from('marketplace_sales_leads').update({stage:lead.value}).eq('id',lead.dataset.leadStage);if(error)alert(error.message);else await load();return;}
    const verification=e.target.closest('[data-lead-verification]');if(verification){const {error}=await supabase.from('marketplace_sales_leads').update({verification_status:verification.value}).eq('id',verification.dataset.leadVerification);if(error)alert(error.message);else await load();return;}
-   const task=e.target.closest('[data-task-status]');if(task){const {error}=await supabase.from('marketplace_sales_tasks').update({status:task.value}).eq('id',task.dataset.taskStatus);if(error)alert(error.message);else await load();}
+   const task=e.target.closest('[data-task-status]');if(task){const {error}=await supabase.from('marketplace_sales_tasks').update({status:task.value}).eq('id',task.dataset.taskStatus);if(error)alert(error.message);else await load();return;}
+   const checklist=e.target.closest('[data-checklist-status]');if(checklist){const {error}=await supabase.from('marketplace_trade_checklist_items').update({status:checklist.value}).eq('id',checklist.dataset.checklistStatus).eq('seller_id',checklist.dataset.seller);if(error)alert(error.message);else await load();}
   });
+  root.addEventListener('input',e=>{const form=e.target.closest('[data-cost-calc]');if(form)calculateCostModel(form);});
   window.addEventListener('online',syncQueue);
  }
  await syncQueue();await load();
