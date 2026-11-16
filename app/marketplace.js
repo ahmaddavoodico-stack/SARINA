@@ -4,7 +4,7 @@ const fa = {
  farmerHint:'محصول برداشت‌شده و تولیدی کشاورزان؛ از فروش محلی تا عرضه عمده.',
  companyHint:'کود، سم، بذر، نهال، تجهیزات آبیاری، ماشین‌آلات و فناوری کشاورزی.',
  search:'جست‌وجوی محصول یا فروشنده', all:'همه دسته‌ها', addCart:'افزودن به سبد', quote:'درخواست قیمت', noProducts:'هنوز محصول تأییدشده‌ای برای نمایش وجود ندارد.',
- sellerName:'نام فروشگاه یا مزرعه', sellerType:'نوع فروشنده', farmerSeller:'کشاورز تولیدکننده', companySeller:'شرکت / تأمین‌کننده',
+ sellerName:'نام فروشگاه یا مزرعه', sellerType:'نوع فروشنده', farmerSeller:'کشاورز تولیدکننده', companySeller:'شرکت / تأمین‌کننده', individualSeller:'شخص حقیقی / عامل فروش',
  organization:'سازمان ثبت‌شده', registerSeller:'ثبت درخواست فروشندگی', pending:'در انتظار بررسی سارینا', verified:'تأییدشده', rejected:'ردشده', suspended:'تعلیق‌شده',
  sellerInfo:'اطلاعات فروشنده', productManage:'مدیریت محصولات', addProduct:'ثبت محصول جدید', productName:'نام محصول', category:'دسته‌بندی',
  description:'توضیحات', price:'قیمت واحد', currency:'ارز', unit:'واحد فروش', stock:'موجودی قابل عرضه', minQty:'حداقل سفارش', pricing:'روش قیمت‌گذاری',
