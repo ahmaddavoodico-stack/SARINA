@@ -99,3 +99,10 @@ Private helper functions in the private schema are used by RLS policies. Public 
 - Service provider suggestions are limited to active services already registered in SARINA. A missing directory entry is not treated as proof that no provider exists in the real market.
 - Weekly sales tasks are currently managed in this marketplace workspace. Merging them into the farmer's unified farm-work planner, with shared weekly workload balancing, is a follow-on integration.
 - Payment remains unconfigured and no order is represented as paid. No buyer is contacted, no offer is sent, and no booking/contract is created automatically.
+
+
+### Unified farmer weekly planner integration
+- Sales tasks may be linked to one of the farmer's own farms. The farm ownership is checked by RLS; a seller cannot attach a task to another user's farm.
+- Linked sales tasks with a due date appear alongside agricultural work in the existing farm weekly planner. Farmers can start, complete, defer or cancel them from the same weekly view.
+- Tasks without a linked farm or due date remain available in the Marketing & Sales workspace and do not appear in a farm-specific weekly plan.
+- The sales planner and farm planner use separate records and status vocabularies, but now share the same weekly view. Full workload optimization and automatic scheduling are not yet enabled.
