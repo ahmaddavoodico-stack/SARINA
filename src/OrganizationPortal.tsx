@@ -19,7 +19,16 @@ function toForm(raw:Record<string,any>|null):Profile {
  const links=Array.isArray(raw.social_links)?raw.social_links.map((x:any)=>[x.platform,x.url].filter(Boolean).join(" | ")).join("\n"):"";
  const offices=Array.isArray(raw.office_locations)?raw.office_locations.map((x:any)=>[x.label,x.city,x.address].filter(Boolean).join(" | ")).join("\n"):"";
  const docs=Array.isArray(raw.legal_documents)?raw.legal_documents.map((x:any)=>[x.document_type,x.title,x.storage_path].filter(Boolean).join(" | ")).join("\n"):"";
- return {...empty,...raw,latitude:raw.latitude==null?"":String(raw.latitude),longitude:raw.longitude==null?"":String(raw.longitude),contact_phones:Array.isArray(raw.contact_phones)?raw.contact_phones.join("\n"):"",support_areas:Array.isArray(raw.support_areas)?raw.support_areas.join("\n"):"",service_regions:Array.isArray(raw.service_regions)?raw.service_regions.join("\n"):"",social_links:links,office_locations:offices,legal_documents:docs};
+ const list=(value:unknown)=>Array.isArray(value)?value.filter((x):x is string=>typeof x==="string").join("\n"):"";
+ const str=(value:unknown)=>typeof value==="string"?value:"";
+ return {
+  legal_name:str(raw.legal_name),display_name:str(raw.display_name),organization_type:str(raw.organization_type)||"company",
+  registration_number:str(raw.registration_number),country_name:str(raw.country_name),city:str(raw.city),address:str(raw.address),
+  latitude:raw.latitude==null?"":String(raw.latitude),longitude:raw.longitude==null?"":String(raw.longitude),
+  website_url:str(raw.website_url),contact_email:str(raw.contact_email),contact_phone:str(raw.contact_phone),
+  contact_phones:list(raw.contact_phones),description:str(raw.description),support_areas:list(raw.support_areas),
+  service_regions:list(raw.service_regions),social_links:links,office_locations:offices,legal_documents:docs
+ };
 }
 function toPayload(f:Profile){
  return {...f,latitude:f.latitude?Number(f.latitude):null,longitude:f.longitude?Number(f.longitude):null,
