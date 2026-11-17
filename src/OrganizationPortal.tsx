@@ -1,6 +1,7 @@
-import {useEffect,useMemo,useState} from "react";
-import type {Session,ChangeEvent} from "@supabase/supabase-js";
-import {ArrowLeft,Building2,CheckCircle2,Globe,Instagram,MapPin,Phone,Save,ShieldCheck,UploadCloud} from "lucide-react";
+import {useEffect,useState} from "react";
+import type {ChangeEvent} from "react";
+import type {Session} from "@supabase/supabase-js";
+import {ArrowLeft,Building2,CheckCircle2,Save,ShieldCheck,UploadCloud} from "lucide-react";
 import {supabase} from "./lib/supabase";
 
 type Profile = {
