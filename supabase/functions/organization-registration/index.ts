@@ -255,6 +255,14 @@ Deno.serve(async (req: Request) => {
     if (contactEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactEmail)) {
       return reply(422, { ok: false, code: "INVALID_CONTACT_EMAIL" });
     }
+    const countryId = cleanText(p.country_id, 36);
+    if (countryId && !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(countryId)) {
+      return reply(422, { ok: false, code: "INVALID_COUNTRY_ID" });
+    }
+    const legalDocuments = cleanDocuments(p.legal_documents);
+    if (!legalDocuments.some((doc) => doc.storage_path?.startsWith(authUser.id + "/"))) {
+      return reply(422, { ok: false, code: "LEGAL_DOCUMENTS_REQUIRED" });
+    }
     const { data: active, error: activeError } = await admin.from("organization_applications")
       .select("id,status").eq("applicant_user_id", profileId)
       .in("status", ["pending", "under_review"]).limit(1).maybeSingle();
