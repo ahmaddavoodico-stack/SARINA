@@ -4645,6 +4645,14 @@ export type Database = {
       }
     }
     Views: {
+      organization_rating_summary: {
+        Row: {
+          organization_id: string | null
+          average_rating: number | null
+          review_count: number | null
+        }
+        Relationships: []
+      }
       geography_columns: {
         Row: {
           coord_dimension: number | null
@@ -4689,6 +4697,18 @@ export type Database = {
       }
     }
     Functions: {
+      current_user_has_role: {
+        Args: { p_role_code: string }
+        Returns: boolean
+      }
+      submit_organization_review: {
+        Args: {
+          p_organization_id: string
+          p_rating: number
+          p_review_text?: string | null
+        }
+        Returns: undefined
+      }
       _postgis_deprecate: {
         Args: { newname: string; oldname: string; version: string }
         Returns: undefined
