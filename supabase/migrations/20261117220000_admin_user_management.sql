@@ -153,3 +153,95 @@ revoke all on function public.admin_list_sarina_users() from public, anon;
 revoke all on function public.admin_set_sarina_user_roles(uuid, text[]) from public, anon;
 grant execute on function public.admin_list_sarina_users() to authenticated;
 grant execute on function public.admin_set_sarina_user_roles(uuid, text[]) to authenticated;
+
+-- Prevent users from overriding a role assignment explicitly granted by central administration.
+-- Self-selected onboarding roles remain editable until an administrator takes ownership of them.
+create or replace function public.set_my_sarina_roles(p_role_codes text[])
+returns table(role_code text)
+language plpgsql
+security definer
+set search_path = pg_catalog, public
+as $function$
+declare
+  v_user_id uuid;
+  v_requested text[];
+begin
+  if auth.uid() is null then
+    raise exception 'Authentication required' using errcode = '28000';
+  end if;
+
+  select u.id into v_user_id
+  from public.users u
+  where u.auth_user_id = auth.uid()
+  limit 1;
+
+  if v_user_id is null then
+    raise exception 'SARINA profile not found' using errcode = 'P0002';
+  end if;
+
+  if exists (
+    select 1
+    from public.user_roles ur
+    join public.roles r on r.id = ur.role_id
+    where ur.user_id = v_user_id
+      and ur.scope_type = 'global'
+      and ur.scope_id is null
+      and ur.granted_by is not null
+      and ur.granted_by <> v_user_id
+      and r.code <> 'admin'
+  ) then
+    raise exception 'Your activity roles are managed by the central administrator'
+      using errcode = '42501';
+  end if;
+
+  select array_agg(distinct code order by code)
+  into v_requested
+  from unnest(coalesce(p_role_codes, array[]::text[])) as requested(code)
+  where code is not null and btrim(code) <> '';
+
+  if v_requested is null or cardinality(v_requested) = 0 then
+    raise exception 'Select at least one activity';
+  end if;
+
+  if exists (
+    select 1 from unnest(v_requested) as requested(code)
+    where code not in ('farmer', 'livestock_keeper', 'expert', 'organization')
+  ) then
+    raise exception 'One or more roles cannot be self-assigned' using errcode = '42501';
+  end if;
+
+  if exists (
+    select 1
+    from unnest(v_requested) as requested(code)
+    left join public.roles r on r.code = requested.code
+    where r.id is null
+  ) then
+    raise exception 'Requested role is not available';
+  end if;
+
+  delete from public.user_roles ur
+  using public.roles r
+  where ur.role_id = r.id
+    and ur.user_id = v_user_id
+    and ur.scope_type = 'global'
+    and ur.scope_id is null
+    and r.code <> 'admin'
+    and r.code in ('farmer', 'livestock_keeper', 'expert', 'organization');
+
+  insert into public.user_roles(user_id, role_id, scope_type, scope_id, granted_by)
+  select v_user_id, r.id, 'global', null, v_user_id
+  from public.roles r
+  where r.code = any(v_requested)
+  on conflict (user_id, role_id) where scope_type = 'global' and scope_id is null
+  do nothing;
+
+  return query
+  select r.code
+  from public.user_roles ur
+  join public.roles r on r.id = ur.role_id
+  where ur.user_id = v_user_id
+    and ur.scope_type = 'global'
+    and ur.scope_id is null
+  order by r.code;
+end;
+$function$;
