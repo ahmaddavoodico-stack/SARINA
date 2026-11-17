@@ -223,9 +223,19 @@ Deno.serve(async (req: Request) => {
   }
 
   if (action === "submit") {
-    const { data: draft, error: draftError } = await admin.from("organization_profiles")
+    let { data: draft, error: draftError } = await admin.from("organization_profiles")
       .select("id,profile_data,status").eq("applicant_user_id", profileId).maybeSingle();
-    if (draftError || !draft) return reply(404, { ok: false, code: "DRAFT_NOT_FOUND" });
+    if (draftError) return reply(500, { ok: false, code: "DRAFT_LOOKUP_FAILED" });
+    if (!draft) {
+      // Backward compatibility for older clients that submitted the form directly.
+      const legacyProfile = normalizeProfile(input);
+      const { data: created, error: createError } = await admin.from("organization_profiles").upsert({
+        applicant_user_id: profileId, profile_data: legacyProfile,
+        completion_percent: completion(legacyProfile), status: "draft",
+      }, { onConflict: "applicant_user_id" }).select("id,profile_data,status").single();
+      if (createError || !created) return reply(500, { ok: false, code: "DRAFT_INITIALIZATION_FAILED" });
+      draft = created;
+    }
     if (!["draft", "needs_correction"].includes(draft.status)) {
       return reply(409, { ok: false, code: "SUBMISSION_NOT_ALLOWED", status: draft.status });
     }
@@ -253,11 +263,11 @@ Deno.serve(async (req: Request) => {
     const { data: application, error: insertError } = await admin.from("organization_applications").insert({
       applicant_user_id: profileId, legal_name: legalName, display_name: displayName,
       organization_type: organizationType, registration_number: cleanText(p.registration_number, 120),
-      country_id: cleanText(p.country_id, 36), country_name: cleanText(p.country_name, 120),
+      country_id: countryId, country_name: cleanText(p.country_name, 120),
       city, address, website_url: safeUrl(p.website_url), contact_email: contactEmail,
       contact_phone: contactPhone, contact_phones: contactPhones,
       social_links: cleanSocialLinks(p.social_links), office_locations: cleanOfficeLocations(p.office_locations),
-      legal_documents: cleanDocuments(p.legal_documents),
+      legal_documents: legalDocuments,
       latitude: typeof p.latitude === "number" ? p.latitude : null,
       longitude: typeof p.longitude === "number" ? p.longitude : null,
       description: cleanText(p.description, 2000),
