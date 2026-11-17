@@ -47,7 +47,7 @@ begin
       array[]::text[]
     )
   from public.users u
-  left join public.user_roles ur on ur.user_id = u.id
+  left join public.user_roles ur on ur.user_id = u.id and ur.scope_type = 'global' and ur.scope_id is null
   left join public.roles r on r.id = ur.role_id
   group by u.id
   order by u.created_at desc;
