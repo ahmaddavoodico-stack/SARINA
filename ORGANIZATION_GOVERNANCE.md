@@ -125,3 +125,14 @@ User experience:
 ### Outstanding security finding
 
 Supabase Security Advisors still reports `public.spatial_ref_sys` with RLS disabled. It was not changed automatically because enabling RLS without a deliberate read policy can break spatial reference lookups. Review and decide its read-only policy before changing it. The advisors also report other pre-existing SECURITY DEFINER RPCs and 19 RLS-enabled tables with no policies; these require a separate targeted review rather than blanket grants or blanket policies.
+
+
+## Organization self-service onboarding — 2026-11-17
+
+- Private companies and eligible private institutions can choose an organization account at sign-up. The authenticated onboarding Edge Function creates the internal user profile if needed and grants only the organization application role; organization capabilities still require an approved organization record, active membership, capability and scope.
+- Organization profile drafts are stored separately in `organization_profiles`, behind RLS and service-role-only database grants. Drafts can be saved and resumed without submitting a review application.
+- The company workspace captures identity, registration reference, country/city/address, office and branch details, contact phones/email, website, map coordinates, social/promotional links, activity areas and service regions. It intentionally does not collect bank, settlement, tax or other financial-account information.
+- Submitting a review application requires legal/display names, organization type, a contact method, city and address. Reviewers may request additional legal evidence. Secure file upload is not yet enabled; the current UI records document titles/types only and explicitly discloses this limitation.
+- When a central administrator changes an application to `approved`, a database trigger provisions the verified organization record and active owner membership and marks its onboarding profile verified.
+- Company marketplace publication is additionally gated server-side by the seller verification state, verified organization, active owner membership and verified onboarding profile. Draft preparation remains possible before approval.
+- The company workspace and API changes are on `feature/organization-onboarding`; they are not yet merged into the production frontend branch. A production frontend build and end-to-end browser test are still required before release.
