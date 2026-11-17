@@ -96,7 +96,7 @@ export default function OrganizationPortal({session,onLogout}:{session:Session;o
  const field=(label:string,key:keyof Profile,placeholder="",type="text")=><label className="org-field">{label}<input type={type} value={form[key]} onChange={set(key)} placeholder={placeholder} disabled={locked} dir={["website_url","contact_email","latitude","longitude"].includes(key)?"ltr":"auto"}/></label>;
  if(loading)return <div className="loading-screen">در حال آماده‌سازی پنل شرکت...</div>;
  return <div className="org-shell" dir="rtl">
-  <header className="org-top"><div className="org-brand"><span><Building2/></span><div><b>SARINA</b><small>پنل سازمانی</small></div></div><div className="org-user"><span>{session.user.email}</span><button onClick={onLogout}>خروج</button></div></header>
+  <header className="org-top"><div className="org-brand"><span><Building2/></span><div><b>SARINA</b><small>پنل سازمانی</small></div></div><div className="org-user"><a className="org-market-link" href="/app/?workspace=marketplace">بازارگاه</a><span>{session.user.email}</span><button onClick={onLogout}>خروج</button></div></header>
   <main className="org-main">
    <div className="org-welcome"><div><span className="eyebrow">فضای اختصاصی شرکت‌ها</span><h1>به سارینا خوش آمدید</h1><p>اطلاعات شرکت را هر زمان خواستید تکمیل کنید؛ برای آشنایی با محیط نیازی به تکمیل همه مدارک نیست.</p></div><div className="org-status"><ShieldCheck/><b>{statusText[status]||"پیش‌نویس"}</b></div></div>
    <section className="org-progress"><div><strong>تکمیل پروفایل شرکت</strong><b>{percent.toLocaleString("fa-IR")}٪</b></div><div className="org-track"><span style={{width:percent+"%"}}/></div><small>پیشرفت ذخیره می‌شود و می‌توانید بعداً از همین‌جا ادامه دهید.</small></section>
