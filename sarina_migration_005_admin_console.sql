@@ -32,6 +32,7 @@ GRANT EXECUTE ON FUNCTION private.is_sarina_admin() TO authenticated;
 GRANT SELECT ON TABLE public.users TO authenticated;
 GRANT SELECT ON TABLE public.organization_members TO authenticated;
 GRANT SELECT ON TABLE public.organizations, public.organization_applications TO authenticated;
+GRANT UPDATE ON TABLE public.organizations TO authenticated;
 
 DROP POLICY IF EXISTS "sarina_admin_read_all_users" ON public.users;
 CREATE POLICY "sarina_admin_read_all_users"
