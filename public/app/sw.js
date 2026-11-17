@@ -1,5 +1,5 @@
 const CACHE = 'sarina-farmer-v11';
-const CORE = ['./', './index.html', './styles.css', './app.js', './admin.js', './admin.css', './experts.js', './weather.js', './manifest.webmanifest', './icon.svg'];
+const CORE = ['./', './index.html', './styles.css', './app.js', './admin.js', './admin.css', './experts.js', './weather.js', './marketplace.js', './operations.js', './contracts.js', './organizations.js', './manifest.webmanifest', './icon.svg'];
 const STATIC_PATHS = new Set(CORE.map(path => new URL(path, self.registration.scope).pathname));
 
 self.addEventListener('install', event => {
