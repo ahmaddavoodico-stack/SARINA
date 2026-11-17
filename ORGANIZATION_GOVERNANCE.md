@@ -125,3 +125,22 @@ User experience:
 ### Outstanding security finding
 
 Supabase Security Advisors still reports `public.spatial_ref_sys` with RLS disabled. It was not changed automatically because enabling RLS without a deliberate read policy can break spatial reference lookups. Review and decide its read-only policy before changing it. The advisors also report other pre-existing SECURITY DEFINER RPCs and 19 RLS-enabled tables with no policies; these require a separate targeted review rather than blanket grants or blanket policies.
+
+
+## Organization self-service onboarding — 2026-11-17
+
+- Private companies and eligible private institutions can choose an organization account at sign-up. The authenticated onboarding Edge Function creates the internal user profile if needed and grants only the organization application role; organization capabilities still require an approved organization record, active membership, capability and scope.
+- Organization profile drafts are stored separately in `organization_profiles`, behind RLS and service-role-only database grants. Drafts can be saved and resumed without submitting a review application.
+- The company workspace captures identity, registration reference, country/city/address, office and branch details, contact phones/email, website, map coordinates, social/promotional links, activity areas and service regions. It intentionally does not collect bank, settlement, tax or other financial-account information.
+- Submitting a review application requires legal/display names, organization type, a contact method, city and address. Reviewers may request additional legal evidence. Legal evidence is uploaded to a private Storage bucket with organization-owner-only access. PDF, JPG and PNG files are limited to 10 MB each; review submission and final approval require an uploaded object reference. No financial or bank-account details are collected.
+- When a central administrator changes an application to `approved`, a database trigger provisions the verified organization record and active owner membership and marks its onboarding profile verified.
+- Company marketplace publication is additionally gated server-side by the seller verification state, verified organization, active owner membership and verified onboarding profile. Draft preparation remains possible before approval.
+- The company workspace, farmer-facing verified-company directory, storage policies and API changes are on `feature/organization-onboarding`; they are not yet merged into the production frontend branch. A production frontend build and end-to-end browser test are still required before release.
+
+
+## Farmer company ratings — 2026-11-17
+
+- Active farmer-role accounts can submit one rating (1–5) per verified organization and edit their rating later. The database enforces the role check and one-review-per-farmer/company rule through a security-definer RPC.
+- Public rating summaries expose average rating and review count. The company directory highlights a company as top-rated only at 4.5+ average with at least five ratings.
+- These ratings currently represent registered farmer feedback, not independently verified purchases or transactions. Review moderation/reporting and transaction-linked verification are future governance work.
+- The rating schema and farmer-only server-side checks are applied in Supabase. The frontend rating UI is in the onboarding pull request; latest Vercel preview build is currently failing and must be diagnosed before the UI is considered released.
