@@ -6,7 +6,7 @@ import {supabase} from "../lib/supabase";
 
 type Props={session:Session;sarinaUserId:string;onLogout:()=>void};
 type Profile={id:string;user_id:string;public_name:string;biography:string|null;verification_status:string;years_experience:number|null;profile_visibility:string};
-type Signal={id:string;title:string;message:string;evidence_summary:Record<string,unknown>;attribution_confidence:string;signal_status:string;created_at:string;impact_record_id:string|null};
+type Signal={id:string;title:string;message:string;evidence_summary:Record<string,unknown>;attribution_confidence:string;signal_status:string;generated_at:string;created_at:string;impact_record_id:string|null};
 type Impact={id:string;record_kind:string;title:string;summary:string;status:string;innovation_details:Record<string,unknown>;submitted_at:string|null;created_at:string};
 type Assignment={id:string;request_id:string;assignment_status:string;offered_at:string;responded_at:string|null;expert_requests:{id:string;subject:string;problem_description:string;request_type:string;priority:string;status:string;created_at:string}};
 type Award={id:string;title:string;citation:string;award_level:string;status:string;issued_at:string|null;issuer_name:string};
