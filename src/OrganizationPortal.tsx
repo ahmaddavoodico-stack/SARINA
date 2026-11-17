@@ -18,7 +18,7 @@ function toForm(raw:Record<string,any>|null):Profile {
  if(!raw)return empty;
  const links=Array.isArray(raw.social_links)?raw.social_links.map((x:any)=>[x.platform,x.url].filter(Boolean).join(" | ")).join("\n"):"";
  const offices=Array.isArray(raw.office_locations)?raw.office_locations.map((x:any)=>[x.label,x.city,x.address].filter(Boolean).join(" | ")).join("\n"):"";
- const docs=Array.isArray(raw.legal_documents)?raw.legal_documents.map((x:any)=>[x.document_type,x.title].filter(Boolean).join(" | ")).join("\n"):"";
+ const docs=Array.isArray(raw.legal_documents)?raw.legal_documents.map((x:any)=>[x.document_type,x.title,x.storage_path].filter(Boolean).join(" | ")).join("\n"):"";
  return {...empty,...raw,latitude:raw.latitude==null?"":String(raw.latitude),longitude:raw.longitude==null?"":String(raw.longitude),contact_phones:Array.isArray(raw.contact_phones)?raw.contact_phones.join("\n"):"",support_areas:Array.isArray(raw.support_areas)?raw.support_areas.join("\n"):"",service_regions:Array.isArray(raw.service_regions)?raw.service_regions.join("\n"):"",social_links:links,office_locations:offices,legal_documents:docs};
 }
 function toPayload(f:Profile){
@@ -27,11 +27,11 @@ function toPayload(f:Profile){
   support_areas:lines(f.support_areas),service_regions:lines(f.service_regions),
   social_links:lines(f.social_links).map(x=>{const [platform,url]=x.split("|").map(y=>y.trim());return {platform:platform||"other",url};}),
   office_locations:lines(f.office_locations).map(x=>{const [label,city,address]=x.split("|").map(y=>y.trim());return {label:label||"دفتر",city,address:address||city||label};}),
-  legal_documents:lines(f.legal_documents).map(x=>{const [document_type,title]=x.split("|").map(y=>y.trim());return {document_type:document_type||"other",title:title||document_type};})
+  legal_documents:lines(f.legal_documents).map(x=>{const [document_type,title,storage_path]=x.split("|").map(y=>y.trim());return {document_type:document_type||"other",title:title||document_type,storage_path:storage_path||null};})
  };
 }
 export default function OrganizationPortal({session,onLogout}:{session:Session;onLogout:()=>void}){
- const [form,setForm]=useState<Profile>(empty),[percent,setPercent]=useState(0),[status,setStatus]=useState("draft"),[application,setApplication]=useState<any>(null),[busy,setBusy]=useState(false),[loading,setLoading]=useState(true),[message,setMessage]=useState("");
+ const [form,setForm]=useState<Profile>(empty),[percent,setPercent]=useState(0),[status,setStatus]=useState("draft"),[application,setApplication]=useState<any>(null),[busy,setBusy]=useState(false),[uploading,setUploading]=useState(false),[loading,setLoading]=useState(true),[message,setMessage]=useState("");
  const locked=["under_review","verified","suspended"].includes(status);
  const statusText:Record<string,string>={draft:"پیش‌نویس؛ قابل تکمیل",needs_correction:"نیازمند اصلاح",under_review:"در حال بررسی سارینا",verified:"تأییدشده",suspended:"تعلیق‌شده"};
  async function refresh(){
@@ -51,6 +51,27 @@ export default function OrganizationPortal({session,onLogout}:{session:Session;o
    setPercent(data.draft.completion_percent);setStatus(data.draft.status);setMessage("اطلاعات با موفقیت ذخیره شد؛ هر زمان خواستید می‌توانید ادامه دهید.");
   }catch(e){setMessage(e instanceof Error?e.message:"ذخیره اطلاعات ناموفق بود.");}finally{setBusy(false);}
  }
+ async function uploadDocuments(e:ChangeEvent<HTMLInputElement>){
+  if(!supabase)return;
+  const files=Array.from(e.target.files??[]);
+  if(!files.length)return;
+  setUploading(true);setMessage("");
+  try{
+   const added:string[]=[];
+   for(const file of files){
+    if(file.size>10*1024*1024)throw new Error("حجم هر مدرک باید کمتر از ۱۰ مگابایت باشد.");
+    if(!["application/pdf","image/jpeg","image/png"].includes(file.type))throw new Error("فقط فایل PDF یا تصویر JPG و PNG پذیرفته می‌شود.");
+    const safeName=file.name.replace(/[^\\p{L}\\p{N}._-]/gu,"_").slice(0,100);
+    const path=session.user.id+"/"+crypto.randomUUID()+"-"+safeName;
+    const {error}=await supabase.storage.from("organization-documents").upload(path,file,{contentType:file.type,upsert:false});
+    if(error)throw new Error("بارگذاری مدرک انجام نشد: "+error.message);
+    added.push((file.type==="application/pdf"?"pdf":"image")+" | "+file.name+" | "+path);
+   }
+   setForm(old=>({...old,legal_documents:[...lines(old.legal_documents),...added].join("\\n")}));
+   setMessage("مدارک به‌صورت خصوصی بارگذاری شدند. برای ثبت درخواست بررسی، اطلاعات را ذخیره و ارسال کنید.");
+  }catch(err){setMessage(err instanceof Error?err.message:"بارگذاری مدرک ناموفق بود.");}
+  finally{setUploading(false);e.target.value="";}
+ }
  async function submit(){
   if(!supabase)return;
   setBusy(true);setMessage("");
@@ -58,7 +79,7 @@ export default function OrganizationPortal({session,onLogout}:{session:Session;o
    const saved=await supabase.functions.invoke("organization-registration",{body:{action:"save_draft",profile_data:toPayload(form)}});
    if(saved.error||!saved.data?.ok)throw new Error("ابتدا اطلاعات را ذخیره کنید و موارد ضروری را کامل کنید.");
    const result=await supabase.functions.invoke("organization-registration",{body:{action:"submit"}});
-   if(result.error||!result.data?.ok)throw new Error(result.data?.code==="REQUIRED_FIELDS_MISSING"?"نام رسمی، نام نمایشی، نوع شرکت، راه تماس، شهر و نشانی دفتر الزامی است.":"ارسال برای بررسی انجام نشد.");
+   if(result.error||!result.data?.ok)throw new Error(result.data?.code==="REQUIRED_FIELDS_MISSING"?"نام رسمی، نام نمایشی، نوع شرکت، راه تماس، شهر و نشانی دفتر الزامی است.":result.data?.code==="LEGAL_DOCUMENTS_REQUIRED"?"برای ارسال درخواست، دست‌کم یک مدرک قانونی را بارگذاری کنید.":"ارسال برای بررسی انجام نشد.");
    await refresh();setMessage("پرونده برای بررسی ارسال شد. تا زمان تأیید، امکان فروش فعال نمی‌شود.");
   }catch(e){setMessage(e instanceof Error?e.message:"ارسال پرونده ناموفق بود.");}finally{setBusy(false);}
  }
@@ -98,7 +119,7 @@ export default function OrganizationPortal({session,onLogout}:{session:Session;o
    </div></section>
    <section className="org-section"><h2>۵. مدارک قانونی</h2><p>فعلاً عنوان مدارک موردنیاز را ثبت کنید. بارگذاری امن فایل‌ها در مرحله اتصال فضای اسناد فعال خواهد شد.</p><label className="org-field">عنوان مدرک و نوع آن (هر خط: نوع | عنوان)<textarea value={form.legal_documents} onChange={set("legal_documents")} disabled={locked} rows={3} placeholder={"مجوز فعالیت | پروانه کسب\nثبت شرکت | آگهی تأسیس"}/></label><div className="org-hint"><UploadCloud size={18}/> فایل‌های مدرک هنوز در این نسخه بارگذاری نمی‌شوند؛ این قسمت فعلاً برای ثبت فهرست مدارک است.</div></section>
    <section className="org-gate"><ShieldCheck/><div><b>مجوز فروش پس از تأیید فعال می‌شود</b><p>ورود به پنل، آشنایی با محیط و ذخیره اطلاعات آزاد است. انتشار محصول و فروش تا تکمیل و تأیید اطلاعات و مدارک ضروری غیرفعال می‌ماند.</p></div></section>
-   <div className="org-actions"><button className="primary-button" onClick={save} disabled={busy||locked}><Save size={17}/>{busy?"در حال ذخیره...":"ذخیره و ادامه در آینده"}</button><button className="org-submit" onClick={submit} disabled={busy||locked}>ارسال اطلاعات برای بررسی <ArrowLeft size={17}/></button></div>
+   <div className="org-actions"><button className="primary-button" onClick={save} disabled={busy||uploading||locked}><Save size={17}/>{busy?"در حال ذخیره...":"ذخیره و ادامه در آینده"}</button><button className="org-submit" onClick={submit} disabled={busy||uploading||locked}>ارسال اطلاعات برای بررسی <ArrowLeft size={17}/></button></div>
    <footer className="org-footer">SARINA · هیچ کشاورزی تنها نیست · پنل سازمانی</footer>
   </main>
  </div>;
