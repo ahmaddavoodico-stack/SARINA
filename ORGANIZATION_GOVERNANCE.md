@@ -136,3 +136,11 @@ Supabase Security Advisors still reports `public.spatial_ref_sys` with RLS disab
 - When a central administrator changes an application to `approved`, a database trigger provisions the verified organization record and active owner membership and marks its onboarding profile verified.
 - Company marketplace publication is additionally gated server-side by the seller verification state, verified organization, active owner membership and verified onboarding profile. Draft preparation remains possible before approval.
 - The company workspace, farmer-facing verified-company directory, storage policies and API changes are on `feature/organization-onboarding`; they are not yet merged into the production frontend branch. A production frontend build and end-to-end browser test are still required before release.
+
+
+## Farmer company ratings — 2026-11-17
+
+- Active farmer-role accounts can submit one rating (1–5) per verified organization and edit their rating later. The database enforces the role check and one-review-per-farmer/company rule through a security-definer RPC.
+- Public rating summaries expose average rating and review count. The company directory highlights a company as top-rated only at 4.5+ average with at least five ratings.
+- These ratings currently represent registered farmer feedback, not independently verified purchases or transactions. Review moderation/reporting and transaction-linked verification are future governance work.
+- The rating schema and farmer-only server-side checks are applied in Supabase. The frontend rating UI is in the onboarding pull request; latest Vercel preview build is currently failing and must be diagnosed before the UI is considered released.
