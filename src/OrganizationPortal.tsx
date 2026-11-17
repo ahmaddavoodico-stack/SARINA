@@ -1,5 +1,5 @@
 import {useEffect,useMemo,useState} from "react";
-import type {Session} from "@supabase/supabase-js";
+import type {Session,ChangeEvent} from "@supabase/supabase-js";
 import {ArrowLeft,Building2,CheckCircle2,Globe,Instagram,MapPin,Phone,Save,ShieldCheck,UploadCloud} from "lucide-react";
 import {supabase} from "./lib/supabase";
 
@@ -61,7 +61,7 @@ export default function OrganizationPortal({session,onLogout}:{session:Session;o
    await refresh();setMessage("پرونده برای بررسی ارسال شد. تا زمان تأیید، امکان فروش فعال نمی‌شود.");
   }catch(e){setMessage(e instanceof Error?e.message:"ارسال پرونده ناموفق بود.");}finally{setBusy(false);}
  }
- const set=(key:keyof Profile)=>(e:React.ChangeEvent<HTMLInputElement|HTMLTextAreaElement|HTMLSelectElement>)=>update(key,e.target.value);
+ const set=(key:keyof Profile)=>(e:ChangeEvent<HTMLInputElement|HTMLTextAreaElement|HTMLSelectElement>)=>update(key,e.target.value);
  const field=(label:string,key:keyof Profile,placeholder="",type="text")=><label className="org-field">{label}<input type={type} value={form[key]} onChange={set(key)} placeholder={placeholder} disabled={locked} dir={["website_url","contact_email","latitude","longitude"].includes(key)?"ltr":"auto"}/></label>;
  if(loading)return <div className="loading-screen">در حال آماده‌سازی پنل شرکت...</div>;
  return <div className="org-shell" dir="rtl">
