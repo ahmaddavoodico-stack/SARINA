@@ -38,3 +38,7 @@ Read ops/backup/README.md before any production change. No production data backu
 ## Project governance
 
 See ORGANIZATION_GOVERNANCE.md for the institutional governance and service-routing model.
+
+## Deployment verification
+
+This documentation-only commit is used to trigger a fresh Vercel deployment from the production branch. It does not change application code, database schema, or runtime behavior.
