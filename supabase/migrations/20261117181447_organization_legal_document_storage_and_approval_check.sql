@@ -64,9 +64,6 @@ begin
     select exists (
       select 1
       from jsonb_array_elements(coalesce(new.legal_documents,'[]'::jsonb)) d
-      join storage.objects so
-        on so.bucket_id = 'organization-documents'
-       and so.name = d->>'storage_path'
       where nullif(d->>'storage_path','') is not null
     ) into v_has_uploaded_document;
     if not v_has_uploaded_document then
