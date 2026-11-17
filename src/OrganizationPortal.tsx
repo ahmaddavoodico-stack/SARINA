@@ -47,7 +47,7 @@ export default function OrganizationPortal({session,onLogout}:{session:Session;o
   if(!supabase)return;
   const {data,error}=await supabase.functions.invoke("organization-registration",{body:{action:"status"}});
   if(error||!data?.ok)throw new Error("دریافت اطلاعات سازمان ممکن نشد.");
-  setForm(toForm(data.draft?.profile_data??null));setPercent(data.draft?.completion_percent??0);setStatus(data.draft?.status??"draft");setApplication(data.applications?.[0]??null);
+  const latest=data.applications?.[0]??null;setForm(toForm(data.draft?.profile_data??null));setPercent(data.draft?.completion_percent??0);setApplication(latest);setStatus(data.draft?.status??(latest&&["pending","under_review"].includes(latest.status)?"under_review":"draft"));
  }
  useEffect(()=>{let live=true;(async()=>{try{await refresh();}catch(e){if(live)setMessage(e instanceof Error?e.message:"خطا در دریافت اطلاعات");}finally{if(live)setLoading(false);}})();return()=>{live=false;};},[]);
  const update=(key:keyof Profile,value:string)=>setForm(old=>({...old,[key]:value}));
@@ -112,7 +112,7 @@ export default function OrganizationPortal({session,onLogout}:{session:Session;o
     {field("حوزه‌های فعالیت","support_areas","هر مورد در یک خط")}
    </div><label className="org-field">معرفی کوتاه شرکت<textarea value={form.description} onChange={set("description")} disabled={locked} rows={3}/></label></section>
    <section className="org-section"><h2>۲. اطلاعات تماس و نشانی</h2><p>راه‌های ارتباطی و محل دفتر مرکزی و شعب</p><div className="org-grid">
-    {field("شماره تماس اصلی *","contact_phone","+98...")}
+    {field("شماره تماس اصلی","contact_phone","+98...")}
     {field("ایمیل ارتباطی","contact_email","info@example.com","email")}
     {field("وب‌سایت رسمی","website_url","https://example.com","url")}
     {field("شماره‌های تماس دیگر","contact_phones","هر شماره در یک خط")}
