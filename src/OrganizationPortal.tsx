@@ -61,13 +61,13 @@ export default function OrganizationPortal({session,onLogout}:{session:Session;o
    for(const file of files){
     if(file.size>10*1024*1024)throw new Error("حجم هر مدرک باید کمتر از ۱۰ مگابایت باشد.");
     if(!["application/pdf","image/jpeg","image/png"].includes(file.type))throw new Error("فقط فایل PDF یا تصویر JPG و PNG پذیرفته می‌شود.");
-    const safeName=file.name.replace(/[^\\p{L}\\p{N}._-]/gu,"_").slice(0,100);
+    const safeName=file.name.replace(/[^\p{L}\p{N}._-]/gu,"_").slice(0,100);
     const path=session.user.id+"/"+crypto.randomUUID()+"-"+safeName;
     const {error}=await supabase.storage.from("organization-documents").upload(path,file,{contentType:file.type,upsert:false});
     if(error)throw new Error("بارگذاری مدرک انجام نشد: "+error.message);
     added.push((file.type==="application/pdf"?"pdf":"image")+" | "+file.name+" | "+path);
    }
-   setForm(old=>({...old,legal_documents:[...lines(old.legal_documents),...added].join("\\n")}));
+   setForm(old=>({...old,legal_documents:[...lines(old.legal_documents),...added].join("\n")}));
    setMessage("مدارک به‌صورت خصوصی بارگذاری شدند. برای ثبت درخواست بررسی، اطلاعات را ذخیره و ارسال کنید.");
   }catch(err){setMessage(err instanceof Error?err.message:"بارگذاری مدرک ناموفق بود.");}
   finally{setUploading(false);e.target.value="";}
@@ -117,8 +117,7 @@ export default function OrganizationPortal({session,onLogout}:{session:Session;o
     <label className="org-field">محصولات یا خدمات اصلی<textarea value={form.support_areas} onChange={set("support_areas")} disabled={locked} rows={3} placeholder="هر مورد در یک خط"/></label>
     <label className="org-field">استان‌ها و مناطق تحت پوشش<textarea value={form.service_regions} onChange={set("service_regions")} disabled={locked} rows={3} placeholder="هر منطقه در یک خط"/></label>
    </div></section>
-   <section className="org-section"><h2>۵. مدارک قانونی</h2><p>فعلاً عنوان مدارک موردنیاز را ثبت کنید. بارگذاری امن فایل‌ها در مرحله اتصال فضای اسناد فعال خواهد شد.</p><label className="org-field">عنوان مدرک و نوع آن (هر خط: نوع | عنوان)<textarea value={form.legal_documents} onChange={set("legal_documents")} disabled={locked} rows={3} placeholder={"مجوز فعالیت | پروانه کسب\nثبت شرکت | آگهی تأسیس"}/></label><div className="org-hint"><UploadCloud size={18}/> فایل‌های مدرک هنوز در این نسخه بارگذاری نمی‌شوند؛ این قسمت فعلاً برای ثبت فهرست مدارک است.</div></section>
-   <section className="org-gate"><ShieldCheck/><div><b>مجوز فروش پس از تأیید فعال می‌شود</b><p>ورود به پنل، آشنایی با محیط و ذخیره اطلاعات آزاد است. انتشار محصول و فروش تا تکمیل و تأیید اطلاعات و مدارک ضروری غیرفعال می‌ماند.</p></div></section>
+   <section className="org-section"><h2>۵. مدارک قانونی</h2><p>مدارک را می‌توانید همین حالا یا بعداً بارگذاری کنید. فایل‌ها خصوصی هستند و فقط برای بررسی سازمانی استفاده می‌شوند.</p><label className="org-field">بارگذاری مدارک (PDF، JPG، PNG)<input type="file" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" multiple disabled={locked||uploading} onChange={uploadDocuments}/></label><label className="org-field">فهرست مدارک بارگذاری‌شده<textarea value={form.legal_documents} readOnly rows={4} placeholder="پس از بارگذاری، نام و مسیر خصوصی مدارک اینجا نمایش داده می‌شود."/></label><div className="org-hint"><UploadCloud size={18}/> حداکثر حجم هر فایل ۱۰ مگابایت است. ارسال درخواست بررسی به حداقل یک مدرک بارگذاری‌شده نیاز دارد.</div></section><section className="org-gate"><ShieldCheck/><div><b>مجوز فروش پس از تأیید فعال می‌شود</b><p>ورود به پنل، آشنایی با محیط و ذخیره اطلاعات آزاد است. انتشار محصول و فروش تا تکمیل و تأیید اطلاعات و مدارک ضروری غیرفعال می‌ماند.</p></div></section>
    <div className="org-actions"><button className="primary-button" onClick={save} disabled={busy||uploading||locked}><Save size={17}/>{busy?"در حال ذخیره...":"ذخیره و ادامه در آینده"}</button><button className="org-submit" onClick={submit} disabled={busy||uploading||locked}>ارسال اطلاعات برای بررسی <ArrowLeft size={17}/></button></div>
    <footer className="org-footer">SARINA · هیچ کشاورزی تنها نیست · پنل سازمانی</footer>
   </main>
