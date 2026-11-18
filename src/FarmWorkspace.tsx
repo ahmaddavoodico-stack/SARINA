@@ -102,6 +102,17 @@ export default function FarmWorkspace({session}:{session:Session}){
     <button className="primary-button" disabled={saving}>{saving?"در حال ذخیره...":"ذخیره پرونده مزرعه"} <ArrowLeft size={17}/></button>
    </form>
   </article>}
+  <article className="panel" style={{marginTop:24}}>
+   <div className="section-title"><div><span className="eyebrow">اسناد و تصاویر</span><h2>مدارک هر مزرعه</h2></div></div>
+   <p className="muted">برای هر مزرعه می‌توانید مدارک PDF یا تصویر JPG و PNG تا حجم ۱۰ مگابایت بارگذاری کنید.</p>
+   {farms.length===0?<p className="muted">ابتدا یک پرونده مزرعه ایجاد کنید.</p>:farms.map(f=><div key={f.id} style={{borderTop:"1px solid var(--border)",paddingTop:14,marginTop:14}}>
+    <strong>{f.farm_name}</strong>
+    <label style={{display:"block",marginTop:10}}>افزودن مدرک
+     <input type="file" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" onChange={e=>void uploadDocument(f.id,e.currentTarget.files?.[0]??null,e.currentTarget)}/>
+    </label>
+    {documents.filter(d=>d.farm_id===f.id).length===0?<p className="muted">هنوز مدرکی ثبت نشده است.</p>:<ul>{documents.filter(d=>d.farm_id===f.id).map(d=><li key={d.id}><button type="button" className="text-button" onClick={()=>void openDocument(d.storage_path)}>{d.file_name}</button> <small className="muted">{(d.file_size_bytes/1024/1024).toFixed(2)} مگابایت</small></li>)}</ul>}
+   </div>)}
+  </article>
   <div className="section-title"><div><span className="eyebrow">پرونده‌های شما</span><h2>فهرست مزارع</h2></div><button className="text-button" onClick={()=>void load()} disabled={loading}><RefreshCw size={15}/> به‌روزرسانی</button></div>
   {loading?<div className="empty-state">در حال دریافت مزارع...</div>:farms.length===0?<div className="empty-state"><Sprout size={36}/><strong>هنوز مزرعه‌ای ثبت نکرده‌اید</strong><p>با ایجاد اولین پرونده، اطلاعات مزرعه شما در سارینا ذخیره می‌شود.</p><button className="primary-button" onClick={()=>setShowForm(true)}>شروع پرونده مزرعه <ArrowLeft size={16}/></button></div>:<div className="admin-table-wrap"><table className="admin-table"><thead><tr><th>نام مزرعه</th><th>مساحت</th><th>وضعیت</th><th>تاریخ ایجاد</th></tr></thead><tbody>{farms.map(f=><tr key={f.id}><td>{f.farm_name}</td><td>{f.total_area===null?"ثبت نشده":Number(f.total_area).toLocaleString("fa-IR")+" "+unitText(f.area_unit)}</td><td>{statusText(f.status)}</td><td>{new Date(f.created_at).toLocaleDateString("fa-IR")}</td></tr>)}</tbody></table></div>}
  </section>;
