@@ -60,7 +60,7 @@ export default function FarmWorkspace({session}:{session:Session}){
   try{
    const{data:profile,error:profileError}=await supabase!.from("users").select("id").eq("auth_user_id",session.user.id).single();
    if(profileError)throw profileError;
-   const safeName=file.name.replace(/[^\\p{L}\\p{N}._-]/gu,"_").slice(-120)||"document";
+   const safeName=file.name.replace(/[^a-zA-Z0-9._-]/g,"_").slice(-120)||"document";
    const path=session.user.id+"/"+farmId+"/"+crypto.randomUUID()+"-"+safeName;
    const{error:uploadError}=await supabase!.storage.from("farmer-documents").upload(path,file,{contentType:file.type,upsert:false});
    if(uploadError)throw uploadError;
