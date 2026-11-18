@@ -5,9 +5,10 @@ import {ArrowLeft,MapPin,Plus,RefreshCw,Sprout} from "lucide-react";
 import {supabase} from "./lib/supabase";
 
 type Farm={id:string;farm_name:string;total_area:number|null;area_unit:string;status:string;created_at:string};
+type FarmDocument={id:string;farm_id:string;file_name:string;storage_path:string;mime_type:string;file_size_bytes:number;created_at:string};
 const units=[{value:"hectare",label:"هکتار"},{value:"acre",label:"آکر"},{value:"square_meter",label:"متر مربع"}];
 export default function FarmWorkspace({session}:{session:Session}){
- const[farms,setFarms]=useState<Farm[]>([]),[loading,setLoading]=useState(true),[saving,setSaving]=useState(false),[showForm,setShowForm]=useState(false),[error,setError]=useState(""),[notice,setNotice]=useState("");
+ const[farms,setFarms]=useState<Farm[]>([]),[documents,setDocuments]=useState<FarmDocument[]>([]),[loading,setLoading]=useState(true),[saving,setSaving]=useState(false),[showForm,setShowForm]=useState(false),[error,setError]=useState(""),[notice,setNotice]=useState("");
  const[name,setName]=useState(""),[area,setArea]=useState(""),[unit,setUnit]=useState("hectare"),[latitude,setLatitude]=useState(""),[longitude,setLongitude]=useState("");
  async function load(){
   if(!supabase)return;
@@ -16,6 +17,9 @@ export default function FarmWorkspace({session}:{session:Session}){
    const{data,error}=await supabase.from("farms").select("id,farm_name,total_area,area_unit,status,created_at").order("created_at",{ascending:false});
    if(error)throw error;
    setFarms((data??[]) as Farm[]);
+   const{data:docRows,error:docError}=await supabase.from("farm_documents").select("id,farm_id,file_name,storage_path,mime_type,file_size_bytes,created_at").order("created_at",{ascending:false});
+   if(docError)throw docError;
+   setDocuments((docRows??[]) as FarmDocument[]);
   }catch(e){setError(e instanceof Error?e.message:"دریافت پرونده‌های مزرعه انجام نشد.");}
   finally{setLoading(false);}
  }
@@ -46,6 +50,31 @@ export default function FarmWorkspace({session}:{session:Session}){
    setNotice("پرونده مزرعه با موفقیت ذخیره شد."+(lat!==null?" موقعیت جغرافیایی نیز ثبت شد.":" برای تکمیل اطلاعات، می‌توانید موقعیت را بعداً اضافه کنید."));
   }catch(e){setError(e instanceof Error?e.message:"ذخیره پرونده مزرعه انجام نشد.");}
   finally{setSaving(false);}
+ }
+ async function uploadDocument(farmId:string,file:File|null,input:HTMLInputElement){
+  if(!file)return;
+  setError("");setNotice("");
+  const allowed=["application/pdf","image/jpeg","image/png"];
+  if(!allowed.includes(file.type)){setError("فقط فایل PDF یا تصویر JPG و PNG پذیرفته می‌شود.");input.value="";return;}
+  if(file.size>10*1024*1024){setError("حجم هر مدرک حداکثر ۱۰ مگابایت است.");input.value="";return;}
+  try{
+   const{data:profile,error:profileError}=await supabase!.from("users").select("id").eq("auth_user_id",session.user.id).single();
+   if(profileError)throw profileError;
+   const safeName=file.name.replace(/[^\\p{L}\\p{N}._-]/gu,"_").slice(-120)||"document";
+   const path=session.user.id+"/"+farmId+"/"+crypto.randomUUID()+"-"+safeName;
+   const{error:uploadError}=await supabase!.storage.from("farmer-documents").upload(path,file,{contentType:file.type,upsert:false});
+   if(uploadError)throw uploadError;
+   const{data:doc,error:insertError}=await supabase!.from("farm_documents").insert({farm_id:farmId,uploaded_by_user_id:profile.id,file_name:file.name,mime_type:file.type,file_size_bytes:file.size,storage_path:path}).select("id,farm_id,file_name,storage_path,mime_type,file_size_bytes,created_at").single();
+   if(insertError){await supabase!.storage.from("farmer-documents").remove([path]);throw insertError;}
+   setDocuments(current=>[doc as FarmDocument,...current]);
+   setNotice("مدرک با موفقیت بارگذاری و ذخیره شد.");
+  }catch(e){setError(e instanceof Error?e.message:"بارگذاری مدرک انجام نشد.");}
+  finally{input.value="";}
+ }
+ async function openDocument(path:string){
+  const{data,error}=await supabase!.storage.from("farmer-documents").createSignedUrl(path,60);
+  if(error){setError(error.message);return;}
+  window.open(data.signedUrl,"_blank","noopener,noreferrer");
  }
  const statusText=(s:string)=>s==="active"?"فعال":s==="inactive"?"غیرفعال":"بایگانی‌شده";
  const unitText=(u:string)=>units.find(x=>x.value===u)?.label||u;
