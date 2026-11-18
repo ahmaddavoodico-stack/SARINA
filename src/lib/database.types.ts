@@ -97,6 +97,63 @@ export type Database = {
           },
         ]
       }
+      ai_conversation_credit_ledger: {
+        Row: {
+          created_at: string
+          delta_units: number
+          description_code: string | null
+          entry_type: string
+          id: string
+          idempotency_key: string
+          metadata: Json
+          period_end: string | null
+          period_start: string | null
+          usage_event_id: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          delta_units: number
+          description_code?: string | null
+          entry_type: string
+          id?: string
+          idempotency_key: string
+          metadata?: Json
+          period_end?: string | null
+          period_start?: string | null
+          usage_event_id?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          delta_units?: number
+          description_code?: string | null
+          entry_type?: string
+          id?: string
+          idempotency_key?: string
+          metadata?: Json
+          period_end?: string | null
+          period_start?: string | null
+          usage_event_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_conversation_credit_ledger_usage_event_id_fkey"
+            columns: ["usage_event_id"]
+            isOneToOne: false
+            referencedRelation: "ai_usage_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_conversation_credit_ledger_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ai_conversations: {
         Row: {
           conversation_type: string
@@ -147,6 +204,51 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      ai_infrastructure_cost_entries: {
+        Row: {
+          amount: number
+          cost_basis: string
+          currency_code: string
+          id: string
+          metadata: Json
+          period_end: string
+          period_start: string
+          provider_code: string
+          recorded_at: string
+          service_category: string
+          service_code: string
+          source_reference: string | null
+        }
+        Insert: {
+          amount: number
+          cost_basis?: string
+          currency_code: string
+          id?: string
+          metadata?: Json
+          period_end: string
+          period_start: string
+          provider_code: string
+          recorded_at?: string
+          service_category: string
+          service_code: string
+          source_reference?: string | null
+        }
+        Update: {
+          amount?: number
+          cost_basis?: string
+          currency_code?: string
+          id?: string
+          metadata?: Json
+          period_end?: string
+          period_start?: string
+          provider_code?: string
+          recorded_at?: string
+          service_category?: string
+          service_code?: string
+          source_reference?: string | null
+        }
+        Relationships: []
       }
       ai_message_feedback: {
         Row: {
@@ -260,6 +362,93 @@ export type Database = {
           },
         ]
       }
+      ai_model_pricing: {
+        Row: {
+          cached_input_per_million: number | null
+          created_at: string
+          currency_code: string
+          id: string
+          image_unit_price: number | null
+          input_per_million: number | null
+          is_active: boolean
+          model_code: string
+          notes: string | null
+          output_per_million: number | null
+          pricing_version: string
+          provider_code: string
+          valid_from: string
+          valid_until: string | null
+        }
+        Insert: {
+          cached_input_per_million?: number | null
+          created_at?: string
+          currency_code?: string
+          id?: string
+          image_unit_price?: number | null
+          input_per_million?: number | null
+          is_active?: boolean
+          model_code: string
+          notes?: string | null
+          output_per_million?: number | null
+          pricing_version: string
+          provider_code: string
+          valid_from: string
+          valid_until?: string | null
+        }
+        Update: {
+          cached_input_per_million?: number | null
+          created_at?: string
+          currency_code?: string
+          id?: string
+          image_unit_price?: number | null
+          input_per_million?: number | null
+          is_active?: boolean
+          model_code?: string
+          notes?: string | null
+          output_per_million?: number | null
+          pricing_version?: string
+          provider_code?: string
+          valid_from?: string
+          valid_until?: string | null
+        }
+        Relationships: []
+      }
+      ai_model_routing_rules: {
+        Row: {
+          allow_fallback: boolean
+          fallback_model_code: string | null
+          id: string
+          is_enabled: boolean
+          max_input_tokens: number | null
+          max_output_tokens: number | null
+          preferred_model_code: string | null
+          request_class: string
+          updated_at: string
+        }
+        Insert: {
+          allow_fallback?: boolean
+          fallback_model_code?: string | null
+          id?: string
+          is_enabled?: boolean
+          max_input_tokens?: number | null
+          max_output_tokens?: number | null
+          preferred_model_code?: string | null
+          request_class: string
+          updated_at?: string
+        }
+        Update: {
+          allow_fallback?: boolean
+          fallback_model_code?: string | null
+          id?: string
+          is_enabled?: boolean
+          max_input_tokens?: number | null
+          max_output_tokens?: number | null
+          preferred_model_code?: string | null
+          request_class?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       ai_models: {
         Row: {
           capability: string
@@ -304,6 +493,48 @@ export type Database = {
           },
         ]
       }
+      ai_platform_budgets: {
+        Row: {
+          budget_amount: number
+          budget_month: string
+          budget_scope: string
+          created_at: string
+          currency_code: string
+          hard_limit_enabled: boolean
+          id: string
+          is_enabled: boolean
+          scope_code: string
+          updated_at: string
+          warning_threshold_percent: number
+        }
+        Insert: {
+          budget_amount: number
+          budget_month: string
+          budget_scope: string
+          created_at?: string
+          currency_code?: string
+          hard_limit_enabled?: boolean
+          id?: string
+          is_enabled?: boolean
+          scope_code?: string
+          updated_at?: string
+          warning_threshold_percent?: number
+        }
+        Update: {
+          budget_amount?: number
+          budget_month?: string
+          budget_scope?: string
+          created_at?: string
+          currency_code?: string
+          hard_limit_enabled?: boolean
+          id?: string
+          is_enabled?: boolean
+          scope_code?: string
+          updated_at?: string
+          warning_threshold_percent?: number
+        }
+        Relationships: []
+      }
       ai_providers: {
         Row: {
           configuration: Json
@@ -339,6 +570,109 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      ai_usage_events: {
+        Row: {
+          cached_input_tokens: number
+          conversation_id: string | null
+          cost_basis: string
+          created_at: string
+          farm_id: string | null
+          farmer_credit_units: number | null
+          feature_code: string
+          id: string
+          image_units: number
+          input_tokens: number
+          latency_ms: number | null
+          metadata: Json
+          model_code: string
+          output_tokens: number
+          pricing_version: string | null
+          provider_code: string
+          provider_cost_amount: number | null
+          provider_cost_currency: string
+          reasoning_tokens: number
+          request_id: string
+          status: string
+          tool_calls: number
+          usage_class: string
+          user_id: string
+        }
+        Insert: {
+          cached_input_tokens?: number
+          conversation_id?: string | null
+          cost_basis?: string
+          created_at?: string
+          farm_id?: string | null
+          farmer_credit_units?: number | null
+          feature_code: string
+          id?: string
+          image_units?: number
+          input_tokens?: number
+          latency_ms?: number | null
+          metadata?: Json
+          model_code: string
+          output_tokens?: number
+          pricing_version?: string | null
+          provider_code: string
+          provider_cost_amount?: number | null
+          provider_cost_currency?: string
+          reasoning_tokens?: number
+          request_id: string
+          status: string
+          tool_calls?: number
+          usage_class?: string
+          user_id: string
+        }
+        Update: {
+          cached_input_tokens?: number
+          conversation_id?: string | null
+          cost_basis?: string
+          created_at?: string
+          farm_id?: string | null
+          farmer_credit_units?: number | null
+          feature_code?: string
+          id?: string
+          image_units?: number
+          input_tokens?: number
+          latency_ms?: number | null
+          metadata?: Json
+          model_code?: string
+          output_tokens?: number
+          pricing_version?: string | null
+          provider_code?: string
+          provider_cost_amount?: number | null
+          provider_cost_currency?: string
+          reasoning_tokens?: number
+          request_id?: string
+          status?: string
+          tool_calls?: number
+          usage_class?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_usage_events_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "ai_conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_usage_events_farm_id_fkey"
+            columns: ["farm_id"]
+            isOneToOne: false
+            referencedRelation: "farms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_usage_events_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       communication_logs: {
         Row: {
@@ -903,6 +1237,54 @@ export type Database = {
           },
         ]
       }
+      expert_audio_sessions: {
+        Row: {
+          consultation_id: string
+          created_at: string
+          ended_at: string | null
+          expires_at: string
+          id: string
+          initiated_by: string
+          started_at: string | null
+          status: string
+        }
+        Insert: {
+          consultation_id: string
+          created_at?: string
+          ended_at?: string | null
+          expires_at?: string
+          id?: string
+          initiated_by: string
+          started_at?: string | null
+          status?: string
+        }
+        Update: {
+          consultation_id?: string
+          created_at?: string
+          ended_at?: string | null
+          expires_at?: string
+          id?: string
+          initiated_by?: string
+          started_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expert_audio_sessions_consultation_id_fkey"
+            columns: ["consultation_id"]
+            isOneToOne: false
+            referencedRelation: "expert_consultations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expert_audio_sessions_initiated_by_fkey"
+            columns: ["initiated_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       expert_consultation_messages: {
         Row: {
           consultation_id: string
@@ -1206,6 +1588,139 @@ export type Database = {
           },
         ]
       }
+      expert_impact_signals: {
+        Row: {
+          acknowledged_at: string | null
+          assessment_id: string | null
+          attribution_confidence: string
+          created_at: string
+          evidence_summary: Json
+          expert_profile_id: string
+          generated_at: string
+          id: string
+          impact_record_id: string | null
+          message: string
+          signal_status: string
+          title: string
+        }
+        Insert: {
+          acknowledged_at?: string | null
+          assessment_id?: string | null
+          attribution_confidence?: string
+          created_at?: string
+          evidence_summary?: Json
+          expert_profile_id: string
+          generated_at?: string
+          id?: string
+          impact_record_id?: string | null
+          message: string
+          signal_status?: string
+          title: string
+        }
+        Update: {
+          acknowledged_at?: string | null
+          assessment_id?: string | null
+          attribution_confidence?: string
+          created_at?: string
+          evidence_summary?: Json
+          expert_profile_id?: string
+          generated_at?: string
+          id?: string
+          impact_record_id?: string | null
+          message?: string
+          signal_status?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expert_impact_signals_assessment_id_fkey"
+            columns: ["assessment_id"]
+            isOneToOne: false
+            referencedRelation: "expert_impact_assessments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expert_impact_signals_expert_profile_id_fkey"
+            columns: ["expert_profile_id"]
+            isOneToOne: false
+            referencedRelation: "expert_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expert_impact_signals_impact_record_id_fkey"
+            columns: ["impact_record_id"]
+            isOneToOne: false
+            referencedRelation: "expert_impact_records"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      expert_ip_applications: {
+        Row: {
+          application_type: string
+          co_inventors: Json
+          created_at: string
+          evidence_refs: string[]
+          expert_profile_id: string
+          id: string
+          impact_record_id: string
+          legal_jurisdiction: string | null
+          novelty_summary: string
+          proposed_claims: string | null
+          status: string
+          submitted_at: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          application_type: string
+          co_inventors?: Json
+          created_at?: string
+          evidence_refs?: string[]
+          expert_profile_id: string
+          id?: string
+          impact_record_id: string
+          legal_jurisdiction?: string | null
+          novelty_summary: string
+          proposed_claims?: string | null
+          status?: string
+          submitted_at?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          application_type?: string
+          co_inventors?: Json
+          created_at?: string
+          evidence_refs?: string[]
+          expert_profile_id?: string
+          id?: string
+          impact_record_id?: string
+          legal_jurisdiction?: string | null
+          novelty_summary?: string
+          proposed_claims?: string | null
+          status?: string
+          submitted_at?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expert_ip_applications_expert_profile_id_fkey"
+            columns: ["expert_profile_id"]
+            isOneToOne: false
+            referencedRelation: "expert_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expert_ip_applications_impact_record_id_fkey"
+            columns: ["impact_record_id"]
+            isOneToOne: false
+            referencedRelation: "expert_impact_records"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       expert_profiles: {
         Row: {
           biography: string | null
@@ -1351,6 +1866,80 @@ export type Database = {
             columns: ["issuer_user_id"]
             isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      expert_recognition_requests: {
+        Row: {
+          created_at: string
+          expert_note: string | null
+          expert_profile_id: string
+          id: string
+          impact_record_id: string
+          request_type: string
+          review_note: string | null
+          reviewed_at: string | null
+          reviewed_by_user_id: string | null
+          signal_id: string
+          status: string
+          submitted_at: string
+        }
+        Insert: {
+          created_at?: string
+          expert_note?: string | null
+          expert_profile_id: string
+          id?: string
+          impact_record_id: string
+          request_type?: string
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by_user_id?: string | null
+          signal_id: string
+          status?: string
+          submitted_at?: string
+        }
+        Update: {
+          created_at?: string
+          expert_note?: string | null
+          expert_profile_id?: string
+          id?: string
+          impact_record_id?: string
+          request_type?: string
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by_user_id?: string | null
+          signal_id?: string
+          status?: string
+          submitted_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expert_recognition_requests_expert_profile_id_fkey"
+            columns: ["expert_profile_id"]
+            isOneToOne: false
+            referencedRelation: "expert_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expert_recognition_requests_impact_record_id_fkey"
+            columns: ["impact_record_id"]
+            isOneToOne: false
+            referencedRelation: "expert_impact_records"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expert_recognition_requests_reviewed_by_user_id_fkey"
+            columns: ["reviewed_by_user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expert_recognition_requests_signal_id_fkey"
+            columns: ["signal_id"]
+            isOneToOne: true
+            referencedRelation: "expert_impact_signals"
             referencedColumns: ["id"]
           },
         ]
@@ -1660,6 +2249,57 @@ export type Database = {
             columns: ["parent_id"]
             isOneToOne: false
             referencedRelation: "expertise_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      farm_documents: {
+        Row: {
+          created_at: string
+          document_type: string
+          farm_id: string
+          file_name: string
+          file_size_bytes: number
+          id: string
+          mime_type: string
+          storage_path: string
+          uploaded_by_user_id: string
+        }
+        Insert: {
+          created_at?: string
+          document_type?: string
+          farm_id: string
+          file_name: string
+          file_size_bytes: number
+          id?: string
+          mime_type: string
+          storage_path: string
+          uploaded_by_user_id: string
+        }
+        Update: {
+          created_at?: string
+          document_type?: string
+          farm_id?: string
+          file_name?: string
+          file_size_bytes?: number
+          id?: string
+          mime_type?: string
+          storage_path?: string
+          uploaded_by_user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "farm_documents_farm_id_fkey"
+            columns: ["farm_id"]
+            isOneToOne: false
+            referencedRelation: "farms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "farm_documents_uploaded_by_user_id_fkey"
+            columns: ["uploaded_by_user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
             referencedColumns: ["id"]
           },
         ]
@@ -2595,6 +3235,241 @@ export type Database = {
           },
         ]
       }
+      job_applications: {
+        Row: {
+          applicant_user_id: string
+          cover_message: string | null
+          created_at: string
+          id: string
+          job_id: string
+          proposed_pay: number | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          applicant_user_id: string
+          cover_message?: string | null
+          created_at?: string
+          id?: string
+          job_id: string
+          proposed_pay?: number | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          applicant_user_id?: string
+          cover_message?: string | null
+          created_at?: string
+          id?: string
+          job_id?: string
+          proposed_pay?: number | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_applications_applicant_user_id_fkey"
+            columns: ["applicant_user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_applications_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "job_listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      job_listings: {
+        Row: {
+          category: string
+          city: string | null
+          country_id: string | null
+          created_at: string
+          description: string
+          employer_user_id: string
+          employment_type: string
+          ends_on: string | null
+          experience_min_years: number | null
+          expires_at: string | null
+          farm_id: string | null
+          id: string
+          location_label: string | null
+          pay_currency: string | null
+          pay_max: number | null
+          pay_min: number | null
+          pay_type: string
+          region: string | null
+          required_skills: string[]
+          starts_on: string | null
+          status: string
+          title: string
+          updated_at: string
+          worker_count: number
+        }
+        Insert: {
+          category: string
+          city?: string | null
+          country_id?: string | null
+          created_at?: string
+          description: string
+          employer_user_id: string
+          employment_type: string
+          ends_on?: string | null
+          experience_min_years?: number | null
+          expires_at?: string | null
+          farm_id?: string | null
+          id?: string
+          location_label?: string | null
+          pay_currency?: string | null
+          pay_max?: number | null
+          pay_min?: number | null
+          pay_type?: string
+          region?: string | null
+          required_skills?: string[]
+          starts_on?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+          worker_count?: number
+        }
+        Update: {
+          category?: string
+          city?: string | null
+          country_id?: string | null
+          created_at?: string
+          description?: string
+          employer_user_id?: string
+          employment_type?: string
+          ends_on?: string | null
+          experience_min_years?: number | null
+          expires_at?: string | null
+          farm_id?: string | null
+          id?: string
+          location_label?: string | null
+          pay_currency?: string | null
+          pay_max?: number | null
+          pay_min?: number | null
+          pay_type?: string
+          region?: string | null
+          required_skills?: string[]
+          starts_on?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+          worker_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_listings_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "countries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_listings_employer_user_id_fkey"
+            columns: ["employer_user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_listings_farm_id_fkey"
+            columns: ["farm_id"]
+            isOneToOne: false
+            referencedRelation: "farms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      job_profiles: {
+        Row: {
+          availability: string
+          bio: string | null
+          city: string | null
+          country_id: string | null
+          created_at: string
+          display_name: string
+          employment_preferences: string[]
+          expected_pay_max: number | null
+          expected_pay_min: number | null
+          experience_years: number | null
+          headline: string | null
+          id: string
+          is_published: boolean
+          location_label: string | null
+          pay_currency: string | null
+          region: string | null
+          skills: string[]
+          updated_at: string
+          user_id: string
+          worker_type: string
+        }
+        Insert: {
+          availability?: string
+          bio?: string | null
+          city?: string | null
+          country_id?: string | null
+          created_at?: string
+          display_name: string
+          employment_preferences?: string[]
+          expected_pay_max?: number | null
+          expected_pay_min?: number | null
+          experience_years?: number | null
+          headline?: string | null
+          id?: string
+          is_published?: boolean
+          location_label?: string | null
+          pay_currency?: string | null
+          region?: string | null
+          skills?: string[]
+          updated_at?: string
+          user_id: string
+          worker_type?: string
+        }
+        Update: {
+          availability?: string
+          bio?: string | null
+          city?: string | null
+          country_id?: string | null
+          created_at?: string
+          display_name?: string
+          employment_preferences?: string[]
+          expected_pay_max?: number | null
+          expected_pay_min?: number | null
+          experience_years?: number | null
+          headline?: string | null
+          id?: string
+          is_published?: boolean
+          location_label?: string | null
+          pay_currency?: string | null
+          region?: string | null
+          skills?: string[]
+          updated_at?: string
+          user_id?: string
+          worker_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_profiles_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "countries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_profiles_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       location_permissions: {
         Row: {
           consent_status: string
@@ -2950,6 +3825,211 @@ export type Database = {
           },
         ]
       }
+      marketplace_price_observations: {
+        Row: {
+          created_at: string
+          currency: string
+          destination_country: string
+          id: string
+          market_region: string | null
+          notes: string | null
+          observed_at: string
+          price_max: number
+          price_min: number
+          product_id: string
+          quality_grade: string | null
+          seller_id: string
+          source_name: string
+          source_url: string | null
+          source_verified: boolean
+          trade_basis: string
+          unit_label: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          currency?: string
+          destination_country: string
+          id?: string
+          market_region?: string | null
+          notes?: string | null
+          observed_at: string
+          price_max: number
+          price_min: number
+          product_id: string
+          quality_grade?: string | null
+          seller_id: string
+          source_name: string
+          source_url?: string | null
+          source_verified?: boolean
+          trade_basis?: string
+          unit_label: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          currency?: string
+          destination_country?: string
+          id?: string
+          market_region?: string | null
+          notes?: string | null
+          observed_at?: string
+          price_max?: number
+          price_min?: number
+          product_id?: string
+          quality_grade?: string | null
+          seller_id?: string
+          source_name?: string
+          source_url?: string | null
+          source_verified?: boolean
+          trade_basis?: string
+          unit_label?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketplace_price_observations_product_seller_fk"
+            columns: ["product_id", "seller_id"]
+            isOneToOne: false
+            referencedRelation: "marketplace_products"
+            referencedColumns: ["id", "seller_id"]
+          },
+          {
+            foreignKeyName: "marketplace_price_observations_seller_id_fkey"
+            columns: ["seller_id"]
+            isOneToOne: false
+            referencedRelation: "marketplace_sellers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      marketplace_product_external_links: {
+        Row: {
+          created_at: string
+          id: string
+          is_public: boolean
+          label: string
+          link_type: string
+          product_id: string
+          seller_id: string
+          updated_at: string
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_public?: boolean
+          label: string
+          link_type: string
+          product_id: string
+          seller_id: string
+          updated_at?: string
+          url: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_public?: boolean
+          label?: string
+          link_type?: string
+          product_id?: string
+          seller_id?: string
+          updated_at?: string
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketplace_product_external_links_product_seller_fk"
+            columns: ["product_id", "seller_id"]
+            isOneToOne: false
+            referencedRelation: "marketplace_products"
+            referencedColumns: ["id", "seller_id"]
+          },
+          {
+            foreignKeyName: "marketplace_product_external_links_seller_id_fkey"
+            columns: ["seller_id"]
+            isOneToOne: false
+            referencedRelation: "marketplace_sellers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      marketplace_product_service_needs: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          notes: string | null
+          organization_service_id: string | null
+          product_id: string | null
+          provider_contact: string | null
+          provider_name: string | null
+          provider_url: string | null
+          seller_id: string
+          service_code: string
+          status: string
+          target_date: string | null
+          updated_at: string
+          urgency: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          notes?: string | null
+          organization_service_id?: string | null
+          product_id?: string | null
+          provider_contact?: string | null
+          provider_name?: string | null
+          provider_url?: string | null
+          seller_id: string
+          service_code: string
+          status?: string
+          target_date?: string | null
+          updated_at?: string
+          urgency?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          notes?: string | null
+          organization_service_id?: string | null
+          product_id?: string | null
+          provider_contact?: string | null
+          provider_name?: string | null
+          provider_url?: string | null
+          seller_id?: string
+          service_code?: string
+          status?: string
+          target_date?: string | null
+          updated_at?: string
+          urgency?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketplace_product_service_needs_organization_service_id_fkey"
+            columns: ["organization_service_id"]
+            isOneToOne: false
+            referencedRelation: "organization_services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marketplace_product_service_needs_product_seller_fk"
+            columns: ["product_id", "seller_id"]
+            isOneToOne: false
+            referencedRelation: "marketplace_products"
+            referencedColumns: ["id", "seller_id"]
+          },
+          {
+            foreignKeyName: "marketplace_product_service_needs_seller_id_fkey"
+            columns: ["seller_id"]
+            isOneToOne: false
+            referencedRelation: "marketplace_sellers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       marketplace_products: {
         Row: {
           available_until: string | null
@@ -3128,6 +4208,258 @@ export type Database = {
           },
         ]
       }
+      marketplace_sales_leads: {
+        Row: {
+          buyer_name: string
+          buyer_type: string
+          city: string | null
+          contact_email: string | null
+          contact_method: string | null
+          contact_name: string | null
+          contact_phone: string | null
+          country: string | null
+          created_at: string
+          currency: string
+          expected_unit_price: number | null
+          id: string
+          need_description: string | null
+          next_action: string | null
+          next_action_at: string | null
+          notes: string | null
+          product_id: string | null
+          provenance: Json
+          region: string | null
+          seller_id: string
+          source_name: string | null
+          source_type: string
+          source_url: string | null
+          stage: string
+          target_quantity: number | null
+          unit_label: string | null
+          updated_at: string
+          verification_status: string
+        }
+        Insert: {
+          buyer_name: string
+          buyer_type?: string
+          city?: string | null
+          contact_email?: string | null
+          contact_method?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          country?: string | null
+          created_at?: string
+          currency?: string
+          expected_unit_price?: number | null
+          id?: string
+          need_description?: string | null
+          next_action?: string | null
+          next_action_at?: string | null
+          notes?: string | null
+          product_id?: string | null
+          provenance?: Json
+          region?: string | null
+          seller_id: string
+          source_name?: string | null
+          source_type?: string
+          source_url?: string | null
+          stage?: string
+          target_quantity?: number | null
+          unit_label?: string | null
+          updated_at?: string
+          verification_status?: string
+        }
+        Update: {
+          buyer_name?: string
+          buyer_type?: string
+          city?: string | null
+          contact_email?: string | null
+          contact_method?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          country?: string | null
+          created_at?: string
+          currency?: string
+          expected_unit_price?: number | null
+          id?: string
+          need_description?: string | null
+          next_action?: string | null
+          next_action_at?: string | null
+          notes?: string | null
+          product_id?: string | null
+          provenance?: Json
+          region?: string | null
+          seller_id?: string
+          source_name?: string | null
+          source_type?: string
+          source_url?: string | null
+          stage?: string
+          target_quantity?: number | null
+          unit_label?: string | null
+          updated_at?: string
+          verification_status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketplace_sales_leads_product_seller_fk"
+            columns: ["product_id", "seller_id"]
+            isOneToOne: false
+            referencedRelation: "marketplace_products"
+            referencedColumns: ["id", "seller_id"]
+          },
+          {
+            foreignKeyName: "marketplace_sales_leads_seller_id_fkey"
+            columns: ["seller_id"]
+            isOneToOne: false
+            referencedRelation: "marketplace_sellers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      marketplace_sales_tasks: {
+        Row: {
+          completion_note: string | null
+          created_at: string
+          due_at: string | null
+          farm_id: string | null
+          id: string
+          lead_id: string | null
+          notes: string | null
+          priority: string
+          product_id: string | null
+          seller_id: string
+          status: string
+          task_type: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          completion_note?: string | null
+          created_at?: string
+          due_at?: string | null
+          farm_id?: string | null
+          id?: string
+          lead_id?: string | null
+          notes?: string | null
+          priority?: string
+          product_id?: string | null
+          seller_id: string
+          status?: string
+          task_type?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          completion_note?: string | null
+          created_at?: string
+          due_at?: string | null
+          farm_id?: string | null
+          id?: string
+          lead_id?: string | null
+          notes?: string | null
+          priority?: string
+          product_id?: string | null
+          seller_id?: string
+          status?: string
+          task_type?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketplace_sales_tasks_farm_id_fkey"
+            columns: ["farm_id"]
+            isOneToOne: false
+            referencedRelation: "farms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marketplace_sales_tasks_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "marketplace_sales_leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marketplace_sales_tasks_product_seller_fk"
+            columns: ["product_id", "seller_id"]
+            isOneToOne: false
+            referencedRelation: "marketplace_products"
+            referencedColumns: ["id", "seller_id"]
+          },
+          {
+            foreignKeyName: "marketplace_sales_tasks_seller_id_fkey"
+            columns: ["seller_id"]
+            isOneToOne: false
+            referencedRelation: "marketplace_sellers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      marketplace_seller_change_requests: {
+        Row: {
+          created_at: string
+          id: string
+          proposed_changes: Json
+          reason: string | null
+          requested_by: string
+          review_note: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          seller_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          proposed_changes: Json
+          reason?: string | null
+          requested_by: string
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          seller_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          proposed_changes?: Json
+          reason?: string | null
+          requested_by?: string
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          seller_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketplace_seller_change_requests_requested_by_fkey"
+            columns: ["requested_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marketplace_seller_change_requests_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marketplace_seller_change_requests_seller_id_fkey"
+            columns: ["seller_id"]
+            isOneToOne: false
+            referencedRelation: "marketplace_sellers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       marketplace_sellers: {
         Row: {
           city: string | null
@@ -3259,6 +4591,231 @@ export type Database = {
           },
           {
             foreignKeyName: "marketplace_shipments_seller_id_fkey"
+            columns: ["seller_id"]
+            isOneToOne: false
+            referencedRelation: "marketplace_sellers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      marketplace_trade_checklist_items: {
+        Row: {
+          category: string
+          created_at: string
+          id: string
+          item_code: string
+          notes: string | null
+          provider_name: string | null
+          route_id: string
+          seller_id: string
+          source_url: string | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          id?: string
+          item_code: string
+          notes?: string | null
+          provider_name?: string | null
+          route_id: string
+          seller_id: string
+          source_url?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          id?: string
+          item_code?: string
+          notes?: string | null
+          provider_name?: string | null
+          route_id?: string
+          seller_id?: string
+          source_url?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketplace_trade_checklist_items_seller_id_fkey"
+            columns: ["seller_id"]
+            isOneToOne: false
+            referencedRelation: "marketplace_sellers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marketplace_trade_checklist_route_seller_fk"
+            columns: ["route_id", "seller_id"]
+            isOneToOne: false
+            referencedRelation: "marketplace_trade_routes"
+            referencedColumns: ["id", "seller_id"]
+          },
+        ]
+      }
+      marketplace_trade_cost_models: {
+        Row: {
+          assumptions: Json
+          calculated_unit_cost: number
+          certification_cost: number
+          contingency_percent: number
+          created_at: string
+          currency: string
+          customs_cost: number
+          destination_country: string
+          farmgate_cost: number
+          grading_cost: number
+          id: string
+          inland_transport_cost: number
+          insurance_cost: number
+          international_freight_cost: number
+          notes: string | null
+          other_cost: number
+          packaging_cost: number
+          platform_fee_percent: number
+          product_id: string
+          seller_id: string
+          storage_cost: number
+          suggested_unit_price: number
+          target_margin_percent: number
+          unit_label: string
+          updated_at: string
+        }
+        Insert: {
+          assumptions?: Json
+          calculated_unit_cost: number
+          certification_cost?: number
+          contingency_percent?: number
+          created_at?: string
+          currency?: string
+          customs_cost?: number
+          destination_country: string
+          farmgate_cost?: number
+          grading_cost?: number
+          id?: string
+          inland_transport_cost?: number
+          insurance_cost?: number
+          international_freight_cost?: number
+          notes?: string | null
+          other_cost?: number
+          packaging_cost?: number
+          platform_fee_percent?: number
+          product_id: string
+          seller_id: string
+          storage_cost?: number
+          suggested_unit_price: number
+          target_margin_percent?: number
+          unit_label: string
+          updated_at?: string
+        }
+        Update: {
+          assumptions?: Json
+          calculated_unit_cost?: number
+          certification_cost?: number
+          contingency_percent?: number
+          created_at?: string
+          currency?: string
+          customs_cost?: number
+          destination_country?: string
+          farmgate_cost?: number
+          grading_cost?: number
+          id?: string
+          inland_transport_cost?: number
+          insurance_cost?: number
+          international_freight_cost?: number
+          notes?: string | null
+          other_cost?: number
+          packaging_cost?: number
+          platform_fee_percent?: number
+          product_id?: string
+          seller_id?: string
+          storage_cost?: number
+          suggested_unit_price?: number
+          target_margin_percent?: number
+          unit_label?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketplace_trade_cost_models_product_seller_fk"
+            columns: ["product_id", "seller_id"]
+            isOneToOne: false
+            referencedRelation: "marketplace_products"
+            referencedColumns: ["id", "seller_id"]
+          },
+          {
+            foreignKeyName: "marketplace_trade_cost_models_seller_id_fkey"
+            columns: ["seller_id"]
+            isOneToOne: false
+            referencedRelation: "marketplace_sellers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      marketplace_trade_routes: {
+        Row: {
+          created_at: string
+          destination_country: string
+          hs_code: string | null
+          id: string
+          incoterm: string | null
+          notes: string | null
+          product_id: string
+          seller_id: string
+          shipment_mode: string
+          status: string
+          target_buyer_type: string
+          target_quantity: number | null
+          unit_label: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          destination_country: string
+          hs_code?: string | null
+          id?: string
+          incoterm?: string | null
+          notes?: string | null
+          product_id: string
+          seller_id: string
+          shipment_mode?: string
+          status?: string
+          target_buyer_type?: string
+          target_quantity?: number | null
+          unit_label?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          destination_country?: string
+          hs_code?: string | null
+          id?: string
+          incoterm?: string | null
+          notes?: string | null
+          product_id?: string
+          seller_id?: string
+          shipment_mode?: string
+          status?: string
+          target_buyer_type?: string
+          target_quantity?: number | null
+          unit_label?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketplace_trade_routes_product_seller_fk"
+            columns: ["product_id", "seller_id"]
+            isOneToOne: false
+            referencedRelation: "marketplace_products"
+            referencedColumns: ["id", "seller_id"]
+          },
+          {
+            foreignKeyName: "marketplace_trade_routes_seller_id_fkey"
             columns: ["seller_id"]
             isOneToOne: false
             referencedRelation: "marketplace_sellers"
@@ -3433,16 +4990,22 @@ export type Database = {
           city: string | null
           contact_email: string | null
           contact_phone: string | null
+          contact_phones: string[]
           country_id: string | null
           country_name: string | null
           created_at: string
           description: string | null
           display_name: string
           id: string
+          latitude: number | null
+          legal_documents: Json
           legal_name: string
+          longitude: number | null
+          office_locations: Json
           organization_type: string
           registration_number: string | null
           service_regions: string[]
+          social_links: Json
           status: string
           submitted_at: string
           support_areas: string[]
@@ -3455,16 +5018,22 @@ export type Database = {
           city?: string | null
           contact_email?: string | null
           contact_phone?: string | null
+          contact_phones?: string[]
           country_id?: string | null
           country_name?: string | null
           created_at?: string
           description?: string | null
           display_name: string
           id?: string
+          latitude?: number | null
+          legal_documents?: Json
           legal_name: string
+          longitude?: number | null
+          office_locations?: Json
           organization_type: string
           registration_number?: string | null
           service_regions?: string[]
+          social_links?: Json
           status?: string
           submitted_at?: string
           support_areas?: string[]
@@ -3477,16 +5046,22 @@ export type Database = {
           city?: string | null
           contact_email?: string | null
           contact_phone?: string | null
+          contact_phones?: string[]
           country_id?: string | null
           country_name?: string | null
           created_at?: string
           description?: string | null
           display_name?: string
           id?: string
+          latitude?: number | null
+          legal_documents?: Json
           legal_name?: string
+          longitude?: number | null
+          office_locations?: Json
           organization_type?: string
           registration_number?: string | null
           service_regions?: string[]
+          social_links?: Json
           status?: string
           submitted_at?: string
           support_areas?: string[]
@@ -3642,6 +5217,101 @@ export type Database = {
           {
             foreignKeyName: "organization_members_user_id_fkey"
             columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      organization_profiles: {
+        Row: {
+          applicant_user_id: string
+          completion_percent: number
+          created_at: string
+          id: string
+          profile_data: Json
+          review_notes: string | null
+          reviewed_at: string | null
+          status: string
+          submitted_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          applicant_user_id: string
+          completion_percent?: number
+          created_at?: string
+          id?: string
+          profile_data?: Json
+          review_notes?: string | null
+          reviewed_at?: string | null
+          status?: string
+          submitted_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          applicant_user_id?: string
+          completion_percent?: number
+          created_at?: string
+          id?: string
+          profile_data?: Json
+          review_notes?: string | null
+          reviewed_at?: string | null
+          status?: string
+          submitted_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_profiles_applicant_user_id_fkey"
+            columns: ["applicant_user_id"]
+            isOneToOne: true
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      organization_reviews: {
+        Row: {
+          created_at: string
+          id: string
+          organization_id: string
+          rating: number
+          review_text: string | null
+          reviewer_user_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          organization_id: string
+          rating: number
+          review_text?: string | null
+          reviewer_user_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          organization_id?: string
+          rating?: number
+          review_text?: string | null
+          reviewer_user_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_reviews_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "organization_reviews_reviewer_user_id_fkey"
+            columns: ["reviewer_user_id"]
             isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
@@ -4088,6 +5758,53 @@ export type Database = {
         }
         Relationships: []
       }
+      sarina_service_entitlements: {
+        Row: {
+          access_status: string
+          created_at: string
+          expires_at: string | null
+          id: string
+          metadata: Json
+          service_code: string
+          source_code: string
+          starts_at: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          access_status?: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          metadata?: Json
+          service_code: string
+          source_code?: string
+          starts_at?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          access_status?: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          metadata?: Json
+          service_code?: string
+          source_code?: string
+          starts_at?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sarina_service_entitlements_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       service_contracts: {
         Row: {
           base_amount: number
@@ -4441,6 +6158,7 @@ export type Database = {
         Row: {
           account_status: string
           auth_user_id: string | null
+          communication_preferences: Json
           country_id: string | null
           created_at: string
           email: string | null
@@ -4453,6 +6171,7 @@ export type Database = {
         Insert: {
           account_status?: string
           auth_user_id?: string | null
+          communication_preferences?: Json
           country_id?: string | null
           created_at?: string
           email?: string | null
@@ -4465,6 +6184,7 @@ export type Database = {
         Update: {
           account_status?: string
           auth_user_id?: string | null
+          communication_preferences?: Json
           country_id?: string | null
           created_at?: string
           email?: string | null
@@ -4687,6 +6407,22 @@ export type Database = {
         }
         Relationships: []
       }
+      organization_rating_summary: {
+        Row: {
+          average_rating: number | null
+          organization_id: string | null
+          review_count: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_reviews_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       _postgis_deprecate: {
@@ -4839,6 +6575,7 @@ export type Database = {
         Returns: string
       }
       current_sarina_user_id: { Args: never; Returns: string }
+      current_user_has_role: { Args: { p_role_code: string }; Returns: boolean }
       disablelongtransactions: { Args: never; Returns: string }
       dropgeometrycolumn:
         | {
@@ -4979,6 +6716,18 @@ export type Database = {
           organization_id: string
         }[]
       }
+      list_my_marketplace_seller_change_requests: {
+        Args: { p_seller_id: string }
+        Returns: {
+          created_at: string
+          id: string
+          proposed_changes: Json
+          reason: string
+          review_note: string
+          reviewed_at: string
+          status: string
+        }[]
+      }
       longtransactionsenabled: { Args: never; Returns: boolean }
       organization_has_scoped_access: {
         Args: {
@@ -5044,6 +6793,14 @@ export type Database = {
       }
       postgis_version: { Args: never; Returns: string }
       postgis_wagyu_version: { Args: never; Returns: string }
+      review_marketplace_seller_change_request: {
+        Args: {
+          p_decision: string
+          p_request_id: string
+          p_review_note?: string
+        }
+        Returns: boolean
+      }
       set_my_sarina_roles: {
         Args: { p_role_codes: string[] }
         Returns: {
@@ -5630,6 +7387,22 @@ export type Database = {
       st_wrapx: {
         Args: { geom: unknown; move: number; wrap: number }
         Returns: unknown
+      }
+      submit_marketplace_seller_change_request: {
+        Args: {
+          p_proposed_changes: Json
+          p_reason?: string
+          p_seller_id: string
+        }
+        Returns: string
+      }
+      submit_organization_review: {
+        Args: {
+          p_organization_id: string
+          p_rating: number
+          p_review_text?: string
+        }
+        Returns: string
       }
       transition_service_contract: {
         Args: {
