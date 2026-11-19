@@ -1,7 +1,7 @@
 import {useEffect,useMemo,useState} from "react";
 import type {FormEvent} from "react";
 import type {Session} from "@supabase/supabase-js";
-import {Activity,ArrowLeft,Bell,BookOpen,Building2,CheckCircle2,ChevronLeft,ClipboardList,CloudSun,Home,LogOut,Menu,MessageCircle,Search,ShieldCheck,Sprout,Tractor,UserRound,Users} from "lucide-react";
+import {Activity,ArrowLeft,Bell,BookOpen,Building2,CheckCircle2,ChevronLeft,ClipboardList,CloudSun,Home,LogOut,Menu,MessageCircle,Search,ShieldCheck,Sprout,Tractor,TrendingUp,UserRound,Users} from "lucide-react";
 import {isSupabaseConfigured,supabase} from "./lib/supabase";
 import FarmWorkspace from "./FarmWorkspace";
 import LearningWorkspace from "./LearningWorkspace";
