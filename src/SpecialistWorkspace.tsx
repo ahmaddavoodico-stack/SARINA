@@ -155,6 +155,20 @@ export default function SpecialistWorkspace({session}:{session:Session}){
     <article className="specialist-kpi"><span className="blue"><Activity size={19}/></span><small>مزارع نیازمند ثبت مشاهده</small><strong>{summary.stale.length.toLocaleString("fa-IR")}</strong><em>بدون مشاهده جدید در ۱۴ روز اخیر</em></article>
    </div>
 
+   <div className="specialist-section-head specialist-inbox-head"><div><span className="eyebrow">میز کار و همکاری‌ها</span><h2><Inbox size={17}/> صندوق ارجاع‌های تخصصی</h2></div><span className="specialist-count">{offeredAssignments.length.toLocaleString("fa-IR")} ارجاع تازه · {acceptedAssignments.length.toLocaleString("fa-IR")} پذیرفته‌شده</span></div>
+   {assignmentNotice&&<div className="specialist-data-note">{assignmentNotice}</div>}
+   {offeredAssignments.length===0&&acceptedAssignments.length===0?<div className="specialist-inbox-empty"><span><Inbox size={22}/></span><div><strong>صندوق همکاری شما آماده است</strong><p>وقتی درخواست کشاورزی به شما ارجاع شود، جزئیات و پیش‌خوان پرونده در همین قسمت نمایش داده می‌شود.</p></div></div>:<div className="specialist-request-list">
+    {[...offeredAssignments,...acceptedAssignments].map(assignment=>{const request=requestMap.get(assignment.request_id);if(!request)return null;const assistant=assistantMap.get(request.id);const offered=assignment.assignment_status==="offered";return <article className="specialist-request-card" key={assignment.id}>
+     <div className="specialist-request-top"><span className={offered?"specialist-request-pill new":"specialist-request-pill accepted"}>{offered?"ارجاع جدید":"همکاری پذیرفته‌شده"}</span><small>{faDate(request.created_at)}</small></div>
+     <h3>{request.subject||"درخواست مشاوره کشاورزی"}</h3>
+     <p className="specialist-request-description">{request.problem_description||"توضیحات اولیه در پرونده ثبت نشده است."}</p>
+     <div className="specialist-request-meta"><span>نوع درخواست: {request.request_type||"مشخص نشده"}</span><span>اولویت: {priorityText(request.priority||"normal")}</span><span>وضعیت: {requestStatus(request.status)}</span></div>
+     {assistant&&<div className="specialist-case-brief"><div><strong><Activity size={14}/> پیش‌خوان پرونده SARINA</strong><span>{completenessLabel(assistant.completeness_status)}</span></div>{assistant.assistant_summary?<p>{assistant.assistant_summary}</p>:<p>خلاصه پرونده هنوز آماده نشده است؛ اطلاعات ثبت‌شده را بررسی کنید و در صورت نیاز از کشاورز توضیح بیشتری بخواهید.</p>}{assistant.missing_information?.length>0&&<small>اطلاعات تکمیلی موردنیاز: {assistant.missing_information.join("، ")}</small>}</div>}
+     {!assistant&&<div className="specialist-case-brief muted"><strong><Activity size={14}/> دستیار پرونده</strong><p>پرونده به شما ارجاع شده است. پیش‌خوان دستیار هنوز برای این درخواست ثبت نشده؛ بررسی تخصصی خود را بر اساس شواهد موجود انجام دهید.</p></div>}
+     {offered&&<div className="specialist-request-actions"><button disabled={respondingTo===assignment.id} onClick={()=>void respondToAssignment(assignment.id,"accepted")}><CheckCircle2 size={15}/>{respondingTo===assignment.id?"در حال ثبت...":"پذیرش همکاری"}</button><button className="secondary" disabled={respondingTo===assignment.id} onClick={()=>void respondToAssignment(assignment.id,"declined")}>عدم پذیرش</button></div>}
+    </article>})}
+   </div>}
+
    {farms.length===0?<div className="specialist-empty"><span><Sprout size={30}/></span><h2>هنوز مزرعه‌ای به نظارت شما متصل نشده است</h2><p>پس از تأیید قرارداد خدمات و پذیرش آن توسط کشاورز و متخصص، مزرعه به‌صورت خودکار در این داشبورد نمایش داده می‌شود.</p></div>:<>
     <div className="specialist-section-head"><div><span className="eyebrow">نظارت و پرونده‌ها</span><h2>مزارع تحت نظر شما</h2></div><span className="specialist-count">{farms.length.toLocaleString("fa-IR")} مزرعه</span></div>
     <div className="specialist-farm-grid">
