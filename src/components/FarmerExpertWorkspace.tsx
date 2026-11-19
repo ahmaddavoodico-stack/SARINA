@@ -9,7 +9,7 @@ const db=supabase as any;
 export default function FarmerExpertWorkspace({sarinaUserId}:Props){
  const [experts,setExperts]=useState<Expert[]>([]),[farms,setFarms]=useState<Farm[]>([]),[specialties,setSpecialties]=useState<any[]>([]);
  const [selected,setSelected]=useState(""),[farmId,setFarmId]=useState(""),[subject,setSubject]=useState(""),[problem,setProblem]=useState(""),[category,setCategory]=useState(""),[filter,setFilter]=useState("");
- const [requests,setRequests]=useState<any[]>([]),[notifications,setNotifications]=useState<any[]>([]),[busy,setBusy]=useState(false),[notice,setNotice]=useState(""),[loading,setLoading]=useState(true);
+ const [requests,setRequests]=useState<any[]>([]),[notifications,setNotifications]=useState<any[]>([]),[activeConsultation,setActiveConsultation]=useState<string|null>(null),[messages,setMessages]=useState<any[]>([]),[messageText,setMessageText]=useState(""),[busy,setBusy]=useState(false),[notice,setNotice]=useState(""),[loading,setLoading]=useState(true);
  async function refresh(){
   if(!supabase)return;setLoading(true);
   const [e,f,c,r,n]=await Promise.all([
@@ -26,6 +26,7 @@ export default function FarmerExpertWorkspace({sarinaUserId}:Props){
   setLoading(false);
  }
  useEffect(()=>{void refresh();},[sarinaUserId]);
+ useEffect(()=>{if(!supabase||!activeConsultation)return;const channel=supabase.channel("farmer-consultation-"+activeConsultation).on("postgres_changes",{event:"INSERT",schema:"public",table:"expert_consultation_messages",filter:"consultation_id=eq."+activeConsultation},payload=>setMessages(old=>old.some(m=>m.id===(payload.new as any).id)?old:[...old,payload.new])).subscribe();return()=>{void supabase.removeChannel(channel);};},[activeConsultation]);
  useEffect(()=>{
   if(!supabase)return;
   const channel=supabase.channel("farmer-expert-notifications-"+sarinaUserId)
@@ -60,6 +61,8 @@ export default function FarmerExpertWorkspace({sarinaUserId}:Props){
   }catch(err){setNotice(err instanceof Error?err.message:"ثبت درخواست مشاوره انجام نشد.");}
   finally{setBusy(false);}
  }
+ async function openConversation(requestId:string){if(!supabase)return;const {data,error}=await db.from("expert_consultations").select("id").eq("request_id",requestId).order("created_at",{ascending:false}).limit(1).maybeSingle();if(error){setNotice(error.message);return;}if(!data?.id){setNotice("گفت‌وگوی این پرونده هنوز ایجاد نشده است.");return;}const {data:items,error:messageError}=await db.from("expert_consultation_messages").select("id,sender_user_id,message_text,created_at").eq("consultation_id",data.id).order("created_at",{ascending:true}).limit(100);if(messageError){setNotice(messageError.message);return;}setActiveConsultation(data.id);setMessages(items||[]);}
+ async function sendFarmerMessage(e:React.FormEvent){e.preventDefault();if(!supabase||!activeConsultation||!messageText.trim())return;const {error}=await db.from("expert_consultation_messages").insert({consultation_id:activeConsultation,sender_user_id:sarinaUserId,message_text:messageText.trim(),content_parts:[]});if(error){setNotice(error.message);return;}setMessageText("");}
  async function markRead(id:string){const {error}=await db.from("expert_case_notifications").update({read_at:new Date().toISOString()}).eq("id",id);if(error)setNotice(error.message);else setNotifications(old=>old.map(n=>n.id===id?{...n,read_at:new Date().toISOString()}:n));}
  return <section className="farmer-expert-workspace" dir="rtl">
   <div className="page-heading"><span className="eyebrow">شبکه متخصصان تأییدشده</span><h1>مشاوره تخصصی کشاورزی</h1><p>متخصص موردنیازتان را پیدا کنید، درخواست بفرستید و مسیر پرونده را در SARINA پیگیری کنید.</p></div>
@@ -88,7 +91,8 @@ export default function FarmerExpertWorkspace({sarinaUserId}:Props){
    </aside>
   </div>
   <div className="section-title"><div><span className="eyebrow">پیگیری پرونده‌ها</span><h2>درخواست‌های من</h2></div><button className="expert-link" onClick={()=>void refresh()}><RefreshCw size={15}/> تازه‌سازی</button></div>
-  <div className="request-list">{requests.length===0?<div className="empty-state">هنوز درخواست مشاوره‌ای ثبت نشده است.</div>:requests.map(r=><article className="request-row" key={r.id}><MessageCircle size={20}/><div><strong>{r.subject}</strong><small>{new Date(r.created_at).toLocaleDateString("fa-IR")}</small></div><span>{r.status==="submitted"?"ارسال‌شده":r.status==="assigned"?"ارجاع‌شده":r.status}</span><small>{r.expert_request_assignments?.[0]?.expert_profiles?.public_name||"کارشناس منتخب"}</small></article>)}</div>
+  <div className="request-list">{requests.length===0?<div className="empty-state">هنوز درخواست مشاوره‌ای ثبت نشده است.</div>:requests.map(r=><article className="request-row" key={r.id}><MessageCircle size={20}/><div><strong>{r.subject}</strong><small>{new Date(r.created_at).toLocaleDateString("fa-IR")}</small></div><span>{r.status==="submitted"?"ارسال‌شده":r.status==="assigned"?"ارجاع‌شده":r.status}</span><small>{r.expert_request_assignments?.[0]?.expert_profiles?.public_name||"کارشناس منتخب"}</small><button onClick={()=>void openConversation(r.id)}>گفت‌وگو</button></article>)}</div>
+  {activeConsultation&&<section className="expert-request-panel farmer-chat-panel"><h2>گفت‌وگوی پرونده</h2><div className="farmer-chat-messages">{messages.map(m=><article key={m.id} className={m.sender_user_id===sarinaUserId?"mine":"theirs"}><p>{m.message_text||"پیام پیوست‌دار"}</p><small>{new Date(m.created_at).toLocaleString("fa-IR")}</small></article>)}</div><form onSubmit={sendFarmerMessage}><textarea rows={2} value={messageText} onChange={e=>setMessageText(e.target.value)} placeholder="پیام خود را بنویسید..." required/><button className="expert-primary" disabled={busy||!messageText.trim()}>ارسال پیام</button></form></section>}
   <div className="section-title"><div><span className="eyebrow">اعلان‌های پرونده</span><h2>پیام‌ها و تغییر وضعیت‌ها {unread>0&&<span className="live-dot">{unread} جدید</span>}</h2></div></div>
   <div className="request-list">{notifications.length===0?<div className="empty-state">اعلانی ندارید.</div>:notifications.map(n=><article className="request-row" key={n.id}><BellIcon/><div><strong>{n.preview||"به‌روزرسانی پرونده"}</strong><small>{new Date(n.created_at).toLocaleString("fa-IR")}</small></div>{!n.read_at&&<button onClick={()=>void markRead(n.id)}>خواندم</button>}</article>)}</div>
  </section>;
