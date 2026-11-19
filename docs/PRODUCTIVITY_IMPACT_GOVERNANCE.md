@@ -46,3 +46,14 @@ The migration adds consent-gated, scope-gated read foundations. It deliberately 
 - Authority access is both consent-gated and geographic-scope-gated; it is not enabled automatically.
 - The current workbench is a central-admin triage interface. A dedicated authority interface and farmer consent controls remain separate release steps.
 - No outcome, recognition, knowledge item or authority permission is fabricated or seeded.
+
+
+## Automated preliminary evaluation engine (2026-11-19)
+
+- Added `farm_productivity_metric_evaluation_rules` to make metric direction explicit and reviewable. Initial enabled indicators are marketable yield, gross revenue, soil organic matter and marketable loss rate. Water applied, input cost, labor hours and soil EC are intentionally not direction-scored because their interpretation depends on yield, context, depth, crop or economic structure.
+- Added `farm_productivity_candidate_signals` as a separate queue from reviewed outcome records. The engine never inserts a final breakthrough/limited-progress/decline classification and never assigns credit to SARINA or an expert.
+- Added admin-only RPC `run_farm_productivity_evaluation`. It compares only confirmed baselines with later measurements for the same farm, field and crop-cycle scope, exact unit match, and medium/high data quality; confidence below 0.60 is excluded when confidence is supplied.
+- The engine records compatible metric deltas and source metadata. A zero baseline produces an absolute delta without a percentage. No arbitrary universal percentage threshold is used.
+- Candidate signals are directional hints (positive, negative, mixed, insufficient evidence), not statistical significance or causal impact. Season, weather, input intensity and other confounders are not yet adjusted. A human reviewer must decide the four official outcome lanes and contribution attribution.
+- The central oversight workbench can run the evaluation, view pending signals and link a selected signal to a human-reviewed outcome record. No candidate is automatically recognized, published, or shared with an authority.
+- The current runner is manually invoked by an authenticated SARINA administrator; automatic scheduled evaluation is not enabled yet. The current project has no farm measurement records, so no real farm outcome can be evaluated until farmers provide comparable baseline and follow-up data.
