@@ -72,4 +72,29 @@ grant select,insert,update on public.farm_productivity_knowledge_candidates to a
 comment on table public.farm_productivity_outcome_reviews is 'Reviewed productivity outcomes with explicit attribution and follow-up status; not causal claims by default.';
 comment on table public.farm_productivity_authority_consents is 'Farmer-controlled revocable consent for verified regional authority access within separately approved geographic scope.';
 comment on table public.farm_productivity_knowledge_candidates is 'Internal learning candidates; approval requires anonymization and farmer consent, plus expert consent for expert-led or joint work.';
+
+-- The existing scoped-access helper is invoker-security. Let an active member
+-- inspect only their own organization's scope and capability rows so that
+-- the helper can evaluate scope without exposing other organizations.
+drop policy if exists organization_access_scopes_member_read on public.organization_access_scopes;
+create policy organization_access_scopes_member_read
+ on public.organization_access_scopes for select to authenticated
+ using (exists (
+  select 1 from public.organization_members om
+  where om.organization_id=organization_access_scopes.organization_id
+   and om.user_id=(select public.current_sarina_user_id())
+   and om.status='active'
+ ));
+drop policy if exists organization_capabilities_member_read on public.organization_capabilities;
+create policy organization_capabilities_member_read
+ on public.organization_capabilities for select to authenticated
+ using (exists (
+  select 1 from public.organization_members om
+  where om.organization_id=organization_capabilities.organization_id
+   and om.user_id=(select public.current_sarina_user_id())
+   and om.status='active'
+ ));
+grant select on public.organization_access_scopes to authenticated;
+grant select on public.organization_capabilities to authenticated;
+
 commit;
