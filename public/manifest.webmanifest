@@ -1,1 +1,16 @@
-{"id":"/","name":"سارینا | همراه هوشمند کشاورز","short_name":"سارینا","description":"همراه هوشمند کشاورز برای مدیریت مزرعه و خدمات تخصصی","lang":"fa","dir":"rtl","start_url":"/","scope":"/","display":"standalone","background_color":"#f5f7f3","theme_color":"#173f35","icons":[{"src":"/favicon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}]}
+{
+  "id": "/",
+  "name": "سارینا | همراه هوشمند کشاورز",
+  "short_name": "سارینا",
+  "description": "همراه هوشمند کشاورز برای مدیریت مزرعه و خدمات تخصصی",
+  "lang": "fa",
+  "dir": "rtl",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f5f7f3",
+  "theme_color": "#173f35",
+  "icons": [
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}
