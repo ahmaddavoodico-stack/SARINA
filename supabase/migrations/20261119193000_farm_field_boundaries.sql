@@ -33,6 +33,8 @@ drop trigger if exists farm_fields_boundary_area_before_write on public.farm_fie
 create trigger farm_fields_boundary_area_before_write before insert or update of boundary on public.farm_fields
 for each row execute function public.set_farm_field_boundary_area();
 
+create index if not exists farm_fields_boundary_gix on public.farm_fields using gist (boundary) where boundary is not null;
+
 comment on column public.farm_fields.boundary is 'Farmer-confirmed field boundary as MultiPolygon, WGS84 / SRID 4326.';
 comment on column public.farm_fields.boundary_capture_method is 'How the boundary was captured: device_gps, map_pin, or mixed.';
 comment on column public.farm_fields.gps_accuracy_m is 'Device-reported horizontal GPS accuracy in meters at capture time; null when unavailable.';
