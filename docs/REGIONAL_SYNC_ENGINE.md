@@ -53,7 +53,7 @@ No region has been activated by this change. The current Seoul project is not th
 - The receiver writes only to `regional_sync_projections`, not canonical `users`, `farms` or `expert_consultations`.
 - Conflict rows are intentionally retained for an explicit policy/admin resolution workflow; no last-write-wins overwrite is performed.
 - Nonce records are retained for ten minutes. Add a scheduled cleanup for expired nonces and a retention policy for audit/conflict records before sustained production traffic.
-- The database migration history has two new entries: `regional_sync_engine_and_projections` and `regional_sync_worker_guardrails`. Keep the matching SQL migration files in source control and reconcile migration timestamps against the existing regional foundation migration before merging PR #42.
+- The database migration history now includes the regional foundation, sync engine, worker guardrails and entity-ownership registry migrations. Their SQL source files are stored under `supabase/migrations/` using the applied database versions.
 
 ## Ownership audit
 
