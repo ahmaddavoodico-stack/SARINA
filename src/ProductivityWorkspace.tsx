@@ -1,7 +1,7 @@
 import {useEffect,useMemo,useState} from "react";
 import type {FormEvent} from "react";
 import type {Session} from "@supabase/supabase-js";
-import {Activity,ArrowUpRight,BarChart3,CheckCircle2,ClipboardList,Plus,RefreshCw,Target,TrendingUp} from "lucide-react";
+import {ArrowUpRight,BarChart3,CheckCircle2,ClipboardList,Plus,RefreshCw,Target,TrendingUp} from "lucide-react";
 import {supabase} from "./lib/supabase";
 
 type Farm={id:string;farm_name:string;total_area:number|null;area_unit:string};
