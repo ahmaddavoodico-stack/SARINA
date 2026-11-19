@@ -44,7 +44,6 @@ export default function SpecialistWorkspace({session}:{session:Session}){
  const[requests,setRequests]=useState<ExpertRequest[]>([]);
  const[assistantCases,setAssistantCases]=useState<AssistantCase[]>([]);
  const[expertName,setExpertName]=useState("");
- const[expertProfileId,setExpertProfileId]=useState("");
  const[contracts,setContracts]=useState<SpecialistContract[]>([]);
  const[incomeAllocations,setIncomeAllocations]=useState<IncomeAllocation[]>([]);
  const[incomeInvoices,setIncomeInvoices]=useState<IncomeInvoice[]>([]);
@@ -83,7 +82,6 @@ export default function SpecialistWorkspace({session}:{session:Session}){
    ]);
    if(!profileResult.error&&profileResult.data){
     const profileId=profileResult.data.id as string;
-    setExpertProfileId(profileId);
     setExpertName(profileResult.data.public_name||userResult.data.full_name||"متخصص");
     const [assignmentResult,contractResult]=await Promise.all([
      client.from("expert_request_assignments").select("id,request_id,expert_profile_id,assignment_status,offered_at,responded_at").eq("expert_profile_id",profileId).order("offered_at",{ascending:false}).limit(60),
@@ -161,8 +159,6 @@ export default function SpecialistWorkspace({session}:{session:Session}){
  const visibleActions=actions.filter(a=>a.farm_id===activeFarmId&&(a.is_overdue||a.is_due_this_week||a.action_status==="in_progress"));
  const handleRefresh=async()=>{setRefreshing(true);await load();};
  const money=(amount:number|string,currency:string)=>`${Number(amount||0).toLocaleString("fa-IR",{maximumFractionDigits:0})} ${currency}`;
- const invoiceMap=useMemo(()=>new Map(incomeInvoices.map(i=>[i.id,i])),[incomeInvoices]);
- const contractMap=useMemo(()=>new Map(contracts.map(x=>[x.id,x])),[contracts]);
  const incomeTotals=useMemo(()=>{
   const valid=incomeAllocations.filter(a=>a.status!=="reversed");
   const sum=(rows:IncomeAllocation[])=>rows.reduce((n,a)=>n+Number(a.amount||0),0);
@@ -224,6 +220,7 @@ export default function SpecialistWorkspace({session}:{session:Session}){
       {items.length>0&&<div className="specialist-contract-items"><strong>خدمات درج‌شده در صورت‌حساب</strong>{items.map(item=><div key={item.id}><span>{item.description}</span><b>{money(item.line_total,item.currency_code)}</b></div>)}</div>}
       {allocations.length>0&&<div className="specialist-contract-items"><strong>جزئیات سهم و تسویه</strong>{allocations.map(a=><div key={a.id}><span>{allocationText(a.allocation_kind)} · {({pending:"در انتظار",eligible:"آماده تسویه",processing:"در حال پردازش",paid:"پرداخت‌شده",failed:"ناموفق",reversed:"برگشت‌خورده",held:"نگه‌داشته‌شده"} as Record<string,string>)[a.status]||a.status}</span><b>{money(a.amount,a.currency_code)}</b></div>)}</div>}
       {invoices.length>0&&<small className="specialist-contract-foot">صورت‌حساب‌ها: {invoices.map(i=>i.invoice_number+" ("+({draft:"پیش‌نویس",issued:"صادرشده",partially_paid:"پرداخت ناقص",paid:"پرداخت کامل",void:"باطل",overdue:"معوق"} as Record<string,string>)[i.status]+")").join(" · ")}</small>}
+      {incomePayments.filter(p=>invoices.some(i=>i.id===p.invoice_id)).length>0&&<div className="specialist-contract-items"><strong>تراکنش‌های پرداخت کشاورز</strong>{incomePayments.filter(p=>invoices.some(i=>i.id===p.invoice_id)).map(payment=><div key={payment.id}><span>{({initiated:"آغازشده",pending:"در انتظار تأیید",authorized:"مجازشده",paid:"پرداخت موفق",failed:"ناموفق",cancelled:"لغوشده",refunded:"بازپرداخت‌شده",chargeback:"برگشت بانکی"} as Record<string,string>)[payment.status]||payment.status} · {faDate(payment.confirmed_at)}</span><b>{money(payment.amount,payment.currency_code)}</b></div>)}</div>}
      </article>})}
     </div>
     <p className="specialist-income-note">ارزش پایه قرارداد با درآمد قطعی متخصص یکی نیست. درآمد قابل تسویه از سهم‌های ثبت‌شده برای متخصص محاسبه می‌شود؛ مبالغ مبتنی بر نتیجه تا زمان تأیید و واجد شرایط شدن، در وضعیت مناسب خود باقی می‌مانند. سهم SARINA و شرایط هر قرارداد جداگانه و مطابق توافق نمایش داده می‌شوند.</p>
