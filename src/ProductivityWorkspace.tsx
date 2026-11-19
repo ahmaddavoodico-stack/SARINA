@@ -1,0 +1,98 @@
+import {useEffect,useMemo,useState} from "react";
+import type {FormEvent} from "react";
+import type {Session} from "@supabase/supabase-js";
+import {Activity,ArrowUpRight,BarChart3,CalendarDays,CheckCircle2,ClipboardList,Plus,RefreshCw,Target,TrendingUp} from "lucide-react";
+import {supabase} from "./lib/supabase";
+
+type Farm={id:string;farm_name:string;total_area:number|null;area_unit:string};
+type Metric={metric_code:string;metric_family:string;label_fa:string;label_en:string;default_unit:string;description_fa:string;is_core:boolean;sort_order:number};
+type Measurement={id:string;farm_id:string;metric_code:string;metric_value:number;unit_code:string;observed_at:string;source_type:string;quality_label:string;confidence_score:number|null;notes:string|null};
+type Baseline={id:string;farm_id:string;baseline_date:string;status:string;completeness_percent:number;missing_metric_codes:string[];metrics_snapshot:Record<string,any>;created_at:string};
+type Plan={id:string;farm_id:string;title:string;description:string|null;priority:string;status:string;start_date:string|null;target_date:string|null;created_at:string};
+type Action={id:string;plan_id:string;title:string;status:string;due_date:string|null};
+const db=supabase as any;
+const sourceOptions=[{value:"farmer_reported",label:"گزارش کشاورز"},{value:"measured",label:"اندازه‌گیری میدانی"},{value:"laboratory",label:"آزمایشگاه"},{value:"official",label:"منبع رسمی"},{value:"remote_estimate",label:"برآورد سنجش‌ازدور"},{value:"modelled",label:"مدل محاسباتی"},{value:"inferred",label:"استنباطی"}];
+const qualityLabel=(v:string)=>({high:"بالا",medium:"متوسط",low:"پایین",unknown:"نامشخص"} as Record<string,string>)[v]||"نامشخص";
+const planStatus=(v:string)=>({draft:"پیش‌نویس",active:"در حال اجرا",paused:"متوقف",completed:"تکمیل‌شده",cancelled:"لغوشده"} as Record<string,string>)[v]||v;
+export default function ProductivityWorkspace({session}:{session:Session}){
+ const[farms,setFarms]=useState<Farm[]>([]),[metrics,setMetrics]=useState<Metric[]>([]),[farmId,setFarmId]=useState(""),[measurements,setMeasurements]=useState<Measurement[]>([]),[baselines,setBaselines]=useState<Baseline[]>([]),[plans,setPlans]=useState<Plan[]>([]),[actions,setActions]=useState<Action[]>([]),[benchmarkCount,setBenchmarkCount]=useState(0);
+ const[loading,setLoading]=useState(true),[saving,setSaving]=useState(false),[error,setError]=useState(""),[notice,setNotice]=useState("");
+ const[metricCode,setMetricCode]=useState("marketable_yield"),[value,setValue]=useState(""),[unit,setUnit]=useState("kg/ha"),[source,setSource]=useState("farmer_reported"),[quality,setQuality]=useState("unknown"),[confidence,setConfidence]=useState(""),[notes,setNotes]=useState("");
+ const[planTitle,setPlanTitle]=useState(""),[planDescription,setPlanDescription]=useState(""),[actionDrafts,setActionDrafts]=useState<Record<string,string>>({});
+ const activeFarm=farms.find(f=>f.id===farmId);
+ const selectedMetric=metrics.find(m=>m.metric_code===metricCode);
+ async function load(){
+  if(!db)return;setLoading(true);setError("");
+  try{
+   const[{data:farmsData,error:farmsError},{data:metricData,error:metricError}]=await Promise.all([
+    db.from("farms").select("id,farm_name,total_area,area_unit").order("created_at",{ascending:false}),
+    db.from("farm_productivity_metric_definitions").select("metric_code,metric_family,label_fa,label_en,default_unit,description_fa,is_core,sort_order").eq("is_active",true).order("sort_order")
+   ]);
+   if(farmsError)throw farmsError;if(metricError)throw metricError;
+   const farmRows=(farmsData??[]) as Farm[],metricRows=(metricData??[]) as Metric[];setFarms(farmRows);setMetrics(metricRows);
+   const nextFarm=farmRows.some(f=>f.id===farmId)?farmId:farmRows[0]?.id??"";setFarmId(nextFarm);
+   if(!nextFarm){setMeasurements([]);setBaselines([]);setPlans([]);setActions([]);setBenchmarkCount(0);return;}
+   const[meas,base,plan,bench]=await Promise.all([
+    db.from("farm_productivity_measurements").select("id,farm_id,metric_code,metric_value,unit_code,observed_at,source_type,quality_label,confidence_score,notes").eq("farm_id",nextFarm).order("observed_at",{ascending:false}).limit(200),
+    db.from("farm_productivity_baselines").select("id,farm_id,baseline_date,status,completeness_percent,missing_metric_codes,metrics_snapshot,created_at").eq("farm_id",nextFarm).order("baseline_date",{ascending:false}).limit(30),
+    db.from("farm_improvement_plans").select("id,farm_id,title,description,priority,status,start_date,target_date,created_at").eq("farm_id",nextFarm).order("created_at",{ascending:false}).limit(50),
+    db.from("farm_productivity_benchmarks").select("id",{count:"exact",head:true}).eq("status","published")
+   ]);
+   for(const r of [meas,base,plan,bench])if(r.error)throw r.error;
+   const planRows=(plan.data??[]) as Plan[];setMeasurements((meas.data??[]) as Measurement[]);setBaselines((base.data??[]) as Baseline[]);setPlans(planRows);setBenchmarkCount(bench.count??0);
+   if(planRows.length){const{data:actionRows,error:actionError}=await db.from("farm_improvement_actions").select("id,plan_id,title,status,due_date").in("plan_id",planRows.map(p=>p.id)).order("due_date");if(actionError)throw actionError;setActions((actionRows??[]) as Action[]);}else setActions([]);
+  }catch(e){setError(e instanceof Error?e.message:"دریافت اطلاعات بهره‌وری انجام نشد.");}
+  finally{setLoading(false);}
+ }
+ useEffect(()=>{void load();},[session.user.id]);
+ useEffect(()=>{if(selectedMetric)setUnit(selectedMetric.default_unit);},[metricCode]);
+ const latestByMetric=useMemo(()=>{const map=new Map<string,Measurement>();for(const m of measurements){if(!map.has(m.metric_code))map.set(m.metric_code,m);}return map;},[measurements]);
+ const latestBaseline=baselines[0];
+ async function profileId(){const{data,error}=await db.from("users").select("id").eq("auth_user_id",session.user.id).single();if(error)throw error;return data.id as string;}
+ async function addMeasurement(e:FormEvent){
+  e.preventDefault();if(!farmId||!value.trim())return;const numeric=Number(value);if(!Number.isFinite(numeric)||numeric<0){setError("مقدار شاخص باید یک عدد معتبر و غیرمنفی باشد.");return;}
+  setSaving(true);setError("");setNotice("");try{const userId=await profileId();const{error}=await db.from("farm_productivity_measurements").insert({farm_id:farmId,metric_code:metricCode,metric_value:numeric,unit_code:unit.trim()||selectedMetric?.default_unit||"",source_type:source,quality_label:quality,confidence_score:confidence===""?null:Number(confidence),notes:notes.trim()||null,reported_by:userId});if(error)throw error;setValue("");setNotes("");setConfidence("");setNotice("اندازه‌گیری با منبع و کیفیت داده ذخیره شد.");await load();}catch(e){setError(e instanceof Error?e.message:"ثبت اندازه‌گیری انجام نشد.");}finally{setSaving(false);}
+ }
+ async function createBaseline(){
+  if(!farmId)return;setSaving(true);setError("");setNotice("");try{
+   const core=metrics.filter(m=>m.is_core),snapshot:Record<string,any>={},missing:string[]=[];
+   for(const metric of core){const row=latestByMetric.get(metric.metric_code);if(row)snapshot[metric.metric_code]={value:row.metric_value,unit:row.unit_code,observed_at:row.observed_at,source_type:row.source_type,quality:row.quality_label,confidence:row.confidence_score};else missing.push(metric.metric_code);}
+   const completeness=core.length?Math.round(((core.length-missing.length)/core.length)*100):0,userId=await profileId();
+   const{error}=await db.from("farm_productivity_baselines").insert({farm_id:farmId,status:missing.length?"draft":"confirmed",completeness_percent:completeness,missing_metric_codes:missing,metrics_snapshot:snapshot,created_by:userId,notes:missing.length?"خط پایه اولیه؛ شاخص‌های ثبت‌نشده عمداً خالی مانده‌اند.":"خط پایه بر اساس شاخص‌های اصلی ثبت‌شده."});
+   if(error)throw error;setNotice("نسخه جدید خط پایه ذخیره شد؛ شاخص‌های فاقد داده به‌صورت شفاف مشخص شده‌اند.");await load();
+  }catch(e){setError(e instanceof Error?e.message:"ساخت خط پایه انجام نشد.");}finally{setSaving(false);}
+ }
+ async function createPlan(e:FormEvent){
+  e.preventDefault();if(!farmId||!planTitle.trim())return;setSaving(true);setError("");setNotice("");try{const userId=await profileId();const{error}=await db.from("farm_improvement_plans").insert({farm_id:farmId,title:planTitle.trim(),description:planDescription.trim()||null,status:"active",origin:"farmer",created_by:userId,baseline_id:latestBaseline?.id??null});if(error)throw error;setPlanTitle("");setPlanDescription("");setNotice("برنامه بهبود به پرونده مزرعه افزوده شد.");await load();}catch(e){setError(e instanceof Error?e.message:"ساخت برنامه انجام نشد.");}finally{setSaving(false);}
+ }
+ async function addAction(planId:string){
+  const title=(actionDrafts[planId]??"").trim();if(!title)return;setSaving(true);setError("");try{const userId=await profileId();const{error}=await db.from("farm_improvement_actions").insert({plan_id:planId,title,created_by:userId});if(error)throw error;setActionDrafts(p=>({...p,[planId]:""}));setNotice("اقدام به برنامه افزوده شد.");await load();}catch(e){setError(e instanceof Error?e.message:"ثبت اقدام انجام نشد.");}finally{setSaving(false);}
+ }
+ async function updateAction(action:Action,status:string){setSaving(true);setError("");try{const{error}=await db.from("farm_improvement_actions").update({status,completed_at:status==="completed"?new Date().toISOString():null}).eq("id",action.id);if(error)throw error;await load();}catch(e){setError(e instanceof Error?e.message:"به‌روزرسانی اقدام انجام نشد.");}finally{setSaving(false);}}
+ const date=(v:string)=>new Date(v).toLocaleDateString("fa-IR");
+ return <section className="productivity-workspace">
+  <div className="page-heading"><span className="eyebrow">SARINA · Farm Productivity Intelligence</span><h1>هوشمندی بهره‌وری مزرعه</h1><p>وضعیت امروز را ثبت کنید، خط پایه بسازید، برنامه بهبود را اجرا کنید و تغییرات واقعی را در طول زمان بسنجید.</p></div>
+  {error&&<div className="notice warning" role="alert">{error}</div>}{notice&&<div className="notice" role="status">{notice}</div>}
+  {loading?<div className="empty-state">در حال بارگذاری پرونده بهره‌وری...</div>:farms.length===0?<div className="empty-state"><Target size={34}/><strong>ابتدا پرونده مزرعه را بسازید</strong><p>برای ثبت خط پایه و سنجش پیشرفت، ابتدا در بخش «مزارع من» یک مزرعه ثبت کنید.</p></div>:<>
+   <div className="productivity-farm-select"><label>مزرعه مورد بررسی<select value={farmId} onChange={e=>setFarmId(e.target.value)}>{farms.map(f=><option key={f.id} value={f.id}>{f.farm_name}</option>)}</select></label><button className="text-button" onClick={()=>void load()} disabled={saving}><RefreshCw size={15}/> تازه‌سازی</button></div>
+   <div className="productivity-stats">
+    <article className="panel"><span className="round-icon"><BarChart3/></span><small>شاخص‌های ثبت‌شده</small><strong>{latestByMetric.size.toLocaleString("fa-IR")} از {metrics.length.toLocaleString("fa-IR")}</strong><p>فقط مقادیر دارای منبع و واحد ثبت‌شده شمرده می‌شوند.</p></article>
+    <article className="panel"><span className="round-icon"><Target/></span><small>تکمیل خط پایه</small><strong>{latestBaseline?Number(latestBaseline.completeness_percent).toLocaleString("fa-IR")+"٪":"هنوز ثبت نشده"}</strong><p>{latestBaseline?"آخرین خط پایه · "+date(latestBaseline.baseline_date):"با داده‌های موجود یک خط پایه اولیه بسازید."}</p></article>
+    <article className="panel"><span className="round-icon"><ClipboardList/></span><small>برنامه‌های بهبود</small><strong>{plans.length.toLocaleString("fa-IR")}</strong><p>{actions.filter(a=>a.status==="completed").length.toLocaleString("fa-IR")} اقدام تکمیل‌شده از {actions.length.toLocaleString("fa-IR")}</p></article>
+    <article className="panel"><span className="round-icon"><TrendingUp/></span><small>معیارهای منطقه‌ای معتبر</small><strong>{benchmarkCount.toLocaleString("fa-IR")}</strong><p>فقط داده‌های منتشرشده با منبع و مجوز مشخص نمایش داده می‌شوند.</p></article>
+   </div>
+   <div className="productivity-section-heading"><div><span className="eyebrow">01 · BASELINE</span><h2>خط پایه و وضعیت فعلی</h2></div><button className="primary-button" onClick={()=>void createBaseline()} disabled={saving||measurements.length===0}><Target size={16}/> ثبت نسخه جدید خط پایه</button></div>
+   {latestBaseline&&<div className="productivity-baseline-note"><strong>آخرین خط پایه: {date(latestBaseline.baseline_date)}</strong><span>{Number(latestBaseline.completeness_percent).toLocaleString("fa-IR")}٪ تکمیل · {latestBaseline.status==="confirmed"?"تأییدشده":"اولیه و ناقص"}</span>{latestBaseline.missing_metric_codes?.length>0&&<small>شاخص‌های فاقد داده: {latestBaseline.missing_metric_codes.map(c=>metrics.find(m=>m.metric_code===c)?.label_fa||c).join("، ")}</small>}</div>}
+   <div className="productivity-metric-grid">{metrics.map(m=>{const latest=latestByMetric.get(m.metric_code);return <article className="productivity-metric-card" key={m.metric_code}><div><small>{m.metric_family==="production"?"تولید":m.metric_family==="resource_efficiency"?"بهره‌وری منابع":m.metric_family==="economics"?"اقتصاد مزرعه":m.metric_family==="soil"?"خاک":"پایداری"}</small><strong>{m.label_fa}</strong></div>{latest?<><b>{Number(latest.metric_value).toLocaleString("fa-IR")} <small>{latest.unit_code}</small></b><span>آخرین ثبت: {date(latest.observed_at)} · کیفیت {qualityLabel(latest.quality_label)}</span></>:<p>هنوز داده‌ای ثبت نشده است.</p>}</article>;})}</div>
+   <div className="productivity-section-heading"><div><span className="eyebrow">02 · MEASUREMENTS</span><h2>ثبت اندازه‌گیری جدید</h2></div></div>
+   <form className="panel productivity-form" onSubmit={addMeasurement}><label>شاخص<select value={metricCode} onChange={e=>setMetricCode(e.target.value)}>{metrics.map(m=><option key={m.metric_code} value={m.metric_code}>{m.label_fa}</option>)}</select></label><label>مقدار<input type="number" min="0" step="any" required value={value} onChange={e=>setValue(e.target.value)} placeholder="مقدار اندازه‌گیری"/></label><label>واحد<input value={unit} onChange={e=>setUnit(e.target.value)} required maxLength={32}/></label><label>منبع داده<select value={source} onChange={e=>setSource(e.target.value)}>{sourceOptions.map(s=><option key={s.value} value={s.value}>{s.label}</option>)}</select></label><label>کیفیت داده<select value={quality} onChange={e=>setQuality(e.target.value)}><option value="unknown">نامشخص</option><option value="low">پایین</option><option value="medium">متوسط</option><option value="high">بالا</option></select></label><label>اطمینان (۰ تا ۱)<input type="number" min="0" max="1" step="0.01" value={confidence} onChange={e=>setConfidence(e.target.value)} placeholder="اختیاری"/></label><label className="productivity-notes">توضیحات / شرایط اندازه‌گیری<textarea value={notes} onChange={e=>setNotes(e.target.value)} rows={2} placeholder="تاریخ نمونه‌برداری، عمق خاک، رقم محصول یا شرایط اندازه‌گیری..."/></label><button className="primary-button" disabled={saving}>{saving?"در حال ذخیره...":"ذخیره اندازه‌گیری"} <Plus size={16}/></button></form>
+   <div className="productivity-section-heading"><div><span className="eyebrow">03 · IMPROVEMENT PLAN</span><h2>برنامه افزایش بهره‌وری</h2></div></div>
+   <form className="panel productivity-form productivity-plan-form" onSubmit={createPlan}><label>عنوان برنامه<input value={planTitle} onChange={e=>setPlanTitle(e.target.value)} required maxLength={180} placeholder="مثلاً کاهش مصرف آب بدون افت عملکرد"/></label><label className="productivity-notes">شرح هدف و اقدام‌ها<textarea value={planDescription} onChange={e=>setPlanDescription(e.target.value)} rows={2} placeholder="هدف، بازه اجرا و نتیجه مورد انتظار..."/></label><button className="primary-button" disabled={saving||!planTitle.trim()}>ایجاد برنامه بهبود <Plus size={16}/></button></form>
+   <div className="productivity-plan-list">{plans.length===0?<div className="empty-state">هنوز برنامه‌ای ثبت نشده است.</div>:plans.map(p=><article className="panel productivity-plan-card" key={p.id}><div className="productivity-plan-top"><div><strong>{p.title}</strong><small>{p.description||"بدون توضیحات تکمیلی"}</small></div><span className={"productivity-status "+p.status}>{planStatus(p.status)}</span></div><div className="productivity-actions">{actions.filter(a=>a.plan_id===p.id).map(a=><div className="productivity-action" key={a.id}><span>{a.title}</span><select aria-label={"وضعیت اقدام "+a.title} value={a.status} onChange={e=>void updateAction(a,e.target.value)} disabled={saving}><option value="planned">برنامه‌ریزی‌شده</option><option value="in_progress">در حال اجرا</option><option value="completed">تکمیل‌شده</option><option value="skipped">انجام نمی‌شود</option></select></div>)}</div><div className="productivity-add-action"><input value={actionDrafts[p.id]??""} onChange={e=>setActionDrafts(prev=>({...prev,[p.id]:e.target.value}))} placeholder="افزودن اقدام اجرایی..."/><button type="button" className="text-button" onClick={()=>void addAction(p.id)} disabled={saving||!(actionDrafts[p.id]??"").trim()}><Plus size={16}/> افزودن</button></div></article>)}</div>
+   <div className="productivity-section-heading"><div><span className="eyebrow">04 · REGIONAL BENCHMARKS</span><h2>مقایسه با مزارع مشابه</h2></div></div>
+   <div className="panel productivity-benchmark-note">{benchmarkCount===0?<><CheckCircle2 size={22}/><div><strong>هنوز معیار منطقه‌ای تأییدشده‌ای منتشر نشده است.</strong><p>برای جلوگیری از مقایسه گمراه‌کننده، SARINA فعلاً رتبه یا عدد ساختگی نمایش نمی‌دهد. پس از افزودن داده‌های معتبر با منبع، مجوز، منطقه، محصول و دوره زمانی مشخص، مقایسه فعال می‌شود.</p></div></>:<><ArrowUpRight size={22}/><div><strong>{benchmarkCount.toLocaleString("fa-IR")} رکورد معیار منتشرشده در مخزن وجود دارد.</strong><p>نمایش مقایسه فقط پس از تطبیق محصول، واحد، منطقه، فصل و نظام تولید انجام خواهد شد.</p></div></>}</div>
+   <div className="productivity-section-heading"><div><span className="eyebrow">05 · MONITORING</span><h2>پایش تغییرات و اثر برنامه‌ها</h2></div></div>
+   <div className="panel productivity-history"><div className="section-title"><h3>تاریخچه اندازه‌گیری‌ها</h3><span>{measurements.length.toLocaleString("fa-IR")} رکورد</span></div>{measurements.length===0?<p>با ثبت اولین اندازه‌گیری، روند این مزرعه در این قسمت نمایش داده می‌شود.</p>:<div className="admin-table-wrap"><table className="admin-table"><thead><tr><th>شاخص</th><th>مقدار</th><th>تاریخ</th><th>منبع</th><th>کیفیت</th></tr></thead><tbody>{measurements.map(m=><tr key={m.id}><td>{metrics.find(x=>x.metric_code===m.metric_code)?.label_fa||m.metric_code}</td><td>{Number(m.metric_value).toLocaleString("fa-IR")} {m.unit_code}</td><td>{date(m.observed_at)}</td><td>{sourceOptions.find(s=>s.value===m.source_type)?.label||m.source_type}</td><td>{qualityLabel(m.quality_label)}</td></tr>)}</tbody></table></div>}</div>
+  </>}
+ </section>;
+}
