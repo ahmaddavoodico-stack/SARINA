@@ -54,3 +54,17 @@ No region has been activated by this change. The current Seoul project is not th
 - Conflict rows are intentionally retained for an explicit policy/admin resolution workflow; no last-write-wins overwrite is performed.
 - Nonce records are retained for ten minutes. Add a scheduled cleanup for expired nonces and a retention policy for audit/conflict records before sustained production traffic.
 - The database migration history has two new entries: `regional_sync_engine_and_projections` and `regional_sync_worker_guardrails`. Keep the matching SQL migration files in source control and reconcile migration timestamps against the existing regional foundation migration before merging PR #42.
+
+## Ownership audit
+
+The database now contains a server-only `regional_entity_registry` populated from the actual public-schema tables, views and foreign-key relationships. Latest audit:
+
+- 153 public entities inventoried.
+- 100 classified by canonical owner or relationship.
+- 53 remain `review_required`, with synchronization disabled.
+- Only the three canonical aggregates (users, farms, consultations) are marked for the current allowlisted projection contracts.
+- Farm-linked children inherit the farm's home region for routing, but this does not authorize row replication.
+- Consultation/request records, AI conversations, messages, audio, documents, location permissions, communication logs, integration connections and service contracts remain local-only/restricted by default.
+- Derived views are rebuilt locally and are never synchronized as rows.
+
+The 53 unclassified entities are intentionally blocked from synchronization until their ownership, legal classification, retention and exact field allowlist are reviewed.
