@@ -159,13 +159,14 @@ export default function SpecialistWorkspace({session}:{session:Session}){
  const visibleActions=actions.filter(a=>a.farm_id===activeFarmId&&(a.is_overdue||a.is_due_this_week||a.action_status==="in_progress"));
  const handleRefresh=async()=>{setRefreshing(true);await load();};
  const money=(amount:number|string,currency:string)=>`${Number(amount||0).toLocaleString("fa-IR",{maximumFractionDigits:0})} ${currency}`;
+ const recognizedAllocation=(a:IncomeAllocation)=>["pending","eligible","processing","paid","held"].includes(a.status);
  const incomeTotals=useMemo(()=>{
-  const valid=incomeAllocations.filter(a=>a.status!=="reversed");
+  const valid=incomeAllocations.filter(recognizedAllocation);
   const sum=(rows:IncomeAllocation[])=>rows.reduce((n,a)=>n+Number(a.amount||0),0);
   const currencies=Array.from(new Set(valid.map(a=>a.currency_code)));
   return {earned:sum(valid),paid:sum(valid.filter(a=>a.status==="paid")),waiting:sum(valid.filter(a=>["pending","eligible","processing"].includes(a.status))),held:sum(valid.filter(a=>a.status==="held")),currencies};
  },[incomeAllocations]);
- const incomeByKind=useMemo(()=>Array.from(new Set(incomeAllocations.map(a=>a.allocation_kind))).map(kind=>({kind,rows:incomeAllocations.filter(a=>a.allocation_kind===kind&&a.status!=="reversed")})),[incomeAllocations]);
+ const incomeByKind=useMemo(()=>Array.from(new Set(incomeAllocations.map(a=>a.allocation_kind))).map(kind=>({kind,rows:incomeAllocations.filter(a=>a.allocation_kind===kind&&recognizedAllocation(a))})),[incomeAllocations]);
  const pricingText=(value:string)=>({fixed_fee:"مبلغ ثابت",milestone:"مرحله‌ای",subscription:"دوره‌ای / اشتراکی",per_use:"به‌ازای هر خدمت",result_based:"مبتنی بر نتیجه",hybrid:"ترکیبی"} as Record<string,string>)[value]||value;
  const allocationText=(value:string)=>({expert_fee:"حق‌الزحمه خدمات تخصصی",result_share:"سهم از نتیجه",other:"سایر دریافتی‌ها",provider_cost:"هزینه ارائه خدمت",platform_fee:"کارمزد سامانه",refund:"بازپرداخت",tax:"مالیات"} as Record<string,string>)[value]||value;
  const requestMap=useMemo(()=>new Map(requests.map(r=>[r.id,r])),[requests]);
@@ -214,7 +215,7 @@ export default function SpecialistWorkspace({session}:{session:Session}){
     </div>
     {incomeByKind.length>0?<div className="specialist-income-breakdown">{incomeByKind.map(group=><div key={group.kind}><span>{allocationText(group.kind)}</span><strong>{group.rows.reduce((n,a)=>n+Number(a.amount||0),0).toLocaleString("fa-IR")} {Array.from(new Set(group.rows.map(a=>a.currency_code))).join(" / ")}</strong></div>)}</div>:<div className="specialist-inbox-empty"><span><TrendingUp size={22}/></span><div><strong>هنوز دریافتی یا تسهیم درآمدی ثبت نشده است</strong><p>با ایجاد قرارداد، صدور صورت‌حساب و ثبت سهم متخصص، درآمدهای واقعی این بخش به تفکیک خدمت و وضعیت تسویه نمایش داده می‌شوند. اینجا مبلغ فرضی یا تخمینی به‌عنوان درآمد نشان داده نمی‌شود.</p></div></div>}
     <div className="specialist-contract-list">
-     {contracts.map(contract=>{const allocations=incomeAllocations.filter(a=>a.contract_id===contract.id);const invoices=incomeInvoices.filter(i=>i.contract_id===contract.id);const items=invoices.flatMap(i=>incomeItems.filter(item=>item.invoice_id===i.id));const expertShare=allocations.filter(a=>a.status!=="reversed").reduce((n,a)=>n+Number(a.amount||0),0);const settled=allocations.filter(a=>a.status==="paid").reduce((n,a)=>n+Number(a.amount||0),0);return <article className="specialist-contract-card" key={contract.id}>
+     {contracts.map(contract=>{const allocations=incomeAllocations.filter(a=>a.contract_id===contract.id);const invoices=incomeInvoices.filter(i=>i.contract_id===contract.id);const items=invoices.flatMap(i=>incomeItems.filter(item=>item.invoice_id===i.id));const expertShare=allocations.filter(recognizedAllocation).reduce((n,a)=>n+Number(a.amount||0),0);const settled=allocations.filter(a=>a.status==="paid").reduce((n,a)=>n+Number(a.amount||0),0);return <article className="specialist-contract-card" key={contract.id}>
       <div className="specialist-contract-head"><div><small>{contract.contract_code}</small><h3>{contract.title}</h3></div><span className={"specialist-contract-status "+(contract.status==="active"?"active":"")}>{({active:"فعال",accepted:"پذیرفته‌شده",completed:"تکمیل‌شده",proposed:"پیشنهادی",disputed:"دارای اختلاف",cancelled:"لغوشده",expired:"منقضی"} as Record<string,string>)[contract.status]||contract.status}</span></div>
       <div className="specialist-contract-facts"><span>مدل: {pricingText(contract.pricing_model)}</span><span>ارزش پایه قرارداد: {money(contract.base_amount,contract.currency_code)}</span><span>سهم ثبت‌شده متخصص: {money(expertShare,contract.currency_code)}</span><span>تسویه‌شده: {money(settled,contract.currency_code)}</span></div>
       {items.length>0&&<div className="specialist-contract-items"><strong>خدمات درج‌شده در صورت‌حساب</strong>{items.map(item=><div key={item.id}><span>{item.description}</span><b>{money(item.line_total,item.currency_code)}</b></div>)}</div>}
