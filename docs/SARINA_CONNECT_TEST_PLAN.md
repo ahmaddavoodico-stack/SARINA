@@ -19,21 +19,34 @@
 
 ## Identity and routing
 - One central SARINA Telegram bot can serve many isolated private chats.
-- One central SARINA WhatsApp Business identity can serve multiple independent customer conversations subject to provider limits.
+- One central SARINA Bale bot can serve many isolated private chats; do not provision a separate bot per farmer or specialist.
 - A relayed specialist message visibly identifies the actual assigned specialist represented by SARINA.
 - Provider sender identity is never misrepresented as the specialist's personal account.
 - Multiple consultations for one farmer remain separate and correctly routed.
 - Inbound webhook identity maps to exactly one authorized SARINA user and active consultation; ambiguous mappings fail closed.
-- Telegram bot cannot initiate a conversation before the user starts it.
+- Telegram and Bale bots cannot initiate a conversation before the user starts it.
 - WhatsApp opt-in, template, service-window, region, quality and throughput rules are enforced.
 - Disabling one provider does not interrupt in-app messaging or another provider.
+
+## Bale adapter sandbox
+- Create the bot through Bale's official botfather and verify getMe before accepting traffic.
+- Verify webhook registration, webhook status, allowed ports, HTTPS ingress and secret-path validation.
+- Verify update_id deduplication, out-of-order/replayed update handling and bounded payload parsing.
+- Verify /start, consent/link confirmation, /help and /stop behavior in Persian and Arabic.
+- Verify sendMessage and reply threading; confirm represented specialist identity is visible.
+- Verify private-chat-only routing; ignore group/channel updates for consultation workflows.
+- Verify photo/document/location/voice support only for the media types enabled in the pilot; enforce MIME, size, ownership and malware checks.
+- Verify unavailable users, revoked consent, invalid route, API timeout, provider throttling and webhook outage.
+- Verify backlog/recovery against Bale's documented 2,000-update/24-hour retention behavior.
+- Confirm no Bale payment/wallet method is used for AI or specialist billing.
+- Confirm all ordinary Bale messages and receipts are independent from AI credit metering.
 
 ## Runtime and reliability (after provider adapters exist)
 - AI credit balance zero: normal messaging remains available.
 - AI provider timeout: normal messaging remains available.
 - Provider timeout/rate limit: bounded retries and dead-letter after configured limit; in-app messages remain usable.
 - Duplicate webhook: one canonical message/event only.
-- Invalid webhook signature: reject before processing and do not persist payload.
+- Invalid webhook secret path or request validation: reject before processing and do not persist payload.
 - Attachment: validate MIME, size, ownership and malware scan before delivery.
 - Delivery receipts update status without invoking AI or creating duplicate messages.
 - A normal message, attachment, delivery receipt or field note does not debit AI credits.
@@ -48,7 +61,7 @@
 - Everyday, specialist and field communication are organized as modes, not forced group rooms.
 
 ## Not yet covered by the current foundation
-- Actual Telegram and WhatsApp adapters.
+- Actual Telegram, Bale and WhatsApp adapters.
 - Secure channel linking/consent UI.
 - Worker deployment, queue claiming and dead-letter operations.
 - Provider template, regional availability and pricing checks.
