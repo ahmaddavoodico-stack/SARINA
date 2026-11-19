@@ -19,6 +19,11 @@ type Measurement={
 type ExpertAssignment={id:string;request_id:string;expert_profile_id:string;assignment_status:string;offered_at:string|null;responded_at:string|null};
 type ExpertRequest={id:string;requester_user_id:string;farm_id:string|null;subject:string;problem_description:string|null;request_type:string;priority:string;status:string;preferred_language:string|null;created_at:string;};
 type AssistantCase={id:string;request_id:string;assistant_status:string;completeness_status:string;missing_information:string[]|null;assistant_summary:string|null;received_at:string|null;reviewed_at:string|null;};
+type SpecialistContract={id:string;contract_code:string;title:string;service_type:string;status:string;pricing_model:string;currency_code:string;base_amount:number|string;platform_fee_model:string;platform_fee_rate:number|string|null;expert_result_share_rate:number|string|null;start_at:string|null;end_at:string|null;farmer_user_id:string};
+type IncomeAllocation={id:string;contract_id:string;invoice_id:string|null;payment_transaction_id:string|null;recipient_type:string;allocation_kind:string;amount:number|string;currency_code:string;status:string;eligible_at:string|null;settled_at:string|null};
+type IncomeInvoice={id:string;contract_id:string;invoice_number:string;status:string;currency_code:string;subtotal:number|string;total_amount:number|string;issued_at:string|null;due_at:string|null};
+type IncomeItem={id:string;invoice_id:string;item_kind:string;description:string;line_total:number|string;currency_code:string};
+type IncomePayment={id:string;invoice_id:string;status:string;amount:number|string;currency_code:string;confirmed_at:string|null};
 type ScheduledAction={
  action_id:string;plan_id:string;farm_id:string;farm_name:string;farmer_user_id:string;
  plan_title:string;plan_origin:string;plan_priority:string;plan_status:string;
@@ -39,6 +44,13 @@ export default function SpecialistWorkspace({session}:{session:Session}){
  const[requests,setRequests]=useState<ExpertRequest[]>([]);
  const[assistantCases,setAssistantCases]=useState<AssistantCase[]>([]);
  const[expertName,setExpertName]=useState("");
+ const[expertProfileId,setExpertProfileId]=useState("");
+ const[contracts,setContracts]=useState<SpecialistContract[]>([]);
+ const[incomeAllocations,setIncomeAllocations]=useState<IncomeAllocation[]>([]);
+ const[incomeInvoices,setIncomeInvoices]=useState<IncomeInvoice[]>([]);
+ const[incomeItems,setIncomeItems]=useState<IncomeItem[]>([]);
+ const[incomePayments,setIncomePayments]=useState<IncomePayment[]>([]);
+ const[financeNotice,setFinanceNotice]=useState("");
  const[respondingTo,setRespondingTo]=useState("");
  const[assignmentNotice,setAssignmentNotice]=useState("");
  const[selectedFarm,setSelectedFarm]=useState("");
@@ -70,8 +82,38 @@ export default function SpecialistWorkspace({session}:{session:Session}){
     client.from("expert_profiles").select("id,public_name,years_experience").eq("user_id",userResult.data.id).maybeSingle()
    ]);
    if(!profileResult.error&&profileResult.data){
+    const profileId=profileResult.data.id as string;
+    setExpertProfileId(profileId);
     setExpertName(profileResult.data.public_name||userResult.data.full_name||"متخصص");
-    const assignmentResult=await client.from("expert_request_assignments").select("id,request_id,expert_profile_id,assignment_status,offered_at,responded_at").eq("expert_profile_id",profileResult.data.id).order("offered_at",{ascending:false}).limit(60);
+    const [assignmentResult,contractResult]=await Promise.all([
+     client.from("expert_request_assignments").select("id,request_id,expert_profile_id,assignment_status,offered_at,responded_at").eq("expert_profile_id",profileId).order("offered_at",{ascending:false}).limit(60),
+     client.from("service_contracts").select("id,contract_code,title,service_type,status,pricing_model,currency_code,base_amount,platform_fee_model,platform_fee_rate,expert_result_share_rate,start_at,end_at,farmer_user_id").eq("expert_profile_id",profileId).order("created_at",{ascending:false}).limit(100)
+    ]);
+    if(!contractResult.error){
+     const contractRows=(contractResult.data??[]) as SpecialistContract[];
+     setContracts(contractRows);
+     const contractIds=contractRows.map(x=>x.id);
+     if(contractIds.length){
+      const [allocationResult,invoiceResult]=await Promise.all([
+       client.from("contract_settlement_allocations").select("id,contract_id,invoice_id,payment_transaction_id,recipient_type,allocation_kind,amount,currency_code,status,eligible_at,settled_at").in("contract_id",contractIds).eq("recipient_type","expert").order("created_at",{ascending:false}).limit(500),
+       client.from("contract_invoices").select("id,contract_id,invoice_number,status,currency_code,subtotal,total_amount,issued_at,due_at").in("contract_id",contractIds).order("created_at",{ascending:false}).limit(300)
+      ]);
+      if(!allocationResult.error)setIncomeAllocations((allocationResult.data??[]) as IncomeAllocation[]);else setFinanceNotice("ریز تسویه‌ها فعلاً در دسترس نیست: "+allocationResult.error.message);
+      if(!invoiceResult.error){
+       const invoiceRows=(invoiceResult.data??[]) as IncomeInvoice[];
+       setIncomeInvoices(invoiceRows);
+       const invoiceIds=invoiceRows.map(x=>x.id);
+       if(invoiceIds.length){
+        const [itemResult,paymentResult]=await Promise.all([
+         client.from("contract_invoice_items").select("id,invoice_id,item_kind,description,line_total,currency_code").in("invoice_id",invoiceIds).limit(600),
+         client.from("payment_transactions").select("id,invoice_id,status,amount,currency_code,confirmed_at").in("invoice_id",invoiceIds).order("created_at",{ascending:false}).limit(300)
+        ]);
+        if(!itemResult.error)setIncomeItems((itemResult.data??[]) as IncomeItem[]);
+        if(!paymentResult.error)setIncomePayments((paymentResult.data??[]) as IncomePayment[]);
+       }else{setIncomeItems([]);setIncomePayments([]);}
+      }else setFinanceNotice("صورت‌حساب‌های قرارداد بارگذاری نشدند: "+invoiceResult.error.message);
+     }else{setIncomeAllocations([]);setIncomeInvoices([]);setIncomeItems([]);setIncomePayments([]);}
+    }else{setContracts([]);setIncomeAllocations([]);setIncomeInvoices([]);setIncomeItems([]);setIncomePayments([]);setFinanceNotice("قراردادهای مالی بارگذاری نشدند: "+contractResult.error.message);}
     if(!assignmentResult.error){
      const rows=(assignmentResult.data??[]) as ExpertAssignment[];
      setAssignments(rows);
@@ -85,7 +127,7 @@ export default function SpecialistWorkspace({session}:{session:Session}){
       if(!caseResult.error)setAssistantCases((caseResult.data??[]) as AssistantCase[]);
      }else{setRequests([]);setAssistantCases([]);}
     }else{setAssignments([]);setRequests([]);setAssistantCases([]);setAssignmentNotice("صندوق درخواست‌ها در دسترس نیست: "+assignmentResult.error.message);}
-   }else{setExpertName(userResult.data.full_name||"متخصص");setAssignments([]);setRequests([]);setAssistantCases([]);}
+   }else{setExpertName(userResult.data.full_name||"متخصص");setAssignments([]);setRequests([]);setAssistantCases([]);setContracts([]);setIncomeAllocations([]);setIncomeInvoices([]);setIncomeItems([]);setIncomePayments([]);}
   }else{setAssignments([]);setRequests([]);setAssistantCases([]);}
   if(!farmResult.error&&!problems.length)setNotice("اطلاعات از پرونده‌ها و برنامه‌های موجود SARINA دریافت شد.");
   setLoading(false);setRefreshing(false);
@@ -118,6 +160,18 @@ export default function SpecialistWorkspace({session}:{session:Session}){
  },[actions,farms]);
  const visibleActions=actions.filter(a=>a.farm_id===activeFarmId&&(a.is_overdue||a.is_due_this_week||a.action_status==="in_progress"));
  const handleRefresh=async()=>{setRefreshing(true);await load();};
+ const money=(amount:number|string,currency:string)=>`${Number(amount||0).toLocaleString("fa-IR",{maximumFractionDigits:0})} ${currency}`;
+ const invoiceMap=useMemo(()=>new Map(incomeInvoices.map(i=>[i.id,i])),[incomeInvoices]);
+ const contractMap=useMemo(()=>new Map(contracts.map(x=>[x.id,x])),[contracts]);
+ const incomeTotals=useMemo(()=>{
+  const valid=incomeAllocations.filter(a=>a.status!=="reversed");
+  const sum=(rows:IncomeAllocation[])=>rows.reduce((n,a)=>n+Number(a.amount||0),0);
+  const currencies=Array.from(new Set(valid.map(a=>a.currency_code)));
+  return {earned:sum(valid),paid:sum(valid.filter(a=>a.status==="paid")),waiting:sum(valid.filter(a=>["pending","eligible","processing"].includes(a.status))),held:sum(valid.filter(a=>a.status==="held")),currencies};
+ },[incomeAllocations]);
+ const incomeByKind=useMemo(()=>Array.from(new Set(incomeAllocations.map(a=>a.allocation_kind))).map(kind=>({kind,rows:incomeAllocations.filter(a=>a.allocation_kind===kind&&a.status!=="reversed")})),[incomeAllocations]);
+ const pricingText=(value:string)=>({fixed_fee:"مبلغ ثابت",milestone:"مرحله‌ای",subscription:"دوره‌ای / اشتراکی",per_use:"به‌ازای هر خدمت",result_based:"مبتنی بر نتیجه",hybrid:"ترکیبی"} as Record<string,string>)[value]||value;
+ const allocationText=(value:string)=>({expert_fee:"حق‌الزحمه خدمات تخصصی",result_share:"سهم از نتیجه",other:"سایر دریافتی‌ها",provider_cost:"هزینه ارائه خدمت",platform_fee:"کارمزد سامانه",refund:"بازپرداخت",tax:"مالیات"} as Record<string,string>)[value]||value;
  const requestMap=useMemo(()=>new Map(requests.map(r=>[r.id,r])),[requests]);
  const assistantMap=useMemo(()=>new Map(assistantCases.map(a=>[a.request_id,a])),[assistantCases]);
  const offeredAssignments=assignments.filter(a=>a.assignment_status==="offered"&&requestMap.has(a.request_id));
@@ -153,6 +207,27 @@ export default function SpecialistWorkspace({session}:{session:Session}){
     <article className="specialist-kpi"><span className="blue"><Activity size={19}/></span><small>مزارع نیازمند ثبت مشاهده</small><strong>{summary.stale.length.toLocaleString("fa-IR")}</strong><em>بدون مشاهده جدید در ۱۴ روز اخیر</em></article>
    </div>
 
+   <section className="specialist-income">
+    <div className="specialist-section-head"><div><span className="eyebrow">شفافیت مالی و قراردادها</span><h2><TrendingUp size={18}/> درآمد و تسویه‌های شما</h2><p>محاسبه بر پایه قراردادهای پذیرفته‌شده، صورت‌حساب‌ها و سهم‌های ثبت‌شده برای متخصص</p></div><span className="specialist-count">{contracts.length.toLocaleString("fa-IR")} قرارداد</span></div>
+    {financeNotice&&<div className="specialist-data-note">{financeNotice}</div>}
+    <div className="specialist-income-kpis">
+     <article><small>مجموع سهم درآمد ثبت‌شده</small><strong>{incomeTotals.currencies.length===1?money(incomeTotals.earned,incomeTotals.currencies[0]):incomeTotals.earned.toLocaleString("fa-IR")}</strong><span>بر اساس ردیف‌های تسهیم به نام متخصص</span></article>
+     <article><small>تسویه‌شده</small><strong>{incomeTotals.currencies.length===1?money(incomeTotals.paid,incomeTotals.currencies[0]):incomeTotals.paid.toLocaleString("fa-IR")}</strong><span>پرداخت‌هایی که وضعیت آن‌ها نهایی شده</span></article>
+     <article><small>در انتظار پرداخت</small><strong>{incomeTotals.currencies.length===1?money(incomeTotals.waiting,incomeTotals.currencies[0]):incomeTotals.waiting.toLocaleString("fa-IR")}</strong><span>در انتظار تأیید یا پردازش تسویه</span></article>
+     <article><small>مبالغ نگه‌داشته‌شده</small><strong>{incomeTotals.currencies.length===1?money(incomeTotals.held,incomeTotals.currencies[0]):incomeTotals.held.toLocaleString("fa-IR")}</strong><span>تا تعیین تکلیف طبق قرارداد</span></article>
+    </div>
+    {incomeByKind.length>0?<div className="specialist-income-breakdown">{incomeByKind.map(group=><div key={group.kind}><span>{allocationText(group.kind)}</span><strong>{group.rows.reduce((n,a)=>n+Number(a.amount||0),0).toLocaleString("fa-IR")} {Array.from(new Set(group.rows.map(a=>a.currency_code))).join(" / ")}</strong></div>)}</div>:<div className="specialist-inbox-empty"><span><TrendingUp size={22}/></span><div><strong>هنوز دریافتی یا تسهیم درآمدی ثبت نشده است</strong><p>با ایجاد قرارداد، صدور صورت‌حساب و ثبت سهم متخصص، درآمدهای واقعی این بخش به تفکیک خدمت و وضعیت تسویه نمایش داده می‌شوند. اینجا مبلغ فرضی یا تخمینی به‌عنوان درآمد نشان داده نمی‌شود.</p></div></div>}
+    <div className="specialist-contract-list">
+     {contracts.map(contract=>{const allocations=incomeAllocations.filter(a=>a.contract_id===contract.id);const invoices=incomeInvoices.filter(i=>i.contract_id===contract.id);const items=invoices.flatMap(i=>incomeItems.filter(item=>item.invoice_id===i.id));const expertShare=allocations.filter(a=>a.status!=="reversed").reduce((n,a)=>n+Number(a.amount||0),0);const settled=allocations.filter(a=>a.status==="paid").reduce((n,a)=>n+Number(a.amount||0),0);return <article className="specialist-contract-card" key={contract.id}>
+      <div className="specialist-contract-head"><div><small>{contract.contract_code}</small><h3>{contract.title}</h3></div><span className={"specialist-contract-status "+(contract.status==="active"?"active":"")}>{({active:"فعال",accepted:"پذیرفته‌شده",completed:"تکمیل‌شده",proposed:"پیشنهادی",disputed:"دارای اختلاف",cancelled:"لغوشده",expired:"منقضی"} as Record<string,string>)[contract.status]||contract.status}</span></div>
+      <div className="specialist-contract-facts"><span>مدل: {pricingText(contract.pricing_model)}</span><span>ارزش پایه قرارداد: {money(contract.base_amount,contract.currency_code)}</span><span>سهم ثبت‌شده متخصص: {money(expertShare,contract.currency_code)}</span><span>تسویه‌شده: {money(settled,contract.currency_code)}</span></div>
+      {items.length>0&&<div className="specialist-contract-items"><strong>خدمات درج‌شده در صورت‌حساب</strong>{items.map(item=><div key={item.id}><span>{item.description}</span><b>{money(item.line_total,item.currency_code)}</b></div>)}</div>}
+      {allocations.length>0&&<div className="specialist-contract-items"><strong>جزئیات سهم و تسویه</strong>{allocations.map(a=><div key={a.id}><span>{allocationText(a.allocation_kind)} · {({pending:"در انتظار",eligible:"آماده تسویه",processing:"در حال پردازش",paid:"پرداخت‌شده",failed:"ناموفق",reversed:"برگشت‌خورده",held:"نگه‌داشته‌شده"} as Record<string,string>)[a.status]||a.status}</span><b>{money(a.amount,a.currency_code)}</b></div>)}</div>}
+      {invoices.length>0&&<small className="specialist-contract-foot">صورت‌حساب‌ها: {invoices.map(i=>i.invoice_number+" ("+({draft:"پیش‌نویس",issued:"صادرشده",partially_paid:"پرداخت ناقص",paid:"پرداخت کامل",void:"باطل",overdue:"معوق"} as Record<string,string>)[i.status]+")").join(" · ")}</small>}
+     </article>})}
+    </div>
+    <p className="specialist-income-note">ارزش پایه قرارداد با درآمد قطعی متخصص یکی نیست. درآمد قابل تسویه از سهم‌های ثبت‌شده برای متخصص محاسبه می‌شود؛ مبالغ مبتنی بر نتیجه تا زمان تأیید و واجد شرایط شدن، در وضعیت مناسب خود باقی می‌مانند. سهم SARINA و شرایط هر قرارداد جداگانه و مطابق توافق نمایش داده می‌شوند.</p>
+   </section>
    <div className="specialist-section-head specialist-inbox-head"><div><span className="eyebrow">میز کار و همکاری‌ها</span><h2><Inbox size={17}/> صندوق ارجاع‌های تخصصی</h2></div><span className="specialist-count">{offeredAssignments.length.toLocaleString("fa-IR")} ارجاع تازه · {acceptedAssignments.length.toLocaleString("fa-IR")} پذیرفته‌شده</span></div>
    {assignmentNotice&&<div className="specialist-data-note">{assignmentNotice}</div>}
    {offeredAssignments.length===0&&acceptedAssignments.length===0?<div className="specialist-inbox-empty"><span><Inbox size={22}/></span><div><strong>صندوق همکاری شما آماده است</strong><p>وقتی درخواست کشاورزی به شما ارجاع شود، جزئیات و پیش‌خوان پرونده در همین قسمت نمایش داده می‌شود.</p></div></div>:<div className="specialist-request-list">
