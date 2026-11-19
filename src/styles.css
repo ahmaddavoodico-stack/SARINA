@@ -172,3 +172,14 @@
 .sarina-update-action{display:inline-flex;align-items:center;justify-content:center;gap:7px;white-space:nowrap;border:0;border-radius:10px;padding:10px 13px;background:#245b45;color:#fff;font:inherit;font-size:12px;cursor:pointer}
 .sarina-update-dismiss{display:grid;place-items:center;flex:0 0 30px;width:30px;height:30px;border:0;border-radius:8px;background:#f1f5f1;color:#53675a;cursor:pointer}
 @media(max-width:520px){.sarina-update-banner{inset-inline:10px;bottom:10px;gap:9px;padding:11px}.sarina-update-copy span{font-size:10px}.sarina-update-action{padding:9px 10px;font-size:11px}}
+
+/* Productivity impact and owner follow-up workbench */
+.productivity-workspace{direction:rtl}
+.productivity-workspace .productivity-stats{margin:18px 0 24px}
+.productivity-workspace .productivity-stats .panel{min-height:145px}
+.productivity-workspace .productivity-plan-list>section{margin-bottom:18px}
+.productivity-workspace .productivity-plan-list>section>.productivity-section-heading{margin-top:14px}
+.productivity-workspace .productivity-plan-card{margin-bottom:10px}
+.productivity-workspace .productivity-action{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.productivity-workspace .productivity-action select{max-width:180px}
+@media(max-width:700px){.productivity-workspace .productivity-action{align-items:flex-start;flex-direction:column}.productivity-workspace .productivity-action select{max-width:100%;width:100%}}
