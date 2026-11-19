@@ -1,4 +1,18 @@
-const CACHE="sarina-shell-v1";const SHELL=["/","/manifest.webmanifest","/favicon.svg"];
-self.addEventListener("install",e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(SHELL)));self.skipWaiting();});
-self.addEventListener("activate",e=>{e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))));self.clients.claim();});
-self.addEventListener("fetch",e=>{const r=e.request,u=new URL(r.url);if(r.method!=="GET"||u.origin!==self.location.origin||u.pathname.startsWith("/rest/")||u.pathname.startsWith("/auth/"))return;if(r.mode==="navigate")e.respondWith(fetch(r).then(res=>{const copy=res.clone();caches.open(CACHE).then(c=>c.put("/",copy));return res;}).catch(()=>caches.match("/")));});
+const CACHE="sarina-shell-v2";
+const SHELL=["/","/manifest.webmanifest","/icon-192.svg","/icon-512.svg","/favicon.svg"];
+self.addEventListener("install",event=>{event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(SHELL)));self.skipWaiting();});
+self.addEventListener("activate",event=>{event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key.startsWith("sarina-shell-")&&key!==CACHE).map(key=>caches.delete(key)))));self.clients.claim();});
+self.addEventListener("fetch",event=>{
+ const request=event.request,url=new URL(request.url);
+ if(request.method!=="GET"||url.origin!==self.location.origin||url.pathname.startsWith("/rest/")||url.pathname.startsWith("/auth/")||url.pathname.startsWith("/storage/"))return;
+ if(request.mode==="navigate"){
+  event.respondWith(fetch(request).then(response=>{if(response.ok){const copy=response.clone();caches.open(CACHE).then(cache=>cache.put("/",copy));}return response;}).catch(()=>caches.match("/")));
+  return;
+ }
+ if(["script","style","image","font"].includes(request.destination)){
+  event.respondWith(caches.match(request).then(cached=>{
+   const network=fetch(request).then(response=>{if(response.ok){const copy=response.clone();caches.open(CACHE).then(cache=>cache.put(request,copy));}return response;});
+   return cached||network;
+  }));
+ }
+});
