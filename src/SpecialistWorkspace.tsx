@@ -1,5 +1,5 @@
 import {useCallback,useEffect,useMemo,useState} from "react";
-import {Activity,AlertCircle,CalendarDays,CheckCircle2,ClipboardList,Clock3,Leaf,RefreshCw,Sprout,TrendingUp,Inbox,ShieldCheck,UserRound,ArrowUpLeft} from "lucide-react";
+import {Activity,AlertCircle,CalendarDays,CheckCircle2,ClipboardList,Clock3,Leaf,RefreshCw,Sprout,TrendingUp,Inbox,ShieldCheck} from "lucide-react";
 import type {Session} from "@supabase/supabase-js";
 import {supabase} from "./lib/supabase";
 
@@ -39,7 +39,6 @@ export default function SpecialistWorkspace({session}:{session:Session}){
  const[requests,setRequests]=useState<ExpertRequest[]>([]);
  const[assistantCases,setAssistantCases]=useState<AssistantCase[]>([]);
  const[expertName,setExpertName]=useState("");
- const[expertProfileId,setExpertProfileId]=useState("");
  const[respondingTo,setRespondingTo]=useState("");
  const[assignmentNotice,setAssignmentNotice]=useState("");
  const[selectedFarm,setSelectedFarm]=useState("");
@@ -71,7 +70,6 @@ export default function SpecialistWorkspace({session}:{session:Session}){
     client.from("expert_profiles").select("id,public_name,years_experience").eq("user_id",userResult.data.id).maybeSingle()
    ]);
    if(!profileResult.error&&profileResult.data){
-    setExpertProfileId(profileResult.data.id);
     setExpertName(profileResult.data.public_name||userResult.data.full_name||"متخصص");
     const assignmentResult=await client.from("expert_request_assignments").select("id,request_id,expert_profile_id,assignment_status,offered_at,responded_at").eq("expert_profile_id",profileResult.data.id).order("offered_at",{ascending:false}).limit(60);
     if(!assignmentResult.error){
@@ -87,7 +85,7 @@ export default function SpecialistWorkspace({session}:{session:Session}){
       if(!caseResult.error)setAssistantCases((caseResult.data??[]) as AssistantCase[]);
      }else{setRequests([]);setAssistantCases([]);}
     }else{setAssignments([]);setRequests([]);setAssistantCases([]);setAssignmentNotice("صندوق درخواست‌ها در دسترس نیست: "+assignmentResult.error.message);}
-   }else{setExpertProfileId("");setExpertName(userResult.data.full_name||"متخصص");setAssignments([]);setRequests([]);setAssistantCases([]);}
+   }else{setExpertName(userResult.data.full_name||"متخصص");setAssignments([]);setRequests([]);setAssistantCases([]);}
   }else{setAssignments([]);setRequests([]);setAssistantCases([]);}
   if(!farmResult.error&&!problems.length)setNotice("اطلاعات از پرونده‌ها و برنامه‌های موجود SARINA دریافت شد.");
   setLoading(false);setRefreshing(false);
