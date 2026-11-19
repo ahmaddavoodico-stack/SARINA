@@ -214,3 +214,32 @@
 .specialist-request-actions button.secondary{background:#fff;border-color:#e1e8df;color:#718276}
 .specialist-request-actions button:disabled{opacity:.5;cursor:wait}
 @media(max-width:760px){.specialist-welcome{align-items:flex-start;padding:15px;gap:10px}.specialist-welcome-mark{width:40px;height:40px;flex-basis:40px}.specialist-welcome-copy h2{font-size:14px}.specialist-welcome-promise{display:none}.specialist-request-list{grid-template-columns:1fr}}
+
+
+/* Specialist income and contract transparency */
+.specialist-income{margin:26px 0 30px}
+.specialist-income>.specialist-section-head p{font-size:10px;color:#8b9b8e;margin:6px 0 0}
+.specialist-income-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:14px 0}
+.specialist-income-kpis article{display:flex;flex-direction:column;gap:7px;padding:15px;background:#fff;border:1px solid var(--line);border-radius:13px;min-width:0}
+.specialist-income-kpis small{font-size:10px;color:#7e9082}
+.specialist-income-kpis strong{font-size:clamp(14px,2vw,20px);color:#315e3c;overflow-wrap:anywhere}
+.specialist-income-kpis span{font-size:9px;line-height:1.7;color:#9aa69b}
+.specialist-income-breakdown{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:12px 0}
+.specialist-income-breakdown>div{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px 13px;border-radius:10px;background:#f2f6f0;border:1px solid #e7eee4}
+.specialist-income-breakdown span{font-size:9px;color:#728676}.specialist-income-breakdown strong{font-size:11px;color:#46694c;white-space:nowrap}
+.specialist-contract-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px;margin-top:12px}
+.specialist-contract-card{padding:15px;background:#fff;border:1px solid var(--line);border-radius:14px;min-width:0}
+.specialist-contract-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.specialist-contract-head small{font-size:9px;color:#97a49a}.specialist-contract-head h3{font-size:12px;color:#365b40;margin:5px 0 0}
+.specialist-contract-status{font-size:9px;padding:5px 8px;border-radius:20px;background:#f1f3ef;color:#829084;white-space:nowrap}
+.specialist-contract-status.active{background:#eaf4e9;color:#4f8054}
+.specialist-contract-facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:13px 0;padding:11px 0;border-top:1px solid #edf1eb;border-bottom:1px solid #edf1eb}
+.specialist-contract-facts span{font-size:9px;color:#7e9081;line-height:1.7}
+.specialist-contract-items{margin-top:10px}
+.specialist-contract-items>strong{font-size:9px;color:#54735a;display:block;margin-bottom:6px}
+.specialist-contract-items>div{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:6px 0;border-top:1px dashed #edf0eb}
+.specialist-contract-items>div span{font-size:9px;color:#829085;line-height:1.7}
+.specialist-contract-items>div b{font-size:9px;color:#526c57;white-space:nowrap}
+.specialist-contract-foot{display:block;margin-top:10px;color:#9aa69b;font-size:9px;line-height:1.8}
+.specialist-income-note{font-size:9px;line-height:1.9;color:#8c9b8e;background:#f7f9f5;border-radius:10px;padding:10px 12px;margin-top:13px}
+@media(max-width:760px){.specialist-income-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.specialist-income-breakdown{grid-template-columns:1fr}.specialist-contract-list{grid-template-columns:1fr}}
