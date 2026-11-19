@@ -33,7 +33,7 @@ function AuthScreen(){
   const[mode,setMode]=useState<"login"|"signup">("login");
   const[email,setEmail]=useState(""),[password,setPassword]=useState(""),[name,setName]=useState("");
   const[busy,setBusy]=useState(false),[message,setMessage]=useState("");
-  const t=authCopy[language],isRtl=t.direction==="rtl";
+  const t=authCopy[language];
   useEffect(()=>{
     document.documentElement.lang=language;
     document.documentElement.dir=t.direction;
