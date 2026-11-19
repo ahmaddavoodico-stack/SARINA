@@ -1,6 +1,6 @@
 # SARINA Farm Productivity Intelligence
 
-**Status:** Architecture foundation; production schema and application behavior are not changed by this document.
+**Status:** Architecture foundation with a first GPS/map capture implementation committed on the feature branch. Production schema has not been applied.
 
 ## Mission
 
@@ -78,6 +78,8 @@ Never compare unlike units, different crop cycles, incompatible harvest windows 
 ## First implementation sequence
 
 ### Phase 1 — Farm location and field boundary (first user-facing milestone)
+
+**Implementation branch status:** Leaflet map, permission-based device GPS, manual boundary vertex capture, vertex removal/undo, client-side area/perimeter preview, farmer confirmation, farm/field save flow, and a PostGIS migration have been staged in `feature/farm-productivity-intelligence-foundation`. The migration is intentionally not applied to production until backup and isolated restore are verified. Mobile/device testing and RLS/persistence validation remain release gates.
 
 1. Ask permission before accessing device location.
 2. Provide a clear “My location” action and show the reported GPS accuracy.
