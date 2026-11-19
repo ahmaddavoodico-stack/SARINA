@@ -150,7 +150,7 @@ returns trigger language plpgsql security definer set search_path = '' as $$
 declare v_expert_user_id uuid;
 begin
   insert into public.expert_case_assistant_cases(request_id, assistant_status, assistant_summary)
-  values (new.id, 'received', concat_ws(E'\\n', new.subject, new.problem_description))
+  values (new.id, 'received', concat_ws(E'\n', new.subject, new.problem_description))
   on conflict (request_id) do nothing;
   select ep.user_id into v_expert_user_id from public.expert_profiles ep where ep.id=new.assigned_expert_profile_id;
   insert into public.expert_case_notifications(recipient_user_id, actor_user_id, request_id, event_type, preview)
