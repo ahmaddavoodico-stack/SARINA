@@ -48,9 +48,9 @@ function AuthScreen({authError}:{authError:string}) {
  return <main className={"welcome-shell"+(rtl?" is-rtl":"")} dir={rtl?"rtl":"ltr"}>
   <section className="welcome-hero">
    <header className="welcome-header"><div className="welcome-brand"><span className="welcome-brand-mark"><Sprout size={27}/></span><strong>SARINA</strong></div><span className="global-label">GLOBAL AGRICULTURE</span></header>
-   <div className="welcome-hero-copy"><span className="welcome-kicker">{stage==="language"?"A GLOBAL HOME FOR AGRICULTURE":t.tag}</span><h1>No farmer<br/><em>is alone.</em></h1><p>A smarter future for agriculture.</p><div className="welcome-values"><span>KNOWLEDGE</span><i/><span>INNOVATION</span><i/><span>GROWTH</span></div></div>
+   <div className="welcome-hero-copy"><span className="welcome-kicker">{stage==="language"?"A GLOBAL HOME FOR AGRICULTURE":t.tag}</span><h1>{stage==="language"?<>No farmer<br/><em>is alone.</em></>:t.headline}</h1><p>{stage==="language"?"A smarter future for agriculture.":t.sub}</p>{stage==="language"&&<div className="welcome-values"><span>KNOWLEDGE</span><i/><span>INNOVATION</span><i/><span>GROWTH</span></div>}</div>
    <div className="welcome-hero-art" aria-hidden="true"><div className="welcome-sun"/><div className="welcome-hill hill-back"/><div className="welcome-hill hill-mid"/><div className="welcome-hill hill-front"/><div className="welcome-field-lines"/></div>
-   <div className="welcome-hero-foot">A GLOBAL AGRICULTURAL COMMUNITY</div>
+   <div className="welcome-hero-foot">{stage==="language"?"A GLOBAL AGRICULTURAL COMMUNITY":t.footer.toUpperCase()}</div>
   </section>
   <section className="welcome-side">
    <div className="welcome-mobile-brand"><span className="welcome-brand-mark"><Sprout size={25}/></span><strong>SARINA</strong></div>
