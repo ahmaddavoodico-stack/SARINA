@@ -1,5 +1,5 @@
 import {useCallback,useEffect,useMemo,useState} from "react";
-import {Activity,AlertCircle,CalendarDays,CheckCircle2,ClipboardList,Clock3,Leaf,RefreshCw,Sprout,TrendingUp} from "lucide-react";
+import {Activity,AlertCircle,CalendarDays,CheckCircle2,ClipboardList,Clock3,Leaf,RefreshCw,Sprout,TrendingUp,Inbox,ShieldCheck,UserRound,ArrowUpLeft} from "lucide-react";
 import type {Session} from "@supabase/supabase-js";
 import {supabase} from "./lib/supabase";
 
@@ -16,6 +16,9 @@ type Measurement={
  metric_value:number|string;unit_code:string;source_type:string;confidence_score:number|null;
  quality_label:string;notes:string|null;
 };
+type ExpertAssignment={id:string;request_id:string;expert_profile_id:string;assignment_status:string;offered_at:string|null;responded_at:string|null};
+type ExpertRequest={id:string;requester_user_id:string;farm_id:string|null;subject:string;problem_description:string|null;request_type:string;priority:string;status:string;preferred_language:string|null;created_at:string;};
+type AssistantCase={id:string;request_id:string;assistant_status:string;completeness_status:string;missing_information:string[]|null;assistant_summary:string|null;received_at:string|null;reviewed_at:string|null;};
 type ScheduledAction={
  action_id:string;plan_id:string;farm_id:string;farm_name:string;farmer_user_id:string;
  plan_title:string;plan_origin:string;plan_priority:string;plan_status:string;
@@ -32,6 +35,13 @@ export default function SpecialistWorkspace({session}:{session:Session}){
  const[farms,setFarms]=useState<SupervisedFarm[]>([]);
  const[measurements,setMeasurements]=useState<Measurement[]>([]);
  const[actions,setActions]=useState<ScheduledAction[]>([]);
+ const[assignments,setAssignments]=useState<ExpertAssignment[]>([]);
+ const[requests,setRequests]=useState<ExpertRequest[]>([]);
+ const[assistantCases,setAssistantCases]=useState<AssistantCase[]>([]);
+ const[expertName,setExpertName]=useState("");
+ const[expertProfileId,setExpertProfileId]=useState("");
+ const[respondingTo,setRespondingTo]=useState("");
+ const[assignmentNotice,setAssignmentNotice]=useState("");
  const[selectedFarm,setSelectedFarm]=useState("");
  const[selectedMetric,setSelectedMetric]=useState("");
  const[loading,setLoading]=useState(true);
@@ -40,13 +50,14 @@ export default function SpecialistWorkspace({session}:{session:Session}){
  const[notice,setNotice]=useState("");
 
  const load=useCallback(async()=>{
-  if(!supabase)return;
-  setError("");setNotice("");
+  if(!supabase){setLoading(false);setRefreshing(false);return;}
+  setError("");setNotice("");setAssignmentNotice("");
   const client=supabase as any;
-  const [farmResult,measurementResult,actionResult]=await Promise.all([
+  const [farmResult,measurementResult,actionResult,userResult]=await Promise.all([
    client.from("expert_supervised_farm_dashboard").select("*").order("farm_name",{ascending:true}),
    client.from("expert_farm_productivity_timeline").select("*").order("observed_at",{ascending:false}).limit(600),
-   client.from("expert_farm_action_schedule").select("*").order("due_date",{ascending:true}).limit(300)
+   client.from("expert_farm_action_schedule").select("*").order("due_date",{ascending:true}).limit(300),
+   client.from("users").select("id,full_name").eq("auth_user_id",session.user.id).maybeSingle()
   ]);
   const problems=[farmResult.error,measurementResult.error,actionResult.error].filter(Boolean);
   if(farmResult.error){setError("دریافت فهرست مزارع تحت نظارت ممکن نشد: "+farmResult.error.message);setFarms([]);}
@@ -55,9 +66,32 @@ export default function SpecialistWorkspace({session}:{session:Session}){
   else setMeasurements((measurementResult.data??[]) as Measurement[]);
   if(actionResult.error){setActions([]);setNotice("برنامه اقدامات بارگذاری نشد: "+actionResult.error.message);}
   else setActions((actionResult.data??[]) as ScheduledAction[]);
+  if(!userResult.error&&userResult.data){
+   const [profileResult]=await Promise.all([
+    client.from("expert_profiles").select("id,public_name,years_experience").eq("user_id",userResult.data.id).maybeSingle()
+   ]);
+   if(!profileResult.error&&profileResult.data){
+    setExpertProfileId(profileResult.data.id);
+    setExpertName(profileResult.data.public_name||userResult.data.full_name||"متخصص");
+    const assignmentResult=await client.from("expert_request_assignments").select("id,request_id,expert_profile_id,assignment_status,offered_at,responded_at").eq("expert_profile_id",profileResult.data.id).order("offered_at",{ascending:false}).limit(60);
+    if(!assignmentResult.error){
+     const rows=(assignmentResult.data??[]) as ExpertAssignment[];
+     setAssignments(rows);
+     const ids=rows.map(a=>a.request_id);
+     if(ids.length){
+      const [requestResult,caseResult]=await Promise.all([
+       client.from("expert_requests").select("id,requester_user_id,farm_id,subject,problem_description,request_type,priority,status,preferred_language,created_at").in("id",ids).order("created_at",{ascending:false}),
+       client.from("expert_case_assistant_cases").select("id,request_id,assistant_status,completeness_status,missing_information,assistant_summary,received_at,reviewed_at").in("request_id",ids)
+      ]);
+      if(!requestResult.error)setRequests((requestResult.data??[]) as ExpertRequest[]);else setAssignmentNotice("درخواست‌های ارجاع‌شده فعلاً بارگذاری نشدند: "+requestResult.error.message);
+      if(!caseResult.error)setAssistantCases((caseResult.data??[]) as AssistantCase[]);
+     }else{setRequests([]);setAssistantCases([]);}
+    }else{setAssignments([]);setRequests([]);setAssistantCases([]);setAssignmentNotice("صندوق درخواست‌ها در دسترس نیست: "+assignmentResult.error.message);}
+   }else{setExpertProfileId("");setExpertName(userResult.data.full_name||"متخصص");setAssignments([]);setRequests([]);setAssistantCases([]);}
+  }else{setAssignments([]);setRequests([]);setAssistantCases([]);}
   if(!farmResult.error&&!problems.length)setNotice("اطلاعات از پرونده‌ها و برنامه‌های موجود SARINA دریافت شد.");
   setLoading(false);setRefreshing(false);
- },[]);
+ },[session.user.id]);
 
  useEffect(()=>{setLoading(true);void load();},[session.user.id,load]);
 
@@ -86,8 +120,27 @@ export default function SpecialistWorkspace({session}:{session:Session}){
  },[actions,farms]);
  const visibleActions=actions.filter(a=>a.farm_id===activeFarmId&&(a.is_overdue||a.is_due_this_week||a.action_status==="in_progress"));
  const handleRefresh=async()=>{setRefreshing(true);await load();};
+ const requestMap=useMemo(()=>new Map(requests.map(r=>[r.id,r])),[requests]);
+ const assistantMap=useMemo(()=>new Map(assistantCases.map(a=>[a.request_id,a])),[assistantCases]);
+ const offeredAssignments=assignments.filter(a=>a.assignment_status==="offered"&&requestMap.has(a.request_id));
+ const acceptedAssignments=assignments.filter(a=>a.assignment_status==="accepted"&&requestMap.has(a.request_id));
+ const respondToAssignment=async(assignmentId:string,status:"accepted"|"declined")=>{
+  if(!supabase)return;
+  setRespondingTo(assignmentId);setAssignmentNotice("");
+  const result=await (supabase as any).from("expert_request_assignments").update({assignment_status:status,responded_at:new Date().toISOString()}).eq("id",assignmentId).eq("assignment_status","offered").select("id").maybeSingle();
+  if(result.error||!result.data){setAssignmentNotice(result.error?.message||"این ارجاع دیگر در وضعیت قابل پاسخ‌گویی نیست. اطلاعات را تازه‌سازی کنید.");setRespondingTo("");return;}
+  setAssignmentNotice(status==="accepted"?"ارجاع پذیرفته شد؛ پرونده در فهرست همکاری‌های شما قرار گرفت.":"ارجاع رد شد.");
+  await load();setRespondingTo("");
+ };
+ const requestStatus=(value:string)=>({submitted:"در انتظار بررسی",assigned:"ارجاع‌شده",in_progress:"در حال رسیدگی",waiting_user:"در انتظار پاسخ کشاورز",resolved:"مختومه",cancelled:"لغوشده"} as Record<string,string>)[value]||value;
+ const completenessLabel=(value:string)=>({complete:"اطلاعات اولیه کامل",partial:"نیازمند تکمیل اطلاعات",insufficient:"اطلاعات ناکافی",pending:"در انتظار آماده‌سازی"} as Record<string,string>)[value]||value;
 
  return <section className="specialist-workspace" dir="rtl">
+  <div className="specialist-welcome">
+   <div className="specialist-welcome-mark"><ShieldCheck size={23}/></div>
+   <div className="specialist-welcome-copy"><span>فضای کاری حرفه‌ای شما در SARINA</span><h2>خوش آمدید، {expertName||"متخصص عزیز"} 🌱</h2><p>SARINA در کنار شماست تا پرونده‌ها، برنامه‌ها و پیگیری‌های تخصصی‌تان را منظم‌تر و هوشمندانه‌تر مدیریت کنید.</p></div>
+   <div className="specialist-welcome-promise"><strong>دفتر کار شما</strong><small>یک همراه برای هر پرونده</small></div>
+  </div>
   <div className="specialist-heading">
    <div><span className="eyebrow">SARINA · Farm Productivity Intelligence</span><h1>داشبورد متخصص</h1><p>نمای یکپارچه مزارع تحت نظارت، روند بهره‌وری و برنامه هفتگی کشاورزان.</p></div>
    <button className="specialist-refresh" onClick={()=>void handleRefresh()} disabled={loading||refreshing}><RefreshCw size={15} className={refreshing?"spin":""}/>{refreshing?"در حال به‌روزرسانی":"به‌روزرسانی اطلاعات"}</button>
