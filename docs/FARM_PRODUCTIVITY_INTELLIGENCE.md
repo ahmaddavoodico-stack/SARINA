@@ -1,6 +1,6 @@
 # SARINA Farm Productivity Intelligence
 
-**Status:** GPS/map capture implementation committed on the feature branch. Field-boundary schema migration has been applied to the linked Supabase project and verified.
+**Status:** Farm boundary capture plus the first usable productivity intelligence workspace and its owner-scoped database model are implemented on `feature/farm-productivity-system`. Both productivity migrations are applied and verified in the linked Supabase project. The module is not yet merged to `main`.
 
 ## Mission
 
@@ -40,7 +40,7 @@ Do not create duplicate farm, recommendation, regional-source or expert-impact s
 - `farm_locations` stores a point (latitude/longitude), not the surveyed boundary of a field.
 - `farm_fields` currently stores a name, area, unit and optional soil description; no polygon boundary was found.
 - The current farmer form accepts manually typed coordinates; browser GPS and map-based polygon capture were not found in the inspected component.
-- No dedicated, normalized farm productivity baseline / repeated outcome metric model was found in the inspected table inventory.
+- A dedicated productivity data model now exists: metric definitions, dated measurements, versioned baseline snapshots, curated benchmarks, improvement plans and trackable actions. The six tables are protected by RLS.
 - The current farm recommendation table is farmer-readable; action execution and expert workflows need a deliberate authorization review before extension.
 
 ## Domain model and implementation status
@@ -91,22 +91,19 @@ Never compare unlike units, different crop cycles, incompatible harvest windows 
 
 ### Phase 2 — Baseline MVP
 
-- Generate a completeness checklist and a dated baseline snapshot.
+**Implementation status:** The farmer workspace now records dated metrics with units, provenance, quality and optional confidence; creates versioned baseline snapshots; calculates completeness against core indicators; and explicitly lists missing metrics. Latest measurements can be compared with the saved baseline only when units match. A farmer can create an improvement plan, add actions and track action status. Remaining work includes richer crop-cycle/field-specific entry, date-range selection, evidence attachments and end-to-end authenticated testing.
+
 - Begin with metrics that have sufficient records; do not block the farmer on unavailable lab or yield data.
 - Ask for missing values progressively using selectable options and simple evidence capture.
-- Show baseline status and confidence, not a fabricated single productivity score.
+- Show baseline completeness and provenance, not a fabricated single productivity score.
 
 ### Phase 3 — Benchmarks and plans
 
-- Ingest only traceable, licensed regional references.
-- Implement comparability checks before presenting peer comparisons.
-- Link action plans to the baseline and existing recommendation workflow.
+**Implementation status:** Benchmark storage is available with source URL, license, sample size, region, period, units, statistic type and quality metadata. Only published records are visible to authenticated farmers, and publication requires a source URL, license and sample size. No benchmark records have been seeded; peer comparisons remain intentionally unavailable until trustworthy, licensed references are curated. Farmer-created improvement plans and actions are implemented; expert review and SARINA-generated recommendation integration remain future work.
 
 ### Phase 4 — Impact monitoring
 
-- Schedule/encourage repeat measurements at crop-appropriate intervals.
-- Compare compatible periods and account for major confounders.
-- Show implementation status and measured outcomes separately.
+**Implementation status:** The workspace shows latest measurements, baseline-to-current absolute and relative changes for matching units, measurement history, and completed versus total plan actions. It does not claim causal attribution. Crop-cycle-aware period comparisons, confounder adjustment and evidence-backed expert impact review remain future work.
 
 ## Security, release and operational gates
 
@@ -116,7 +113,7 @@ Never compare unlike units, different crop cycles, incompatible harvest windows 
 - Do not expose service-role or secret keys in the browser.
 - Check Data API exposure and explicit grants for new tables; public-schema tables are no longer automatically exposed by default on current Supabase projects.
 - Use PostGIS for field geometry only after confirming the deployed extension schema and supported functions. The inspected project currently has PostGIS in `public`; do not relocate or alter the extension as part of this feature without a dedicated backup and migration plan.
-- The field-boundary migration was applied as an additive schema change after confirming `farms` and `farm_fields` contained zero rows. No farm records were created or modified by the migration.
+- The field-boundary and productivity migrations were applied to the linked Supabase project. Six productivity tables have RLS enabled, nine explicit policies, owner-scoped write/read access, and same-farm/actor validation triggers. The metric catalog contains eight definitions; there are currently zero farmer measurements, baselines, plans, actions or published benchmarks because no farm records exist.
 - Before each schema change, review the live schema, RLS, grants, deployed functions and current Supabase documentation; test the migration and RLS behavior on an isolated target.
 - Do not claim a feature is complete until the mobile permission flow, polygon editing, area calculations, RLS, persistence and production build are tested.
 
@@ -132,3 +129,13 @@ Never compare unlike units, different crop cycles, incompatible harvest windows 
 - Plans and actions can be tracked through completion.
 - Impact reports distinguish observed change from intervention attribution.
 - Existing farmer, authentication, PWA and document workflows continue to work.
+
+
+## Productivity MVP database and UI (2026-11-19)
+
+- Added six tables: `farm_productivity_metric_definitions`, `farm_productivity_measurements`, `farm_productivity_baselines`, `farm_productivity_benchmarks`, `farm_improvement_plans`, and `farm_improvement_actions`.
+- Seeded eight metric definitions across production, resource efficiency, economics and soil; these are definitions only, not assumed farm measurements.
+- Added owner-scoped RLS, authenticated grants, same-farm checks for field/crop-cycle/baseline references, and actor identity checks.
+- Added the farmer-facing `بهره‌وری مزرعه` workspace with metric capture, provenance/quality/confidence, baseline completeness and missing indicators, target-linked improvement plans, action tracking, baseline/current comparisons for matching units, measurement history, and an honest empty state for unavailable benchmarks.
+- Benchmark table is deliberately empty until source, license, region, period, unit and sample size are verified. No fabricated regional averages or rankings are shown.
+- The six tables currently contain zero farmer rows; the eight metric definitions are present.
