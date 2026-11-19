@@ -2,7 +2,7 @@ import {useEffect,useMemo,useState} from "react";
 import {ArrowLeft,CheckCircle2,MessageCircle,RefreshCw,Search,ShieldCheck,UserRound} from "lucide-react";
 import {supabase} from "../lib/supabase";
 
-type Expert={id:string;public_name:string;biography:string|null;years_experience:number|null;languages:any;country_id:string|null};
+type Expert={id:string;public_name:string;biography:string|null;years_experience:number|null;languages:any;country_id:string|null;availability?:{availability_status:string;pause_new_cases:boolean;status_note:string|null;vacation_start:string|null;vacation_end:string|null}};
 type Farm={id:string;farm_name:string|null};
 type Props={sarinaUserId:string};
 const db=supabase as any;
@@ -21,7 +21,9 @@ export default function FarmerExpertWorkspace({sarinaUserId}:Props){
   ]);
   const errors=[e,f,c,r,n].filter(x=>x.error);
   if(errors.length)setNotice("برخی اطلاعات در دسترس نیستند: "+errors.map(x=>x.error.message).join(" · "));
-  setExperts(e.data||[]);setFarms(f.data||[]);setSpecialties(c.data||[]);setRequests(r.data||[]);setNotifications(n.data||[]);
+  const availabilityRows=e.data?.length?await db.from("expert_availability").select("expert_profile_id,availability_status,pause_new_cases,status_note,vacation_start,vacation_end").in("expert_profile_id",e.data.map((x:Expert)=>x.id)):({data:[],error:null} as any);
+  const availabilityMap=new Map((availabilityRows.data||[]).map((x:any)=>[x.expert_profile_id,x]));
+  setExperts((e.data||[]).map((x:Expert)=>({...x,availability:availabilityMap.get(x.id)})));setFarms(f.data||[]);setSpecialties(c.data||[]);setRequests(r.data||[]);setNotifications(n.data||[]);
   const h=await db.from("expert_case_handovers").select("id,request_id,status,reason,initiated_at,from_expert_profile_id,to_expert_profile_id,from_expert:expert_profiles!expert_case_handovers_from_expert_profile_id_fkey(public_name),to_expert:expert_profiles!expert_case_handovers_to_expert_profile_id_fkey(public_name)").eq("requester_user_id",sarinaUserId).eq("status","awaiting_farmer_consent").order("initiated_at",{ascending:false});
   if(h.error)setNotice(old=>old||"درخواست‌های تغییر متخصص در دسترس نیست: "+h.error.message);setHandovers(h.data||[]);
   if(!farmId&&f.data?.[0])setFarmId(f.data[0].id);
@@ -41,6 +43,8 @@ export default function FarmerExpertWorkspace({sarinaUserId}:Props){
   return s.includes(filter.toLowerCase());
  }),[experts,filter]);
  const unread=notifications.filter(n=>!n.read_at).length;
+ const selectedExpert=experts.find(e=>e.id===selected);
+ const expertUnavailable=(e?:Expert)=>!!e?.availability&&(e.availability.pause_new_cases||e.availability.availability_status==="away"||(!!e.availability.vacation_start&&Date.now()>=new Date(e.availability.vacation_start).getTime()&&(!e.availability.vacation_end||Date.now()<=new Date(e.availability.vacation_end).getTime())));
  async function submit(e:React.FormEvent){
   e.preventDefault();if(!selected||!farmId||!subject.trim()||!problem.trim()||!supabase)return;
   setBusy(true);setNotice("");
@@ -88,7 +92,7 @@ export default function FarmerExpertWorkspace({sarinaUserId}:Props){
      <label>موضوع<input required minLength={4} maxLength={160} value={subject} onChange={e=>setSubject(e.target.value)} placeholder="مثلاً بررسی زردی برگ‌های نخل"/></label>
      <label>شرح مسئله<textarea required minLength={10} maxLength={6000} rows={5} value={problem} onChange={e=>setProblem(e.target.value)} placeholder="علائم، زمان شروع و اقدام‌هایی که انجام داده‌اید..."/></label>
      <div className="secure-note"><CheckCircle2 size={15}/> با ارسال درخواست، رضایت شما برای اشتراک همین اطلاعات با کارشناس منتخب ثبت می‌شود.</div>
-     <button className="expert-primary" disabled={busy||!farms.length}>{busy?"در حال ارسال...":"ارسال درخواست مشاوره"} <ArrowLeft size={16}/></button>
+     <button className="expert-primary" disabled={busy||!farms.length||expertUnavailable(selectedExpert)}>{busy?"در حال ارسال...":expertUnavailable(selectedExpert)?"متخصص فعلاً پرونده نمی‌پذیرد":"ارسال درخواست مشاوره"} <ArrowLeft size={16}/></button>
      {!farms.length&&<small>برای ثبت درخواست ابتدا یک مزرعه در بخش «مزارع من» ثبت کنید.</small>}
     </form>
    </aside>
