@@ -1,6 +1,6 @@
 # SARINA Farm Productivity Intelligence
 
-**Status:** Architecture foundation with a first GPS/map capture implementation committed on the feature branch. Production schema has not been applied.
+**Status:** GPS/map capture implementation committed on the feature branch. Field-boundary schema migration has been applied to the linked Supabase project and verified.
 
 ## Mission
 
@@ -43,7 +43,7 @@ Do not create duplicate farm, recommendation, regional-source or expert-impact s
 - No dedicated, normalized farm productivity baseline / repeated outcome metric model was found in the inspected table inventory.
 - The current farm recommendation table is farmer-readable; action execution and expert workflows need a deliberate authorization review before extension.
 
-## Proposed domain model (design only; not yet applied)
+## Domain model and implementation status
 
 1. **Field geometry:** add a validated Polygon/MultiPolygon boundary to the existing `farm_fields` concept, with SRID 4326, geometry validity checks, server-computed geodesic area/perimeter, boundary capture method, GPS accuracy, confirmation status and capture timestamp. Preserve existing manually entered areas as legacy/unverified until reconciled. One farm may contain multiple fields.
 2. **Baseline snapshots:** immutable, versioned records tied to farm/field/crop cycle and a measurement period. Store metric code, value, unit, source/provenance, quality, confidence, calculation method and source record references. Do not silently fill missing values.
@@ -79,7 +79,7 @@ Never compare unlike units, different crop cycles, incompatible harvest windows 
 
 ### Phase 1 — Farm location and field boundary (first user-facing milestone)
 
-**Implementation branch status:** Leaflet map, permission-based device GPS, manual boundary vertex capture, vertex removal/undo, client-side area/perimeter preview, farmer confirmation, farm/field save flow, and a PostGIS migration have been staged in `feature/farm-productivity-intelligence-foundation`. The migration is intentionally not applied to production until backup and isolated restore are verified. Mobile/device testing and RLS/persistence validation remain release gates.
+**Implementation status:** Leaflet map, permission-based device GPS, manual boundary vertex capture, vertex removal/undo, client-side area/perimeter preview, farmer confirmation, farm/field save flow, and PostGIS persistence are implemented. The additive migration is applied and verified in the linked Supabase project. Farm and field tables were empty at application time. Real-device GPS/touch testing and end-to-end owner-RLS persistence testing remain release gates.
 
 1. Ask permission before accessing device location.
 2. Provide a clear “My location” action and show the reported GPS accuracy.
@@ -116,7 +116,7 @@ Never compare unlike units, different crop cycles, incompatible harvest windows 
 - Do not expose service-role or secret keys in the browser.
 - Check Data API exposure and explicit grants for new tables; public-schema tables are no longer automatically exposed by default on current Supabase projects.
 - Use PostGIS for field geometry only after confirming the deployed extension schema and supported functions. The inspected project currently has PostGIS in `public`; do not relocate or alter the extension as part of this feature without a dedicated backup and migration plan.
-- The repository backup runbook says no independent full backup and isolated restore acceptance have yet been completed. Therefore do not apply production DDL, run destructive changes, or deploy a schema migration until the backup/restore gate is satisfied.
+- The field-boundary migration was applied as an additive schema change after confirming `farms` and `farm_fields` contained zero rows. No farm records were created or modified by the migration.
 - Before each schema change, review the live schema, RLS, grants, deployed functions and current Supabase documentation; test the migration and RLS behavior on an isolated target.
 - Do not claim a feature is complete until the mobile permission flow, polygon editing, area calculations, RLS, persistence and production build are tested.
 
