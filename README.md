@@ -6,7 +6,8 @@ SARINA is an international-ready, farmer-first agricultural platform. The initia
 
 - React + TypeScript + Vite.
 - Persian-first, right-to-left responsive farmer workspace.
-- Installable PWA shell and offline navigation fallback.
+- Installable PWA with app manifest, dedicated 192/512 SVG icons, mobile install prompt, iOS/Android installation guidance, and offline shell caching.
+- Farmer learning library with localized Persian/Arabic/English content selection, bookmarks, and completion tracking.
 - Supabase Auth using a browser-safe publishable key only.
 - First read-only integrations for active organization services and the signed-in farmer's institutional request list.
 - Clear empty states while operational data is not yet populated.
@@ -29,7 +30,7 @@ Never put service_role keys, database passwords or provider secrets in VITE_* va
 
 ## Important implementation boundary
 
-The PWA foundation is committed on feat/pwa-first-version. The service directory and request list use read-only queries and require Data API exposure plus correct RLS policies. The current database has no verified organizations or active services, so the directory can legitimately be empty. Request creation, farm records, file uploads, organization dashboards and central administration must be added only after their ownership mapping and access rules are tested.
+The PWA foundation is committed on feat/pwa-first-version. The service directory and request list use read-only queries and require Data API exposure plus correct RLS policies. The current database has no verified organizations or active services, so the directory can legitimately be empty. The education catalog is protected by publication-aware RLS; farmer progress, bookmarks, and pending reviews are restricted to the authenticated SARINA profile. Request creation, farm records, file uploads, organization dashboards and central administration must be added only after their ownership mapping and access rules are tested.
 
 ## Backup and migration
 
