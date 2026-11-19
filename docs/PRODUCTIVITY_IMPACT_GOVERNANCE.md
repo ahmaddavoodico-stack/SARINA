@@ -57,3 +57,14 @@ The migration adds consent-gated, scope-gated read foundations. It deliberately 
 - Candidate signals are directional hints (positive, negative, mixed, insufficient evidence), not statistical significance or causal impact. Season, weather, input intensity and other confounders are not yet adjusted. A human reviewer must decide the four official outcome lanes and contribution attribution.
 - The central oversight workbench can run the evaluation, view pending signals and link a selected signal to a human-reviewed outcome record. No candidate is automatically recognized, published, or shared with an authority.
 - The current runner is manually invoked by an authenticated SARINA administrator; automatic scheduled evaluation is not enabled yet. The current project has no farm measurement records, so no real farm outcome can be evaluated until farmers provide comparable baseline and follow-up data.
+
+
+## Contextual factor analysis (2026-11-19)
+
+- Added owner-scoped `farm_productivity_context_observations` for time-stamped context such as weather, rainfall, irrigation volume/method/water EC, fertilizer and pesticide use, soil moisture/EC/pH, pest/disease pressure, crop stage/cultivar, adherence to recommendations and labor hours.
+- Farmers can enter numeric or categorical observations with date, source and quality metadata from the Farm Productivity workspace. RLS permits only the owning farmer to manage these context records.
+- Added admin-only, fixed-search-path SECURITY DEFINER RPC `run_farm_productivity_context_analysis`, which checks `is_sarina_admin()` before accessing farm records.
+- Context analysis summarizes observations that occurred after the confirmed baseline and by the latest follow-up measurement, in the same farm/field/crop-cycle scope. It also summarizes improvement-plan action completion and recorded costs.
+- Each candidate signal stores context coverage, missing domains, factor summaries, action execution and limitations. Missing domains are explicitly shown; absence of a record is not treated as proof that a factor did not occur.
+- This is descriptive temporal co-occurrence, not a causal model, correlation estimate or proof of impact. It does not assign credit to SARINA, experts or farmers.
+- Automatic weather ingestion, geographic climate normalization, seasonal adjustment, multi-period models and matched control-group analysis remain future work. No external weather data or synthetic observations are fabricated.
