@@ -217,3 +217,23 @@
 .farmer-expert-workspace .request-row>div{flex:1;min-width:140px}
 .farmer-expert-workspace .request-row button{border:1px solid var(--border,#dfe5df);background:transparent;border-radius:8px;padding:6px 10px}
 @media(max-width:900px){.expert-directory-layout{grid-template-columns:1fr}.expert-request-panel{order:-1}}
+
+.admin-expert-verification{display:flex;flex-direction:column;gap:18px}
+.admin-expert-verification .expert-panel{background:var(--surface,#fff);border:1px solid var(--border,#e5e7eb);border-radius:16px;padding:18px}
+.admin-expert-verification .expert-panel h2{font-size:1.1rem;margin:0 0 14px}
+.admin-expert-verification .expert-list article{align-items:flex-start}
+.admin-expert-credential{display:flex;flex-direction:column;gap:6px;min-width:0;flex:1}
+.admin-expert-credential p,.admin-expert-credential small{margin:0;color:var(--muted,#667085);font-size:.86rem}
+.admin-expert-credential textarea{width:100%;max-width:520px;border:1px solid var(--border,#dfe5df);border-radius:9px;padding:9px;background:var(--surface,#fff);font:inherit}
+.admin-expert-actions{display:flex;flex-wrap:wrap;gap:7px}
+.admin-expert-actions button{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border,#dfe5df);border-radius:9px;padding:8px 10px;background:transparent;color:inherit;font:inherit;cursor:pointer}
+.admin-expert-actions button:disabled{opacity:.5}
+.farmer-chat-messages{display:flex;flex-direction:column;gap:10px;max-height:340px;overflow:auto;padding:8px 0}
+.farmer-chat-messages article{max-width:85%;padding:10px 13px;border-radius:12px;background:#f0f5f1}
+.farmer-chat-messages article.mine{align-self:flex-start;background:#e5f2e9}
+.farmer-chat-messages article.theirs{align-self:flex-end;background:#f2f3f5}
+.farmer-chat-messages p{margin:0 0 5px;white-space:pre-wrap}
+.farmer-chat-messages small{font-size:.72rem;color:#667085}
+.farmer-chat-panel form{display:flex;gap:10px;align-items:flex-end}
+.farmer-chat-panel form textarea{flex:1;min-width:0}
+@media(max-width:650px){.farmer-chat-panel form{flex-direction:column;align-items:stretch}.admin-expert-actions{width:100%}}
