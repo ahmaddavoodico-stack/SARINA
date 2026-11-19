@@ -25,7 +25,8 @@
 
 ## Security boundaries
 - RLS restricts availability writes to the profile owner.
-- Assistant case data is visible only to the farmer and assigned verified expert; updates are restricted to the current assigned expert.
+- Assistant case data is visible only to the farmer and assigned verified expert; updates are restricted to the current assigned expert and limited to review fields. Review identity/timestamps are set by the database.
+- Suggested substitutes are checked against verified expert profiles by a database trigger; a client cannot designate an unverified profile.
 - Handover reads are restricted to the farmer and the two involved experts. Creation is restricted to the currently assigned verified expert. Consent is handled by a function that validates the authenticated SARINA user.
 - No service-role key is used in the browser.
 - Automated receipt is an in-app notification, not an outbound SMS/email or a chat message. No outbound messaging provider is configured by this change.
