@@ -148,7 +148,6 @@ export default function SpecialistWorkspace({session}:{session:Session}){
      <div className="specialist-action-meta"><span>{a.due_date?faDate(a.due_date):"بدون موعد"}</span><small>{actionStatus(a.action_status)} · اولویت {priorityText(a.plan_priority)}</small></div>
     </article>)}</div>}
     </>}
-   </>}
    <div className="specialist-assistant-note"><span><Activity size={19}/></span><div><strong>خلاصه پایش دستیار متخصص</strong><p>این نسخه، هشدارهای عملیاتی را از موعد اقدامات و تاریخ آخرین مشاهده/اندازه‌گیری استخراج می‌کند. تولید تحلیل زبانی، پیشنهاد علمی و گزارش خودکار زمان‌بندی‌شده در گام بعدی به موتور دستیار متصل خواهد شد.</p></div></div>
   </>}
  </section>;
