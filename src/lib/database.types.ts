@@ -2308,6 +2308,10 @@ export type Database = {
         Row: {
           area: number | null
           area_unit: string
+          boundary: Json | null
+          boundary_capture_method: string | null
+          boundary_confirmed_at: string | null
+          gps_accuracy_m: number | null
           created_at: string
           farm_id: string
           field_name: string
@@ -2317,6 +2321,14 @@ export type Database = {
         Insert: {
           area?: number | null
           area_unit?: string
+          boundary?: Json | null
+          boundary_capture_method?: string | null
+          boundary_confirmed_at?: string | null
+          gps_accuracy_m?: number | null
+          boundary?: Json | null
+          boundary_capture_method?: string | null
+          boundary_confirmed_at?: string | null
+          gps_accuracy_m?: number | null
           created_at?: string
           farm_id: string
           field_name: string
