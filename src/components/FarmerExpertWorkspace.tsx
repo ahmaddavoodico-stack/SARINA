@@ -26,13 +26,13 @@ export default function FarmerExpertWorkspace({sarinaUserId}:Props){
   setLoading(false);
  }
  useEffect(()=>{void refresh();},[sarinaUserId]);
- useEffect(()=>{if(!supabase||!activeConsultation)return;const channel=supabase.channel("farmer-consultation-"+activeConsultation).on("postgres_changes",{event:"INSERT",schema:"public",table:"expert_consultation_messages",filter:"consultation_id=eq."+activeConsultation},payload=>setMessages(old=>old.some(m=>m.id===(payload.new as any).id)?old:[...old,payload.new])).subscribe();return()=>{void supabase.removeChannel(channel);};},[activeConsultation]);
+ useEffect(()=>{const client=supabase;if(!client||!activeConsultation)return;const channel=client.channel("farmer-consultation-"+activeConsultation).on("postgres_changes",{event:"INSERT",schema:"public",table:"expert_consultation_messages",filter:"consultation_id=eq."+activeConsultation},payload=>setMessages(old=>old.some(m=>m.id===(payload.new as any).id)?old:[...old,payload.new])).subscribe();return()=>{void client.removeChannel(channel);};},[activeConsultation]);
  useEffect(()=>{
-  if(!supabase)return;
-  const channel=supabase.channel("farmer-expert-notifications-"+sarinaUserId)
+  const client=supabase;if(!client)return;
+  const channel=client.channel("farmer-expert-notifications-"+sarinaUserId)
    .on("postgres_changes",{event:"*",schema:"public",table:"expert_case_notifications",filter:"recipient_user_id=eq."+sarinaUserId},()=>{void refresh();})
    .subscribe();
-  return()=>{void supabase.removeChannel(channel);};
+  return()=>{void client.removeChannel(channel);};
  },[sarinaUserId]);
  const visible=useMemo(()=>experts.filter(e=>{
   const s=[e.public_name,e.biography||"",...(e.languages||[])].join(" ").toLowerCase();
