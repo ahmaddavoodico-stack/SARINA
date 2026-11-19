@@ -50,8 +50,8 @@ export default function ExpertDashboard({session,sarinaUserId,onLogout}:Props){
   finally{setLoading(false);}
  },[sarinaUserId]);
  useEffect(()=>{void refresh();},[refresh]);
- useEffect(()=>{if(!supabase)return;const channel=supabase.channel("expert-notifications-"+sarinaUserId).on("postgres_changes",{event:"INSERT",schema:"public",table:"expert_case_notifications",filter:"recipient_user_id=eq."+sarinaUserId},payload=>setCaseNotifications(old=>[payload.new,...old.filter(n=>n.id!==(payload.new as any).id)])).subscribe();return()=>{void supabase.removeChannel(channel);};},[sarinaUserId]);
- useEffect(()=>{if(!supabase||!consultationId)return;const channel=supabase.channel("expert-case-"+consultationId).on("postgres_changes",{event:"INSERT",schema:"public",table:"expert_consultation_messages",filter:"consultation_id=eq."+consultationId},payload=>{setMessages(old=>old.some(x=>x.id===(payload.new as any).id)?old:[...old,payload.new]);}).subscribe();return()=>{void supabase.removeChannel(channel);};},[consultationId]);
+ useEffect(()=>{const client=supabase;if(!client)return;const channel=client.channel("expert-notifications-"+sarinaUserId).on("postgres_changes",{event:"INSERT",schema:"public",table:"expert_case_notifications",filter:"recipient_user_id=eq."+sarinaUserId},payload=>setCaseNotifications(old=>[payload.new,...old.filter(n=>n.id!==(payload.new as any).id)])).subscribe();return()=>{void client.removeChannel(channel);};},[sarinaUserId]);
+ useEffect(()=>{const client=supabase;if(!client||!consultationId)return;const channel=client.channel("expert-case-"+consultationId).on("postgres_changes",{event:"INSERT",schema:"public",table:"expert_consultation_messages",filter:"consultation_id=eq."+consultationId},payload=>{setMessages(old=>old.some(x=>x.id===(payload.new as any).id)?old:[...old,payload.new]);}).subscribe();return()=>{void client.removeChannel(channel);};},[consultationId]);
  const verified=profile?.verification_status==="verified";
  const unread=signals.filter(x=>x.signal_status==="unread").length;
  const unreadCases=caseNotifications.filter(n=>!n.read_at).length;
