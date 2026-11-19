@@ -10,7 +10,7 @@ type Signal={id:string;title:string;message:string;evidence_summary:Record<strin
 type Impact={id:string;record_kind:string;title:string;summary:string;status:string;innovation_details:Record<string,unknown>;submitted_at:string|null;created_at:string};
 type Assignment={id:string;request_id:string;assignment_status:string;offered_at:string;responded_at:string|null;expert_requests:{id:string;subject:string;problem_description:string;request_type:string;priority:string;status:string;created_at:string}};
 type Award={id:string;title:string;citation:string;award_level:string;status:string;issued_at:string|null;issuer_name:string};
-type Credential={id:string;credential_type:string;issuing_body:string|null;credential_ref:string|null;verification_status:string;review_note:string|null};
+type Credential={id:string;credential_type:string;issuing_body:string|null;credential_ref:string|null;document_ref:string|null;verification_status:string;review_note:string|null};
 type IpApplication={id:string;title:string;application_type:string;status:string;submitted_at:string};
 type RecognitionRequest={id:string;request_type:string;status:string;submitted_at:string;expert_note:string|null};
 type Settlement={id:string;contract_id:string;amount:number|string;currency_code:string;status:string;allocation_kind:string;eligible_at:string|null;settled_at:string|null;created_at:string};
@@ -37,7 +37,7 @@ export default function ExpertDashboard({session,sarinaUserId,onLogout}:Props){
     db.from("expert_impact_records").select("id,record_kind,title,summary,status,innovation_details,submitted_at,created_at").eq("expert_profile_id",id).order("created_at",{ascending:false}).limit(50),
     db.from("expert_request_assignments").select("id,request_id,assignment_status,offered_at,responded_at,expert_requests!inner(id,subject,problem_description,request_type,priority,status,created_at)").eq("expert_profile_id",id).order("offered_at",{ascending:false}).limit(50),
     db.from("expert_recognition_awards").select("id,title,citation,award_level,status,issued_at,issuer_name").eq("expert_profile_id",id).order("created_at",{ascending:false}).limit(30),
-    db.from("expert_credentials").select("id,credential_type,issuing_body,credential_ref,verification_status,review_note").eq("expert_profile_id",id).order("created_at",{ascending:false}).limit(30),
+    db.from("expert_credentials").select("id,credential_type,issuing_body,credential_ref,document_ref,verification_status,review_note").eq("expert_profile_id",id).order("created_at",{ascending:false}).limit(30),
     db.from("expert_ip_applications").select("id,title,application_type,status,submitted_at").eq("expert_profile_id",id).order("created_at",{ascending:false}).limit(30),
     db.from("expert_recognition_requests").select("id,request_type,status,submitted_at,expert_note").eq("expert_profile_id",id).order("created_at",{ascending:false}).limit(30),
     db.from("contract_settlement_allocations").select("id,contract_id,amount,currency_code,status,allocation_kind,eligible_at,settled_at,created_at").eq("recipient_type","expert").eq("recipient_ref",id).order("created_at",{ascending:false}).limit(100),
