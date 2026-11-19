@@ -119,3 +119,9 @@ revoke all on function public.regional_claim_sync_outbox(integer,integer) from p
 revoke all on function public.regional_accept_sync_event(uuid,uuid,uuid,text,uuid,text,uuid,text,integer,integer,text,jsonb,jsonb,timestamptz) from public,anon,authenticated;
 grant execute on function public.regional_claim_sync_outbox(integer,integer) to service_role;
 grant execute on function public.regional_accept_sync_event(uuid,uuid,uuid,text,uuid,text,uuid,text,integer,integer,text,jsonb,jsonb,timestamptz) to service_role;
+
+-- Keep all privileged RPCs unavailable to browser roles after replaying this migration set.
+revoke all on function public.regional_enqueue_sync_event(uuid,uuid,uuid,text,uuid,text,integer,integer,text,jsonb,jsonb) from public,anon,authenticated;
+revoke all on function public.regional_record_sync_delivery(uuid,boolean,text,integer) from public,anon,authenticated;
+grant execute on function public.regional_enqueue_sync_event(uuid,uuid,uuid,text,uuid,text,integer,integer,text,jsonb,jsonb) to service_role;
+grant execute on function public.regional_record_sync_delivery(uuid,boolean,text,integer) to service_role;
