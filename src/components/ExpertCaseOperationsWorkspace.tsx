@@ -1,8 +1,8 @@
 import {useEffect,useMemo,useState} from "react";
-import {CalendarClock,CheckCircle2,ClipboardCheck,Clock3,RefreshCw,Send,ShieldCheck,UserRound,Users} from "lucide-react";
+import {CalendarClock,ClipboardCheck,RefreshCw,ShieldCheck,Users} from "lucide-react";
 import {supabase} from "../lib/supabase";
 
-type Props={profileId:string;sarinaUserId:string;verified:boolean};
+type Props={profileId:string;verified:boolean};
 type CaseRow={id:string;requester_user_id:string;subject:string;problem_description:string;priority:string;status:string;created_at:string};
 type AssistantRow={request_id:string;assistant_status:string;completeness_status:string;missing_information:string[];assistant_summary:string|null;received_at:string};
 type ExpertRow={id:string;public_name:string};
@@ -10,7 +10,7 @@ type Availability={availability_status:string;pause_new_cases:boolean;vacation_s
 const db=supabase as any;
 const statusLabels:Record<string,string>={received:"دریافت‌شده",initial_review:"در بررسی اولیه",needs_information:"نیازمند اطلاعات تکمیلی",awaiting_expert:"در انتظار نظر متخصص",expert_reviewed:"بررسی متخصص انجام شد"};
 const dateTime=(value:string|null)=>value?new Date(value).toISOString().slice(0,16):"";
-export default function ExpertCaseOperationsWorkspace({profileId,sarinaUserId,verified}:Props){
+export default function ExpertCaseOperationsWorkspace({profileId,verified}:Props){
  const [cases,setCases]=useState<CaseRow[]>([]),[assistant,setAssistant]=useState<Record<string,AssistantRow>>({}),[experts,setExperts]=useState<ExpertRow[]>([]);
  const [availability,setAvailability]=useState<Availability>({availability_status:"available",pause_new_cases:false,vacation_start:null,vacation_end:null,substitute_expert_profile_id:null,max_open_cases:10,status_note:""});
  const [vacationStart,setVacationStart]=useState(""),[vacationEnd,setVacationEnd]=useState("");
