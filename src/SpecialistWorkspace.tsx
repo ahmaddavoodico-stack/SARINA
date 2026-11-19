@@ -1,5 +1,5 @@
 import {useCallback,useEffect,useMemo,useState} from "react";
-import {Activity,AlertCircle,ArrowLeft,CalendarDays,CheckCircle2,ClipboardList,Clock3,Leaf,RefreshCw,Sprout,TrendingUp} from "lucide-react";
+import {Activity,AlertCircle,CalendarDays,CheckCircle2,ClipboardList,Clock3,Leaf,RefreshCw,Sprout,TrendingUp} from "lucide-react";
 import type {Session} from "@supabase/supabase-js";
 import {supabase} from "./lib/supabase";
 
