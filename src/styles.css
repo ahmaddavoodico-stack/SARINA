@@ -177,3 +177,40 @@
 @media(max-width:1050px){.specialist-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.specialist-farm-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:760px){.specialist-heading{align-items:flex-start;flex-direction:column}.specialist-heading h1{font-size:21px}.specialist-refresh{width:100%;justify-content:center}.specialist-kpis{gap:9px}.specialist-kpi{min-height:126px;padding:12px}.specialist-kpi strong{font-size:21px}.specialist-farm-grid{grid-template-columns:1fr 1fr}.specialist-detail-grid{grid-template-columns:1fr}.specialist-panel{padding:15px}.specialist-action-row{align-items:flex-start;flex-wrap:wrap}.specialist-action-meta{margin-right:46px;flex-direction:row;flex-wrap:wrap}.specialist-section-head h2{font-size:14px}}
 @media(max-width:420px){.specialist-farm-grid{grid-template-columns:1fr}.specialist-farm-meta{font-size:8px}.specialist-facts{gap:12px}}
+
+
+/* Specialist-owned workspace and guided case intake */
+.specialist-welcome{display:flex;align-items:center;gap:15px;padding:20px 22px;margin-bottom:20px;border:1px solid #dce9dc;border-radius:18px;background:linear-gradient(115deg,#f1f7ef 0%,#fbfcf8 62%,#edf4e9 100%);position:relative;overflow:hidden}
+.specialist-welcome:after{content:"";position:absolute;width:180px;height:180px;border-radius:50%;background:#dcebd7;opacity:.35;left:-60px;top:-95px}
+.specialist-welcome-mark{width:48px;height:48px;flex:0 0 48px;border-radius:15px;background:#fff;color:#4c8057;display:grid;place-items:center;box-shadow:0 5px 16px #315d3510;z-index:1}
+.specialist-welcome-copy{flex:1;min-width:0;z-index:1}
+.specialist-welcome-copy>span{font-size:9px;color:#6f8d73;font-weight:700}
+.specialist-welcome-copy h2{font-size:17px;color:#294e39;margin:5px 0}
+.specialist-welcome-copy p{font-size:10px;color:#7d9181;line-height:1.9;margin:0}
+.specialist-welcome-promise{display:flex;flex-direction:column;gap:5px;padding:10px 13px;border-right:1px solid #dce8d9;z-index:1;white-space:nowrap}
+.specialist-welcome-promise strong{font-size:10px;color:#4c7554}.specialist-welcome-promise small{font-size:9px;color:#91a094}
+.specialist-inbox-head h2{display:flex;align-items:center;gap:7px}
+.specialist-inbox-empty{display:flex;align-items:center;gap:13px;padding:17px;background:#fff;border:1px dashed #dce6da;border-radius:14px}
+.specialist-inbox-empty>span{width:40px;height:40px;flex:0 0 40px;border-radius:12px;background:#eff5ed;color:#628468;display:grid;place-items:center}
+.specialist-inbox-empty strong{font-size:11px;color:#45644e}.specialist-inbox-empty p{font-size:9px;line-height:1.9;color:#94a097;margin:4px 0 0}
+.specialist-request-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}
+.specialist-request-card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:15px;min-width:0}
+.specialist-request-top{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.specialist-request-top>small{font-size:9px;color:#9aa49d}
+.specialist-request-pill{font-size:9px;padding:6px 9px;border-radius:20px}
+.specialist-request-pill.new{background:#fff3e4;color:#a77a3e}.specialist-request-pill.accepted{background:#edf5ed;color:#5b825f}
+.specialist-request-card h3{font-size:13px;color:#345440;margin:12px 0 6px}
+.specialist-request-description{font-size:10px;line-height:1.9;color:#77877b;margin:0}
+.specialist-request-meta{display:flex;flex-wrap:wrap;gap:6px 12px;border-top:1px solid #edf1ed;margin-top:12px;padding-top:10px;font-size:9px;color:#8c9b90}
+.specialist-case-brief{margin-top:12px;padding:11px;border-radius:10px;background:#f1f6ef;border:1px solid #e6eee3}
+.specialist-case-brief>div{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.specialist-case-brief strong{display:flex;align-items:center;gap:6px;font-size:10px;color:#486d4e}
+.specialist-case-brief>div>span{font-size:8px;color:#77927a}
+.specialist-case-brief p{font-size:9px;line-height:1.9;color:#748779;margin:7px 0 0}
+.specialist-case-brief>small{display:block;font-size:9px;line-height:1.9;color:#987f55;margin-top:6px}
+.specialist-case-brief.muted{background:#f8f9f6;border-color:#edf0e9}
+.specialist-request-actions{display:flex;gap:8px;margin-top:13px}
+.specialist-request-actions button{display:flex;align-items:center;justify-content:center;gap:6px;flex:1;border:1px solid #3e7951;background:#3e7951;color:#fff;border-radius:9px;padding:9px 10px;font-size:10px;font-weight:700;cursor:pointer}
+.specialist-request-actions button.secondary{background:#fff;border-color:#e1e8df;color:#718276}
+.specialist-request-actions button:disabled{opacity:.5;cursor:wait}
+@media(max-width:760px){.specialist-welcome{align-items:flex-start;padding:15px;gap:10px}.specialist-welcome-mark{width:40px;height:40px;flex-basis:40px}.specialist-welcome-copy h2{font-size:14px}.specialist-welcome-promise{display:none}.specialist-request-list{grid-template-columns:1fr}}
