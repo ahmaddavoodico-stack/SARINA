@@ -1,18 +1,60 @@
-const CACHE="sarina-shell-v2";
+const CACHE="sarina-shell-v3";
 const SHELL=["/","/manifest.webmanifest","/icon-192.svg","/icon-512.svg","/favicon.svg"];
-self.addEventListener("install",event=>{event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(SHELL)));self.skipWaiting();});
-self.addEventListener("activate",event=>{event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key.startsWith("sarina-shell-")&&key!==CACHE).map(key=>caches.delete(key)))));self.clients.claim();});
+
+self.addEventListener("install",event=>{
+ event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(SHELL)));
+});
+
+self.addEventListener("activate",event=>{
+ event.waitUntil((async()=>{
+  const keys=await caches.keys();
+  await Promise.all(keys.filter(key=>key.startsWith("sarina-shell-")&&key!==CACHE).map(key=>caches.delete(key)));
+  await self.clients.claim();
+  const clients=await self.clients.matchAll({type:"window",includeUncontrolled:true});
+  clients.forEach(client=>client.postMessage({type:"SARINA_UPDATE_READY"}));
+ })());
+});
+
+self.addEventListener("message",event=>{
+ if(event.data?.type==="SKIP_WAITING")void self.skipWaiting();
+});
+
 self.addEventListener("fetch",event=>{
- const request=event.request,url=new URL(request.url);
- if(request.method!=="GET"||url.origin!==self.location.origin||url.pathname.startsWith("/rest/")||url.pathname.startsWith("/auth/")||url.pathname.startsWith("/storage/"))return;
+ const request=event.request;
+ const url=new URL(request.url);
+ if(request.method!=="GET"||url.origin!==self.location.origin)return;
+ if(url.pathname.startsWith("/rest/")||url.pathname.startsWith("/auth/")||url.pathname.startsWith("/storage/"))return;
+
  if(request.mode==="navigate"){
-  event.respondWith(fetch(request).then(response=>{if(response.ok){const copy=response.clone();caches.open(CACHE).then(cache=>cache.put("/",copy));}return response;}).catch(()=>caches.match("/")));
+  event.respondWith((async()=>{
+   try{
+    const response=await fetch(request,{cache:"no-store"});
+    if(response.ok){const copy=response.clone();void caches.open(CACHE).then(cache=>cache.put("/",copy));}
+    return response;
+   }catch{return (await caches.match("/"))||Response.error();}
+  })());
   return;
  }
+
+ const hashedAsset=url.pathname.startsWith("/assets/")&&/[-.][a-zA-Z0-9_-]{8,}\.(js|css|woff2?|png|svg|webp|jpg)$/.test(url.pathname);
+ if(hashedAsset){
+  event.respondWith((async()=>{
+   const cached=await caches.match(request);
+   if(cached)return cached;
+   const response=await fetch(request);
+   if(response.ok){const copy=response.clone();void caches.open(CACHE).then(cache=>cache.put(request,copy));}
+   return response;
+  })());
+  return;
+ }
+
  if(["script","style","image","font"].includes(request.destination)){
-  event.respondWith(caches.match(request).then(cached=>{
-   const network=fetch(request).then(response=>{if(response.ok){const copy=response.clone();caches.open(CACHE).then(cache=>cache.put(request,copy));}return response;});
-   return cached||network;
-  }));
+  event.respondWith((async()=>{
+   try{
+    const response=await fetch(request);
+    if(response.ok){const copy=response.clone();void caches.open(CACHE).then(cache=>cache.put(request,copy));}
+    return response;
+   }catch{return (await caches.match(request))||Response.error();}
+  })());
  }
 });
