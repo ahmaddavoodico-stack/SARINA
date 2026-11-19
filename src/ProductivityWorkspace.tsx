@@ -1,7 +1,7 @@
 import {useEffect,useMemo,useState} from "react";
 import type {FormEvent} from "react";
 import type {Session} from "@supabase/supabase-js";
-import {Activity,ArrowUpRight,BarChart3,CalendarDays,CheckCircle2,ClipboardList,Plus,RefreshCw,Target,TrendingUp} from "lucide-react";
+import {Activity,ArrowUpRight,BarChart3,CheckCircle2,ClipboardList,Plus,RefreshCw,Target,TrendingUp} from "lucide-react";
 import {supabase} from "./lib/supabase";
 
 type Farm={id:string;farm_name:string;total_area:number|null;area_unit:string};
@@ -19,7 +19,6 @@ export default function ProductivityWorkspace({session}:{session:Session}){
  const[loading,setLoading]=useState(true),[saving,setSaving]=useState(false),[error,setError]=useState(""),[notice,setNotice]=useState("");
  const[metricCode,setMetricCode]=useState("marketable_yield"),[value,setValue]=useState(""),[unit,setUnit]=useState("kg/ha"),[source,setSource]=useState("farmer_reported"),[quality,setQuality]=useState("unknown"),[confidence,setConfidence]=useState(""),[notes,setNotes]=useState("");
  const[planTitle,setPlanTitle]=useState(""),[planDescription,setPlanDescription]=useState(""),[targetMetric,setTargetMetric]=useState("marketable_yield"),[targetValue,setTargetValue]=useState(""),[actionDrafts,setActionDrafts]=useState<Record<string,string>>({});
- const activeFarm=farms.find(f=>f.id===farmId);
  const selectedMetric=metrics.find(m=>m.metric_code===metricCode);
  async function load(preferredFarmId?:string){
   if(!db)return;setLoading(true);setError("");
