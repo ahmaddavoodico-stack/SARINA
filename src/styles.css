@@ -237,3 +237,21 @@
 .farmer-chat-panel form{display:flex;gap:10px;align-items:flex-end}
 .farmer-chat-panel form textarea{flex:1;min-width:0}
 @media(max-width:650px){.farmer-chat-panel form{flex-direction:column;align-items:stretch}.admin-expert-actions{width:100%}}
+
+/* Expert case assistant and availability */
+.expert-operations{display:grid;gap:18px}
+.expert-operations-toolbar{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+.expert-operations-toolbar small{display:block;color:var(--muted,#718078);margin-top:5px}
+.expert-operations-subtitle{margin-top:16px}
+.expert-case-assistant-card{display:grid;gap:16px}
+.expert-case-assistant-card h3{margin:8px 0 4px}
+.expert-case-source{background:var(--surface-soft,#f5f8f4);border:1px solid var(--border,#e4ebe3);border-radius:14px;padding:14px}
+.expert-case-source p{white-space:pre-wrap;line-height:1.8;margin:8px 0 0}
+.expert-case-assistant-actions{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.expert-case-assistant-actions small{color:var(--muted,#718078)}
+.expert-wide{grid-column:1/-1}
+.expert-check-row{display:flex!important;align-items:center;gap:10px}
+.expert-check-row input{width:auto!important}
+.farmer-handover-panel{margin-top:18px}
+.farmer-handover-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+@media(max-width:700px){.expert-case-assistant-actions{align-items:stretch;flex-direction:column}.expert-case-assistant-actions .expert-primary{width:100%}.farmer-handover-actions{width:100%}.farmer-handover-actions>*{flex:1}}
