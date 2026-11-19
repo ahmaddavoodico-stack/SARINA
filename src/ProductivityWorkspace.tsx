@@ -21,7 +21,7 @@ export default function ProductivityWorkspace({session}:{session:Session}){
  const[planTitle,setPlanTitle]=useState(""),[planDescription,setPlanDescription]=useState(""),[actionDrafts,setActionDrafts]=useState<Record<string,string>>({});
  const activeFarm=farms.find(f=>f.id===farmId);
  const selectedMetric=metrics.find(m=>m.metric_code===metricCode);
- async function load(){
+ async function load(preferredFarmId?:string){
   if(!db)return;setLoading(true);setError("");
   try{
    const[{data:farmsData,error:farmsError},{data:metricData,error:metricError}]=await Promise.all([
@@ -30,7 +30,7 @@ export default function ProductivityWorkspace({session}:{session:Session}){
    ]);
    if(farmsError)throw farmsError;if(metricError)throw metricError;
    const farmRows=(farmsData??[]) as Farm[],metricRows=(metricData??[]) as Metric[];setFarms(farmRows);setMetrics(metricRows);
-   const nextFarm=farmRows.some(f=>f.id===farmId)?farmId:farmRows[0]?.id??"";setFarmId(nextFarm);
+   const requestedFarmId=preferredFarmId??farmId;const nextFarm=farmRows.some(f=>f.id===requestedFarmId)?requestedFarmId:farmRows[0]?.id??"";setFarmId(nextFarm);
    if(!nextFarm){setMeasurements([]);setBaselines([]);setPlans([]);setActions([]);setBenchmarkCount(0);return;}
    const[meas,base,plan,bench]=await Promise.all([
     db.from("farm_productivity_measurements").select("id,farm_id,metric_code,metric_value,unit_code,observed_at,source_type,quality_label,confidence_score,notes").eq("farm_id",nextFarm).order("observed_at",{ascending:false}).limit(200),
@@ -74,7 +74,7 @@ export default function ProductivityWorkspace({session}:{session:Session}){
   <div className="page-heading"><span className="eyebrow">SARINA · Farm Productivity Intelligence</span><h1>هوشمندی بهره‌وری مزرعه</h1><p>وضعیت امروز را ثبت کنید، خط پایه بسازید، برنامه بهبود را اجرا کنید و تغییرات واقعی را در طول زمان بسنجید.</p></div>
   {error&&<div className="notice warning" role="alert">{error}</div>}{notice&&<div className="notice" role="status">{notice}</div>}
   {loading?<div className="empty-state">در حال بارگذاری پرونده بهره‌وری...</div>:farms.length===0?<div className="empty-state"><Target size={34}/><strong>ابتدا پرونده مزرعه را بسازید</strong><p>برای ثبت خط پایه و سنجش پیشرفت، ابتدا در بخش «مزارع من» یک مزرعه ثبت کنید.</p></div>:<>
-   <div className="productivity-farm-select"><label>مزرعه مورد بررسی<select value={farmId} onChange={e=>setFarmId(e.target.value)}>{farms.map(f=><option key={f.id} value={f.id}>{f.farm_name}</option>)}</select></label><button className="text-button" onClick={()=>void load()} disabled={saving}><RefreshCw size={15}/> تازه‌سازی</button></div>
+   <div className="productivity-farm-select"><label>مزرعه مورد بررسی<select value={farmId} onChange={e=>{setFarmId(e.target.value);void load(e.target.value);}}>{farms.map(f=><option key={f.id} value={f.id}>{f.farm_name}</option>)}</select></label><button className="text-button" onClick={()=>void load()} disabled={saving}><RefreshCw size={15}/> تازه‌سازی</button></div>
    <div className="productivity-stats">
     <article className="panel"><span className="round-icon"><BarChart3/></span><small>شاخص‌های ثبت‌شده</small><strong>{latestByMetric.size.toLocaleString("fa-IR")} از {metrics.length.toLocaleString("fa-IR")}</strong><p>فقط مقادیر دارای منبع و واحد ثبت‌شده شمرده می‌شوند.</p></article>
     <article className="panel"><span className="round-icon"><Target/></span><small>تکمیل خط پایه</small><strong>{latestBaseline?Number(latestBaseline.completeness_percent).toLocaleString("fa-IR")+"٪":"هنوز ثبت نشده"}</strong><p>{latestBaseline?"آخرین خط پایه · "+date(latestBaseline.baseline_date):"با داده‌های موجود یک خط پایه اولیه بسازید."}</p></article>
