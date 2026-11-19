@@ -139,7 +139,7 @@ export default function SpecialistWorkspace({session}:{session:Session}){
       </>}
       {metrics.length===0&&<div className="specialist-chart-empty"><Activity size={25}/><strong>هنوز اندازه‌گیری بهره‌وری ثبت نشده است.</strong><span>با ثبت خط پایه و اندازه‌گیری‌های دوره‌ای، نمودار فعال می‌شود.</span></div>}
      </article>
-    </div>
+    </div>}
 
     <div className="specialist-section-head specialist-week-head"><div><span className="eyebrow">پیگیری اجرایی</span><h2>برنامه هفتگی و اقدامات</h2></div><span className="specialist-count">{visibleActions.length.toLocaleString("fa-IR")} اقدام برای این مزرعه</span></div>
     {visibleActions.length===0?<div className="specialist-chart-empty"><CalendarDays size={25}/><strong>برای این مزرعه اقدام عقب‌افتاده یا برنامه‌ریزی‌شده‌ای در هفته جاری ثبت نشده است.</strong><span>برنامه‌های جدید پس از ثبت در پرونده به این قسمت اضافه می‌شوند.</span></div>:<div className="specialist-action-list">{visibleActions.map(a=><article className="specialist-action-row" key={a.action_id}>
