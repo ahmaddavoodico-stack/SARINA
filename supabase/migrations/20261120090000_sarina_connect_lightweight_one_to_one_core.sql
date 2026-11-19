@@ -55,7 +55,7 @@ create index if not exists sarina_connect_delivery_ready_idx
   where delivery_status in ('queued','failed');
 create index if not exists sarina_connect_delivery_message_idx
   on public.sarina_connect_delivery_jobs (message_id, created_at desc);
-create unique index if not exists sarina_connect_delivery_provider_ref_uq
+create index if not exists sarina_connect_delivery_provider_ref_idx
   on public.sarina_connect_delivery_jobs (provider_message_ref)
   where provider_message_ref is not null;
 
