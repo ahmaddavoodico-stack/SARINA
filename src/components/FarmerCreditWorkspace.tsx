@@ -22,7 +22,7 @@ export function FarmerCreditSummaryCard({userId,onOpen}:{userId:string;onOpen:()
  const balance=useMemo(()=>rows.reduce((sum,row)=>sum+Number(row.delta_units||0),0),[rows]);
  return <button type="button" className="farmer-credit-summary" onClick={onOpen}>
   <span className="farmer-credit-summary-icon"><Leaf size={21}/></span>
-  <span className="farmer-credit-summary-copy"><small>اعتبار سبز SARINA</small><strong>{loading?"در حال دریافت…":unavailable?"اطلاعات فعلاً در دسترس نیست":fmt(balance)+" واحد"}</strong><em>سهمیه، مصرف، تمدید و بسته‌های افزایش اعتبار</em></span>
+  <span className="farmer-credit-summary-copy"><small>اعتبار خدمات SARINA</small><strong>{loading?"در حال دریافت…":unavailable?"اطلاعات فعلاً در دسترس نیست":fmt(balance)+" واحد"}</strong><em>سهمیه، مصرف، تمدید و بسته‌های افزایش اعتبار</em></span>
   <ArrowLeft size={18}/>
  </button>;
 }
@@ -44,17 +44,18 @@ export default function FarmerCreditWorkspace({userId}:{userId:string}){
  const balance=useMemo(()=>rows.reduce((sum,row)=>sum+Number(row.delta_units||0),0),[rows]);
  const currentAllowance=useMemo(()=>{
   const today=new Date().toISOString().slice(0,10);
-  return rows.filter(x=>x.entry_type==="allowance"&&x.period_start&&x.period_end&&x.period_start<=today&&x.period_end>=today).reduce((sum,x)=>sum+Number(x.delta_units||0),0);
+  const active=rows.filter(x=>x.entry_type==="allowance"&&x.period_start&&x.period_end&&x.period_start<=today&&x.period_end>=today);
+  return active.length?active.reduce((sum,x)=>sum+Number(x.delta_units||0),0):null;
  },[rows]);
  const latestPeriod=useMemo(()=>rows.filter(x=>x.entry_type==="allowance"&&x.period_end).sort((a,b)=>(b.period_end||"").localeCompare(a.period_end||""))[0]||null,[rows]);
  const usage=useMemo(()=>rows.filter(x=>x.entry_type==="usage").reduce((sum,x)=>sum+Math.abs(Number(x.delta_units||0)),0),[rows]);
  return <section className="farmer-credit-page" dir="rtl">
-  <header className="farmer-credit-heading"><div><span>شفافیت و مدیریت خدمات</span><h1><Leaf size={24}/> اعتبار سبز SARINA</h1><p>سهمیه پایه، مصرف خدمات و اعتبارهای تشویقی خود را در یکجا ببینید.</p></div><button type="button" onClick={()=>void load()} disabled={loading}><RefreshCw size={16}/> تازه‌سازی</button></header>
+  <header className="farmer-credit-heading"><div><span>شفافیت و مدیریت خدمات</span><h1><Leaf size={24}/> اعتبار خدمات SARINA</h1><p>سهمیه پایه، مصرف خدمات و اعتبارهای تشویقی خود را در یکجا ببینید.</p></div><button type="button" onClick={()=>void load()} disabled={loading}><RefreshCw size={16}/> تازه‌سازی</button></header>
   {error&&<div className="farmer-credit-alert"><AlertCircle size={17}/>{error}</div>}
   {loading?<div className="farmer-credit-empty">در حال دریافت دفترکل اعتبار…</div>:unavailable?<div className="farmer-credit-empty"><AlertCircle size={25}/><b>اطلاعات اعتبار فعلاً قابل دریافت نیست</b><p>برای جلوگیری از نمایش عدد نادرست، موجودی یا مصرف تخمینی نشان داده نمی‌شود.</p></div>:<>
    <div className="farmer-credit-stats">
     <article className="primary"><small>مانده ثبت‌شده در دفترکل</small><strong>{fmt(balance)}</strong><span>واحد اعتبار</span></article>
-    <article><small>سهمیه پایه دوره جاری</small><strong>{fmt(currentAllowance)}</strong><span>فقط تخصیص‌های ثبت‌شده در دوره جاری</span></article>
+    <article><small>سهمیه پایه دوره جاری</small><strong>{currentAllowance===null?"ثبت نشده":fmt(currentAllowance)}</strong><span>فقط تخصیص‌های ثبت‌شده در دوره جاری</span></article>
     <article><small>مصرف ثبت‌شده</small><strong>{fmt(usage)}</strong><span>مجموع رویدادهای مصرف موجود در دفترکل</span></article>
    </div>
    <div className="farmer-credit-period"><CalendarClock size={20}/><div><b>تمدید ماهانه سهمیه پایه</b><p>{latestPeriod?"آخرین دوره ثبت‌شده: "+date(latestPeriod.period_start)+" تا "+date(latestPeriod.period_end):"هنوز دوره تخصیص ماهانه‌ای در دفترکل این حساب ثبت نشده است."}</p><small>زمان تمدید بعدی فقط پس از ثبت برنامه تخصیص دوره‌ای از سمت سرور نمایش داده می‌شود.</small></div></div>
