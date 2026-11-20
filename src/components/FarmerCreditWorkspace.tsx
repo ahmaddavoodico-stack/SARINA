@@ -14,8 +14,8 @@ export function FarmerCreditSummaryCard({userId,onOpen}:{userId:string;onOpen:()
  const [unavailable,setUnavailable]=useState(false);
  const load=useCallback(async()=>{
   if(!supabase||!userId){setUnavailable(true);setLoading(false);return;}
-  const {data,error}=await db.from("ai_conversation_credit_ledger").select("id,delta_units,entry_type,period_start,period_end,description_code,created_at").eq("user_id",userId).order("created_at",{ascending:false}).limit(250);
-  if(error){setUnavailable(true);setRows([]);}else{setUnavailable(false);setRows((data||[]) as LedgerEntry[]);}
+  const {data,error}=await db.from("ai_conversation_credit_ledger").select("id,delta_units,entry_type,period_start,period_end,description_code,created_at").eq("user_id",userId).order("created_at",{ascending:false}).limit(1000);
+  if(error||(data||[]).length>=1000){setUnavailable(true);setRows([]);}else{setUnavailable(false);setRows((data||[]) as LedgerEntry[]);}
   setLoading(false);
  },[userId]);
  useEffect(()=>{void load();},[load]);
@@ -35,8 +35,8 @@ export default function FarmerCreditWorkspace({userId}:{userId:string}){
  const load=useCallback(async()=>{
   if(!supabase||!userId){setUnavailable(true);setLoading(false);return;}
   setLoading(true);setError("");
-  const {data,error}=await db.from("ai_conversation_credit_ledger").select("id,delta_units,entry_type,period_start,period_end,description_code,created_at").eq("user_id",userId).order("created_at",{ascending:false}).limit(250);
-  if(error){setUnavailable(true);setRows([]);setError("دریافت دفترکل اعتبار ممکن نشد. لطفاً بعداً دوباره تلاش کنید.");}
+  const {data,error}=await db.from("ai_conversation_credit_ledger").select("id,delta_units,entry_type,period_start,period_end,description_code,created_at").eq("user_id",userId).order("created_at",{ascending:false}).limit(1000);
+  if(error||(data||[]).length>=1000){setUnavailable(true);setRows([]);setError(error?"دریافت دفترکل اعتبار ممکن نشد. لطفاً بعداً دوباره تلاش کنید.":"تعداد رویدادهای دفترکل از محدوده امن نمایش بیشتر است؛ برای جلوگیری از محاسبه ناقص، موجودی نمایش داده نمی‌شود.");}
   else{setUnavailable(false);setRows((data||[]) as LedgerEntry[]);}
   setLoading(false);
  },[userId]);
