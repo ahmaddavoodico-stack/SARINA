@@ -401,3 +401,126 @@
 .company-rating{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-top:12px;padding:9px 11px;background:#f7f8ef;border-radius:10px;color:#8a6b1e;font-size:11px}.company-rating>small{color:#819087}.top-rated{font-size:9px;background:#e7f3e8;color:#2d7048;border-radius:20px;padding:4px 8px}.company-review{border-top:1px solid var(--line);margin-top:13px;padding-top:10px}.review-form{display:grid;gap:9px;margin-top:10px;padding:12px;background:#f7faf7;border-radius:12px}.review-form label,.review-form small{font-size:10px;color:#718178}.review-form textarea{width:100%;min-height:76px;border:1px solid var(--line);border-radius:9px;padding:9px;font:inherit;font-size:11px;resize:vertical}.review-stars{display:flex;gap:5px;direction:ltr;justify-content:flex-end}.review-stars button{border:0;background:transparent;color:#cbd2c9;font-size:26px;cursor:pointer;padding:0 3px}.review-stars button.selected{color:#d39b22}
 
 .auth-method-switch{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:14px 0 4px;padding:4px;background:#f1f5f0;border-radius:11px}.auth-method-switch button{border:0;background:transparent;border-radius:8px;padding:9px 10px;color:#718276;font:inherit;font-size:11px}.auth-method-switch button.active{background:#fff;color:#1e5948;box-shadow:0 2px 7px #1e59480f}
+
+
+/* Farmer SARINA credit dashboard */
+.farmer-credit-summary{width:100%;display:flex;align-items:center;gap:14px;text-align:right;margin:18px 0 24px;padding:17px 19px;border:1px solid #dce9d9;border-radius:16px;background:linear-gradient(110deg,#f4f8ef,#fbfcf8);color:#294b32;cursor:pointer}
+.farmer-credit-summary:hover{border-color:#9fbea0;box-shadow:0 7px 22px rgba(46,88,53,.08)}
+.farmer-credit-summary-icon{width:44px;height:44px;display:grid;place-items:center;border-radius:13px;background:#e5f0df;color:#4b8050;flex:0 0 auto}
+.farmer-credit-summary-copy{display:flex;flex:1;flex-direction:column;gap:4px;min-width:0}
+.farmer-credit-summary-copy small{font-size:11px;color:#67816a}
+.farmer-credit-summary-copy strong{font-size:19px;color:#284d31}
+.farmer-credit-summary-copy em{font-size:10px;font-style:normal;color:#829182}
+.farmer-credit-page{display:flex;flex-direction:column;gap:17px;max-width:1120px;margin:0 auto}
+.farmer-credit-heading{display:flex;justify-content:space-between;align-items:center;gap:16px}
+.farmer-credit-heading>div>span,.specialist-ai-credit-heading>div>span{font-size:11px;color:#7d947f}
+.farmer-credit-heading h1,.specialist-ai-credit-heading h2{display:flex;align-items:center;gap:9px;margin:7px 0;color:#294b32;font-size:25px}
+.farmer-credit-heading p,.specialist-ai-credit-heading p{margin:0;color:#7b897d;font-size:12px;line-height:1.8}
+.farmer-credit-heading>button{display:flex;align-items:center;gap:7px;border:1px solid #dfe8dd;border-radius:10px;background:#fff;padding:9px 12px;color:#456b4a;cursor:pointer}
+.farmer-credit-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.farmer-credit-stats article{display:flex;flex-direction:column;gap:8px;padding:17px;border:1px solid #e5ece2;border-radius:14px;background:#fff}
+.farmer-credit-stats article.primary{background:#f2f7ee;border-color:#d8e7d2}
+.farmer-credit-stats small{font-size:11px;color:#7b8b7d}
+.farmer-credit-stats strong{font-size:25px;color:#315e39}
+.farmer-credit-stats span{font-size:10px;color:#9aa69b}
+.farmer-credit-period{display:flex;align-items:flex-start;gap:12px;padding:15px 17px;border:1px solid #e5ece2;border-radius:14px;background:#fbfcfa;color:#55795b}
+.farmer-credit-period b{font-size:13px;color:#345b3b}
+.farmer-credit-period p{margin:4px 0;font-size:11px;color:#687c6b}
+.farmer-credit-period small{font-size:10px;color:#9aa69b}
+.farmer-credit-columns{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.farmer-credit-panel{padding:18px;border:1px solid #e5ece2;border-radius:15px;background:#fff}
+.farmer-credit-panel h2{display:flex;align-items:center;gap:8px;margin:0 0 10px;font-size:15px;color:#345b3b}
+.farmer-credit-panel>p{font-size:11px;line-height:1.9;color:#7d897e}
+.farmer-credit-disabled{display:flex;align-items:flex-start;gap:10px;padding:12px;border-radius:11px;background:#f7f9f6;color:#829082}
+.farmer-credit-disabled b,.farmer-credit-disabled small{display:block}
+.farmer-credit-disabled b{font-size:11px;color:#5c735f}
+.farmer-credit-disabled small{margin-top:4px;font-size:10px;line-height:1.7}
+.farmer-credit-history h2{margin-bottom:12px}
+.farmer-credit-table-head,.farmer-credit-table article{display:grid;grid-template-columns:minmax(0,1fr) 130px 100px;gap:12px;align-items:center}
+.farmer-credit-table-head{padding:9px 0;border-bottom:1px solid #edf1eb;font-size:10px;color:#97a397}
+.farmer-credit-table article{padding:12px 0;border-bottom:1px solid #f0f3ee;font-size:11px}
+.farmer-credit-table article:last-child{border-bottom:0}
+.farmer-credit-table article b,.farmer-credit-table article small{display:block}
+.farmer-credit-table article b{color:#415c45}
+.farmer-credit-table article small{margin-top:4px;color:#9aa69b;font-size:9px}
+.farmer-credit-table time{font-size:10px;color:#839083}
+.farmer-credit-table strong.positive{color:#3e8952}.farmer-credit-table strong.negative{color:#a36d50}
+.farmer-credit-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;min-height:110px;padding:20px;color:#89968a;text-align:center;font-size:12px}
+.farmer-credit-empty p{margin:0;font-size:11px}
+.farmer-credit-alert{display:flex;align-items:center;gap:8px;padding:12px;border-radius:10px;background:#fff7ed;color:#9a6b32;font-size:11px}
+.farmer-credit-footnote{font-size:10px;line-height:1.8;color:#9aa69b}
+.specialist-ai-credit{display:flex;flex-direction:column;gap:17px;max-width:1080px}
+.specialist-ai-credit-heading{display:flex;align-items:center;justify-content:space-between;gap:14px}
+.specialist-ai-credit-heading h2{font-size:22px}
+.specialist-ai-credit-status{padding:6px 10px;border-radius:30px;background:#f4f0e4;color:#94733c;font-size:10px;white-space:nowrap}
+.specialist-ai-credit-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:11px}
+.specialist-ai-credit-stats article{display:flex;flex-direction:column;gap:8px;padding:16px;border:1px solid #e5ece2;border-radius:13px;background:#fff}
+.specialist-ai-credit-stats small{font-size:10px;color:#879488}
+.specialist-ai-credit-stats strong{font-size:16px;color:#788779}
+.specialist-ai-credit-stats span{font-size:9px;line-height:1.7;color:#a0aaa0}
+.specialist-ai-credit-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.specialist-ai-credit-actions article{display:flex;gap:12px;padding:16px;border:1px solid #e5ece2;border-radius:14px;background:#fff;color:#628069}
+.specialist-ai-credit-actions b{font-size:13px;color:#3b5e41}
+.specialist-ai-credit-actions p{font-size:10px;line-height:1.8;color:#879488}
+.specialist-ai-credit-actions button{display:inline-flex;align-items:center;gap:6px;padding:8px 11px;border:1px solid #e2e8df;border-radius:9px;background:#f6f8f5;color:#98a398;font-size:10px}
+.specialist-ai-credit-warning{display:flex;gap:10px;padding:14px;border:1px solid #f0e5cf;border-radius:12px;background:#fffaf0;color:#a17c42}
+.specialist-ai-credit-warning b{font-size:11px}
+.specialist-ai-credit-warning p{margin:5px 0 0;font-size:10px;line-height:1.8;color:#917e5d}
+.specialist-ai-credit-footnote{display:flex;align-items:center;gap:7px;font-size:10px;line-height:1.8;color:#9aa69b}
+@media(max-width:760px){.farmer-credit-stats,.specialist-ai-credit-stats{grid-template-columns:1fr}.farmer-credit-columns,.specialist-ai-credit-actions{grid-template-columns:1fr}.farmer-credit-heading,.specialist-ai-credit-heading{align-items:flex-start;flex-direction:column}.farmer-credit-table-head,.farmer-credit-table article{grid-template-columns:minmax(0,1fr) 88px 65px;gap:7px}.farmer-credit-stats strong{font-size:22px}.farmer-credit-summary{padding:13px}.farmer-credit-summary-copy strong{font-size:16px}}
+
+
+/* Independent farmer-specialist human chat inbox */
+.chat-inbox{display:grid;gap:16px;min-width:0}
+.chat-inbox-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:18px}
+.chat-inbox-heading h2{font-size:23px;margin:6px 0;color:var(--text,#20382f)}
+.chat-inbox-heading p{font-size:12px;line-height:1.8;color:var(--muted,#7c8981);margin:0;max-width:680px}
+.chat-inbox-count{background:var(--surface,#fff);border:1px solid var(--border,#e3e9e3);border-radius:12px;padding:10px 15px;min-width:105px;text-align:center}
+.chat-inbox-count b,.chat-inbox-count small{display:block}
+.chat-inbox-count b{font-size:21px;color:#28734a}.chat-inbox-count small{font-size:10px;color:var(--muted,#7c8981)}
+.chat-inbox-layout{display:grid;grid-template-columns:minmax(250px,340px) minmax(0,1fr);min-height:570px;background:var(--surface,#fff);border:1px solid var(--border,#e3e9e3);border-radius:16px;overflow:hidden}
+.chat-thread-list{border-left:1px solid var(--border,#e3e9e3);min-width:0;display:flex;flex-direction:column}
+.chat-inbox-tools{display:flex;gap:8px;padding:12px;border-bottom:1px solid var(--border,#e3e9e3)}
+.chat-inbox-tools label{display:flex;align-items:center;gap:8px;flex:1;min-width:0;border:1px solid var(--border,#e3e9e3);border-radius:9px;padding:8px 10px;color:var(--muted,#7c8981)}
+.chat-inbox-tools input{border:0;outline:0;min-width:0;width:100%;background:transparent;color:inherit;font:inherit;font-size:11px}
+.chat-inbox-tools>button{border:1px solid var(--border,#e3e9e3);border-radius:9px;background:transparent;color:var(--muted,#7c8981);padding:8px}
+.chat-filter-row{display:flex;gap:7px;padding:9px 12px;border-bottom:1px solid var(--border,#e3e9e3)}
+.chat-filter-row button{border:0;border-radius:20px;padding:6px 10px;background:transparent;color:var(--muted,#7c8981);font:inherit;font-size:10px}
+.chat-filter-row button.active{background:#eaf4eb;color:#28734a;font-weight:700}
+.chat-thread{display:flex;align-items:center;gap:10px;width:100%;padding:13px 12px;border:0;border-bottom:1px solid var(--border,#edf0ed);background:transparent;text-align:right;color:inherit;cursor:pointer}
+.chat-thread.selected{background:#f0f6f0}
+.chat-thread-avatar{width:37px;height:37px;flex:0 0 37px;border-radius:50%;display:grid;place-items:center;background:#edf4ed;color:#3d8054}
+.chat-thread-copy{display:grid;gap:3px;min-width:0;flex:1}
+.chat-thread-copy b,.chat-thread-copy strong,.chat-thread-copy small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chat-thread-copy b{font-size:11px}.chat-thread-copy strong{font-size:10px;font-weight:600;color:var(--muted,#77847c)}.chat-thread-copy small{font-size:9px;color:#98a39b}
+.chat-thread>i{font-style:normal;background:#28734a;color:white;border-radius:20px;min-width:20px;text-align:center;padding:2px 5px;font-size:9px}
+.chat-conversation{min-width:0;display:flex;flex-direction:column}
+.chat-conversation-head{display:flex;align-items:center;gap:12px;padding:13px 16px;border-bottom:1px solid var(--border,#e3e9e3)}
+.chat-conversation-head>div{display:grid;gap:4px;min-width:0;flex:1}.chat-conversation-head b{font-size:12px}.chat-conversation-head small{font-size:10px;color:var(--muted,#7c8981)}
+.chat-back{display:none;border:0;background:transparent;color:#28734a;align-items:center;gap:4px;font:inherit;font-size:10px}
+.chat-secure-label{display:flex;align-items:center;gap:5px;color:#4b8058;font-size:9px}
+.chat-message-history{flex:1;min-height:390px;max-height:570px;overflow:auto;display:flex;flex-direction:column;align-items:stretch;gap:10px;padding:16px;background:#f8faf7}
+.chat-message{align-self:flex-end;max-width:82%;background:#fff;border:1px solid #e8ede7;border-radius:12px 12px 3px 12px;padding:9px 12px;overflow-wrap:anywhere}
+.chat-message.mine{align-self:flex-start;background:#eaf4eb;border-color:#dfebdf;border-radius:12px 12px 12px 3px}
+.chat-message p{white-space:pre-wrap;line-height:1.8;margin:0 0 5px;font-size:11px}
+.chat-message small{font-size:9px;color:#849188}
+.chat-load-older{align-self:center;display:flex;align-items:center;gap:6px;border:1px solid var(--border,#e3e9e3);border-radius:20px;background:white;padding:7px 12px;font:inherit;font-size:10px;color:#547a5d}
+.chat-compose{display:grid;gap:8px;padding:12px 14px;border-top:1px solid var(--border,#e3e9e3)}
+.chat-compose textarea{resize:vertical;min-height:54px;max-height:150px;width:100%;border:1px solid var(--border,#dfe6df);border-radius:10px;padding:10px;background:var(--surface,#fff);color:inherit;font:inherit;font-size:11px}
+.chat-compose>div{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.chat-compose small{font-size:9px;color:var(--muted,#87938b)}
+.chat-compose button{display:inline-flex;align-items:center;gap:7px;border:0;border-radius:9px;background:#236b45;color:white;padding:9px 14px;font:inherit;font-size:10px;font-weight:700}
+.chat-compose button:disabled{opacity:.55}
+.chat-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:24px;text-align:center;color:#91a095;font-size:11px;line-height:1.8}
+.chat-empty b{color:#65766b;font-size:11px}.chat-empty p{margin:0;max-width:260px;font-size:10px}
+.chat-select-prompt{flex:1;min-height:500px}
+.chat-inbox .spin{animation:chat-spin 1s linear infinite}
+@keyframes chat-spin{to{transform:rotate(360deg)}}
+@media(max-width:760px){
+ .chat-inbox-heading{flex-direction:column}.chat-inbox-count{align-self:flex-start}
+ .chat-inbox-layout{grid-template-columns:1fr;min-height:600px}
+ .chat-thread-list{border-left:0}.chat-conversation{min-height:600px}
+ .chat-thread-list.mobile-hidden,.chat-conversation.mobile-hidden{display:none}
+ .chat-back{display:inline-flex}
+ .chat-message-history{min-height:400px}
+}
