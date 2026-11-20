@@ -28,6 +28,13 @@ No provider API secret or registered signing key was supplied in this work sessi
 
 ## Workstream 2 — authenticated farm context assembly
 
+### Implemented in this phase
+- SCI now calls the existing land and weather context Edge Functions in parallel with the caller JWT and publishable key; it does not forward a service-role key.
+- Both responses must succeed and pass farm-ID, freshness, source/schema, safety, and coordinate-range validation before SCI returns an accepted request.
+- SCI returns a minimal context manifest (source, timestamps, counts, regional-context status), not the full farm record or sensitive context payload.
+- Context failure, malformed responses, and cross-farm/stale data fail closed. Adapter/model invocation remains disabled.
+
+### Remaining
 - Reuse `farm-land-context` and `farm-weather-context`; do not recreate their data model.
 - Fetch both using the caller's JWT so the existing farm ownership/RLS boundary remains in force.
 - Validate exact farm ID, freshness, coordinate bounds, required source/provenance fields, and missing-data safety before any adapter dispatch.
@@ -93,7 +100,7 @@ Record the commit, CI run, preview URL, test identity/role, scenario, expected r
 | Workstream | Current state |
 |---|---|
 | SIACP/provider adapter | Transport/schema foundations exist; signing, replay defense, adapter dispatch, and provider call remain |
-| Context assembly | Separate authenticated land/weather functions exist; SCI orchestration and integrated tests remain |
+| Context assembly | SCI now orchestrates both existing caller-JWT context functions and validates their responses; live integration against isolated farm fixtures remains |
 | Specialist AI preparation | Case assistant data-entry workflow exists; evidence-grounded AI drafting remains |
 | Regional benchmarks | Storage and governance exist; curated published reference data remain |
 | Security/integration tests | Contract tests are added here; RLS and role-isolation tests remain |
