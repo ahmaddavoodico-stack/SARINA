@@ -22,3 +22,5 @@ jobs:
           npm audit --json > npm-audit.json || true
           node -e 'const a=require("./npm-audit.json"); for (const [name,v] of Object.entries(a.vulnerabilities||{})) console.log(`${name}: ${v.severity}; direct=${v.isDirect}; fix=${JSON.stringify(v.fixAvailable)}`); console.log(`Total vulnerabilities: ${JSON.stringify(a.metadata?.vulnerabilities||{})}`)'
       - run: npm run build
+      - name: Check standalone workspace JavaScript
+        run: node --check public/app/app.js && node --check public/app/marketplace.js && node --check public/app/experts.js && node --check public/app/organizations.js
