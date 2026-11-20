@@ -11,6 +11,8 @@ on:
     branches: [main]
     paths:
       - "supabase/functions/sarina-central-intelligence/**"
+      - "supabase/functions/specialist-case-preparation/**"
+      - "supabase/migrations/*siacp*"
       - ".github/workflows/sci-contract-tests.yml"
 permissions:
   contents: read
