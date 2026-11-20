@@ -27,7 +27,7 @@ export default function FarmerSpecialistChatInbox({userId,mode,profileId,verifie
   if(!supabase||!userId)return;
   setLoading(true);
   try{
-   const n=await db.from("expert_case_notifications").select("id,event_type,preview,created_at,read_at,request_id,consultation_id").eq("recipient_user_id",userId).order("created_at",{ascending:false}).limit(200);
+   const n=await db.from("expert_case_notifications").select("id,event_type,preview,created_at,read_at,request_id,consultation_id").eq("recipient_user_id",userId).eq("event_type","new_message").is("read_at",null).order("created_at",{ascending:false}).limit(1000);
    if(n.error)throw n.error;
    setNotifications(n.data||[]);
    let rows:any[]=[];
