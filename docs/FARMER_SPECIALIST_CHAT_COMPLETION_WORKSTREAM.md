@@ -102,3 +102,11 @@ This is a working foundation, not evidence that the full chat experience, attach
 - No database schema, grants, RLS policies, or storage policies were changed.
 - GitHub Actions returned no workflow runs for the latest commit. The latest Vercel status is a Build Rate Limit failure; a successful build/deployment is not established.
 - Therefore this work is a committed UI foundation plus a read-only security audit, not a production-ready release. The grant hardening, role-based negative tests, full build, and smoke tests remain release blockers.
+
+
+### Critical authorization defect discovered during deeper handover review
+- The INSERT policy `expert_case_handovers_assigned_expert_insert` contains the tautology `er.requester_user_id = er.requester_user_id` instead of binding `expert_case_handovers.requester_user_id` to the actual request owner.
+- The `authenticated` role has INSERT permission on this table, and the `respond_to_expert_case_handover(p_handover_id, p_accept)` SECURITY DEFINER function authorizes the caller by comparing `v_handover.requester_user_id` to `current_sarina_user_id()`. Since the INSERT policy does not validate that field against the request owner, an assigned specialist could potentially create a handover row with their own user ID and invoke the farmer-consent RPC themselves.
+- The normal specialist UI currently supplies the real `requester_user_id`, but client behavior is not a security boundary. This is a server-side authorization vulnerability, not merely a UI issue.
+- Required remediation on a development branch: replace the tautological predicate with `er.requester_user_id = expert_case_handovers.requester_user_id`; independently harden the RPC by joining the handover to its request and requiring `expert_requests.requester_user_id = current_sarina_user_id()`; review function EXECUTE grants and preserve only the intended farmer invocation. Add negative tests proving the assigned specialist cannot create or approve a handover as the farmer, while the actual farmer can approve/decline.
+- Treat handover and chat release as blocked until this migration is applied and tested in an isolated development database. No production changes have been made.
