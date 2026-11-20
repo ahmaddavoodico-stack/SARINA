@@ -7,7 +7,7 @@ import {
 import { buildSpecialistCaseEvidence } from "./specialist-preparation.ts";
 
 const KEY = "unit-test-signing-secret-at-least-32-characters";
-const NOW = Date.parse("2026-11-20T12:00:00.000Z");
+const NOW = Date.now();
 
 Deno.test("SIACP canonicalization sorts object keys recursively", () => {
   const actual = canonicalizeSiacp({ z: 1, a: { y: true, b: "x" } });
