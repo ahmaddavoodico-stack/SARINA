@@ -101,3 +101,19 @@ Deno.test("SIACP result validator binds response to expected correlation and rec
     throw new Error("mismatched result accepted");
   }
 });
+
+Deno.test("farm context validator rejects out-of-range coordinates", () => {
+  const weather = {
+    farm_id: FARM_ID, data_kind: "forecast_model_current_and_daily_forecast", source: "open-meteo",
+    retrieved_at: fresh, location: { latitude: 120, longitude: 48 }, current: {}, forecast: [{ date: "2026-11-20" }],
+  };
+  const land = {
+    schema: "SARINA_FARM_LAND_CONTEXT_V1", farm: { id: FARM_ID }, retrieved_at: fresh,
+    farmer_reports: [], soil_tests: [], water_tests: [], regional_context: {},
+    safety: { distinguish_farmer_report_from_lab_and_model_data: true, missing_values_must_remain_missing: true },
+  };
+  const issues = validateFarmContexts(FARM_ID, weather, land, NOW);
+  if (!issues.some((issue) => issue.field === "farm_weather_context")) {
+    throw new Error("out-of-range latitude accepted");
+  }
+});
