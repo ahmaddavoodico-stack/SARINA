@@ -23,8 +23,15 @@ This is a staged completion program, not a claim that the farmer/specialist modu
 5. Validate every adapter result against the expected correlation ID, recipient, schema, and provenance. Treat provider output as untrusted content.
 6. Fail closed on missing secrets, unknown adapter, invalid signature, timeout, rate limit, malformed response, or context mismatch. Never convert a model response into a physical-action command.
 
+### Implemented in this phase
+- Added deterministic SIACP JSON canonicalization, HMAC-SHA256 signing/verification, sender and recipient allowlists, timestamp/TTL checks, and a nonce-store contract.
+- Added an atomic PostgreSQL nonce registry/RPC restricted to the service role; the Edge Function uses it for replay prevention.
+- Added a provider-neutral adapter interface/registry and a ChatGPT Responses API adapter using server-side secrets, a server-side model allowlist, bounded payload/output size, timeouts, and schema-constrained output.
+- The specialist preparation endpoint creates a signed SIACP request and verifies it before provider dispatch.
+- Dispatch remains explicitly disabled unless the server-side feature flag, signing key, provider key, model allowlist, and nonce migration are all configured.
+
 ### Not yet release-ready
-No provider API secret or registered signing key was supplied in this work session. Therefore no live ChatGPT call, signed production dispatch, or result persistence is enabled by this branch.
+No provider API secret or registered signing key was supplied in this work session. The new provider path has not been enabled against a live provider or production data. No live ChatGPT call, signed production dispatch, or result persistence is claimed.
 
 ## Workstream 2 — authenticated farm context assembly
 
@@ -44,11 +51,18 @@ No provider API secret or registered signing key was supplied in this work sessi
 
 ## Workstream 3 — evidence-based specialist preparation
 
-- Load the farmer's existing farm record, field/crop-cycle scope, soil and water tests, observations, weather, productivity baseline, measurements, and prior actions only when the caller is authorized for that case/farm.
-- Produce a structured draft: known facts, farmer-reported statements, verified measurements, model estimates, missing information, possible explanations, risk flags, follow-up questions, and source references.
-- Display uncertainty and limitations. Do not issue diagnosis or treatment as a final expert decision.
-- Keep the specialist responsible for assessment and final recommendations; preserve review/edit/override and audit history.
-- Do not expose one farmer's records to another farmer or an unassigned/unverified specialist.
+### Implemented in this phase
+- Added a verified-specialist-only Edge Function that checks the signed-in specialist profile and exact assigned case before assembling any evidence.
+- The function reads case/farm/field/crop-cycle/soil/water/observation data through the caller JWT and RLS. Unavailable or unauthorized optional domains are reported as missing, not fetched with service-role privileges.
+- Added a provenance-aware evidence packet that separates farmer reports, laboratory measurements, recorded-source values, and system facts; missing domains remain explicit.
+- Added a structured ChatGPT draft contract with known facts, farmer reports, verified measurements, model estimates, missing information, possible explanations, risk flags, follow-up questions, source references, and limitations.
+- Added a button and review panel to the verified specialist case workspace. AI output is presented as a draft only.
+
+### Remaining
+- Configure and test the signed provider path in a non-production environment; current feature flag defaults to disabled.
+- Confirm that each optional table's RLS grants the assigned specialist only the consented case scope; inaccessible data must remain unavailable.
+- Add persisted audit/version history for generated drafts and specialist edits before production release.
+- Execute tests using isolated verified-specialist identities and synthetic farmer cases.
 
 ## Workstream 4 — comparable regional benchmarking
 
@@ -99,9 +113,9 @@ Record the commit, CI run, preview URL, test identity/role, scenario, expected r
 
 | Workstream | Current state |
 |---|---|
-| SIACP/provider adapter | Transport/schema foundations exist; signing, replay defense, adapter dispatch, and provider call remain |
-| Context assembly | SCI now orchestrates both existing caller-JWT context functions and validates their responses; live integration against isolated farm fixtures remains |
-| Specialist AI preparation | Case assistant data-entry workflow exists; evidence-grounded AI drafting remains |
+| SIACP/provider adapter | Canonical signing, HMAC verification, allowlists, atomic nonce replay protection, adapter registry and ChatGPT Responses adapter added; live provider validation/configuration remains |
+| Context assembly | SCI orchestrates both existing caller-JWT context functions and validates their responses; isolated-farm integration remains |
+| Specialist AI preparation | Assigned-case evidence endpoint, provenance packet, structured draft schema and specialist workspace UI added; live-provider validation and persisted audit history remain |
 | Regional benchmarks | Storage and governance exist; curated published reference data remain |
 | Security/integration tests | Contract tests are added here; RLS and role-isolation tests remain |
 | End-to-end acceptance | Test plan defined; real device and authorized test-user execution remains |
