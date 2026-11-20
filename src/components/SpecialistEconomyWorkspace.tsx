@@ -1,6 +1,6 @@
 import {useEffect,useMemo,useState} from "react";
 import type {FormEvent} from "react";
-import {RefreshCw,ShieldCheck,Sprout,Wallet,PlusCircle} from "lucide-react";
+import {RefreshCw,Wallet,PlusCircle} from "lucide-react";
 import {supabase} from "../lib/supabase";
 const db=supabase as any;
 type Pricing={currency_code:string;workspace_monthly_fee:number;included_monthly_credits:number;credit_unit_price:number;ai_price_per_1k_tokens:number;reward_multiplier:number;grace_period_days:number;overage_enabled:boolean;billing_enabled:boolean;reward_review_required:boolean};
