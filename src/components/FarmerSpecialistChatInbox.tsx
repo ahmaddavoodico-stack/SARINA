@@ -77,9 +77,8 @@ export default function FarmerSpecialistChatInbox({userId,mode,profileId,verifie
 
  const markConversationRead=useCallback(async(consultationId:string)=>{
   const unreadIds=notifications.filter(n=>n.consultation_id===consultationId&&n.event_type==="new_message"&&!n.read_at).map(n=>n.id);
-  if(!unreadIds.length)return;
   const now=new Date().toISOString();
-  const {error}=await db.from("expert_case_notifications").update({read_at:now}).in("id",unreadIds).eq("recipient_user_id",userId);
+  const {error}=await db.from("expert_case_notifications").update({read_at:now}).eq("recipient_user_id",userId).eq("consultation_id",consultationId).eq("event_type","new_message").is("read_at",null);
   if(error){setNotice("وضعیت خوانده‌شدن پیام‌ها ثبت نشد: "+error.message);return;}
   setNotifications(old=>old.map(n=>unreadIds.includes(n.id)?{...n,read_at:now}:n));
   setThreads(old=>old.map(t=>t.id===consultationId?{...t,unread:0}:t));
