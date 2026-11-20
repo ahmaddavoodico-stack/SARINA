@@ -125,3 +125,15 @@ User experience:
 ### Outstanding security finding
 
 Supabase Security Advisors still reports `public.spatial_ref_sys` with RLS disabled. It was not changed automatically because enabling RLS without a deliberate read policy can break spatial reference lookups. Review and decide its read-only policy before changing it. The advisors also report other pre-existing SECURITY DEFINER RPCs and 19 RLS-enabled tables with no policies; these require a separate targeted review rather than blanket grants or blanket policies.
+
+
+## Organization self-service onboarding and review
+
+- The explicit global `organization` role starts a private organization workspace; it does not grant access to any verified organization, marketplace, or institutional data by itself.
+- Organization profile drafts are stored in `organization_profiles` and can be resumed before formal submission.
+- Legal documents use a private `organization-documents` storage bucket, user-scoped paths, MIME/size limits, and server-side object validation.
+- A central administrator must review the application. Approval provisions the organization and its initial membership; only approved organizations with active membership and scoped capabilities can use gated marketplace and institutional features.
+- Organization ratings and reviews are separate from application verification and use authenticated farmer identity checks.
+- Self-selected `expert` and `organization` roles are requests for the relevant workspace, not professional verification or organization approval. Those gates remain server-side.
+
+The connected Supabase project already contains these organization schema migrations. This change restores the matching migration source files to GitHub; it does not reapply them to the live database.
