@@ -74,3 +74,31 @@ This is a working foundation, not evidence that the full chat experience, attach
 - Keep this workstream limited to farmer–specialist communication.
 - Preserve existing migration history; schema changes must be forward-only after migration-history review.
 - Do not activate external AI providers or marketplace-linked financial flows as part of this workstream.
+
+
+## Implementation and security audit update (2026-11-21)
+
+### UI work committed to develop
+- Added `src/components/FarmerSpecialistChatInbox.tsx` as a shared, role-aware inbox for farmer and verified specialist accounts.
+- Added a distinct farmer navigation entry, `گفت‌وگو با متخصصان`, separate from the expert directory/request form.
+- Added a distinct specialist navigation tab, `مکالمات با کشاورزان`.
+- The inbox uses the existing `expert_requests`, `expert_request_assignments`, `expert_consultations`, `expert_consultation_messages`, and `expert_case_notifications` records; no parallel message store was created.
+- Added message history pagination (50 messages per page), realtime INSERT subscription for the active conversation, deduplication of realtime inserts, a 6,000-character text limit, sending-state protection against repeated taps, and marking all unread message notifications for the active consultation as read.
+- The new inbox is text-only. It does not advertise generic file attachments or render existing audio payloads. The legacy database audio-note path remains separate and must be integrated/tested before the new inbox can claim voice-note support.
+- Existing case-specific chat and report workflow remain available as contextual tools; the new inbox is the dedicated communication entry point.
+
+### Read-only database audit findings
+- The connected Supabase project currently has no development branches. Its migration history includes the existing expert messaging, realtime, voice-note, voice-upload cleanup, and voice-message policy-hardening migrations; no migration was applied during this audit.
+- RLS is enabled on the core request, assignment, consultation, message, notification, profile, and handover tables.
+- Message SELECT and INSERT policies are participant-scoped. Specialist access is tied to a verified profile and an offered/accepted assignment; the farmer is checked against the request owner.
+- The handover completion trigger revokes the prior specialist's offered/accepted assignment when the substitute accepts, then updates the request's assigned specialist. The active message access policies no longer include revoked assignments.
+- Realtime publication currently includes `expert_consultation_messages` and `expert_case_notifications`.
+- The `expert-voice-notes` storage bucket is private and has consultation/participant-scoped storage policies. No generic document/image attachment path was verified for chat; do not expose one in the UI yet.
+- **Integrity hardening item identified:** the notification UPDATE policy restricts rows to their recipient, but the `authenticated` role has table-level UPDATE privilege on `expert_case_notifications`. This appears row-scoped rather than cross-user access, but it permits a recipient to update columns beyond `read_at` on their own notification rows. The intended least-privilege fix is to revoke table-level UPDATE and grant UPDATE only on `read_at`, after confirming all legitimate clients and RPCs. This requires a forward-only migration and tests.
+- The Supabase security advisor also reports unrelated project-wide findings (including RLS-disabled `public.spatial_ref_sys`, several RLS-enabled tables without policies, and SECURITY DEFINER RPC exposure). Those findings need a separate scoped security review; do not make broad unrelated changes in this chat workstream.
+
+### Environment and release gate
+- No Supabase development branch is currently available. Creating one requires explicit cost approval at **US$0.01344 per hour** for the selected organization. No branch was created because that cost has not yet been approved.
+- No database schema, grants, RLS policies, or storage policies were changed.
+- GitHub Actions returned no workflow runs for the latest commit. The latest Vercel status is a Build Rate Limit failure; a successful build/deployment is not established.
+- Therefore this work is a committed UI foundation plus a read-only security audit, not a production-ready release. The grant hardening, role-based negative tests, full build, and smoke tests remain release blockers.
