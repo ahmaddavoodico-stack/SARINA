@@ -7,6 +7,7 @@ type CaseRow={id:string;requester_user_id:string;subject:string;problem_descript
 type AssistantRow={request_id:string;assistant_status:string;completeness_status:string;missing_information:string[];assistant_summary:string|null;received_at:string};
 type ExpertRow={id:string;public_name:string};
 type Availability={availability_status:string;pause_new_cases:boolean;vacation_start:string|null;vacation_end:string|null;substitute_expert_profile_id:string|null;max_open_cases:number;status_note:string|null};
+type PreparationResult={preparation_status:string;model_invoked:boolean;draft?:Record<string,string[]>;evidence_packet?:{evidence?:{id:string;label:string;value:string;provenance:string}[];coverage?:{missingDomains?:string[]}}};
 const db=supabase as any;
 const statusLabels:Record<string,string>={received:"دریافت‌شده",initial_review:"در بررسی اولیه",needs_information:"نیازمند اطلاعات تکمیلی",awaiting_expert:"در انتظار نظر متخصص",expert_reviewed:"بررسی متخصص انجام شد"};
 const dateTime=(value:string|null)=>value?new Date(value).toISOString().slice(0,16):"";
@@ -17,6 +18,8 @@ export default function ExpertCaseOperationsWorkspace({profileId,verified}:Props
  const [selectedCase,setSelectedCase]=useState(""),[replacement,setReplacement]=useState(""),[handoverReason,setHandoverReason]=useState("مرخصی یا عدم امکان پاسخ‌گویی متخصص فعلی");
  const [drafts,setDrafts]=useState<Record<string,{status:string;summary:string;missing:string}>>({});
  const [loading,setLoading]=useState(true),[busy,setBusy]=useState(false),[notice,setNotice]=useState("");
+ const [aiPreparations,setAiPreparations]=useState<Record<string,PreparationResult>>({});
+ const [preparingCase,setPreparingCase]=useState("");
  async function refresh(){
   if(!supabase)return;setLoading(true);
   const [a,e]=await Promise.all([
@@ -55,6 +58,15 @@ export default function ExpertCaseOperationsWorkspace({profileId,verified}:Props
   const {error}=await db.from("expert_case_assistant_cases").update({assistant_status:d.status,completeness_status:missing.length?"missing_information":"appears_complete",missing_information:missing,assistant_summary:d.summary.trim()||c.problem_description}).eq("request_id",c.id);
   setBusy(false);if(error){setNotice(error.message);return;}setNotice("یادداشت و وضعیت بررسی اولیه ثبت شد؛ کشاورز اعلان وضعیت را دریافت می‌کند.");await refresh();
  }
+ async function prepareCase(c:CaseRow){
+  if(!supabase)return;setPreparingCase(c.id);setNotice("");
+  const {data,error}=await supabase.functions.invoke("specialist-case-preparation",{body:{request_id:c.id}});
+  setPreparingCase("");
+  if(error){setNotice("آماده‌سازی هوشمند انجام نشد: "+error.message);return;}
+  if(!data?.ok){setNotice("آماده‌سازی هوشمند انجام نشد: "+(data?.code||"خطای نامشخص"));return;}
+  setAiPreparations(old=>({...old,[c.id]:data as PreparationResult}));
+  setNotice(data.model_invoked?"پیش‌نویس هوشمند آماده شد و فقط برای بازبینی متخصص نمایش داده می‌شود.":"پرونده شواهد آماده شد؛ فراخوانی مدل هنوز فعال نیست.");
+ }
  async function requestHandover(e:React.FormEvent){
   e.preventDefault();if(!supabase||!selectedCase||!replacement)return;const c=cases.find(x=>x.id===selectedCase);if(!c)return;
   setBusy(true);setNotice("");
@@ -74,7 +86,13 @@ export default function ExpertCaseOperationsWorkspace({profileId,verified}:Props
     <label>اطلاعات تکمیلی موردنیاز (با ویرگول جدا کنید)<input value={d.missing} onChange={e=>setDrafts(old=>({...old,[c.id]:{...d,missing:e.target.value}}))} placeholder="مثلاً سن گیاه، EC آب، عکس برگ"/></label>
     <label className="expert-wide">خلاصه پرونده برای متخصص<textarea rows={3} value={d.summary} onChange={e=>setDrafts(old=>({...old,[c.id]:{...d,summary:e.target.value}}))}/></label>
    </div>
-   <div className="expert-case-assistant-actions"><small>{a?.completeness_status==="missing_information"?"پرونده دارای اطلاعات ناقص است":a?.completeness_status==="appears_complete"?"اطلاعات اولیه ثبت شده؛ کامل بودن تخصصی تأیید نشده است":"کنترل کامل بودن هنوز انجام نشده"}</small><button className="expert-primary" disabled={busy} onClick={()=>void saveCase(c)}><ClipboardCheck size={15}/> ثبت بررسی اولیه</button></div>
+   {aiPreparations[c.id]&&<div className="expert-case-source" aria-live="polite">
+    <b>{aiPreparations[c.id].model_invoked?"پیش‌نویس هوشمند برای بازبینی متخصص":"بسته شواهد پرونده؛ مدل هنوز فعال نیست"}</b>
+    {aiPreparations[c.id].draft&&Object.entries(aiPreparations[c.id].draft||{}).filter(([key,value])=>key!=="review_required"&&Array.isArray(value)&&value.length>0).map(([key,value])=><p key={key}><strong>{key.replaceAll("_"," ")}:</strong> {(value as string[]).join("؛ ")}</p>)}
+    {aiPreparations[c.id].evidence_packet?.evidence?.map(item=><p key={item.id}><strong>{item.label} ({item.provenance}):</strong> {item.value}</p>)}
+    <small>این خروجی تصمیم تخصصی یا تشخیص نهایی نیست؛ صحت شواهد و هر پیشنهاد باید توسط متخصص بررسی شود.</small>
+   </div>}
+   <div className="expert-case-assistant-actions"><small>{a?.completeness_status==="missing_information"?"پرونده دارای اطلاعات ناقص است":a?.completeness_status==="appears_complete"?"اطلاعات اولیه ثبت شده؛ کامل بودن تخصصی تأیید نشده است":"کنترل کامل بودن هنوز انجام نشده"}</small><button className="expert-link" disabled={preparingCase===c.id||busy} onClick={()=>void prepareCase(c)}>{preparingCase===c.id?"در حال آماده‌سازی...":"تهیه پیش‌نویس هوشمند"}</button><button className="expert-primary" disabled={busy} onClick={()=>void saveCase(c)}><ClipboardCheck size={15}/> ثبت بررسی اولیه</button></div>
   </article>;})}
   <div className="expert-section-title expert-operations-subtitle"><span>مدیریت حضور و جانشینی</span><h2>حضور، مرخصی و جایگزینی متخصص</h2><p>در زمان مرخصی، پرونده‌ها خودکار و پنهانی منتقل نمی‌شوند؛ ابتدا رضایت کشاورز و سپس پذیرش متخصص جایگزین لازم است.</p></div>
   <form className="expert-panel expert-form-grid" onSubmit={saveAvailability}>
