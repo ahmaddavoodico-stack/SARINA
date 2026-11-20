@@ -61,11 +61,12 @@ export default function FarmerSpecialistChatInbox({userId,mode,profileId,verifie
 
  useEffect(()=>{void refresh();},[refresh]);
  useEffect(()=>{
-  if(!supabase)return;
-  const channel=supabase.channel("chat-inbox-notifications-"+mode+"-"+userId)
+  const client=supabase;
+  if(!client)return;
+  const channel=client.channel("chat-inbox-notifications-"+mode+"-"+userId)
    .on("postgres_changes",{event:"*",schema:"public",table:"expert_case_notifications",filter:"recipient_user_id=eq."+userId},()=>{void refresh();})
    .subscribe();
-  return()=>{void supabase.removeChannel(channel);};
+  return()=>{void client.removeChannel(channel);};
  },[userId,mode,refresh]);
 
  const activeThread=threads.find(thread=>thread.id===active)||null;
@@ -96,14 +97,15 @@ export default function FarmerSpecialistChatInbox({userId,mode,profileId,verifie
  },[markConversationRead]);
 
  useEffect(()=>{
-  if(!supabase||!active)return;
-  const channel=supabase.channel("chat-thread-"+active)
+  const client=supabase;
+  if(!client||!active)return;
+  const channel=client.channel("chat-thread-"+active)
    .on("postgres_changes",{event:"INSERT",schema:"public",table:"expert_consultation_messages",filter:"consultation_id=eq."+active},payload=>{
     const incoming=payload.new as ChatMessage;
     setMessages(old=>old.some(item=>item.id===incoming.id)?old:[...old,incoming]);
     if(incoming.sender_user_id!==userId){void markConversationRead(active);void refresh();}
    }).subscribe();
-  return()=>{void supabase.removeChannel(channel);};
+  return()=>{void client.removeChannel(channel);};
  },[active,userId,markConversationRead,refresh]);
 
  async function loadOlder(){
@@ -113,8 +115,8 @@ export default function FarmerSpecialistChatInbox({userId,mode,profileId,verifie
   const {data,error}=await db.from("expert_consultation_messages").select("id,sender_user_id,message_text,content_parts,created_at").eq("consultation_id",active).lt("created_at",oldest).order("created_at",{ascending:false}).limit(50);
   setLoadingOlder(false);
   if(error){setNotice("بارگذاری پیام‌های قدیمی‌تر انجام نشد: "+error.message);return;}
-  const batch=(data||[]).reverse();
-  setMessages(old=>[...batch,...old.filter(item=>!batch.some(next=>next.id===item.id))]);
+  const batch:ChatMessage[]=(data||[]).reverse() as ChatMessage[];
+  setMessages(old=>[...batch,...old.filter(item=>!batch.some((next:ChatMessage)=>next.id===item.id))]);
   setHasOlder((data||[]).length===50);
  }
 
