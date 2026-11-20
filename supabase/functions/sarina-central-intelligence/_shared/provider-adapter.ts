@@ -32,6 +32,19 @@ export interface ModelProviderAdapter {
   invoke(request: ProviderRequest): Promise<ProviderResult>;
 }
 
+export class ProviderAdapterRegistry {
+  private readonly adapters = new Map<string, ModelProviderAdapter>();
+  register(adapter: ModelProviderAdapter): void {
+    if (this.adapters.has(adapter.providerId)) throw new Error("PROVIDER_ADAPTER_ALREADY_REGISTERED");
+    this.adapters.set(adapter.providerId, adapter);
+  }
+  resolve(providerId: string): ModelProviderAdapter {
+    const adapter = this.adapters.get(providerId);
+    if (!adapter) throw new Error("PROVIDER_ADAPTER_NOT_REGISTERED");
+    return adapter;
+  }
+}
+
 const specialistDraftSchema = {
   type: "object",
   additionalProperties: false,
@@ -120,6 +133,7 @@ export class ChatGPTResponsesAdapter implements ModelProviderAdapter {
               }],
             },
           ],
+          max_output_tokens: 3000,
           text: {
             format: {
               type: "json_schema",
@@ -131,11 +145,15 @@ export class ChatGPTResponsesAdapter implements ModelProviderAdapter {
         }),
       });
       if (!response.ok) {
-        const detail = await response.text();
-        throw new Error(`CHATGPT_PROVIDER_HTTP_${response.status}:${detail.slice(0, 500)}`);
+        throw new Error(`CHATGPT_PROVIDER_HTTP_${response.status}`);
       }
       const data = await response.json();
-      const outputText = typeof data.output_text === "string" ? data.output_text : "";
+      const outputText = typeof data.output_text === "string"
+        ? data.output_text
+        : (Array.isArray(data.output) ? data.output.flatMap((item: Record<string, unknown>) =>
+            Array.isArray(item.content) ? item.content : [])
+          .filter((item: Record<string, unknown>) => item.type === "output_text" && typeof item.text === "string")
+          .map((item: Record<string, unknown>) => item.text as string).join("") : "");
       if (!outputText) throw new Error("CHATGPT_EMPTY_OUTPUT");
       let parsed: unknown;
       try { parsed = JSON.parse(outputText); }
