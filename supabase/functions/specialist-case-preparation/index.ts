@@ -23,6 +23,10 @@ async function optionalSingle(client: ReturnType<typeof createClient>, table: st
   const { data, error } = await client.from(table).select(columns).eq("id", id).maybeSingle();
   return error ? null : (isRecord(data) ? data : null);
 }
+async function optionalScopedSingle(client: ReturnType<typeof createClient>, table: string, columns: string, id: string, farmId: string) {
+  const { data, error } = await client.from(table).select(columns).eq("id", id).eq("farm_id", farmId).maybeSingle();
+  return error ? null : (isRecord(data) ? data : null);
+}
 async function optionalRows(client: ReturnType<typeof createClient>, table: string, columns: string, farmId: string, limit = 10) {
   const { data, error } = await client.from(table).select(columns).eq("farm_id", farmId).limit(limit);
   return error ? [] : asRows(data);
@@ -82,8 +86,8 @@ Deno.serve(async (req: Request) => {
   const [farm, field, cropCycle, soilTests, waterTests, observations] = farmId
     ? await Promise.all([
         optionalSingle(userClient, "farms", "id,farm_name,total_area,area_unit,status", farmId),
-        typeof request.field_id === "string" ? optionalSingle(userClient, "farm_fields", "id,field_name,area,area_unit,soil_description", request.field_id) : Promise.resolve(null),
-        typeof request.crop_cycle_id === "string" ? optionalSingle(userClient, "crop_cycles", "id,crop_name,variety,planting_date,expected_harvest_date,status", request.crop_cycle_id) : Promise.resolve(null),
+        typeof request.field_id === "string" ? optionalScopedSingle(userClient, "farm_fields", "id,farm_id,field_name,area,area_unit,soil_description", request.field_id, farmId) : Promise.resolve(null),
+        typeof request.crop_cycle_id === "string" ? optionalScopedSingle(userClient, "crop_cycles", "id,farm_id,crop_name,variety,planting_date,expected_harvest_date,status", request.crop_cycle_id, farmId) : Promise.resolve(null),
         optionalRows(userClient, "soil_tests", "id,field_id,sampled_at,laboratory_name,test_method,soil_texture,ph,ec_ds_m,organic_matter_pct,calcium_carbonate_pct,nitrogen_mg_kg,phosphorus_mg_kg,potassium_mg_kg,data_source,notes", farmId, 10),
         optionalRows(userClient, "water_tests", "id,sampled_at,water_source,laboratory_name,test_method,ph,ec_ds_m,tds_mg_l,sodium_mg_l,calcium_mg_l,magnesium_mg_l,chloride_mg_l,bicarbonate_mg_l,sar,boron_mg_l,data_source,notes", farmId, 10),
         optionalRows(userClient, "farm_observations", "id,observation_type,observed_at,description,severity,image_refs", farmId, 25),
