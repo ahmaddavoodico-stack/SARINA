@@ -139,3 +139,8 @@ Never compare unlike units, different crop cycles, incompatible harvest windows 
 - Added the farmer-facing `بهره‌وری مزرعه` workspace with metric capture, provenance/quality/confidence, baseline completeness and missing indicators, target-linked improvement plans, action tracking, baseline/current comparisons for matching units, measurement history, and an honest empty state for unavailable benchmarks.
 - Benchmark table is deliberately empty until source, license, region, period, unit and sample size are verified. No fabricated regional averages or rankings are shown.
 - The six tables currently contain zero farmer rows; the eight metric definitions are present.
+
+
+## Verified specialist workspace integration
+
+The specialist workspace exposes supervised farms, recorded productivity measurements, and due/overdue improvement actions through the existing specialist-scoped database views. It is presented as a dedicated tab inside the verified specialist office. Access to this tab is restricted to verified specialists; it does not create parallel farm or productivity records and does not claim autonomous agronomic diagnosis.
