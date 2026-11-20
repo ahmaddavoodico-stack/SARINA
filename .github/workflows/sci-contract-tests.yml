@@ -1,0 +1,24 @@
+name: SCI contract tests
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "supabase/functions/sarina-central-intelligence/**"
+      - ".github/workflows/sci-contract-tests.yml"
+  push:
+    branches: [main]
+    paths:
+      - "supabase/functions/sarina-central-intelligence/**"
+      - ".github/workflows/sci-contract-tests.yml"
+permissions:
+  contents: read
+jobs:
+  contract-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Test SCI and SIACP contracts
+        run: deno test --no-check supabase/functions/sarina-central-intelligence/_shared/sci-contract_test.ts
