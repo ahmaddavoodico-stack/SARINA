@@ -1,6 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
-import { createChatGPTAdapterFromEnv } from "../sarina-central-intelligence/_shared/provider-adapter.ts";
+import { createChatGPTAdapterFromEnv, ProviderAdapterRegistry } from "../sarina-central-intelligence/_shared/provider-adapter.ts";
 import { signSiacpEnvelope, verifySignedSiacpTask, type NonceStore } from "../sarina-central-intelligence/_shared/siacp-security.ts";
 import { buildSpecialistCaseEvidence } from "../sarina-central-intelligence/_shared/specialist-preparation.ts";
 
@@ -51,9 +51,13 @@ Deno.serve(async (req: Request) => {
   const { data: auth, error: authError } = await userClient.auth.getUser();
   if (authError || !auth.user) return reply(401, { ok: false, code: "INVALID_SESSION" });
 
+  const { data: sarinaUserId, error: sarinaUserError } = await userClient.rpc("current_sarina_user_id");
+  if (sarinaUserError || typeof sarinaUserId !== "string") {
+    return reply(403, { ok: false, code: "SARINA_PROFILE_NOT_RESOLVED" });
+  }
   const { data: expert, error: expertError } = await userClient
     .from("expert_profiles").select("id,verification_status")
-    .eq("user_id", auth.user.id).maybeSingle();
+    .eq("user_id", sarinaUserId).maybeSingle();
   if (expertError || !expert || expert.verification_status !== "verified") {
     return reply(403, { ok: false, code: "VERIFIED_SPECIALIST_REQUIRED" });
   }
@@ -145,7 +149,9 @@ Deno.serve(async (req: Request) => {
   if (!verified.ok) return reply(503, { ok: false, code: verified.code, retryable: true });
 
   try {
-    const adapter = createChatGPTAdapterFromEnv();
+    const registry = new ProviderAdapterRegistry();
+    registry.register(createChatGPTAdapterFromEnv());
+    const adapter = registry.resolve("chatgpt");
     const result = await adapter.invoke({
       task: "specialist_case_preparation",
       correlationId: verified.correlationId,
