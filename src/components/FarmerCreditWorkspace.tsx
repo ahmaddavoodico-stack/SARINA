@@ -22,7 +22,7 @@ export function FarmerCreditSummaryCard({userId,onOpen}:{userId:string;onOpen:()
  const balance=useMemo(()=>rows.reduce((sum,row)=>sum+Number(row.delta_units||0),0),[rows]);
  return <button type="button" className="farmer-credit-summary" onClick={onOpen}>
   <span className="farmer-credit-summary-icon"><Leaf size={21}/></span>
-  <span className="farmer-credit-summary-copy"><small>اعتبار خدمات SARINA</small><strong>{loading?"در حال دریافت…":unavailable?"اطلاعات فعلاً در دسترس نیست":fmt(balance)+" واحد"}</strong><em>سهمیه، مصرف، تمدید و بسته‌های افزایش اعتبار</em></span>
+  <span className="farmer-credit-summary-copy"><small>اعتبار خدمات SARINA</small><strong>{loading?"در حال دریافت…":unavailable?"اطلاعات فعلاً در دسترس نیست":rows.length===0?"هنوز اعتباری ثبت نشده":fmt(balance)+" واحد"}</strong><em>سهمیه، مصرف، تمدید و بسته‌های افزایش اعتبار</em></span>
   <ArrowLeft size={18}/>
  </button>;
 }
