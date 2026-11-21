@@ -524,3 +524,24 @@
  .chat-back{display:inline-flex}
  .chat-message-history{min-height:400px}
 }
+
+
+/* Mobile navigation: restore RTL trigger and isolate drawer scrolling */
+@media(max-width:760px){
+  .topbar{direction:rtl}
+  .topbar .mobile-menu{order:0;flex:0 0 36px;margin:0}
+  .topbar .breadcrumb{order:1;margin-right:8px;margin-left:auto;min-width:0}
+  .sidebar{
+    height:100vh;
+    height:100dvh;
+    max-height:100dvh;
+    overflow-x:hidden;
+    overflow-y:auto;
+    overscroll-behavior-y:contain;
+    -webkit-overflow-scrolling:touch;
+    touch-action:pan-y;
+    scrollbar-width:thin;
+  }
+  .sidebar nav{flex:0 0 auto}
+  .sidebar-bottom{flex:0 0 auto}
+}
