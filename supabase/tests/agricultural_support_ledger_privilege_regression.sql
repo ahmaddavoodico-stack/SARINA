@@ -72,7 +72,8 @@ begin
     raise exception 'Required support registry/allocation RLS policies are missing';
   end if;
 
-  if not exists(select 1 from pg_trigger where tgrelid='public.agricultural_support_program_versions'::regclass and tgname='agricultural_support_program_version_guard' and not tgisinternal)
+  if not exists(select 1 from pg_trigger where tgrelid='public.agricultural_support_programs'::regclass and tgname='agricultural_support_program_actor_guard' and not tgisinternal)
+     or not exists(select 1 from pg_trigger where tgrelid='public.agricultural_support_program_versions'::regclass and tgname='agricultural_support_program_version_guard' and not tgisinternal)
      or not exists(select 1 from pg_trigger where tgrelid='public.farm_support_allocations'::regclass and tgname='farm_support_allocation_guard' and not tgisinternal)
      or not exists(select 1 from pg_trigger where tgrelid='public.farm_support_allocation_events'::regclass and tgname='farm_support_allocation_event_guard' and not tgisinternal) then
     raise exception 'Published-version or append-only guards are missing';
