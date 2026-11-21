@@ -31,7 +31,7 @@ The link is unique per allocation/document pair and append-only for client roles
 - Add a narrow `farm_documents` SELECT policy so an organization can see metadata only for linked evidence.
 - Add a narrow private Storage SELECT policy for only the linked object in `farmer-documents`.
 - Keep the bucket private; do not expose public URLs.
-- Prevent deletion of linked evidence through the farmer Storage delete policy and the document foreign key. A correction workflow must create a new record rather than silently erasing evidence.
+- Prevent deletion of linked evidence through the farmer Storage delete policy and the document foreign key. A correction workflow must create a new record rather than silently erasing evidence. Supabase also blocks direct SQL deletion from `storage.objects`; the deletion rule must be exercised through the Storage API in a development environment.
 
 ### Utilization reports
 
@@ -69,7 +69,7 @@ The static privilege tests and role-switched behavior tests completed without ex
 - a farmer can append a utilization event;
 - linked evidence metadata cannot be deleted because the relationship is retained.
 
-The Storage object read test also exercised the corrected expert voice policies and completed without the prior recursion error.
+The Storage object read test also exercised the corrected expert voice policies and completed without the prior recursion error. A direct SQL deletion assertion was intentionally not used because Supabase's `storage.protect_delete()` trigger rejects direct table deletion; the policy is covered by metadata assertions and remains a Storage API release test.
 
 A post-rollback read-only check must still confirm no tables, policies or helper functions remain in the live database. No production migration or file upload was performed by this branch.
 
