@@ -129,6 +129,29 @@ create table if not exists public.farm_support_allocation_events (
 create index if not exists farm_support_allocation_events_timeline_idx
   on public.farm_support_allocation_events(allocation_id,occurred_at,id);
 
+create or replace function public.validate_agricultural_support_program_actor()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $
+begin
+  if tg_op = 'INSERT' then
+    if new.created_by_user_id is distinct from public.current_sarina_user_id() then
+      raise exception 'The program creator must match the authenticated SARINA user.';
+    end if;
+  else
+    if new.issuing_organization_id is distinct from old.issuing_organization_id
+       or new.program_code is distinct from old.program_code
+       or new.created_by_user_id is distinct from old.created_by_user_id then
+      raise exception 'Program identity and creator are immutable.';
+    end if;
+    new.updated_at := now();
+  end if;
+  return new;
+end;
+$;
+
 -- Trigger-only validators. Fixed search_path and fully-qualified references are
 -- intentional; client roles cannot execute these functions directly.
 create or replace function public.validate_agricultural_support_program_version()
@@ -140,6 +163,19 @@ as $$
 declare
   v_issuer_status text;
 begin
+  if tg_op = 'INSERT' and new.created_by_user_id is distinct from public.current_sarina_user_id() then
+    raise exception 'The program version creator must match the authenticated SARINA user.';
+  end if;
+
+  if tg_op = 'UPDATE' then
+    if new.program_id is distinct from old.program_id
+       or new.version_number is distinct from old.version_number
+       or new.created_by_user_id is distinct from old.created_by_user_id then
+      raise exception 'Program version identity and creator are immutable.';
+    end if;
+    new.updated_at := now();
+  end if;
+
   if tg_op = 'DELETE' and old.status = 'published' then
     raise exception 'Published support program versions are immutable; create a new version.';
   end if;
@@ -326,6 +362,12 @@ grant execute on function sarina_internal.can_read_farm_support_allocation(uuid)
 grant execute on function sarina_internal.can_write_farm_support_allocation(uuid) to authenticated;
 grant execute on function sarina_internal.can_create_farm_support_allocation(uuid,uuid,uuid,uuid) to authenticated;
 
+drop trigger if exists agricultural_support_program_actor_guard
+  on public.agricultural_support_programs;
+create trigger agricultural_support_program_actor_guard
+before insert or update on public.agricultural_support_programs
+for each row execute function public.validate_agricultural_support_program_actor();
+
 drop trigger if exists agricultural_support_program_version_guard
   on public.agricultural_support_program_versions;
 create trigger agricultural_support_program_version_guard
@@ -466,6 +508,7 @@ grant select, insert
 grant select, insert
   on public.farm_support_allocation_events to authenticated;
 
+revoke all on function public.validate_agricultural_support_program_actor() from public, anon, authenticated;
 revoke all on function public.validate_agricultural_support_program_version() from public, anon, authenticated;
 revoke all on function public.validate_farm_support_allocation() from public, anon, authenticated;
 revoke all on function public.validate_farm_support_allocation_event() from public, anon, authenticated;
