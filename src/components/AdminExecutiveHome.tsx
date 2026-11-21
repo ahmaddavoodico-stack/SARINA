@@ -30,7 +30,7 @@ export default function AdminExecutiveHome({session,go}:Props){
    db.from("organization_applications").select("id",{count:"exact",head:true}),
    db.from("organization_services").select("id",{count:"exact",head:true}),
    db.from("institutional_service_requests").select("id",{count:"exact",head:true}),
-   db.from("expert_requests").select("id",{count:"exact",head:true}),
+   db.from("expert_profiles").select("id",{count:"exact",head:true}),
    db.from("organization_applications").select("id",{count:"exact",head:true}).eq("status","pending"),
    db.from("expert_profiles").select("id",{count:"exact",head:true}).eq("verification_status","pending"),
    db.from("institutional_service_requests").select("id,request_title,status,submitted_at").order("submitted_at",{ascending:false}).limit(4),
