@@ -28,7 +28,6 @@ declare
     'marketplace_trade_routes',
     'marketplace_trade_checklist_items'
   ];
-  v_client_roles text[] := array['anon','authenticated'];
 begin
   foreach v_table in array v_marketplace_tables loop
     if not exists (
@@ -51,6 +50,11 @@ begin
         raise exception 'authenticated retains % on public.%', v_privilege, v_table;
       end if;
     end loop;
+
+    if v_table not in ('marketplace_categories','marketplace_products','marketplace_product_external_links')
+       and has_table_privilege('anon', format('public.%I', v_table), 'SELECT') then
+      raise exception 'anon retains SELECT on private marketplace table public.%', v_table;
+    end if;
 
     if has_any_column_privilege('anon', format('public.%I', v_table), 'INSERT')
        or has_any_column_privilege('anon', format('public.%I', v_table), 'UPDATE')
@@ -83,8 +87,14 @@ begin
   end if;
 
   if has_table_privilege('authenticated','public.marketplace_quote_requests','INSERT')
-     or has_table_privilege('authenticated','public.marketplace_quote_requests','DELETE') then
-    raise exception 'Authenticated users retain direct quote INSERT/DELETE';
+     or has_table_privilege('authenticated','public.marketplace_quote_requests','UPDATE')
+     or has_table_privilege('authenticated','public.marketplace_quote_requests','DELETE')
+     or not has_column_privilege('authenticated','public.marketplace_quote_requests','status','UPDATE')
+     or not has_column_privilege('authenticated','public.marketplace_quote_requests','seller_response','UPDATE')
+     or has_column_privilege('authenticated','public.marketplace_quote_requests','message','UPDATE')
+     or has_column_privilege('authenticated','public.marketplace_quote_requests','buyer_user_id','UPDATE')
+     or has_column_privilege('authenticated','public.marketplace_quote_requests','seller_id','UPDATE') then
+    raise exception 'Quote request grants are not restricted to status/seller_response column updates';
   end if;
 
   if has_table_privilege('authenticated','public.marketplace_shipments','DELETE') then
