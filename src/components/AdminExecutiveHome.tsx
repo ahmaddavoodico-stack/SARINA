@@ -40,7 +40,7 @@ export default function AdminExecutiveHome({session,go}:Props){
   ];
   const results=await Promise.all(queries);
   const keys:(keyof Snapshot)[]=["users","farms","organizations","applications","services","farmerRequests","expertProfiles","pendingApplications","pendingExperts"];
-  const next={...empty};
+  const next:Snapshot={...empty};
   results.slice(0,9).forEach((result,index)=>{next[keys[index]]=result.error?null:(result.count??0);});
   const metricLabels=["کاربران","مزارع","سازمان‌ها","درخواست‌های عضویت","خدمات سازمانی","درخواست‌های کشاورزان","متخصصان","عضویت‌های در انتظار بررسی","متخصصان در انتظار تأیید"];
   const errors=results.slice(0,9).map((result,index)=>result.error?metricLabels[index]:null).filter(Boolean);
