@@ -1,5 +1,5 @@
 import {useMemo,useState} from "react";
-import {Activity,ArrowDownLeft,ArrowUpLeft,Building2,CheckCircle2,ChevronLeft,Clock3,FileText,MapPinned,ShieldCheck,Users} from "lucide-react";
+import {Activity,ArrowUpLeft,Building2,Clock3,FileText,MapPinned,ShieldCheck,Users} from "lucide-react";
 
 type Level="national"|"province"|"county"|"center";
 type DemoCase={id:string;title:string;area:string;level:string;status:string;age:string;priority:"بالا"|"متوسط"|"عادی";summary:string;next:string};
