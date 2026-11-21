@@ -6,6 +6,7 @@ do $$
 declare
   v_table text;
   v_privilege text;
+  v_capability_constraint text;
   v_tables text[] := array[
     'agricultural_support_programs',
     'agricultural_support_program_versions',
@@ -70,6 +71,17 @@ begin
      or not exists(select 1 from pg_policies where schemaname='public' and tablename='farm_support_allocation_events' and policyname='farm_support_allocation_events_farmer_insert' and cmd='INSERT')
      or not exists(select 1 from pg_policies where schemaname='public' and tablename='farm_support_allocation_events' and policyname='farm_support_allocation_events_organization_insert' and cmd='INSERT') then
     raise exception 'Required support registry/allocation RLS policies are missing';
+  end if;
+
+  select pg_get_constraintdef(oid) into v_capability_constraint
+    from pg_constraint
+   where conrelid='public.organization_capabilities'::regclass
+     and conname='organization_capabilities_code_check';
+
+  if v_capability_constraint is null
+     or position('support.allocations.read' in v_capability_constraint)=0
+     or position('support.allocations.write' in v_capability_constraint)=0 then
+    raise exception 'Support allocation capabilities are missing from the organization capability catalog';
   end if;
 
   if not exists(select 1 from pg_trigger where tgrelid='public.agricultural_support_programs'::regclass and tgname='agricultural_support_program_actor_guard' and not tgisinternal)
