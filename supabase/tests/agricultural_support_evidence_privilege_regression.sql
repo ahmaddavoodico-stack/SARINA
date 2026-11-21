@@ -50,6 +50,17 @@ begin
     raise exception 'Evidence attachment helper grants are incorrect';
   end if;
 
+  if has_function_privilege('anon','sarina_internal.can_access_expert_voice_consultation(text)','EXECUTE')
+     or not has_function_privilege('authenticated','sarina_internal.can_access_expert_voice_consultation(text)','EXECUTE') then
+    raise exception 'Expert voice recursion helper grants are incorrect';
+  end if;
+
+  if not exists(select 1 from pg_policies where schemaname='storage' and tablename='objects' and policyname='sarina_expert_voice_read' and qual like '%can_access_expert_voice_consultation%')
+     or not exists(select 1 from pg_policies where schemaname='storage' and tablename='objects' and policyname='sarina_expert_voice_upload' and with_check like '%can_access_expert_voice_consultation%')
+     or not exists(select 1 from pg_policies where schemaname='storage' and tablename='objects' and policyname='sarina_expert_voice_delete_own' and qual like '%can_access_expert_voice_consultation%') then
+    raise exception 'Expert voice Storage policies still contain recursive direct joins';
+  end if;
+
   if not exists (
     select 1 from pg_constraint
     where conrelid='public.farm_support_allocation_events'::regclass
