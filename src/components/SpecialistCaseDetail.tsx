@@ -77,11 +77,14 @@ export default function SpecialistCaseDetail({requestId,consultationId,userId,ve
  if(loading)return <section className="expert-panel specialist-case-detail" dir="rtl">در حال بارگذاری جزئیات پرونده...</section>;
  if(!request)return <section className="expert-panel specialist-case-detail" dir="rtl"><b>جزئیات پرونده در دسترس نیست.</b>{notice&&<p>{notice}</p>}</section>;
  const canWork=verified&&assignmentStatus==="accepted";
+ const waitingForFarmer=["waiting_user","waiting_farmer"].includes(request.status)||assistant?.assistant_status==="needs_information"||assistant?.completeness_status==="missing_information";
  const tabs=[{id:"case",label:"پرونده کارشناسی",icon:ClipboardList},{id:"conversation",label:"مکالمه انسانی",icon:MessageCircle},{id:"assistant",label:"دستیار هوشمند",icon:Sparkles}] as const;
  return <section className="specialist-case-detail" dir="rtl">
   <header className="specialist-detail-heading"><div><span className="eyebrow">پرونده کارشناسی SARINA</span><h2>{request.subject}</h2><p>{request.problem_description}</p></div><div className="specialist-detail-status"><b>{statusLabel(request.status)}</b><small>اولویت: {request.priority==="urgent"?"فوری":request.priority==="high"?"زیاد":request.priority==="low"?"کم":"عادی"}</small></div></header>
   <nav className="specialist-detail-tabs" aria-label="بخش‌های پرونده">{tabs.map(item=>{const Icon=item.icon;return <button type="button" key={item.id} className={tab===item.id?"active":""} onClick={()=>setTab(item.id)}><Icon size={15}/>{item.label}</button>;})}</nav>
   {notice&&<div className="expert-alert" role="status">{notice}</div>}
+  {assignmentStatus==="offered"&&<div className="specialist-workflow-state waiting"><div className="specialist-workflow-kicker">پرونده تازه ارجاع‌شده</div><b>مسئول اقدام بعدی: متخصص دریافت‌کننده</b><p>موضوع و شواهد را مرور کنید و برای آغاز رسیدگی، ارجاع را از صندوق ورودی بپذیرید. تا پیش از پذیرش، اقدام کارشناسی و ارسال گزارش غیرفعال است.</p></div>}
+  {assignmentStatus==="accepted"&&waitingForFarmer&&<div className="specialist-workflow-state waiting"><div className="specialist-workflow-kicker">منتظر اطلاعات تکمیلی کشاورز</div><b>مسئول اقدام بعدی: کشاورز</b><p>درخواست اطلاعات در پرونده ثبت شده است. پس از دریافت پاسخ، پرونده باید دوباره توسط متخصص بررسی شود.</p>{(assistant?.missing_information??[]).length>0&&<ul>{(assistant?.missing_information??[]).map((item,i)=><li key={i}>{item}</li>)}</ul>}</div>}
   {tab==="case"&&<>
    <div className="specialist-detail-metrics">
     <article><small>تاریخ ثبت پرونده</small><b>{faDate(request.created_at)}</b></article>
