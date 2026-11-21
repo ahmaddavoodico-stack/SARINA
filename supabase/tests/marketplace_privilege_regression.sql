@@ -1,6 +1,6 @@
 -- SARINA marketplace privilege regression checks (PostgreSQL 17)
--- Read-only assertions. Expected to FAIL against the current snapshot until
--- the separately reviewed least-privilege migration has been applied.
+-- Read-only assertions. Expected to PASS after migration
+-- 20261121195239_marketplace_client_privilege_hardening.
 -- This script does not change grants, rows, policies, or schema.
 
 do $$
