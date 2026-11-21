@@ -33,6 +33,18 @@ export default function JihadServiceLayerWorkspace({mode}:{mode:Mode}){
    .jsl-demo{white-space:nowrap;border:1px solid #ead6a9;background:#fff7e7;color:#8a6829;border-radius:999px;padding:7px 11px;font-size:10px;font-weight:800}
    .jsl-notice{display:flex;gap:9px;padding:11px 13px;border:1px solid #eadfbe;background:#fffaf0;color:#755c2c;border-radius:12px;font-size:11px;line-height:1.8}
    .jsl-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+   .jsl-awards{border:1px solid #e4eadb;background:linear-gradient(120deg,#fffdf6,#f4f8ef);border-radius:15px;padding:15px;display:grid;gap:12px}
+   .jsl-awards-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+   .jsl-awards-head h3{font-size:14px;color:#34583b;margin:0 0 5px}
+   .jsl-awards-head p{font-size:10px;color:#778679;line-height:1.8;margin:0}
+   .jsl-award-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
+   .jsl-award-card{border:1px solid #e8e2ca;border-radius:12px;padding:11px;background:#fff}
+   .jsl-award-card strong{display:block;color:#526a39;font-size:11px;margin:7px 0 5px}
+   .jsl-award-card small{display:block;color:#7e897d;font-size:9px;line-height:1.8}
+   .jsl-award-tag{display:inline-flex;background:#f7f0d9;color:#8a6b2e;padding:4px 7px;border-radius:99px;font-size:9px}
+   .jsl-award-note{font-size:10px;color:#69786c;line-height:1.8;border-top:1px solid #e8ebdf;padding-top:9px}
+   @media(max-width:760px){.jsl-award-grid{grid-template-columns:1fr}}
+
    .jsl-stat{border:1px solid #e3ebe3;background:#fff;border-radius:14px;padding:13px}
    .jsl-stat small{display:block;color:#78877c;font-size:10px;margin-bottom:8px}
    .jsl-stat strong{font-size:22px;color:#285238}
@@ -79,6 +91,21 @@ export default function JihadServiceLayerWorkspace({mode}:{mode:Mode}){
    <article className="jsl-stat"><small>{isOrg?"میانگین زمان پاسخ":isExpert?"اقدام‌های امروز":"آخرین به‌روزرسانی"}</small><strong>{isOrg?"۲٫۴":isExpert?"۲":"امروز"}</strong><em>{isOrg?"روز · نمونه":isExpert?"مورد · نمونه":"نمونه"}</em></article>
    <article className="jsl-stat"><small>{isOrg?"نیازهای پرتکرار منطقه":isExpert?"دستورالعمل‌های مرتبط":"مراجع پاسخ‌گو"}</small><strong>{faNum(isOrg?5:isExpert?2:3)}</strong><em>عدد نمایشی</em></article>
   </div>
+  <section className="jsl-awards">
+   <div className="jsl-awards-head"><div><h3>{isOrg?"نظام تقدیر و مشوق‌های بهره‌وری": "تقدیرنامه‌ها و فرصت‌های تشویقی"}</h3><p>{isOrg?"صدور تقدیرنامه برای کشاورزان و کارشناسان بر پایه عملکرد مستند و سیاست‌های مصوب بهره‌وری.": "سوابق تقدیر و اثر آن‌ها در فرصت‌های تشویقی و مسیر حرفه‌ای شما."}</p></div><span className="jsl-award-tag">نسخه نمایشی</span></div>
+   <div className="jsl-award-grid">
+    {(isOrg?[
+      {level:"کشاورز برتر",name:"بهبود پایدار بهره‌وری مزرعه",detail:"رشد نسبت به خط پایه با تعدیل شرایط اقلیمی، محصول و محدودیت منابع."},
+      {level:"کارشناس اثرگذار",name:"اثرگذاری کارشناسی مستند",detail:"کیفیت راهکار، پیگیری، نتیجه تأییدشده و رضایت/اثر واقعی در مزرعه."},
+      {level:"نوآوری و پایداری",name:"نوآوری و مدیریت مسئولانه منابع",detail:"بهبود بهره‌وری آب، خاک، انرژی و تاب‌آوری؛ با کنترل پیامدهای جانبی."}
+     ]:[
+      {level:isExpert?"تقدیر کارشناسی":"تقدیر بهره‌وری مزرعه",name:isExpert?"اثرگذاری حرفه‌ای در بهبود مزارع":"بهبود پایدار عملکرد مزرعه",detail:isExpert?"نتیجه تأییدشده، کیفیت توصیه، پاسخ‌گویی و اثر قابل انتساب.":"روند بهبود نسبت به خط پایه و شرایط مشابه منطقه‌ای."},
+      {level:"فرصت تشویقی",name:"اولویت در برنامه‌های حمایتی",detail:"امتیاز مثبت در برنامه‌های مشخص، مشروط به احراز سایر شرایط و ظرفیت."},
+      {level:"یادگیری و توسعه",name:"آموزش و خدمات تخصصی",detail:"دسترسی به برنامه‌های آموزشی، مشاوره و فرصت‌های توسعه مهارت."}
+     ]).map((item,i)=><article className="jsl-award-card" key={item.level}><span className="jsl-award-tag">{item.level}</span><strong>{item.name}</strong><small>{item.detail}</small></article>)}
+   </div>
+   <div className="jsl-award-note">{isOrg?"سیاست امتیازدهی باید شفاف، قابل بازبینی و متناسب با محصول، منطقه، خط پایه و کیفیت داده باشد. تقدیرنامه به‌تنهایی تضمین‌کننده تسهیلات یا حق قانونی نیست. صدور واقعی فقط پس از تأیید مرجع مجاز و ثبت در زیرساخت موجود انجام می‌شود.":"در نسخه عملیاتی، تقدیرنامه‌های صادرشده از سوابق رسمی شما خوانده می‌شوند و فرصت‌های تشویقی فقط مطابق ضوابط منتشرشده هر برنامه محاسبه خواهند شد. این کارت‌ها فعلاً داده نمونه‌اند."}</div>
+  </section>
   <div className="jsl-grid">
    <section className="jsl-panel">
     <div className="jsl-panel-head"><div><h3>{isOrg?"صندوق تقاضاهای منطقه":isExpert?"ارجاعات مرتبط با جهاد":"درخواست‌های مرتبط با جهاد"}</h3><span className="jsl-muted">{isOrg?"اولویت‌بندی، زمان انتظار و موضوع":isExpert?"فقط مأموریت‌های ارجاع‌شده به شما": "وضعیت، آخرین اقدام و قدم بعدی"}</span></div><Activity size={17} color="#5e8968"/></div>
