@@ -52,9 +52,9 @@ The scope must be limited to the actual farm, farmer, country or explicitly auth
 
 ## Verification performed
 
-The migration and regression SQL were executed together against the linked PostgreSQL 17 project inside a single explicit transaction, followed by `ROLLBACK`. The regression assertions completed without exception. A subsequent read-only check confirmed that the new tables and internal helper function do not exist in the live database after rollback.
+The migration, privilege regression assertions, and role-switched behavioral RLS test were executed together against the linked PostgreSQL 17 project inside a single explicit transaction, followed by `ROLLBACK`. All assertions completed without exception. The behavioral test used synthetic auth users, a verified test authority, two farms, a farm-only scope, and test-only program/allocation records. A subsequent read-only check confirmed that the new tables and internal helper function do not exist in the live database after rollback.
 
-This validates SQL execution and metadata/grant assertions against the current live schema without changing it. It does not replace a clean local reset test, role-switched behavioral RLS tests, code review, backup verification or a controlled production migration.
+This validates SQL execution, metadata/grant assertions, and core owner/scope behavior against the current live schema without changing it. It does not replace a clean local reset test, broader revoked-consent/unverified-organization tests, code review, backup verification or a controlled production migration.
 
 ## Release gates
 
