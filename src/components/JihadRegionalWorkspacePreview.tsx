@@ -4,25 +4,25 @@ import {Activity,ArrowUpLeft,Building2,Clock3,FileText,MapPinned,ShieldCheck,Use
 type Level="national"|"province"|"county"|"center";
 type DemoCase={id:string;title:string;area:string;level:string;status:string;age:string;priority:"بالا"|"متوسط"|"عادی";summary:string;next:string};
 const cases:DemoCase[]=[
- {id:"DEMO-1405-001",title:"بررسی تنش آبی در اراضی کشاورزی",area:"نمونه: استان خوزستان / شهرستان اهواز",level:"شهرستان",status:"در انتظار بررسی استان",age:"۲ روز",priority:"بالا",summary:"گزارش تجمیعی فرضی از چند مزرعه؛ بدون نام، شناسه یا موقعیت دقیق کشاورز",next:"بررسی و اعلام نظر سطح استان"},
- {id:"DEMO-1405-002",title:"درخواست پایش آفت در محصول گندم",area:"نمونه: استان فارس / شهرستان مرودشت",level:"مرکز خدمات",status:"در حال رسیدگی محلی",age:"۵ ساعت",priority:"متوسط",summary:"نمونه پرونده برای نمایش گردش کار کارشناسی و ارجاع کنترل‌شده",next:"ثبت جمع‌بندی کارشناس مرکز"},
- {id:"DEMO-1405-003",title:"جمع‌بندی نیازهای نهاده‌ای فصل کشت",area:"نمونه: استان کرمان / شهرستان جیرفت",level:"استان",status:"ارجاع‌شده به سطح ملی",age:"۴ روز",priority:"عادی",summary:"گزارش ساختگی و تجمیعی؛ داده واقعی در این پیش‌نمایش استفاده نشده است",next:"بررسی سیاست‌گذاری در سطح ملی"},
- {id:"DEMO-1405-004",title:"پیگیری خسارت ناشی از رخداد اقلیمی",area:"نمونه: استان گلستان / شهرستان گنبد",level:"شهرستان",status:"منتظر تکمیل اطلاعات",age:"۱ روز",priority:"متوسط",summary:"نمایش وضعیت انتظار اطلاعات تکمیلی از واحد مسئول",next:"دریافت و اعتبارسنجی مستندات"}
+ {id:"DEMO-ABADAN-001",title:"بررسی تنش آبی در مزارع نمونه آبادان",area:"پایلوت نمایشی: استان خوزستان / شهرستان آبادان",level:"شهرستان",status:"در انتظار بررسی استان",age:"۲ روز",priority:"بالا",summary:"سناریوی ساختگی برای آزمون جمع‌بندی شهرستان و ارجاع به سطح استان؛ فاقد اطلاعات کشاورز و مزرعه واقعی",next:"بررسی و اعلام نظر سازمان جهاد کشاورزی خوزستان"},
+ {id:"DEMO-ABADAN-002",title:"درخواست پایش آفت در محصول نمونه",area:"پایلوت نمایشی: استان خوزستان / شهرستان آبادان",level:"مرکز خدمات",status:"در حال رسیدگی محلی",age:"۵ ساعت",priority:"متوسط",summary:"سناریوی ساختگی مرکز خدمات؛ نام و محدوده دقیق مرکز عمداً تعیین نشده تا فهرست رسمی تأیید شود",next:"ثبت جمع‌بندی کارشناس مرکز خدمات"},
+ {id:"DEMO-ABADAN-003",title:"جمع‌بندی نیازهای نهاده‌ای فصل کشت",area:"پایلوت نمایشی: استان خوزستان / شهرستان آبادان",level:"شهرستان",status:"ارجاع‌شده به سطح استان",age:"۴ روز",priority:"عادی",summary:"گزارش فرضی و تجمیعی برای آزمون ارجاع رو به بالا؛ داده واقعی استفاده نشده است",next:"بررسی و تصمیم در سطح استان"},
+ {id:"DEMO-ABADAN-004",title:"پیگیری خسارت ناشی از رخداد اقلیمی",area:"پایلوت نمایشی: استان خوزستان / شهرستان آبادان",level:"مرکز خدمات",status:"منتظر تکمیل اطلاعات",age:"۱ روز",priority:"متوسط",summary:"نمایش وضعیت انتظار اطلاعات تکمیلی از واحد محلی فرضی",next:"دریافت و اعتبارسنجی مستندات در مرکز خدمات"}
 ];
 const levelLabels:Record<Level,string>={national:"ملی",province:"استان",county:"شهرستان",center:"مرکز خدمات / پهنه"};
 const levelNotes:Record<Level,string>={
  national:"نمای کلان و شاخص‌های تجمیعی؛ بدون نمایش پرونده خام یا اطلاعات هویتی کشاورزان.",
- province:"پایش واحدهای شهرستانی زیرمجموعه و بررسی گزارش‌های ارجاع‌شده در قلمرو استان.",
- county:"مدیریت گردش کار شهرستان، پیگیری مراکز خدمات و جمع‌بندی موضوعات محلی.",
- center:"میز کار اجرایی کارشناسان و مراکز خدمات در محدوده مأموریت تعریف‌شده."
+ province:"پایلوت در سازمان جهاد کشاورزی استان خوزستان؛ تمرکز این مرحله بر پرونده‌های نمونه شهرستان آبادان است.",
+ county:"پایلوت در مدیریت جهاد کشاورزی شهرستان آبادان؛ پیگیری پرونده‌ها و جمع‌بندی موضوعات محلی.",
+ center:"میز کار اجرایی مراکز خدمات و کارشناسان آبادان؛ نام و مرز هر مرکز تا دریافت فهرست رسمی تأیید نمی‌شود."
 };
-const hierarchy:Record<Level,string[]>={national:["سطح ملی","استان‌ها","شهرستان‌ها","مراکز خدمات و پهنه‌ها"],province:["استان نمونه","شهرستان‌های تابعه","مراکز خدمات","کارشناسان مسئول"],county:["شهرستان نمونه","مراکز خدمات تابعه","پهنه‌های عملیاتی","کارشناسان"],center:["مرکز خدمات نمونه","پهنه‌های تحت پوشش","کارشناسان مسئول","پرونده‌های جاری"]};
+const hierarchy:Record<Level,string[]>={national:["سطح ملی","استان‌ها","شهرستان‌ها","مراکز خدمات و پهنه‌ها"],province:["سازمان جهاد کشاورزی استان خوزستان","مدیریت جهاد کشاورزی شهرستان آبادان","مراکز خدمات و پهنه‌های آبادان (فهرست در انتظار تأیید)","کارشناسان دارای مأموریت مصوب"],county:["مدیریت جهاد کشاورزی شهرستان آبادان","مراکز خدمات تابعه (نام‌گذاری پس از تأیید رسمی)","پهنه‌های عملیاتی مصوب","کارشناسان دارای مأموریت در آبادان"],center:["مرکز خدمات منتخب پایلوت (پس از تأیید رسمی)","پهنه‌های تحت پوشش مصوب","کارشناسان مسئول","پرونده‌های جاری مجاز"]};
 export default function JihadRegionalWorkspacePreview(){
  const[level,setLevel]=useState<Level>("province");
  const[selected,setSelected]=useState(cases[0].id);
  const[tab,setTab]=useState<"overview"|"referrals">("overview");
  const current=useMemo(()=>cases.find(item=>item.id===selected)??cases[0],[selected]);
- const visible=useMemo(()=>level==="national"?cases:level==="province"?cases.filter(item=>item.area.includes("خوزستان")||item.area.includes("فارس")):level==="county"?cases.filter(item=>item.level==="شهرستان"):cases.filter(item=>item.level==="مرکز خدمات"),[level]);
+ const visible=useMemo(()=>level==="national"?cases:level==="province"||level==="county"?cases:cases.filter(item=>item.level==="مرکز خدمات"),[level]);
  return <main className="jihad-preview" dir="rtl">
   <style>{`
    .jihad-preview{color:#20372b;max-width:1240px;margin:0 auto;padding:8px 0 32px;font-family:inherit}
@@ -74,10 +74,10 @@ export default function JihadRegionalWorkspacePreview(){
    @media(max-width:560px){.jihad-preview{padding:0 0 22px}.jihad-hero{padding:17px;display:block}.jihad-demo-tag{display:inline-flex;margin-top:14px}.jihad-levels{grid-template-columns:repeat(2,minmax(0,1fr))}.jihad-level{font-size:11px;padding:10px}.jihad-stats{gap:8px}.jihad-stat{padding:12px}.jihad-stat strong{font-size:21px}.jihad-panel{padding:13px}}
   `}</style>
   <section className="jihad-hero">
-   <div><span className="jihad-kicker"><Building2 size={16}/> SARINA Institutional Operations Workspace</span><h1>فضای عملیات منطقه‌ای جهاد کشاورزی</h1><p>نمای یکپارچه برای پایش مأموریت‌ها، رسیدگی محلی و ارجاع نتیجه از مرکز خدمات تا سطح شهرستان، استان و ملی.</p></div>
+   <div><span className="jihad-kicker"><Building2 size={16}/> SARINA Institutional Operations Workspace</span><h1>فضای عملیات منطقه‌ای جهاد کشاورزی</h1><p>پایلوت منتخب: سازمان جهاد کشاورزی استان خوزستان و مدیریت جهاد کشاورزی شهرستان آبادان؛ از رسیدگی محلی تا جمع‌بندی استانی.</p></div>
    <span className="jihad-demo-tag">پیش‌نمایش غیرعملیاتی</span>
   </section>
-  <div className="jihad-warning"><ShieldCheck size={19}/><div><b>محیط آزمایشی با داده ساختگی</b><br/>این صفحه فقط برای ارزیابی تجربه کاربری است. آمار، مناطق و پرونده‌ها نمونه نمایشی‌اند؛ هیچ داده واقعی از کشاورزان یا سازمان‌ها خوانده یا تغییر داده نمی‌شود و هیچ ارجاعی ارسال نمی‌شود.</div></div>
+  <div className="jihad-warning"><ShieldCheck size={19}/><div><b>محیط آزمایشی با داده ساختگی</b><br/>این صفحه فقط برای ارزیابی تجربه کاربری پایلوت خوزستان/آبادان است. تمام آمار و پرونده‌ها ساختگی‌اند؛ هیچ داده واقعی از کشاورزان یا سازمان‌ها خوانده یا تغییر داده نمی‌شود و هیچ ارجاعی ارسال نمی‌شود. نام مراکز خدمات و پهنه‌ها تا تأیید ساختار رسمی، قطعی نیست.</div></div>
   <div className="jihad-levels">{(["national","province","county","center"] as Level[]).map((item,index)=><button key={item} className={level===item?"jihad-level active":"jihad-level"} onClick={()=>setLevel(item)}><span>{index+1}</span>{levelLabels[item]}</button>)}</div>
   <div className="jihad-stats">
    <article className="jihad-stat"><small>پرونده‌های نمونه در این نما</small><strong>{visible.length.toLocaleString("fa-IR")}</strong><em>صرفاً داده ساختگی</em></article>
