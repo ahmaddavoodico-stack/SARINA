@@ -243,6 +243,89 @@ begin
 end;
 $$;
 
+-- Private, non-Data-API helpers avoid cross-table RLS recursion and
+-- avoid requiring organization users to have general farm-read permission.
+create schema if not exists sarina_internal;
+revoke all on schema sarina_internal from public, anon;
+grant usage on schema sarina_internal to authenticated;
+
+create or replace function sarina_internal.has_published_support_program_version(p_program_id uuid)
+returns boolean language sql stable security definer set search_path = ''
+as $
+  select exists (
+    select 1 from public.agricultural_support_programs p
+    join public.agricultural_support_program_versions pv on pv.program_id=p.id
+    where p.id=p_program_id and p.status='active' and pv.status='published'
+  );
+$;
+
+create or replace function sarina_internal.is_farm_support_allocation_owner(p_allocation_id uuid)
+returns boolean language sql stable security definer set search_path = ''
+as $
+  select exists (
+    select 1 from public.farm_support_allocations a
+    join public.farms f on f.id=a.farm_id
+    where a.id=p_allocation_id
+      and f.owner_user_id=public.current_sarina_user_id()
+  );
+$;
+
+create or replace function sarina_internal.can_read_farm_support_allocation(p_allocation_id uuid)
+returns boolean language sql stable security definer set search_path = ''
+as $
+  select exists (
+    select 1 from public.farm_support_allocations a
+    join public.farms f on f.id=a.farm_id
+    join public.organizations o on o.id=a.organization_id
+    where a.id=p_allocation_id and (
+      f.owner_user_id=public.current_sarina_user_id()
+      or (o.status='verified' and (
+        public.organization_has_scoped_access(a.organization_id,'support.allocations.read',f.owner_user_id,f.country_id,f.id)
+        or public.organization_has_scoped_access(a.organization_id,'support.allocations.write',f.owner_user_id,f.country_id,f.id)
+      ))
+    )
+  );
+$;
+
+create or replace function sarina_internal.can_write_farm_support_allocation(p_allocation_id uuid)
+returns boolean language sql stable security definer set search_path = ''
+as $
+  select exists (
+    select 1 from public.farm_support_allocations a
+    join public.farms f on f.id=a.farm_id
+    join public.organizations o on o.id=a.organization_id
+    where a.id=p_allocation_id and o.status='verified'
+      and public.organization_has_scoped_access(a.organization_id,'support.allocations.write',f.owner_user_id,f.country_id,f.id)
+  );
+$;
+
+create or replace function sarina_internal.can_create_farm_support_allocation(
+  p_organization_id uuid,p_program_version_id uuid,p_farm_id uuid,p_approver_user_id uuid
+)
+returns boolean language sql stable security definer set search_path = ''
+as $
+  select p_approver_user_id=public.current_sarina_user_id() and exists (
+    select 1 from public.farms f
+    join public.organizations o on o.id=p_organization_id
+    join public.agricultural_support_program_versions pv on pv.id=p_program_version_id
+    join public.agricultural_support_programs p on p.id=pv.program_id
+    where f.id=p_farm_id and o.status='verified'
+      and p.issuing_organization_id=o.id and p.status='active' and pv.status='published'
+      and public.organization_has_scoped_access(o.id,'support.allocations.write',f.owner_user_id,f.country_id,f.id)
+  );
+$;
+
+revoke all on function sarina_internal.has_published_support_program_version(uuid) from public, anon;
+revoke all on function sarina_internal.is_farm_support_allocation_owner(uuid) from public, anon;
+revoke all on function sarina_internal.can_read_farm_support_allocation(uuid) from public, anon;
+revoke all on function sarina_internal.can_write_farm_support_allocation(uuid) from public, anon;
+revoke all on function sarina_internal.can_create_farm_support_allocation(uuid,uuid,uuid,uuid) from public, anon;
+grant execute on function sarina_internal.has_published_support_program_version(uuid) to authenticated;
+grant execute on function sarina_internal.is_farm_support_allocation_owner(uuid) to authenticated;
+grant execute on function sarina_internal.can_read_farm_support_allocation(uuid) to authenticated;
+grant execute on function sarina_internal.can_write_farm_support_allocation(uuid) to authenticated;
+grant execute on function sarina_internal.can_create_farm_support_allocation(uuid,uuid,uuid,uuid) to authenticated;
+
 drop trigger if exists agricultural_support_program_version_guard
   on public.agricultural_support_program_versions;
 create trigger agricultural_support_program_version_guard
@@ -279,14 +362,7 @@ drop policy if exists agricultural_support_programs_published_read
 create policy agricultural_support_programs_published_read
 on public.agricultural_support_programs
 for select to authenticated
-using (
-  status = 'active'
-  and exists (
-    select 1 from public.agricultural_support_program_versions pv
-    where pv.program_id = agricultural_support_programs.id
-      and pv.status = 'published'
-  )
-);
+using (status = 'active' and sarina_internal.has_published_support_program_version(id));
 
 drop policy if exists agricultural_support_program_versions_admin_manage
   on public.agricultural_support_program_versions;
@@ -301,14 +377,7 @@ drop policy if exists agricultural_support_program_versions_published_read
 create policy agricultural_support_program_versions_published_read
 on public.agricultural_support_program_versions
 for select to authenticated
-using (
-  status = 'published'
-  and exists (
-    select 1 from public.agricultural_support_programs p
-    where p.id = agricultural_support_program_versions.program_id
-      and p.status = 'active'
-  )
-);
+using (status = 'published');
 
 drop policy if exists farm_support_allocations_admin_read
   on public.farm_support_allocations;
@@ -322,44 +391,14 @@ drop policy if exists farm_support_allocations_farmer_read
 create policy farm_support_allocations_farmer_read
 on public.farm_support_allocations
 for select to authenticated
-using (
-  exists (
-    select 1 from public.farms f
-    where f.id = farm_support_allocations.farm_id
-      and f.owner_user_id = (select public.current_sarina_user_id())
-  )
-);
+using (sarina_internal.is_farm_support_allocation_owner(id));
 
 drop policy if exists farm_support_allocations_organization_read
   on public.farm_support_allocations;
 create policy farm_support_allocations_organization_read
 on public.farm_support_allocations
 for select to authenticated
-using (
-  exists (
-    select 1
-      from public.farms f
-      join public.organizations o on o.id = farm_support_allocations.organization_id
-     where f.id = farm_support_allocations.farm_id
-       and o.status = 'verified'
-       and (
-         public.organization_has_scoped_access(
-           farm_support_allocations.organization_id,
-           'support.allocations.read',
-           f.owner_user_id,
-           f.country_id,
-           f.id
-         )
-         or public.organization_has_scoped_access(
-           farm_support_allocations.organization_id,
-           'support.allocations.write',
-           f.owner_user_id,
-           f.country_id,
-           f.id
-         )
-       )
-  )
-);
+using (sarina_internal.can_read_farm_support_allocation(id));
 
 drop policy if exists farm_support_allocations_organization_insert
   on public.farm_support_allocations;
@@ -367,26 +406,8 @@ create policy farm_support_allocations_organization_insert
 on public.farm_support_allocations
 for insert to authenticated
 with check (
-  approved_by_user_id = (select public.current_sarina_user_id())
-  and exists (
-    select 1
-      from public.farms f
-      join public.organizations o on o.id = farm_support_allocations.organization_id
-      join public.agricultural_support_program_versions pv
-        on pv.id = farm_support_allocations.program_version_id
-      join public.agricultural_support_programs p on p.id = pv.program_id
-     where f.id = farm_support_allocations.farm_id
-       and o.status = 'verified'
-       and p.issuing_organization_id = o.id
-       and p.status = 'active'
-       and pv.status = 'published'
-       and public.organization_has_scoped_access(
-         o.id,
-         'support.allocations.write',
-         f.owner_user_id,
-         f.country_id,
-         f.id
-       )
+  sarina_internal.can_create_farm_support_allocation(
+    organization_id,program_version_id,farm_id,approved_by_user_id
   )
 );
 
@@ -402,32 +423,7 @@ drop policy if exists farm_support_allocation_events_participant_read
 create policy farm_support_allocation_events_participant_read
 on public.farm_support_allocation_events
 for select to authenticated
-using (
-  exists (
-    select 1
-      from public.farm_support_allocations a
-      join public.farms f on f.id = a.farm_id
-     where a.id = farm_support_allocation_events.allocation_id
-       and (
-         f.owner_user_id = (select public.current_sarina_user_id())
-         or exists (
-           select 1 from public.organizations o
-            where o.id = a.organization_id
-              and o.status = 'verified'
-              and (
-                public.organization_has_scoped_access(
-                  a.organization_id,'support.allocations.read',
-                  f.owner_user_id,f.country_id,f.id
-                )
-                or public.organization_has_scoped_access(
-                  a.organization_id,'support.allocations.write',
-                  f.owner_user_id,f.country_id,f.id
-                )
-              )
-         )
-       )
-  )
-);
+using (sarina_internal.can_read_farm_support_allocation(allocation_id));
 
 drop policy if exists farm_support_allocation_events_organization_insert
   on public.farm_support_allocation_events;
@@ -440,18 +436,7 @@ with check (
     'dispatched','delivered','partially_delivered','delivery_failed',
     'rejected','cancelled','returned','correction_note'
   )
-  and exists (
-    select 1
-      from public.farm_support_allocations a
-      join public.farms f on f.id = a.farm_id
-      join public.organizations o on o.id = a.organization_id
-     where a.id = farm_support_allocation_events.allocation_id
-       and o.status = 'verified'
-       and public.organization_has_scoped_access(
-         a.organization_id,'support.allocations.write',
-         f.owner_user_id,f.country_id,f.id
-       )
-  )
+  and sarina_internal.can_write_farm_support_allocation(allocation_id)
 );
 
 drop policy if exists farm_support_allocation_events_farmer_insert
@@ -462,13 +447,7 @@ for insert to authenticated
 with check (
   actor_user_id = (select public.current_sarina_user_id())
   and event_type in ('farmer_acknowledged','farmer_disputed')
-  and exists (
-    select 1
-      from public.farm_support_allocations a
-      join public.farms f on f.id = a.farm_id
-     where a.id = farm_support_allocation_events.allocation_id
-       and f.owner_user_id = (select public.current_sarina_user_id())
-  )
+  and sarina_internal.is_farm_support_allocation_owner(allocation_id)
 );
 
 -- Explicit least-privilege grants. No anonymous access and no client UPDATE/DELETE
