@@ -1,7 +1,7 @@
 -- Behavioral RLS regression for agricultural support allocations.
 -- Run only in a disposable/dev database after migration
 -- 20261122001000_agricultural_support_registry_and_allocations.
--- Creates synthetic auth/farm/organization rows inside one transaction and rolls all back.
+-- Synthetic auth/farm/organization rows are created in a transaction and rolled back.
 
 begin;
 
@@ -17,7 +17,6 @@ declare
   v_farm_two uuid := '30000000-0000-0000-0000-000000000002';
   v_program_id uuid := '40000000-0000-0000-0000-000000000001';
   v_version_id uuid := '40000000-0000-0000-0000-000000000002';
-  v_allocation_one uuid := '50000000-0000-0000-0000-000000000001';
   v_allocation_two uuid := '50000000-0000-0000-0000-000000000002';
   v_admin_user uuid;
   v_farmer_one uuid;
@@ -78,88 +77,120 @@ begin
      current_date,'Synthetic test-only legal basis','SYNTHETIC-TEST-SOURCE',now(),v_admin_user,
      'published',now(),v_admin_user,v_admin_user);
 
-  -- Seed a second allocation outside the organization's farm scope as the DB owner.
+  -- Seed a second allocation outside the organization's farm scope as DB owner.
   insert into public.farm_support_allocations
     (id,organization_id,program_version_id,farm_id,support_item_label,support_type,
      approved_quantity,unit_code,approved_by_user_id)
   values
     (v_allocation_two,v_org_id,v_version_id,v_farm_two,'Synthetic fertilizer','fertilizer',50,'kg',v_admin_user);
+end;
+$$;
 
-  -- Organization member can create only within the explicitly scoped farm.
-  perform set_config('request.jwt.claim.sub',v_org_member_auth::text,true);
-  execute 'set local role authenticated';
+-- Organization member: create and read only within the explicit farm scope.
+select set_config('request.jwt.claim.sub','10000000-0000-0000-0000-000000000004',true);
+set local role authenticated;
 
+do $$
+declare
+  v_org_member uuid := public.current_sarina_user_id();
+begin
   insert into public.farm_support_allocations
     (id,organization_id,program_version_id,farm_id,support_item_label,support_type,
      approved_quantity,unit_code,approved_by_user_id)
   values
-    (v_allocation_one,v_org_id,v_version_id,v_farm_one,'Synthetic fertilizer','fertilizer',100,'kg',v_org_member);
+    ('50000000-0000-0000-0000-000000000001',
+     '20000000-0000-0000-0000-000000000001',
+     '40000000-0000-0000-0000-000000000002',
+     '30000000-0000-0000-0000-000000000001',
+     'Synthetic fertilizer','fertilizer',100,'kg',v_org_member);
 
   insert into public.farm_support_allocation_events
     (allocation_id,event_type,event_quantity,unit_code,actor_user_id,note)
   values
-    (v_allocation_one,'delivered',100,'kg',v_org_member,'Synthetic delivery event');
+    ('50000000-0000-0000-0000-000000000001','delivered',100,'kg',v_org_member,'Synthetic delivery event');
 
   if (select count(*) from public.farm_support_allocations) <> 1 then
     raise exception 'Organization member can read only allocations inside their farm scope';
   end if;
 
-  -- An organization member cannot create an allocation outside the approved scope.
   begin
     insert into public.farm_support_allocations
       (organization_id,program_version_id,farm_id,support_item_label,support_type,
        approved_quantity,unit_code,approved_by_user_id)
     values
-      (v_org_id,v_version_id,v_farm_two,'Out of scope item','fertilizer',1,'kg',v_org_member);
+      ('20000000-0000-0000-0000-000000000001',
+       '40000000-0000-0000-0000-000000000002',
+       '30000000-0000-0000-0000-000000000002',
+       'Out of scope item','fertilizer',1,'kg',v_org_member);
     raise exception 'Expected RLS to reject out-of-scope allocation creation';
   exception when insufficient_privilege then
     null;
   end;
+end;
+$$;
 
-  reset role;
-  perform set_config('request.jwt.claim.sub',v_farmer_one_auth::text,true);
-  execute 'set local role authenticated';
+reset role;
 
+-- Farmer one: read own allocation, acknowledge it, and cannot touch another farm.
+select set_config('request.jwt.claim.sub','10000000-0000-0000-0000-000000000002',true);
+set local role authenticated;
+
+do $$
+declare
+  v_farmer uuid := public.current_sarina_user_id();
+begin
   if (select count(*) from public.farm_support_allocations) <> 1 then
-    raise exception 'Farmer one must see their own allocation';
+    raise exception 'Farmer one must see their own allocation only';
   end if;
   if (select count(*) from public.farm_support_allocation_events) <> 1 then
-    raise exception 'Farmer one must see the lifecycle event for their allocation';
+    raise exception 'Farmer one must see the event for their allocation';
   end if;
 
   insert into public.farm_support_allocation_events
     (allocation_id,event_type,actor_user_id,note)
   values
-    (v_allocation_one,'farmer_acknowledged',v_farmer_one,'Synthetic farmer acknowledgement');
+    ('50000000-0000-0000-0000-000000000001','farmer_acknowledged',v_farmer,'Synthetic farmer acknowledgement');
 
-  -- Farmer one cannot acknowledge or inspect farmer two's allocation.
   begin
     insert into public.farm_support_allocation_events
       (allocation_id,event_type,actor_user_id,note)
     values
-      (v_allocation_two,'farmer_acknowledged',v_farmer_one,'Must be rejected');
+      ('50000000-0000-0000-0000-000000000002','farmer_acknowledged',v_farmer,'Must be rejected');
     raise exception 'Expected RLS to reject acknowledgement on another farmer allocation';
   exception when insufficient_privilege then
     null;
   end;
+end;
+$$;
 
-  reset role;
-  perform set_config('request.jwt.claim.sub',v_farmer_two_auth::text,true);
-  execute 'set local role authenticated';
+reset role;
+
+-- Farmer two sees only their own allocation.
+select set_config('request.jwt.claim.sub','10000000-0000-0000-0000-000000000003',true);
+set local role authenticated;
+
+do $$
+begin
   if (select count(*) from public.farm_support_allocations) <> 1 then
-    raise exception 'Farmer two must see only their own allocation';
+    raise exception 'Farmer two must see their own allocation only';
   end if;
+end;
+$$;
 
-  reset role;
-  perform set_config('request.jwt.claim.sub',v_outsider_auth::text,true);
-  execute 'set local role authenticated';
+reset role;
+
+-- Unrelated user sees neither allocation nor event history.
+select set_config('request.jwt.claim.sub','10000000-0000-0000-0000-000000000005',true);
+set local role authenticated;
+
+do $$
+begin
   if (select count(*) from public.farm_support_allocations) <> 0
      or (select count(*) from public.farm_support_allocation_events) <> 0 then
     raise exception 'Unrelated user must not see support allocations or events';
   end if;
-
-  reset role;
 end;
 $$;
 
+reset role;
 rollback;
