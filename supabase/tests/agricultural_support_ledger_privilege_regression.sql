@@ -78,7 +78,27 @@ begin
     raise exception 'Published-version or append-only guards are missing';
   end if;
 
-  if has_function_privilege('anon','public.validate_agricultural_support_program_version()','EXECUTE')
+  if has_schema_privilege('anon','sarina_internal','USAGE')
+     or not has_schema_privilege('authenticated','sarina_internal','USAGE') then
+    raise exception 'The internal helper schema must be private to authenticated policy evaluation';
+  end if;
+
+  if has_function_privilege('anon','sarina_internal.has_published_support_program_version(uuid)','EXECUTE')
+     or not has_function_privilege('authenticated','sarina_internal.has_published_support_program_version(uuid)','EXECUTE')
+     or has_function_privilege('anon','sarina_internal.is_farm_support_allocation_owner(uuid)','EXECUTE')
+     or not has_function_privilege('authenticated','sarina_internal.is_farm_support_allocation_owner(uuid)','EXECUTE')
+     or has_function_privilege('anon','sarina_internal.can_read_farm_support_allocation(uuid)','EXECUTE')
+     or not has_function_privilege('authenticated','sarina_internal.can_read_farm_support_allocation(uuid)','EXECUTE')
+     or has_function_privilege('anon','sarina_internal.can_write_farm_support_allocation(uuid)','EXECUTE')
+     or not has_function_privilege('authenticated','sarina_internal.can_write_farm_support_allocation(uuid)','EXECUTE')
+     or has_function_privilege('anon','sarina_internal.can_create_farm_support_allocation(uuid,uuid,uuid,uuid)','EXECUTE')
+     or not has_function_privilege('authenticated','sarina_internal.can_create_farm_support_allocation(uuid,uuid,uuid,uuid)','EXECUTE') then
+    raise exception 'Internal RLS helper grants are incorrect';
+  end if;
+
+  if has_function_privilege('anon','public.validate_agricultural_support_program_actor()','EXECUTE')
+     or has_function_privilege('authenticated','public.validate_agricultural_support_program_actor()','EXECUTE')
+     or has_function_privilege('anon','public.validate_agricultural_support_program_version()','EXECUTE')
      or has_function_privilege('authenticated','public.validate_agricultural_support_program_version()','EXECUTE')
      or has_function_privilege('anon','public.validate_farm_support_allocation()','EXECUTE')
      or has_function_privilege('authenticated','public.validate_farm_support_allocation()','EXECUTE')
