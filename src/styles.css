@@ -255,3 +255,47 @@
 .farmer-handover-panel{margin-top:18px}
 .farmer-handover-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 @media(max-width:700px){.expert-case-assistant-actions{align-items:stretch;flex-direction:column}.expert-case-assistant-actions .expert-primary{width:100%}.farmer-handover-actions{width:100%}.farmer-handover-actions>*{flex:1}}
+
+/* SARINA office secretary for expert workspace */
+.office-secretary{position:fixed;right:22px;bottom:18px;z-index:80;display:flex;flex-direction:column;align-items:flex-start;gap:11px;font-family:inherit}
+.office-secretary-launcher{display:flex;align-items:center;gap:10px;direction:rtl;padding:7px 10px 7px 7px;min-width:245px;max-width:calc(100vw - 28px);border:1px solid #e2e9df;border-radius:999px;background:#fff;box-shadow:0 9px 30px #173f3522}
+.office-secretary-invite{display:flex;flex:1;min-width:0;flex-direction:column;gap:3px;text-align:right;background:transparent;border:0;padding:3px 4px;color:#294d3b}
+.office-secretary-invite b{font-size:12px;white-space:nowrap}
+.office-secretary-invite span{font-size:9px;color:#87958a}
+.office-secretary-avatar{position:relative;width:54px;height:54px;flex:0 0 54px;border:0;padding:0;border-radius:50%;background:#eaf1e6;box-shadow:0 3px 10px #244f3a18}
+.office-secretary-portrait{width:100%;height:100%;display:block}
+.office-secretary-avatar>span{position:absolute;left:2px;bottom:2px;width:11px;height:11px;border:2px solid white;border-radius:50%;background:#68a978}
+.office-secretary-panel{width:min(375px,calc(100vw - 28px));height:min(560px,calc(100svh - 120px));min-height:390px;display:flex;flex-direction:column;overflow:hidden;background:#fff;border:1px solid #e0e8df;border-radius:22px;box-shadow:0 18px 55px #173f3533;direction:rtl}
+.office-secretary-head{display:flex;align-items:center;gap:10px;padding:13px 15px;background:linear-gradient(120deg,#edf4e9,#f8f7ef);border-bottom:1px solid #e7eee4}
+.office-secretary-head>.office-secretary-portrait{width:44px;height:44px;flex:0 0 44px;border-radius:50%;background:#eaf1e6}
+.office-secretary-head>div{display:flex;flex:1;flex-direction:column;gap:4px}
+.office-secretary-head>div b{font-size:12px;color:#294d3b}
+.office-secretary-head>div span{display:flex;align-items:center;gap:5px;font-size:9px;color:#829286}
+.office-secretary-head>div i{width:6px;height:6px;border-radius:50%;background:#68a978}
+.office-secretary-head>button{display:grid;place-items:center;width:31px;height:31px;border:0;border-radius:10px;background:#fff;color:#718579}
+.office-secretary-content{flex:1;overflow:auto;padding:14px;display:flex;flex-direction:column;gap:11px;background:#fbfcfa}
+.office-secretary-greeting{display:flex;align-items:flex-start;gap:9px;padding:12px;border:1px solid #e4eee0;border-radius:14px 14px 4px 14px;background:#eff5ec;color:#315943}
+.office-secretary-greeting>svg{flex:0 0 auto;color:#a58b4d}
+.office-secretary-greeting b{font-size:11px}
+.office-secretary-greeting p{margin:5px 0 0;font-size:10px;line-height:1.9;color:#718577}
+.office-secretary-summary{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.office-secretary-summary>div{display:grid;grid-template-columns:25px 1fr;align-items:center;column-gap:6px;padding:10px;border:1px solid #e9eee7;border-radius:12px;background:#fff}
+.office-secretary-summary svg{grid-row:span 2;width:18px;color:#64846b}
+.office-secretary-summary b{font-size:17px;color:#294d3b}
+.office-secretary-summary span{font-size:9px;color:#87958a}
+.office-secretary-label{font-size:10px;color:#667a6c;margin-top:2px}
+.office-secretary-action{display:flex;align-items:center;gap:9px;width:100%;padding:10px;border:1px solid #e9eee7;border-radius:12px;background:#fff;text-align:right;color:#315943}
+.office-secretary-action>span{display:grid;place-items:center;width:34px;height:34px;flex:0 0 34px;border-radius:10px;background:#eff5ec}
+.office-secretary-action>span svg{width:17px}
+.office-secretary-action>div{display:flex;flex:1;flex-direction:column;gap:3px}
+.office-secretary-action>div b{font-size:10px}
+.office-secretary-action>div small{font-size:8px;color:#87958a}
+.office-secretary-action>svg{width:14px;transform:rotate(90deg);color:#91a194}
+.office-secretary-note{margin:0;padding:9px 10px;border-radius:10px;background:#fbf7ec;color:#8a7950;font-size:9px;line-height:1.8}
+.office-secretary-compose{display:flex;align-items:center;gap:8px;padding:10px 12px;border-top:1px solid #edf1eb;background:#fff}
+.office-secretary-compose input{height:40px;flex:1;min-width:0;border:1px solid #e3ebe1;border-radius:11px;padding:0 11px;background:#fbfcfa;color:#365744;font-size:10px;outline:none}
+.office-secretary-compose input:focus{border-color:#91b396}
+.office-secretary-compose button{display:grid;place-items:center;width:38px;height:38px;border:0;border-radius:11px;background:#276448;color:#fff}
+.office-secretary-compose button:disabled{opacity:.4}
+.office-secretary-foot{padding:0 10px 9px;background:#fff;text-align:center;color:#99a69b;font-size:8px}
+@media(max-width:760px){.office-secretary{right:12px;bottom:12px;gap:9px}.office-secretary-launcher{min-width:225px;padding:6px 9px 6px 6px}.office-secretary-avatar{width:49px;height:49px;flex-basis:49px}.office-secretary-panel{height:min(535px,calc(100svh - 105px));min-height:365px}}
