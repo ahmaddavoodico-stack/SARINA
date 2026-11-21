@@ -163,8 +163,14 @@ as $$
 declare
   v_issuer_status text;
 begin
-  if tg_op = 'INSERT' and new.created_by_user_id is distinct from public.current_sarina_user_id() then
-    raise exception 'The program version creator must match the authenticated SARINA user.';
+  if tg_op = 'INSERT' then
+    if new.created_by_user_id is distinct from public.current_sarina_user_id() then
+      raise exception 'The program version creator must match the authenticated SARINA user.';
+    end if;
+    if new.source_verified_at is not null
+       and new.verified_by_user_id is distinct from public.current_sarina_user_id() then
+      raise exception 'The source verifier must match the authenticated SARINA user.';
+    end if;
   end if;
 
   if tg_op = 'UPDATE' then
@@ -172,6 +178,13 @@ begin
        or new.version_number is distinct from old.version_number
        or new.created_by_user_id is distinct from old.created_by_user_id then
       raise exception 'Program version identity and creator are immutable.';
+    end if;
+    if new.source_verified_at is distinct from old.source_verified_at
+       or new.verified_by_user_id is distinct from old.verified_by_user_id then
+      if new.source_verified_at is null
+         or new.verified_by_user_id is distinct from public.current_sarina_user_id() then
+        raise exception 'The source verifier must be the authenticated user recording verification.';
+      end if;
     end if;
     new.updated_at := now();
   end if;
@@ -196,8 +209,8 @@ begin
     end if;
 
     if new.published_by_user_id is distinct from public.current_sarina_user_id()
-       or new.verified_by_user_id is distinct from public.current_sarina_user_id() then
-      raise exception 'The publishing and verification actor must match the authenticated SARINA user.';
+       or new.verified_by_user_id is null then
+      raise exception 'Publishing requires the authenticated publisher and a separately recorded source verifier.';
     end if;
   end if;
 
