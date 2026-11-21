@@ -152,6 +152,28 @@ begin
 end;
 $$;
 
+-- Register the support capabilities in the existing organization capability catalog.
+alter table public.organization_capabilities
+  drop constraint if exists organization_capabilities_code_check;
+alter table public.organization_capabilities
+  add constraint organization_capabilities_code_check
+  check (capability_code = any (array[
+    'oversight.farmer.read',
+    'oversight.farm.read',
+    'oversight.expert.read',
+    'farmer_credential.review',
+    'expert_credential.review',
+    'farmer_award.issue',
+    'expert_award.issue',
+    'reports.view',
+    'services.manage',
+    'service.requests.manage',
+    'authority.registry.manage',
+    'integrations.manage',
+    'support.allocations.read',
+    'support.allocations.write'
+  ]::text[]));
+
 -- Trigger-only validators. Fixed search_path and fully-qualified references are
 -- intentional; client roles cannot execute these functions directly.
 create or replace function public.validate_agricultural_support_program_version()
