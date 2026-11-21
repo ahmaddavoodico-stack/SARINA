@@ -61,6 +61,7 @@ export default function AdminExecutiveHome({session,go}:Props){
   {label:"کاربران ثبت‌شده",value:data.users,icon:Users,target:"admin-users" as AdminPage,detail:"حساب‌های پلتفرم"},
   {label:"مزارع ثبت‌شده",value:data.farms,icon:Sprout,target:"admin-farms" as AdminPage,detail:"دارایی‌های کشاورزی"},
   {label:"سازمان‌ها",value:data.organizations,icon:Building2,target:"admin-organizations" as AdminPage,detail:"شبکه نهادی و خصوصی"},
+  {label:"درخواست‌های عضویت",value:data.applications,icon:ClipboardList,target:"admin-applications" as AdminPage,detail:"درخواست‌های ثبت‌شده سازمان‌ها"},
   {label:"خدمات سازمانی",value:data.services,icon:ShieldCheck,target:"admin-services" as AdminPage,detail:"خدمات قابل ارائه"},
   {label:"درخواست‌های کشاورزان",value:data.farmerRequests,icon:ClipboardList,target:"admin-requests" as AdminPage,detail:"درخواست‌های ثبت‌شده"},
   {label:"متخصصان ثبت‌نام‌شده",value:data.expertProfiles,icon:BriefcaseBusiness,target:"admin-expert-verification" as AdminPage,detail:"شبکه متخصصان سارینا"}
@@ -81,7 +82,7 @@ export default function AdminExecutiveHome({session,go}:Props){
   {error&&<div className="executive-alert"><Activity size={17}/>{error}</div>}
   <div className="executive-section-heading"><div><span>نمای کلی سازمان</span><h2>نبض سارینا</h2></div><button className="executive-refresh" onClick={()=>void load()} disabled={loading}><RefreshCw size={15} className={loading?"executive-spin":""}/> به‌روزرسانی</button></div>
   <section className="executive-stat-grid">
-   {stats.map(item=><button className="executive-stat" key={item.target} onClick={()=>go(item.target)}><span className="executive-stat-icon"><item.icon size={19}/></span><small>{item.label}</small><strong>{loading?"…":number(item.value)}</strong><em>{item.detail}<ArrowLeft size={13}/></em></button>)}
+   {stats.map(item=><button className="executive-stat" key={item.target} onClick={()=>go(item.target)}><span className="executive-stat-icon"><item.icon size={19}/></span><small>{item.label}</small><strong>{loading?"…":item.value===null?"—":number(item.value)}</strong><em>{item.detail}<ArrowLeft size={13}/></em></button>)}
   </section>
   <section className="executive-focus-grid">
    <article className="executive-focus-card">
