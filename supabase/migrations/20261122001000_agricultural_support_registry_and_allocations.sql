@@ -134,7 +134,7 @@ returns trigger
 language plpgsql
 security definer
 set search_path = ''
-as $
+as $$
 begin
   if tg_op = 'INSERT' then
     if new.created_by_user_id is distinct from public.current_sarina_user_id() then
@@ -150,7 +150,7 @@ begin
   end if;
   return new;
 end;
-$;
+$$;
 
 -- Trigger-only validators. Fixed search_path and fully-qualified references are
 -- intentional; client roles cannot execute these functions directly.
@@ -300,28 +300,28 @@ grant usage on schema sarina_internal to authenticated;
 
 create or replace function sarina_internal.has_published_support_program_version(p_program_id uuid)
 returns boolean language sql stable security definer set search_path = ''
-as $
+as $$
   select exists (
     select 1 from public.agricultural_support_programs p
     join public.agricultural_support_program_versions pv on pv.program_id=p.id
     where p.id=p_program_id and p.status='active' and pv.status='published'
   );
-$;
+$$;
 
 create or replace function sarina_internal.is_farm_support_allocation_owner(p_allocation_id uuid)
 returns boolean language sql stable security definer set search_path = ''
-as $
+as $$
   select exists (
     select 1 from public.farm_support_allocations a
     join public.farms f on f.id=a.farm_id
     where a.id=p_allocation_id
       and f.owner_user_id=public.current_sarina_user_id()
   );
-$;
+$$;
 
 create or replace function sarina_internal.can_read_farm_support_allocation(p_allocation_id uuid)
 returns boolean language sql stable security definer set search_path = ''
-as $
+as $$
   select exists (
     select 1 from public.farm_support_allocations a
     join public.farms f on f.id=a.farm_id
@@ -334,11 +334,11 @@ as $
       ))
     )
   );
-$;
+$$;
 
 create or replace function sarina_internal.can_write_farm_support_allocation(p_allocation_id uuid)
 returns boolean language sql stable security definer set search_path = ''
-as $
+as $$
   select exists (
     select 1 from public.farm_support_allocations a
     join public.farms f on f.id=a.farm_id
@@ -346,13 +346,13 @@ as $
     where a.id=p_allocation_id and o.status='verified'
       and public.organization_has_scoped_access(a.organization_id,'support.allocations.write',f.owner_user_id,f.country_id,f.id)
   );
-$;
+$$;
 
 create or replace function sarina_internal.can_create_farm_support_allocation(
   p_organization_id uuid,p_program_version_id uuid,p_farm_id uuid,p_approver_user_id uuid
 )
 returns boolean language sql stable security definer set search_path = ''
-as $
+as $$
   select p_approver_user_id=public.current_sarina_user_id() and exists (
     select 1 from public.farms f
     join public.organizations o on o.id=p_organization_id
@@ -362,7 +362,7 @@ as $
       and p.issuing_organization_id=o.id and p.status='active' and pv.status='published'
       and public.organization_has_scoped_access(o.id,'support.allocations.write',f.owner_user_id,f.country_id,f.id)
   );
-$;
+$$;
 
 revoke all on function sarina_internal.has_published_support_program_version(uuid) from public, anon;
 revoke all on function sarina_internal.is_farm_support_allocation_owner(uuid) from public, anon;
