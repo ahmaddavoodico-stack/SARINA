@@ -75,3 +75,22 @@ RLS ردیفی، مجوز TRUNCATE را محدود نمی‌کند. این مو�
 - هیچ schema، migration، row، grant، policy، function، bucket یا تنظیم Supabase تغییر نکرده است.
 - PR #84 فقط کاتالوگ خواندنی را اضافه می‌کند و هیچ مسیر سفارش/پرداختی را فعال نمی‌کند.
 - ادغام PRها یا اجرای remediation روی پروژه زنده منوط به بازبینی و تأیید صریح است.
+
+
+## 8. تکمیل تطبیق منبع و مجوزها — snapshot تکمیلی
+- درخت Git شاخه قدیمی `integration/marketplace-and-communications-workspace` شامل فایل‌های SQL مهاجرت 019 تا 027 در مسیر `supabase/migrations/` است؛ این فایل‌ها در درخت `main` و شاخه پیش‌فرض `feature/farmer-portal-foundation` موجود نیستند.
+- migration history زنده، نسخه‌های 035 تا 042 را ثبت می‌کند؛ اما فایل‌های متناظر در درخت سه شاخه بررسی‌شده پیدا نشدند. فهرست فایل‌های PR شماره 1 نیز migrationهای بازارگاه را شامل نمی‌شود. پس ادعای قبلی PR1 مبنی بر tracked بودن SQLها در `database/migrations` با فهرست واقعی فایل‌های آن PR تأیید نمی‌شود.
+- این تفاوت به معنی نامعتبر بودن schema زنده نیست؛ اما منبع بازتولیدپذیر و تاریخی آن کامل نیست. snapshot فعلی باید به‌عنوان «بازسازی‌شده از دیتابیس زنده» برچسب بخورد، نه migration اصلی 035–042.
+- در `pg_default_acl` برای schema عمومی و مالک‌های `postgres` و `supabase_admin`، مجوزهای پیش‌فرض گسترده برای anon/authenticated/service_role مشاهده شد. این تنظیم سراسری دست‌نخورده می‌ماند تا ماژول‌های دیگر آسیب نبینند؛ hardening بازارگاه باید محدود به جداول خودش باشد.
+- بررسی ACL سطح جدول نشان داد روی 8 جدول ذکرشده در بخش 3، علاوه بر TRUNCATE، مجوزهای MAINTAIN، REFERENCES و TRIGGER نیز برای anon و authenticated موجود است. grantor این ACLها postgres است.
+- روی برخی جداول، grantهای DML ناشناس و grantهای DML authenticated فراتر از policyهای فعال مشاهده شد. policyهای فعلی در بسیاری از این مسیرها نوشتن را رد می‌کنند، اما این وضعیت حداقل‌سازی مجوز را برآورده نمی‌کند.
+- توابع RPC بازارگاه که بدنه آن‌ها بررسی شد، SECURITY DEFINER با search_path ثابت دارند. توابع سفارش/لغو/quote احراز هویت و پروفایل فعال را بررسی می‌کنند؛ درخواست تغییر فروشنده مالکیت فروشنده را بررسی می‌کند؛ بررسی درخواست تغییر نیازمند نقش admin سراسری است. اجرای این توابع برای anon بسته است و برای authenticated باز است.
+- helper خصوصی `private.marketplace_seller_is_verified(uuid)` برای anon قابل اجراست و در policy خواندن عمومی محصولات استفاده می‌شود؛ پیش از هر تغییر باید وضعیت exposed بودن schema خصوصی بررسی شود و این مجوز کورکورانه برداشته نشود.
+- `marketplace_seller_change_requests` دارای RLS فعال و بدون policy مستقیم است؛ مسیرهای آن از RPCهای دارای کنترل مالکیت/مدیریت استفاده می‌کنند. افزودن policy عمومی برای ساکت‌کردن Advisor توصیه نمی‌شود.
+- در چند policy جدیدتر، شرط‌های ظاهراً tautological مانند `p.seller_id = p.seller_id` دیده شد؛ در جدول‌های مربوط، composite foreign keyهای محصول/فروشنده یا route/seller نیز وجود دارند و در snapshot مانع mismatch می‌شوند. این عبارات باید در بازبینی بعدی با alias صریح پاک‌سازی و با آزمون منفی تأیید شوند؛ فعلاً آسیب‌پذیری اثبات‌شده تلقی نشده‌اند.
+
+## 9. ارجاع به remediation plan
+ماتریس دسترسی هدف و آزمون regression فقط‌خواندنی در PR #86 ثبت شده است:
+`docs/security/MARKETPLACE_PRIVILEGE_REMEDIATION_PLAN_FA.md`
+و
+`supabase/tests/marketplace_privilege_regression.sql`.
