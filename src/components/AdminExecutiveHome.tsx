@@ -7,8 +7,8 @@ import SarinaCharacter from "./SarinaCharacter";
 type AdminPage="admin-users"|"admin-organizations"|"admin-applications"|"admin-services"|"admin-requests"|"admin-farms"|"admin-expert-verification"|"admin-productivity"|"admin-specialist-economy"|"admin-role-management";
 type Props={session:Session;go:(page:AdminPage)=>void};
 type ActivityItem={id:string;kind:"request"|"application"|"expert";title:string;status:string;date:string;priority?:string};
-type Snapshot={users:number;farms:number;organizations:number;applications:number;services:number;farmerRequests:number;expertProfiles:number;pendingApplications:number;pendingExperts:number};
-const empty:Snapshot={users:0,farms:0,organizations:0,applications:0,services:0,farmerRequests:0,expertProfiles:0,pendingApplications:0,pendingExperts:0};
+type Snapshot={users:number|null;farms:number|null;organizations:number|null;applications:number|null;services:number|null;farmerRequests:number|null;expertProfiles:number|null;pendingApplications:number|null;pendingExperts:number|null};
+const empty:Snapshot={users:null,farms:null,organizations:null,applications:null,services:null,farmerRequests:null,expertProfiles:null,pendingApplications:null,pendingExperts:null};
 const number=(value:number)=>value.toLocaleString("fa-IR");
 const date=(value:string)=>value?new Date(value).toLocaleString("fa-IR",{month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"}):"—";
 const statusLabel=(value:string)=>({submitted:"ثبت‌شده",pending:"در انتظار بررسی",in_progress:"در حال پیگیری",completed:"تکمیل‌شده",approved:"تأییدشده",rejected:"ردشده",accepted:"پذیرفته‌شده",urgent:"فوری",high:"اولویت بالا"} as Record<string,string>)[value]||value||"—";
@@ -18,10 +18,11 @@ export default function AdminExecutiveHome({session,go}:Props){
  const[activity,setActivity]=useState<ActivityItem[]>([]);
  const[loading,setLoading]=useState(true);
  const[error,setError]=useState("");
+ const[activityUnavailable,setActivityUnavailable]=useState(false);
  const[updatedAt,setUpdatedAt]=useState<string|null>(null);
  const load=useCallback(async()=>{
-  if(!supabase)return;
-  setLoading(true);setError("");
+  if(!supabase){setError("اتصال پایگاه داده در این محیط پیکربندی نشده است.");setLoading(false);return;}
+  setLoading(true);setError("");setActivityUnavailable(false);
   const db=supabase as any;
   const queries=[
    db.from("users").select("id",{count:"exact",head:true}),
@@ -40,8 +41,9 @@ export default function AdminExecutiveHome({session,go}:Props){
   const results=await Promise.all(queries);
   const keys:(keyof Snapshot)[]=["users","farms","organizations","applications","services","farmerRequests","expertProfiles","pendingApplications","pendingExperts"];
   const next={...empty};
-  results.slice(0,9).forEach((result,index)=>{next[keys[index]]=result.error?0:(result.count??0);});
-  const errors=results.slice(0,9).filter(result=>result.error);
+  results.slice(0,9).forEach((result,index)=>{next[keys[index]]=result.error?null:(result.count??0);});
+  const metricLabels=["کاربران","مزارع","سازمان‌ها","درخواست‌های عضویت","خدمات سازمانی","درخواست‌های کشاورزان","متخصصان","عضویت‌های در انتظار بررسی","متخصصان در انتظار تأیید"];
+  const errors=results.slice(0,9).map((result,index)=>result.error?metricLabels[index]:null).filter(Boolean);
   setData(next);
   const items:ActivityItem[]=[
    ...(results[9].data??[]).map((item:any)=>({id:"request-"+item.id,kind:"request" as const,title:item.request_title||"درخواست خدمات کشاورزی",status:item.status,date:item.submitted_at})),
@@ -50,7 +52,8 @@ export default function AdminExecutiveHome({session,go}:Props){
   ].sort((a,b)=>new Date(b.date).getTime()-new Date(a.date).getTime()).slice(0,7);
   setActivity(items);
   const activityErrors=results.slice(9).filter(result=>result.error);
-  if(errors.length||activityErrors.length)setError("برخی شاخص‌ها به‌دلیل محدودیت دسترسی یا خطای دریافت، در این نوبت کامل بارگذاری نشدند. پس از بررسی دسترسی مدیریتی دوباره تلاش کنید.");
+  setActivityUnavailable(activityErrors.length>0);
+  if(errors.length||activityErrors.length){const labels=[...errors,...(activityErrors.length?["جریان فعالیت‌های اخیر"]:[])];setError("اطلاعات این بخش‌ها در دسترس نیست: "+labels.join("، ")+". خطای دریافت را بررسی کنید؛ مقدار «—» به معنی صفر نیست.");}
   setUpdatedAt(new Date().toISOString());setLoading(false);
  },[]);
  useEffect(()=>{void load();},[load]);
@@ -83,8 +86,8 @@ export default function AdminExecutiveHome({session,go}:Props){
   <section className="executive-focus-grid">
    <article className="executive-focus-card">
     <div className="executive-card-title"><span className="executive-card-icon attention"><Activity size={18}/></span><div><h3>موارد نیازمند توجه</h3><p>چیزهایی که بهتر است در اولویت بررسی قرار بگیرند.</p></div></div>
-    <button className="executive-focus-row" onClick={()=>go("admin-applications")}><span className="executive-focus-number">{loading?"…":number(data.pendingApplications)}</span><span><b>درخواست عضویت در انتظار بررسی</b><small>بررسی و تعیین تکلیف سازمان‌های متقاضی</small></span><ArrowLeft size={16}/></button>
-    <button className="executive-focus-row" onClick={()=>go("admin-expert-verification")}><span className="executive-focus-number">{loading?"…":number(data.pendingExperts)}</span><span><b>پروفایل متخصص در انتظار بررسی</b><small>بررسی صلاحیت و تکمیل اطلاعات حرفه‌ای</small></span><ArrowLeft size={16}/></button>
+    <button className="executive-focus-row" onClick={()=>go("admin-applications")}><span className="executive-focus-number">{loading?"…":data.pendingApplications===null?"—":number(data.pendingApplications)}</span><span><b>درخواست عضویت در انتظار بررسی</b><small>بررسی و تعیین تکلیف سازمان‌های متقاضی</small></span><ArrowLeft size={16}/></button>
+    <button className="executive-focus-row" onClick={()=>go("admin-expert-verification")}><span className="executive-focus-number">{loading?"…":data.pendingExperts===null?"—":number(data.pendingExperts)}</span><span><b>پروفایل متخصص در انتظار بررسی</b><small>بررسی صلاحیت و تکمیل اطلاعات حرفه‌ای</small></span><ArrowLeft size={16}/></button>
     <div className="executive-focus-foot"><CheckCircle2 size={15}/> تصمیم‌های مدیریتی همچنان از مسیرهای دارای مجوز انجام می‌شوند.</div>
    </article>
    <article className="executive-shortcuts">
@@ -101,8 +104,8 @@ export default function AdminExecutiveHome({session,go}:Props){
   </section>
   <section className="executive-activity">
    <div className="executive-card-title"><span className="executive-card-icon"><Clock3 size={18}/></span><div><h3>جریان فعالیت‌های اخیر</h3><p>آخرین موارد ثبت‌شده در بخش‌های مختلف سازمان.</p></div></div>
-   {loading?<div className="executive-empty">در حال دریافت فعالیت‌ها…</div>:activity.length===0?<div className="executive-empty">هنوز فعالیتی برای نمایش در این نمای مدیریتی پیدا نشد.</div>:<div className="executive-activity-list">{activity.map(item=><article key={item.id}><span className="executive-activity-dot"/><div><b>{item.title}</b><small>{item.kind==="request"?"درخواست کشاورز":item.kind==="application"?"درخواست سازمان":"پرونده متخصص"} · {date(item.date)}</small></div><span className="executive-status">{item.priority?statusLabel(item.priority):statusLabel(item.status)}</span></article>)}</div>}
+   {loading?<div className="executive-empty">در حال دریافت فعالیت‌ها…</div>:activityUnavailable&&activity.length===0?<div className="executive-empty">دریافت فعالیت‌های اخیر با خطا روبه‌رو شد؛ این وضعیت به معنی نبود فعالیت نیست.</div>:activity.length===0?<div className="executive-empty">هنوز فعالیتی برای نمایش در این نمای مدیریتی پیدا نشد.</div>:<div className="executive-activity-list">{activity.map(item=><article key={item.id}><span className="executive-activity-dot"/><div><b>{item.title}</b><small>{item.kind==="request"?"درخواست کشاورز":item.kind==="application"?"درخواست سازمان":"پرونده متخصص"} · {date(item.date)}</small></div><span className="executive-status">{item.priority?statusLabel(item.priority):statusLabel(item.status)}</span></article>)}</div>}
   </section>
-  <p className="executive-footnote">نمای مدیریتی SARINA · اعداد بر پایه شمارش رکوردهای قابل دسترس برای مدیر مرکزی هستند؛ در صورت خطای دسترسی، مقدار صفر به معنی نبود داده قطعی نیست.</p>
+  <p className="executive-footnote">نمای مدیریتی SARINA · اعداد بر پایه شمارش رکوردهای قابل دسترس برای مدیر مرکزی هستند؛ «—» یعنی داده دریافت نشده و نباید آن را صفر واقعی تلقی کرد.</p>
  </main>;
 }
