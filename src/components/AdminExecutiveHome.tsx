@@ -7,8 +7,8 @@ import SarinaCharacter from "./SarinaCharacter";
 type AdminPage="admin-users"|"admin-organizations"|"admin-applications"|"admin-services"|"admin-requests"|"admin-farms"|"admin-expert-verification"|"admin-productivity"|"admin-specialist-economy"|"admin-role-management";
 type Props={session:Session;go:(page:AdminPage)=>void};
 type ActivityItem={id:string;kind:"request"|"application"|"expert";title:string;status:string;date:string;priority?:string};
-type Snapshot={users:number;farms:number;organizations:number;applications:number;services:number;farmerRequests:number;expertCases:number;pendingApplications:number;urgentCases:number};
-const empty:Snapshot={users:0,farms:0,organizations:0,applications:0,services:0,farmerRequests:0,expertCases:0,pendingApplications:0,urgentCases:0};
+type Snapshot={users:number;farms:number;organizations:number;applications:number;services:number;farmerRequests:number;expertProfiles:number;pendingApplications:number;pendingExperts:number};
+const empty:Snapshot={users:0,farms:0,organizations:0,applications:0,services:0,farmerRequests:0,expertProfiles:0,pendingApplications:0,pendingExperts:0};
 const number=(value:number)=>value.toLocaleString("fa-IR");
 const date=(value:string)=>value?new Date(value).toLocaleString("fa-IR",{month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"}):"—";
 const statusLabel=(value:string)=>({submitted:"ثبت‌شده",pending:"در انتظار بررسی",in_progress:"در حال پیگیری",completed:"تکمیل‌شده",approved:"تأییدشده",rejected:"ردشده",accepted:"پذیرفته‌شده",urgent:"فوری",high:"اولویت بالا"} as Record<string,string>)[value]||value||"—";
@@ -32,13 +32,13 @@ export default function AdminExecutiveHome({session,go}:Props){
    db.from("institutional_service_requests").select("id",{count:"exact",head:true}),
    db.from("expert_requests").select("id",{count:"exact",head:true}),
    db.from("organization_applications").select("id",{count:"exact",head:true}).eq("status","pending"),
-   db.from("expert_requests").select("id",{count:"exact",head:true}).in("priority",["urgent","high"]),
+   db.from("expert_profiles").select("id",{count:"exact",head:true}).eq("verification_status","pending"),
    db.from("institutional_service_requests").select("id,request_title,status,submitted_at").order("submitted_at",{ascending:false}).limit(4),
    db.from("organization_applications").select("id,display_name,legal_name,status,submitted_at").order("submitted_at",{ascending:false}).limit(4),
-   db.from("expert_requests").select("id,subject,status,priority,created_at").order("created_at",{ascending:false}).limit(4)
+   db.from("expert_profiles").select("id,public_name,verification_status,created_at").order("created_at",{ascending:false}).limit(4)
   ];
   const results=await Promise.all(queries);
-  const keys:(keyof Snapshot)[]=["users","farms","organizations","applications","services","farmerRequests","expertCases","pendingApplications","urgentCases"];
+  const keys:(keyof Snapshot)[]=["users","farms","organizations","applications","services","farmerRequests","expertProfiles","pendingApplications","pendingExperts"];
   const next={...empty};
   results.slice(0,9).forEach((result,index)=>{next[keys[index]]=result.error?0:(result.count??0);});
   const errors=results.slice(0,9).filter(result=>result.error);
@@ -46,7 +46,7 @@ export default function AdminExecutiveHome({session,go}:Props){
   const items:ActivityItem[]=[
    ...(results[9].data??[]).map((item:any)=>({id:"request-"+item.id,kind:"request" as const,title:item.request_title||"درخواست خدمات کشاورزی",status:item.status,date:item.submitted_at})),
    ...(results[10].data??[]).map((item:any)=>({id:"application-"+item.id,kind:"application" as const,title:item.display_name||item.legal_name||"درخواست عضویت سازمان",status:item.status,date:item.submitted_at})),
-   ...(results[11].data??[]).map((item:any)=>({id:"expert-"+item.id,kind:"expert" as const,title:item.subject||"پرونده تخصصی",status:item.status,date:item.created_at,priority:item.priority}))
+   ...(results[11].data??[]).map((item:any)=>({id:"expert-"+item.id,kind:"expert" as const,title:item.public_name||"پروفایل متخصص",status:item.verification_status,date:item.created_at}))
   ].sort((a,b)=>new Date(b.date).getTime()-new Date(a.date).getTime()).slice(0,7);
   setActivity(items);
   const activityErrors=results.slice(9).filter(result=>result.error);
@@ -60,7 +60,7 @@ export default function AdminExecutiveHome({session,go}:Props){
   {label:"سازمان‌ها",value:data.organizations,icon:Building2,target:"admin-organizations" as AdminPage,detail:"شبکه نهادی و خصوصی"},
   {label:"خدمات سازمانی",value:data.services,icon:ShieldCheck,target:"admin-services" as AdminPage,detail:"خدمات قابل ارائه"},
   {label:"درخواست‌های کشاورزان",value:data.farmerRequests,icon:ClipboardList,target:"admin-requests" as AdminPage,detail:"درخواست‌های ثبت‌شده"},
-  {label:"پرونده‌های تخصصی",value:data.expertCases,icon:BriefcaseBusiness,target:"admin-expert-verification" as AdminPage,detail:"جریان کار متخصصان"}
+  {label:"متخصصان ثبت‌نام‌شده",value:data.expertProfiles,icon:BriefcaseBusiness,target:"admin-expert-verification" as AdminPage,detail:"شبکه متخصصان سارینا"}
  ];
  return <main className="executive-home" dir="rtl">
   <section className="executive-welcome">
@@ -84,7 +84,7 @@ export default function AdminExecutiveHome({session,go}:Props){
    <article className="executive-focus-card">
     <div className="executive-card-title"><span className="executive-card-icon attention"><Activity size={18}/></span><div><h3>موارد نیازمند توجه</h3><p>چیزهایی که بهتر است در اولویت بررسی قرار بگیرند.</p></div></div>
     <button className="executive-focus-row" onClick={()=>go("admin-applications")}><span className="executive-focus-number">{loading?"…":number(data.pendingApplications)}</span><span><b>درخواست عضویت در انتظار بررسی</b><small>بررسی و تعیین تکلیف سازمان‌های متقاضی</small></span><ArrowLeft size={16}/></button>
-    <button className="executive-focus-row" onClick={()=>go("admin-expert-verification")}><span className="executive-focus-number">{loading?"…":number(data.urgentCases)}</span><span><b>پرونده با اولویت بالا یا فوری</b><small>بازبینی ظرفیت و مسیر رسیدگی متخصصان</small></span><ArrowLeft size={16}/></button>
+    <button className="executive-focus-row" onClick={()=>go("admin-expert-verification")}><span className="executive-focus-number">{loading?"…":number(data.pendingExperts)}</span><span><b>پروفایل متخصص در انتظار بررسی</b><small>بررسی صلاحیت و تکمیل اطلاعات حرفه‌ای</small></span><ArrowLeft size={16}/></button>
     <div className="executive-focus-foot"><CheckCircle2 size={15}/> تصمیم‌های مدیریتی همچنان از مسیرهای دارای مجوز انجام می‌شوند.</div>
    </article>
    <article className="executive-shortcuts">
