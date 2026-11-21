@@ -579,3 +579,17 @@
 .specialist-detail-footer{display:flex;align-items:center;justify-content:space-between;gap:12px;color:#87948a;font-size:9px}
 .specialist-detail-footer span{display:flex;align-items:center;gap:5px}
 @media(max-width:720px){.specialist-detail-heading{flex-direction:column}.specialist-detail-status{display:flex;justify-content:space-between;width:100%}.specialist-detail-grid{grid-template-columns:1fr}.specialist-detail-metrics{grid-template-columns:1fr}.specialist-detail-footer{align-items:flex-start;flex-direction:column}.specialist-source-list>div{grid-template-columns:1fr;gap:3px}}
+
+
+/* Explicit case lifecycle states and human-reviewed report preview */
+.specialist-workflow-state{display:grid;gap:6px;padding:14px 16px;border:1px solid #e2e9df;border-radius:12px;background:#f6f9f3;color:#385d43}
+.specialist-workflow-state.waiting{background:#fff9ee;border-color:#efe3c9;color:#886b3c}
+.specialist-workflow-kicker{font-size:9px;font-weight:750;letter-spacing:.1px;color:#7c967f}
+.specialist-workflow-state.waiting .specialist-workflow-kicker{color:#a27d43}
+.specialist-workflow-state>b{font-size:11px}
+.specialist-workflow-state p,.specialist-report-preview p{margin:0;color:#718076;font-size:10px;line-height:1.9;white-space:pre-wrap;overflow-wrap:anywhere}
+.specialist-workflow-state ul{margin:3px 0 0;padding-right:18px;color:#758477;font-size:10px;line-height:1.9}
+.specialist-report-preview{display:grid;gap:8px;margin-top:14px;padding:14px;border:1px solid #dce8dc;border-radius:12px;background:#f7faf6}
+.specialist-report-preview h4{margin:3px 0 0;color:#345b43;font-size:11px}
+.specialist-report-actions{display:flex;justify-content:flex-start;gap:8px;flex-wrap:wrap;margin-top:5px}
+@media(max-width:680px){.specialist-report-actions{align-items:stretch;flex-direction:column}.specialist-report-actions button{justify-content:center}}
