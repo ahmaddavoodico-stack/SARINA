@@ -6,7 +6,6 @@ type Category={id:string;code:string;name_fa:string;name_en:string;market_sectio
 type Product={id:string;seller_id:string;category_id:string;market_section:string;name:string;description:string|null;specifications:Record<string,unknown>;pricing_model:string;price:number|string|null;currency:string;unit_label:string;minimum_order_qty:number|string;stock_qty:number|string|null;origin_country:string|null;origin_region:string|null;quality_grade:string|null;image_urls:unknown;regulated:boolean;regulatory_status:string;regulatory_reviewed_at:string|null;is_sarina_premium:boolean};
 type Seller={id:string;display_name:string;seller_type:string;country_code:string|null;region:string|null;city:string|null;verification_status:string};
 
-const sectionLabels={farmer_products:"محصولات کشاورزان",company_supplies:"فروشگاه نهاده‌ها و تجهیزات"};
 const currencyLabels:Record<string,string>={IRR:"ریال",USD:"دلار",EUR:"یورو",AED:"درهم",TRY:"لیر",AZN:"منات"};
 
 function safeImage(value:unknown):string|null{
