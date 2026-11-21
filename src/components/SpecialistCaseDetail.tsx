@@ -108,7 +108,7 @@ export default function SpecialistCaseDetail({requestId,consultationId,userId,ve
     </article>
     <article className="expert-panel"><h3>درخواست اطلاعات و مدارک تکمیلی</h3><p className="specialist-source-note">با ثبت درخواست، اعلان خودکار به کشاورز ارسال می‌شود و از او خواسته می‌شود پاسخ را در مکالمه انسانی پرونده بفرستد.</p>
      <form className="specialist-detail-form" onSubmit={requestInformation}><textarea value={missingText} onChange={e=>setMissingText(e.target.value)} rows={4} placeholder={"هر مورد را در یک خط بنویسید؛ مثلاً:\nسن درخت\nتاریخ آخرین آبیاری\nنتیجه EC آب"} required/><button className="expert-primary" disabled={!canWork||saving||!assistant}><Send size={14}/> ارسال درخواست تکمیلی</button></form>
-     {assistant?.missing_information?.length>0&&<p className="specialist-source-note">موارد در انتظار: {assistant.missing_information.join("، ")}</p>}
+     {((assistant?.missing_information??[]).length>0)&&<p className="specialist-source-note">موارد در انتظار: {(assistant?.missing_information??[]).join("، ")}</p>}
     </article>
    </div>
    <article className="expert-panel"><h3>گزارش‌های ثبت‌شده</h3>{reports.length?reports.map(r=><div className="specialist-note-row" key={r.id}><b>{faDate(r.created_at)}</b><p>{r.summary}</p>{r.recommendations&&<small>توصیه‌ها: {r.recommendations}</small>}{r.limitations&&<small>محدودیت‌ها: {r.limitations}</small>}</div>):<p className="expert-muted">گزارش نهایی برای این پرونده ثبت نشده است.</p>}</article>
