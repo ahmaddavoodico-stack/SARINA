@@ -68,7 +68,7 @@ export default function AdminExecutiveHome({session,go}:Props){
     <span className="executive-kicker"><span/> SARINA EXECUTIVE HOME</span>
     <h1>اتاق فرمان سارینا</h1>
     <p>تصویر روشن‌تری از آنچه در سراسر سازمان می‌گذرد؛ از جامعه کشاورزان تا متخصصان و سازمان‌های همکار.</p>
-    <div className="executive-welcome-meta"><span><ShieldCheck size={15}/> فضای امن مدیریت مرکزی</span><span><Clock3 size={15}/> {updatedAt?"آخرین به‌روزرسانی "+date(updatedAt):"در انتظار دریافت اطلاعات"}</span></div>
+    <div className="executive-welcome-meta"><span><ShieldCheck size={15}/> فضای امن مدیریت مرکزی</span><span>{session.user.email||"مدیر مرکزی"}</span><span><Clock3 size={15}/> {updatedAt?"آخرین به‌روزرسانی "+date(updatedAt):"در انتظار دریافت اطلاعات"}</span></div>
    </div>
    <div className="executive-sarina-card">
     <div className="executive-character"><SarinaCharacter large/></div>
