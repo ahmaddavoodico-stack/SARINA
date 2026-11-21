@@ -22,7 +22,7 @@ No real programs, legal terms, eligibility rules, geographic codes or allocation
 - All four tables have RLS enabled.
 - No `anon` table privileges.
 - Program registry writes are restricted to SARINA administrators.
-- A program version can be published only when the issuer is verified, legal basis and source reference are present, source verification is recorded, and the authenticated publisher is identified. The source verifier and publisher may be different authorized SARINA administrators.
+- The migration extends the existing organization capability catalog with the two support-allocation capabilities; neither is automatically enabled for any organization.\n- A program version can be published only when the issuer is verified, legal basis and source reference are present, source verification is recorded, and the authenticated publisher is identified. The source verifier and publisher may be different authorized SARINA administrators.
 - Published program versions are immutable; later changes require a new version.
 - Allocation creation requires a verified issuing organization, an active program with a published version issued by that organization, an enabled `support.allocations.write` capability, and an applicable geographic/farm scope.
 - Organization members must have explicit `support.allocations.read` or `support.allocations.write` capability and matching scope to read allocations.
