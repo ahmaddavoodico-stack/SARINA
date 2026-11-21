@@ -1,5 +1,5 @@
 import {useMemo,useState} from "react";
-import {AlertCircle,ArrowLeft,BriefcaseBusiness,CheckCircle2,Clock3,Filter,Inbox,MessageCircle,Search,ShieldCheck} from "lucide-react";
+import {AlertCircle,ArrowLeft,BriefcaseBusiness,CheckCircle2,Clock3,Inbox,MessageCircle,Search,ShieldCheck} from "lucide-react";
 
 type Assignment={
  id:string;request_id:string;assignment_status:string;offered_at:string;responded_at:string|null;
