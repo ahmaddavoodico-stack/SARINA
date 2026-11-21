@@ -146,6 +146,13 @@ begin
     null;
   end;
 
+  delete from storage.objects
+   where bucket_id='farmer-documents'
+     and name='11000000-0000-0000-0000-000000000002/31000000-0000-0000-0000-000000000001/evidence-one.pdf';
+  if found then
+    raise exception 'A linked evidence object must not be deletable by the farmer';
+  end if;
+
   begin
     delete from public.farm_documents
      where id='61000000-0000-0000-0000-000000000001';
