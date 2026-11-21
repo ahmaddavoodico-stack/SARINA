@@ -545,3 +545,51 @@
   .sidebar nav{flex:0 0 auto}
   .sidebar-bottom{flex:0 0 auto}
 }
+
+
+/* Marketplace foundation — catalog-first, no checkout until commerce security gates pass. */
+.marketplace-workspace{direction:rtl;color:#29483a}
+.marketplace-heading{display:flex;align-items:center;justify-content:space-between;gap:18px;margin-bottom:20px}
+.marketplace-eyebrow{font-size:10px;color:#8b9a8d;font-weight:700}
+.marketplace-heading h1{font-size:25px;color:#1e4938;margin:7px 0 5px}
+.marketplace-heading p{font-size:11px;color:#87958c;margin:0;line-height:1.9}
+.marketplace-refresh{display:flex;align-items:center;gap:8px;border:1px solid #dce8dc;background:#fff;color:#35644a;border-radius:10px;padding:10px 13px;font-size:10px;font-weight:700}
+.marketplace-trust-note,.marketplace-export-note{display:flex;align-items:flex-start;gap:10px;padding:13px 15px;border-radius:12px;background:#edf5ee;color:#4e7559;font-size:10px;line-height:1.9;margin-bottom:17px}
+.marketplace-trust-note svg,.marketplace-export-note svg{flex:none;margin-top:2px}
+.marketplace-tabs{display:flex;gap:8px;border-bottom:1px solid #e4ebe4;margin-bottom:16px}
+.marketplace-tabs button{display:flex;align-items:center;gap:8px;border:0;border-bottom:2px solid transparent;background:transparent;color:#829087;padding:12px 15px;font-size:11px;font-weight:600}
+.marketplace-tabs button.active{color:#1e5948;border-bottom-color:#1e5948}
+.marketplace-export-note{background:#fff8eb;border:1px solid #f0e5cf;color:#8a7043;margin-bottom:17px}
+.marketplace-export-note strong{display:block;color:#785d2e;font-size:11px;margin-bottom:3px}
+.marketplace-export-note p{margin:0}
+.marketplace-filters{display:flex;gap:12px;align-items:center;margin:17px 0}
+.marketplace-search{display:flex;align-items:center;gap:9px;background:#fff;border:1px solid #e2eae2;border-radius:11px;padding:0 12px;height:43px;flex:1;color:#91a097}
+.marketplace-search input{border:0;outline:0;background:transparent;width:100%;font:inherit;font-size:10px;color:#365447}
+.marketplace-category{display:flex;align-items:center;gap:8px;font-size:10px;color:#829087}
+.marketplace-category select{height:43px;min-width:170px;border:1px solid #e2eae2;border-radius:11px;background:#fff;padding:0 10px;color:#365447;font:inherit;font-size:10px}
+.marketplace-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.marketplace-product-card{background:#fff;border:1px solid #e5ece5;border-radius:15px;overflow:hidden;min-width:0}
+.marketplace-product-media{height:155px;background:#edf4ec;position:relative;display:grid;place-items:center;overflow:hidden}
+.marketplace-product-media img{width:100%;height:100%;object-fit:cover}
+.marketplace-product-placeholder{display:flex;flex-direction:column;align-items:center;gap:7px;color:#8eab8d}
+.marketplace-product-placeholder span{font-size:9px;letter-spacing:2px;font-weight:800}
+.marketplace-premium{position:absolute;top:10px;right:10px;background:#fff7e7;color:#96753c;border-radius:20px;padding:5px 8px;font-size:8px;font-weight:700}
+.marketplace-product-body{padding:13px}
+.marketplace-product-meta{display:flex;align-items:center;justify-content:space-between;gap:6px;color:#8b9a8f;font-size:8px}
+.marketplace-regulatory-ok,.marketplace-regulatory-pending{border-radius:20px;padding:4px 7px;background:#edf5ee;color:#4d8259;white-space:nowrap}
+.marketplace-regulatory-pending{background:#fff5e6;color:#9b7840}
+.marketplace-product-body h3{font-size:13px;color:#294c3b;margin:10px 0 5px}
+.marketplace-product-body>p{font-size:9px;line-height:1.9;color:#87958c;min-height:34px;margin:0 0 10px}
+.marketplace-seller{display:flex;align-items:center;gap:6px;color:#5e7a68;font-size:9px}
+.marketplace-origin{font-size:8px;color:#9aa59e;margin-top:7px}
+.marketplace-product-footer{border-top:1px solid #edf1ed;margin-top:11px;padding-top:10px;display:flex;align-items:flex-end;justify-content:space-between;gap:8px}
+.marketplace-product-footer strong{font-size:11px;color:#2d6548}
+.marketplace-product-footer small{font-size:8px;color:#9aa59e;text-align:left}
+.marketplace-empty{min-height:220px;border:1px dashed #d8e3d8;background:#fbfcfa;border-radius:15px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:25px;color:#91a493;gap:9px}
+.marketplace-empty strong{font-size:13px;color:#4a6855}
+.marketplace-empty p{font-size:10px;color:#96a39a;margin:0;line-height:1.9}
+.marketplace-error{padding:11px 13px;background:#fff1ee;color:#a25c4e;border-radius:10px;font-size:10px;margin:12px 0}
+.marketplace-footnote{display:flex;align-items:center;gap:7px;color:#819187;font-size:9px;margin-top:16px;line-height:1.8}
+.marketplace-footnote small{margin-right:auto;color:#a1aaa4}
+@media(max-width:900px){.marketplace-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:600px){.marketplace-heading{align-items:flex-start}.marketplace-heading h1{font-size:21px}.marketplace-refresh{padding:9px}.marketplace-tabs button{padding:11px 8px;font-size:9px;gap:5px}.marketplace-filters{align-items:stretch;flex-direction:column}.marketplace-category{justify-content:space-between}.marketplace-category select{flex:1}.marketplace-grid{grid-template-columns:1fr 1fr;gap:9px}.marketplace-product-media{height:118px}.marketplace-product-body{padding:10px}.marketplace-product-body h3{font-size:11px}.marketplace-product-footer{align-items:flex-start;flex-direction:column}.marketplace-product-footer small{text-align:right}.marketplace-footnote{align-items:flex-start}.marketplace-footnote small{display:none}}
