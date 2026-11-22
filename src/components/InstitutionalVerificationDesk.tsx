@@ -41,7 +41,7 @@ export default function InstitutionalVerificationDesk(){
   if(!db||!selected)return;
   if(["needs_correction","rejected"].includes(status)&&!notes.trim()){setError("برای درخواست اصلاح یا رد پرونده، درج توضیح الزامی است.");return;}
   setBusy(true);setError("");setMessage("");
-  const {data,error}=await db.rpc("review_authority_onboarding_request",{p_request_id:selected.id,p_new_status:status,p_review_notes:notes.trim()||null});
+  const {error}=await db.rpc("review_authority_onboarding_request",{p_request_id:selected.id,p_new_status:status,p_review_notes:notes.trim()||null});
   if(error){setError(error.message.includes("proposed_admin_account_not_verified")?"ایمیل مدیر پیشنهادی هنوز با حساب فعال و احرازشده سارینا تطبیق ندارد؛ تا زمان تطبیق امکان تأیید وجود ندارد.":error.message.includes("review_notes_required")?"برای این تصمیم درج یادداشت الزامی است.": "ثبت تصمیم بررسی انجام نشد: "+error.message);}
   else {setMessage(status==="approved"?"درخواست احراز سازمان تأیید شد؛ ایجاد سازمان، عضویت و محدوده دسترسی همچنان مرحله‌ای مستقل است.":"تصمیم بررسی ثبت و در تاریخچه ممیزی ذخیره شد.");setNotes("");await reload();}
   setBusy(false);
