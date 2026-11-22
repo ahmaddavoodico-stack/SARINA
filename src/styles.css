@@ -524,3 +524,5 @@
  .chat-back{display:inline-flex}
  .chat-message-history{min-height:400px}
 }
+
+.admin-user-actions{display:flex;align-items:center;gap:7px;flex-wrap:wrap}.admin-user-footer .admin-user-actions button{width:auto}.admin-user-actions .danger-action{background:#fff1ed;color:#a45d4c}.admin-user-actions .primary-button{background:var(--g);color:#fff}
