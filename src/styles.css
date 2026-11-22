@@ -841,3 +841,44 @@
 .weekly-empty-panel{padding:18px;border:1px dashed #cad8cc;border-radius:14px;color:#69776d;line-height:1.9;background:#fafcf9}
 .weekly-footnote{margin-top:18px;padding:13px 15px;border-right:3px solid #83a98a;background:#f4f8f4;color:#526457;border-radius:8px;font-size:12px;line-height:1.9}
 @media(max-width:700px){.expert-recommendation-fields{grid-template-columns:1fr}.weekly-section-heading{display:block}.weekly-recommendation-top{align-items:flex-start}.weekly-recommendation-actions{display:grid}.weekly-recommendation-actions button{width:100%}}
+
+
+/* Evidence-aware specialist recommendation follow-up */
+.expert-recommendation-followup{display:grid;gap:15px}
+.expert-recommendation-metrics{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:9px}
+.expert-recommendation-metrics article{padding:13px;border:1px solid var(--line);border-radius:13px;background:#fff;min-width:0}
+.expert-recommendation-metrics small,.expert-recommendation-metrics strong{display:block}
+.expert-recommendation-metrics small{font-size:10px;color:#77857b;line-height:1.8}
+.expert-recommendation-metrics strong{font-size:23px;color:#315d3e;margin-top:4px}
+.expert-recommendation-metrics article.attention{border-color:#efd2bd;background:#fffaf6}
+.expert-recommendation-metrics article.attention strong{color:#a65b2c}
+.expert-recommendation-summary{padding:16px;border:1px solid #d9e7dc;border-radius:15px;background:#f6faf6;color:#415647}
+.expert-recommendation-summary>b{display:flex;align-items:center;gap:8px;color:#28583a}
+.expert-recommendation-summary p{margin:9px 0;line-height:1.9;font-size:13px}
+.expert-recommendation-summary small{font-size:10px;color:#829087}
+.expert-recommendation-summary .attention-text{display:flex;align-items:center;gap:7px;color:#a65b2c}
+.expert-recommendation-case{margin-top:4px}
+.expert-recommendation-case>header{display:flex;align-items:center;justify-content:space-between;padding-bottom:12px;border-bottom:1px solid #edf0eb;color:#386246}
+.expert-recommendation-case>header b,.expert-recommendation-case>header small{display:block}
+.expert-recommendation-case>header small{margin-top:4px;font-size:10px;color:#849188}
+.expert-recommendation-followup-item{padding:15px 0;border-bottom:1px solid #edf1ed}
+.expert-recommendation-followup-item:last-child{border-bottom:0}
+.expert-recommendation-followup-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.expert-recommendation-followup-top b,.expert-recommendation-followup-top small{display:block}
+.expert-recommendation-followup-top b{color:#2e4c37}
+.expert-recommendation-followup-top small{margin-top:5px;color:#89958c;font-size:10px}
+.expert-recommendation-followup-top .expert-tag{white-space:nowrap}
+.expert-recommendation-followup-item .recommendation-instructions{white-space:pre-wrap;color:#59695e;font-size:12px;line-height:1.9;margin:10px 0}
+.expert-recommendation-farmer-report{padding:12px;border-radius:11px;background:#f5f7f3}
+.expert-recommendation-farmer-report b{font-size:12px;color:#415b47}
+.expert-recommendation-farmer-report p{white-space:pre-wrap;margin:6px 0;font-size:12px;line-height:1.9;color:#536258}
+.expert-recommendation-farmer-report small{font-size:10px;color:#89958c}
+.expert-recommendation-review-form{display:grid;gap:9px;margin-top:12px;padding:13px;border:1px solid #dce7dd;border-radius:12px;background:#fbfdfb}
+.expert-recommendation-review-form>div{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.expert-recommendation-review-form>div b{font-size:12px;color:#315d3e}
+.expert-recommendation-review-form>div small,.expert-recommendation-review-form .review-state{font-size:10px;color:#849187}
+.expert-recommendation-review-form label{display:grid;gap:6px;font-size:11px;font-weight:700;color:#4b5e50}
+.expert-recommendation-review-form select,.expert-recommendation-review-form textarea{width:100%;padding:9px 11px;border:1px solid #dbe4dc;border-radius:9px;background:#fff;color:#35483a;font:inherit;font-size:12px}
+.expert-recommendation-integrity{display:flex;align-items:flex-start;gap:8px;margin:0;padding:12px;border-right:3px solid #86a78b;border-radius:8px;background:#f3f7f2;color:#5b6e5e;font-size:11px;line-height:1.9}
+@media(max-width:900px){.expert-recommendation-metrics{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:600px){.expert-recommendation-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.expert-recommendation-followup-top{display:grid}.expert-recommendation-review-form>div{align-items:flex-start;flex-direction:column}}
