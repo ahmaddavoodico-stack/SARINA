@@ -53,7 +53,7 @@ export default function JihadAuthorityOnboarding({session}:{session:Session}){
     applicant_user_id:userId,organization_legal_name:form.legalName.trim(),organization_display_name:form.displayName.trim(),
     organization_type:form.type,registration_or_authority_reference:form.authorityRef.trim()||null,
     country_name:form.countryName.trim(),province_name:form.provinceName.trim(),county_name:form.countyName.trim(),service_hub_name:form.serviceHubName.trim(),
-    requested_service_locations:form.serviceLocations.split(/[،,\\n]/).map(x=>x.trim()).filter(Boolean),
+    requested_service_locations:requestedLocations,
     mandate_reference:form.mandateRef.trim()||null,applicant_contact_name:form.applicantName.trim(),
     applicant_contact_email:form.applicantEmail.trim()||null,applicant_contact_phone:form.applicantPhone.trim()||null,
     proposed_admin_full_name:form.adminName.trim(),proposed_admin_email:form.adminEmail.trim().toLowerCase(),
