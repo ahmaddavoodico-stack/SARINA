@@ -1,6 +1,7 @@
 import {useEffect,useState} from "react";
 import type {ChangeEvent} from "react";
 import JihadAuthorityWorkspace from "./components/JihadAuthorityWorkspace";
+import JihadAuthorityOnboarding from "./components/JihadAuthorityOnboarding";
 import type {Session} from "@supabase/supabase-js";
 import {ArrowLeft,Building2,CheckCircle2,Save,ShieldCheck,UploadCloud} from "lucide-react";
 import {supabase} from "./lib/supabase";
@@ -64,8 +65,7 @@ export default function OrganizationPortal({session,onLogout}:{session:Session;o
  }
  async function uploadDocuments(e:ChangeEvent<HTMLInputElement>){
   if(!supabase)return;
-  const files=Array.from(e.target.files??[]);
-  if(!files.length)return;
+  const files=Array.from(e.target.files??[]);if(!files.length)return;
   setUploading(true);setMessage("");
   try{
    const added:string[]=[];
@@ -100,6 +100,7 @@ export default function OrganizationPortal({session,onLogout}:{session:Session;o
  return <div className="org-shell" dir="rtl">
   <header className="org-top"><div className="org-brand"><span><Building2/></span><div><b>SARINA</b><small>پنل سازمانی</small></div></div><div className="org-user"><span>{session.user.email}</span><button onClick={onLogout}>خروج</button></div></header>
   <main className="org-main">
+   <JihadAuthorityOnboarding session={session}/>
    <JihadAuthorityWorkspace session={session}/>
    <div className="org-welcome"><div><span className="eyebrow">فضای اختصاصی شرکت‌ها</span><h1>به سارینا خوش آمدید</h1><p>اطلاعات شرکت را هر زمان خواستید تکمیل کنید؛ برای آشنایی با محیط نیازی به تکمیل همه مدارک نیست.</p></div><div className="org-status"><ShieldCheck/><b>{statusText[status]||"پیش‌نویس"}</b></div></div>
    <button type="button" onClick={()=>setShowRegionalWorkspace(v=>!v)} style={{display:"flex",alignItems:"center",gap:9,border:"1px solid #dce9dc",background:"#f4f8f2",color:"#315b3c",borderRadius:12,padding:"11px 14px",font:"inherit",fontSize:13,fontWeight:700,cursor:"pointer",marginBottom:14}}><Building2 size={17}/>{showRegionalWorkspace?"بستن پیش‌نمایش همکاری منطقه‌ای":"مشاهده پیش‌نمایش خدمات منطقه‌ای جهاد کشاورزی"} <ArrowLeft size={15}/></button>
