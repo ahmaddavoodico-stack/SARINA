@@ -15,19 +15,20 @@ const labels:Record<string,string>={pending_verification:"در انتظار اح
 const types:Record<string,string>={government:"سازمان دولتی",regulator:"نهاد ناظر",support_agency:"نهاد حمایتی",public_institution:"مؤسسه عمومی"};
 const date=(v:string)=>new Date(v).toLocaleString("fa-IR",{dateStyle:"medium",timeStyle:"short"});
 export default function InstitutionalVerificationDesk(){
+ const db=supabase as any;
  const [rows,setRows]=useState<RequestRow[]>([]),[selected,setSelected]=useState<RequestRow|null>(null);
  const [events,setEvents]=useState<EventRow[]>([]),[notes,setNotes]=useState(""),[filter,setFilter]=useState("open");
  const [loading,setLoading]=useState(true),[busy,setBusy]=useState(false),[error,setError]=useState(""),[message,setMessage]=useState("");
  const reload=useCallback(async()=>{
-  if(!supabase)return;setLoading(true);setError("");
-  const {data,error}=await supabase.from("authority_onboarding_requests").select("*").order("created_at",{ascending:false}).limit(200);
+  if(!db)return;setLoading(true);setError("");
+  const {data,error}=await db.from("authority_onboarding_requests").select("*").order("created_at",{ascending:false}).limit(200);
   if(error){setError("دریافت پرونده‌های احراز سازمانی ناموفق بود: "+error.message);setRows([]);setSelected(null);}
   else {const list=(data??[]) as RequestRow[];setRows(list);setSelected(old=>old?list.find(x=>x.id===old.id)??null:list[0]??null);}
   setLoading(false);
  },[]);
  useEffect(()=>{void reload();},[reload]);
- useEffect(()=>{let live=true;(async()=>{if(!supabase||!selected){setEvents([]);return;}
-  const {data,error}=await supabase.from("authority_onboarding_request_events").select("id,from_status,to_status,review_notes,actor_user_id,occurred_at").eq("request_id",selected.id).order("occurred_at",{ascending:false}).limit(50);
+ useEffect(()=>{let live=true;(async()=>{if(!db||!selected){setEvents([]);return;}
+  const {data,error}=await db.from("authority_onboarding_request_events").select("id,from_status,to_status,review_notes,actor_user_id,occurred_at").eq("request_id",selected.id).order("occurred_at",{ascending:false}).limit(50);
   if(live){if(error)setError("تاریخچه بررسی در دسترس نیست: "+error.message);else setEvents((data??[]) as EventRow[]);}
  })();return()=>{live=false;};},[selected?.id]);
  const visible=useMemo(()=>rows.filter(r=>filter==="all"||(filter==="open"?["pending_verification","under_review","needs_correction"].includes(r.status):r.status===filter)),[rows,filter]);
@@ -37,10 +38,10 @@ export default function InstitutionalVerificationDesk(){
   window.open(data.signedUrl,"_blank","noopener,noreferrer");
  }
  async function review(status:"under_review"|"needs_correction"|"approved"|"rejected"){
-  if(!supabase||!selected)return;
+  if(!db||!selected)return;
   if(["needs_correction","rejected"].includes(status)&&!notes.trim()){setError("برای درخواست اصلاح یا رد پرونده، درج توضیح الزامی است.");return;}
   setBusy(true);setError("");setMessage("");
-  const {data,error}=await supabase.rpc("review_authority_onboarding_request",{p_request_id:selected.id,p_new_status:status,p_review_notes:notes.trim()||null});
+  const {data,error}=await db.rpc("review_authority_onboarding_request",{p_request_id:selected.id,p_new_status:status,p_review_notes:notes.trim()||null});
   if(error){setError(error.message.includes("proposed_admin_account_not_verified")?"ایمیل مدیر پیشنهادی هنوز با حساب فعال و احرازشده سارینا تطبیق ندارد؛ تا زمان تطبیق امکان تأیید وجود ندارد.":error.message.includes("review_notes_required")?"برای این تصمیم درج یادداشت الزامی است.": "ثبت تصمیم بررسی انجام نشد: "+error.message);}
   else {setMessage(status==="approved"?"درخواست احراز سازمان تأیید شد؛ ایجاد سازمان، عضویت و محدوده دسترسی همچنان مرحله‌ای مستقل است.":"تصمیم بررسی ثبت و در تاریخچه ممیزی ذخیره شد.");setNotes("");await reload();}
   setBusy(false);
