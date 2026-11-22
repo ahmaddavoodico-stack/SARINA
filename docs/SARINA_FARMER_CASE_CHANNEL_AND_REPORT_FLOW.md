@@ -188,7 +188,7 @@ This first implementation is a **deterministic, rule-based rollup**, not an LLM-
 - Farmer status and note remain in `expert_recommendation_actions`; a farmer marking an action complete is displayed as **farmer-reported completion**.
 - The specialist's independent assessment is stored in `expert_recommendation_reviews`, separate from the farmer's status.
 - Review outcomes are `acknowledged` (read, not outcome-verified), `verified` (specialist confirms the outcome based on available evidence), or `needs_followup`.
-- The specialist records an outcome summary and an evidence basis. A `verified` outcome is blocked unless the evidence basis is recorded (at least 10 characters); without that basis, the specialist can only acknowledge the report or request follow-up. The review table is internal to the currently assigned, verified specialist; it is not a farmer-editable field or a public outcome claim.
+- The original reviewer identity is retained separately from the latest reviewing specialist. The specialist records an outcome summary and an evidence basis. A `verified` outcome is blocked unless the evidence basis is recorded (at least 10 characters); without that basis, the specialist can only acknowledge the report or request follow-up. The review table is internal to the currently assigned, verified specialist; it is not a farmer-editable field or a public outcome claim.
 - A recommendation with no note or evidence remains insufficiently supported; the assistant does not upgrade its status automatically.
 
 ### Security and rollout
