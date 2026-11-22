@@ -1,7 +1,7 @@
 import {useEffect,useMemo,useState} from "react";
 import type {FormEvent} from "react";
 import type {Session} from "@supabase/supabase-js";
-import {Activity,AlertCircle,CheckCircle2,Clock3,Landmark,Search,ShieldCheck,Users} from "lucide-react";
+import {AlertCircle,CheckCircle2,Landmark,Search,ShieldCheck} from "lucide-react";
 import {supabase} from "../lib/supabase";
 
 type AuthorityOrg={id:string;display_name:string;legal_name:string;organization_type:string};
@@ -15,13 +15,13 @@ export default function JihadAuthorityWorkspace({session}:{session:Session}){
  useEffect(()=>{let active=true;(async()=>{
   if(!supabase){if(active)setLoading(false);return;}
   try{
-   const {data:userId,error:userError}=await supabase.rpc("current_sarina_user_id");
+   const {data:userId,error:userError}=await db.rpc("current_sarina_user_id");
    if(userError||!userId)throw new Error("شناسه کاربر سازمانی دریافت نشد.");
-   const {data:members,error:memberError}=await supabase.from("organization_members").select("organization_id").eq("user_id",userId).eq("status","active");
+   const {data:members,error:memberError}=await db.from("organization_members").select("organization_id").eq("user_id",userId).eq("status","active");
    if(memberError)throw memberError;
    const ids=[...new Set((members??[]).map((x:any)=>x.organization_id).filter(Boolean))];
    if(!ids.length){if(active)setOrgs([]);return;}
-   const {data:organizations,error:orgError}=await supabase.from("organizations").select("id,display_name,legal_name,organization_type").in("id",ids).eq("status","verified").in("organization_type",authorityTypes).order("display_name");
+   const {data:organizations,error:orgError}=await db.from("organizations").select("id,display_name,legal_name,organization_type").in("id",ids).eq("status","verified").in("organization_type",authorityTypes).order("display_name");
    if(orgError)throw orgError;
    if(active){setOrgs((organizations??[]) as AuthorityOrg[]);if(organizations?.length)setOrgId(organizations[0].id);}
   }catch(e){if(active)setError(e instanceof Error?e.message:"دریافت دسترسی سازمانی ممکن نشد.");}
@@ -30,7 +30,7 @@ export default function JihadAuthorityWorkspace({session}:{session:Session}){
  async function lookup(e:FormEvent){
   e.preventDefault();if(!supabase||!orgId||!code.trim())return;
   setBusy(true);setError("");setResult(null);setSearched(false);
-  const {data,error:rpcError}=await supabase.rpc("lookup_farmer_by_public_code",{p_organization_id:orgId,p_public_code:code.trim().toUpperCase()});
+  const {data,error:rpcError}=await db.rpc("lookup_farmer_by_public_code",{p_organization_id:orgId,p_public_code:code.trim().toUpperCase()});
   setBusy(false);setSearched(true);
   if(rpcError){setError("دسترسی یا جست‌وجو تأیید نشد. عضویت، قابلیت، محدوده مأموریت و رضایت فعال کشاورز باید بررسی شود.");return;}
   const row=Array.isArray(data)?data[0]:data;
