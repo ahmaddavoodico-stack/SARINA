@@ -356,6 +356,7 @@ The first identity and consent foundation has now been applied to the active Sup
 | `20261122161100` | `sarina_guard_farm_administrative_region_assignment` |
 | `20261122161154` | `sarina_admin_region_scope_fk_index` |
 | `20261122161306` | `sarina_admin_region_hierarchy_integrity_guard` |
+| `20261122161408` | `sarina_institutional_farmer_access_audit` |
 
 ### Delivered in this phase
 
@@ -367,6 +368,7 @@ The first identity and consent foundation has now been applied to the active Sup
 - `organization_has_scoped_access`: region-descendant and assigned-farm scope support, with membership/capability checks and an empty function search path.
 - `organization_capabilities` now accepts the first Jihad identity, support, directive, recognition and reporting capability codes; the catalog is constrained rather than arbitrary free text.
 - `lookup_farmer_by_public_code(...)`: organization-scoped lookup that requires the `farmer.identity.read` capability and an active farmer consent containing `identity_summary`. Farm count and region names are returned only when `farm_summary` is also consented and the organization has `oversight.farm.read` in scope.
+- `institutional_access_audit_events`: private, RLS-protected audit trail for lookup attempts and decisions. Successful, not-found, invalid, missing-consent and scope-denied outcomes are recorded without storing the farmer's raw lookup code. Audit reads require a separate `oversight.audit.read` capability and the relevant organization scope.
 - `FarmerIdentityCard`: farmer-facing code display/copy and a granular consent center, mounted in the farmer's Jihad-services page.
 
 ### Verification performed
