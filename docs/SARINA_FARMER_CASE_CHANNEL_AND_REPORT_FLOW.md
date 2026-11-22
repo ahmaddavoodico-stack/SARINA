@@ -198,3 +198,6 @@ This first implementation is a **deterministic, rule-based rollup**, not an LLM-
 - No live Supabase schema was changed by adding this migration file. Apply only through the reviewed deployment process, then run role-switched tests for the assigned specialist, farmer, unrelated user, unverified specialist and former specialist after reassignment.
 - The dashboard's rollup reads are also constrained by the existing recommendation table RLS. If the migration is not applied, the UI reports the data retrieval error rather than fabricating results.
 - This iteration does not invoke a language model or send external notifications. The current in-app farmer execution and specialist notification flow remains as previously documented.
+
+
+**Data API exposure check:** Supabase's November 2026 Data API defaults no longer automatically expose newly created public tables. Before enabling this UI after migration, verify that `expert_recommendation_reviews` is explicitly exposed through the project's Data API schema/table settings; the migration grants only the authenticated role and still relies on RLS for row access. Do not broaden anonymous access.
