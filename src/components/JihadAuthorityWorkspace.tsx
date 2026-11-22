@@ -1,4 +1,5 @@
 import {useEffect,useMemo,useState} from "react";
+import type {FormEvent} from "react";
 import type {Session} from "@supabase/supabase-js";
 import {Activity,AlertCircle,CheckCircle2,Clock3,Landmark,Search,ShieldCheck,Users} from "lucide-react";
 import {supabase} from "../lib/supabase";
@@ -26,7 +27,7 @@ export default function JihadAuthorityWorkspace({session}:{session:Session}){
   }catch(e){if(active)setError(e instanceof Error?e.message:"دریافت دسترسی سازمانی ممکن نشد.");}
   finally{if(active)setLoading(false);}
  })();return()=>{active=false;};},[session.user.id]);
- async function lookup(e:React.FormEvent){
+ async function lookup(e:FormEvent){
   e.preventDefault();if(!supabase||!orgId||!code.trim())return;
   setBusy(true);setError("");setResult(null);setSearched(false);
   const {data,error:rpcError}=await supabase.rpc("lookup_farmer_by_public_code",{p_organization_id:orgId,p_public_code:code.trim().toUpperCase()});
