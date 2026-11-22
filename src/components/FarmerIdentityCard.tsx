@@ -29,7 +29,7 @@ export default function FarmerIdentityCard({userId}:{userId:string}){
  const [error,setError]=useState("");
  const [copied,setCopied]=useState(false);
  const db=supabase as any;
- const activeOrganizationIds=useMemo(()=>new Set(consents.filter(x=>x.status==="active"&&(!x.expires_at||new Date(x.expires_at).getTime()>Date.now())).map(x=>x.organization_id)),[consents]);
+ const activeOrganizationIds=useMemo(()=>new Set(consents.filter(x=>x.status==="active").map(x=>x.organization_id)),[consents]);
  const availableOrganizations=organizations.filter(x=>!activeOrganizationIds.has(x.id));
 
  async function refresh(){
@@ -128,7 +128,7 @@ export default function FarmerIdentityCard({userId}:{userId:string}){
     <div className="fic-scopes">{scopeOptions.map(s=><label className="fic-scope" key={s.value}><input type="checkbox" checked={selectedScopes.includes(s.value)} onChange={e=>setSelectedScopes(old=>e.target.checked?[...old,s.value]:old.filter(x=>x!==s.value))}/><span><b>{s.label}</b><small>{s.detail}</small></span></label>)}</div>
     <button className="fic-button primary" type="button" disabled={saving||!organizationId||!selectedScopes.length} onClick={()=>void grantConsent()}>{saving?"در حال ثبت…":"ثبت رضایت انتخاب‌شده"}</button>
    </>:<div className="fic-alert">هنوز مرجع دولتی یا حمایتی تأییدشده‌ای برای اعطای دسترسی در SARINA ثبت نشده است. پس از ثبت و تأیید سازمان جهاد کشاورزی، نام آن در این بخش ظاهر می‌شود.</div>}
-   {consents.length>0&&<div className="fic-consent-list"><b className="fic-muted">سوابق دسترسی</b>{consents.map(c=>{const org=organizations.find(o=>o.id===c.organization_id);const active=c.status==="active"&&(!c.expires_at||new Date(c.expires_at).getTime()>Date.now());return <div className="fic-consent-row" key={c.id}><div><b>{org?.display_name||"مرجع سازمانی"}</b><small>{c.consent_scopes.map(s=>scopeOptions.find(x=>x.value===s)?.label||s).join("، ")}<br/>ثبت: {faDate(c.granted_at)} · انقضا: {faDate(c.expires_at)}</small><span className="fic-status"><CheckCircle2 size={12}/>{active?"فعال":c.status==="revoked"?"لغوشده":"منقضی یا غیرفعال"}</span></div>{active&&<button className="fic-button" type="button" disabled={saving} onClick={()=>void revokeConsent(c.id)}><Trash2 size={13}/> لغو دسترسی</button>}</div>;})}</div>}
+   {consents.length>0&&<div className="fic-consent-list"><b className="fic-muted">سوابق دسترسی</b>{consents.map(c=>{const org=organizations.find(o=>o.id===c.organization_id);const active=c.status==="active"&&(!c.expires_at||new Date(c.expires_at).getTime()>Date.now());return <div className="fic-consent-row" key={c.id}><div><b>{org?.display_name||"مرجع سازمانی"}</b><small>{c.consent_scopes.map(s=>scopeOptions.find(x=>x.value===s)?.label||s).join("، ")}<br/>ثبت: {faDate(c.granted_at)} · انقضا: {faDate(c.expires_at)}</small><span className="fic-status"><CheckCircle2 size={12}/>{active?"فعال":c.status==="revoked"?"لغوشده":"منقضی یا غیرفعال"}</span></div>{c.status==="active"&&<button className="fic-button" type="button" disabled={saving} onClick={()=>void revokeConsent(c.id)}><Trash2 size={13}/>{active?"لغو دسترسی":"بستن رضایت منقضی"}</button>}</div>;})}</div>}
   </div>
  </section>;
 }
