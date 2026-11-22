@@ -6,6 +6,7 @@ import {isSupabaseConfigured,supabase} from "./lib/supabase";
 import OrganizationPortal from "./OrganizationPortal";
 import FarmWorkspace from "./FarmWorkspace";
 import LearningWorkspace from "./LearningWorkspace";
+import InstitutionalVerificationDesk from "./components/InstitutionalVerificationDesk";
 import ProductivityWorkspace from "./ProductivityWorkspace";
 import ProductivityOversightWorkspace from "./ProductivityOversightWorkspace";
 import ExpertDashboard from "./components/ExpertDashboard";
@@ -20,7 +21,7 @@ import FarmerCreditWorkspace,{FarmerCreditSummaryCard} from "./components/Farmer
 import MarketplaceWorkspace from "./components/MarketplaceWorkspace";
 import SarinaCompanion from "./SarinaCompanion";
 
-type Page="home"|"credits"|"farms"|"productivity"|"weekly-plan"|"services"|"institutions"|"companies"|"marketplace"|"requests"|"learning"|"experts"|"expert-chat"|"admin-home"|"admin-users"|"admin-organizations"|"admin-applications"|"admin-services"|"admin-requests"|"admin-farms"|"admin-expert-verification"|"admin-productivity"|"admin-regional"|"admin-specialist-economy"|"admin-role-management";
+type Page="home"|"credits"|"farms"|"productivity"|"weekly-plan"|"services"|"institutions"|"companies"|"marketplace"|"requests"|"learning"|"experts"|"expert-chat"|"admin-home"|"admin-users"|"admin-organizations"|"admin-institutions"|"admin-applications"|"admin-services"|"admin-requests"|"admin-farms"|"admin-expert-verification"|"admin-productivity"|"admin-regional"|"admin-specialist-economy"|"admin-role-management";
 type Service={id:string;title:string;description:string|null;public_description:string|null;service_category:string|null;submission_mode:string;is_official_authority:boolean;legal_basis:string|null;official_service_url:string|null;response_sla_days:number|null;organization_id:string};
 type RequestRow={id:string;request_number:number;request_title:string;status:string;submitted_at:string;submission_mode:string};
 type Company={id:string;display_name:string;legal_name:string;organization_type:string;city:string|null;address:string|null;website_url:string|null;contact_email:string|null;contact_phone:string|null;description:string|null;metadata:any;average_rating:number|null;review_count:number};
