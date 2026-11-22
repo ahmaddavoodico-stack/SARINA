@@ -12,21 +12,27 @@ export default function PwaInstall(){
   const onInstalled=()=>{setInstalled(true);setPromptEvent(null);setShowHelp(false);};
   window.addEventListener("beforeinstallprompt",onBefore);
   window.addEventListener("appinstalled",onInstalled);
-  if(window.matchMedia("(display-mode: standalone)").matches)setInstalled(true);
-  return()=>{window.removeEventListener("beforeinstallprompt",onBefore);window.removeEventListener("appinstalled",onInstalled);};
+  const isStandalone=window.matchMedia("(display-mode: standalone)").matches||(navigator as Navigator&{standalone?:boolean}).standalone===true;
+  if(isStandalone)setInstalled(true);
+  const displayMode=window.matchMedia("(display-mode: standalone)");
+  const onDisplayMode=()=>{if(displayMode.matches)setInstalled(true);};
+  displayMode.addEventListener?.("change",onDisplayMode);
+  return()=>{window.removeEventListener("beforeinstallprompt",onBefore);window.removeEventListener("appinstalled",onInstalled);displayMode.removeEventListener?.("change",onDisplayMode);};
  },[]);
  async function install(){
   if(!promptEvent){setShowHelp(true);return;}
-  await promptEvent.prompt();
-  const choice=await promptEvent.userChoice;
-  if(choice.outcome==="accepted")setPromptEvent(null);
+  try{
+   await promptEvent.prompt();
+   const choice=await promptEvent.userChoice;
+   if(choice.outcome==="accepted"){setPromptEvent(null);setShowHelp(false);}
+  }catch{setShowHelp(true);}
  }
  if(installed)return null;
  return <div className="pwa-install-wrap">
   {showHelp&&<div className="pwa-help" role="dialog" aria-label="راهنمای نصب سارینا">
    <button className="pwa-help-close" onClick={()=>setShowHelp(false)} aria-label="بستن"><X size={16}/></button>
    <strong>نصب سارینا روی گوشی</strong>
-   <p>در مرورگر Chrome، منوی سه‌نقطه را باز کن و گزینه «Install app» یا «افزودن به صفحه اصلی» را بزن.</p>
+   <p>در Android و مرورگرهای Chrome یا Edge، منوی مرورگر را باز کن و گزینه «Install app» یا «افزودن به صفحه اصلی» را انتخاب کن.</p>
    <p>در iPhone و Safari، دکمه Share را بزن و سپس «Add to Home Screen» را انتخاب کن.</p>
   </div>}
   <button className="pwa-install-button" onClick={install}>
