@@ -49,8 +49,11 @@ export default function ExpertRecommendationFollowUp({profileId,sarinaUserId,ver
   if(!supabase||!sarinaUserId)return;const d=drafts[r.id];if(!d?.summary.trim()){setNotice("برای ثبت ارزیابی، خلاصه بررسی متخصص را بنویسید.");return;}
   if(d.status==="verified"&&d.evidence.trim().length<10){setNotice("برای تأیید نتیجه، مبنای شواهد را با حداقل ۱۰ نویسه توضیح دهید؛ بدون ثبت مبنای شواهد فقط می‌توانید گزارش را بررسی‌شده یا نیازمند پیگیری ثبت کنید.");return;}
   setBusy(r.id);setNotice("");
-  const payload={recommendation_id:r.id,reviewer_user_id:sarinaUserId,outcome_status:d.status,outcome_summary:d.summary.trim(),evidence_assessment:d.evidence.trim()||null,reviewed_at:new Date().toISOString(),updated_at:new Date().toISOString()};
-  const {data,error}=await db.from("expert_recommendation_reviews").upsert(payload,{onConflict:"recommendation_id"}).select("id,recommendation_id,reviewer_user_id,outcome_status,outcome_summary,evidence_assessment,reviewed_at,updated_at").single();
+  const payload={reviewer_user_id:sarinaUserId,outcome_status:d.status,outcome_summary:d.summary.trim(),evidence_assessment:d.evidence.trim()||null,reviewed_at:new Date().toISOString(),updated_at:new Date().toISOString()};
+  const query=reviews[r.id]
+   ? db.from("expert_recommendation_reviews").update(payload).eq("recommendation_id",r.id)
+   : db.from("expert_recommendation_reviews").insert({...payload,recommendation_id:r.id,created_by_user_id:sarinaUserId});
+  const {data,error}=await query.select("id,recommendation_id,reviewer_user_id,outcome_status,outcome_summary,evidence_assessment,reviewed_at,updated_at").single();
   setBusy("");if(error){setNotice("ثبت ارزیابی انجام نشد: "+error.message);return;}
   setReviews(old=>({...old,[r.id]:data as Review}));setNotice("بازبینی تخصصی ثبت شد؛ گزارش کشاورز و ارزیابی شما جداگانه نگهداری می‌شوند.");
  }
