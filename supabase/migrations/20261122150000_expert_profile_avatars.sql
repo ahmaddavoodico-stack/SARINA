@@ -15,7 +15,7 @@ using (bucket_id='expert-avatars' and (storage.foldername(name))[2]=auth.uid()::
 and exists(select 1 from public.expert_profiles p where p.id::text=(storage.foldername(name))[1] and p.user_id=auth.uid()));
 
 create or replace function public.set_expert_profile_avatar(p_avatar_path text)
-returns void language plpgsql security definer set search_path=public as $$
+returns void language plpgsql security definer set search_path='' as $
 declare v_profile_id text; v_owner_id text;
 begin
  if auth.uid() is null then raise exception 'Authentication required'; end if;
@@ -26,5 +26,5 @@ begin
  update public.expert_profiles set avatar_path=p_avatar_path,updated_at=now() where id::text=v_profile_id and user_id=auth.uid();
  if not found then raise exception 'Expert profile not found'; end if;
 end; $$;
-revoke all on function public.set_expert_profile_avatar(text) from public;
+revoke all on function public.set_expert_profile_avatar(text) from public, anon;
 grant execute on function public.set_expert_profile_avatar(text) to authenticated;
