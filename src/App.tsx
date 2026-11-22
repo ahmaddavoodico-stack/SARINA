@@ -165,7 +165,6 @@ function WeeklyPlanWorkspace({session}:{session:Session}){
   if(e)setError(e.message);else{setNotice(status==="completed"?"تکمیل توصیه ثبت شد و برای متخصص اعلان ارسال می‌شود.":status==="needs_review"?"درخواست بازبینی برای متخصص ثبت شد.":"شروع اجرای توصیه ثبت شد.");await load(farmId);}setSaving(false);
  }
  const tasks=actions.filter(x=>x.due_date&&x.due_date>=key(weekDays[0])&&x.due_date<=key(weekDays[6]));
- const approvedRecommendations=recommendations.filter(x=>x.status!=="completed"&&x.status!=="needs_review");
  const done=tasks.filter(x=>x.status==="completed").length+recommendations.filter(x=>x.status==="completed").length;
  const total=tasks.length+recommendations.length;
  const priorityLabel=(v:string)=>({low:"کم",normal:"عادی",high:"بالا",urgent:"فوری"} as Record<string,string>)[v]||"عادی";
