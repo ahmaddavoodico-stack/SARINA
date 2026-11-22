@@ -165,7 +165,7 @@ The weekly farmer plan is the execution surface for structured recommendations f
 
 ### Security and rollout
 
-- The migration `20261122180000_expert_recommendation_weekly_schedule.sql` is committed to the integration branch only and has **not** been applied to the connected Supabase project.
+- The migration `20261122151525_expert_recommendation_weekly_schedule.sql` is committed to the integration branch only and has **not** been applied to the connected Supabase project.
 - The recommendation table has RLS for the request owner and the currently assigned verified specialist. Farmer updates are column-limited to execution status, note, evidence and completion metadata.
 - Do not merge or enable this feature until the migration is reviewed, role-switched RLS tests pass, and the frontend/PWA build checks complete.
 
@@ -193,7 +193,7 @@ This first implementation is a **deterministic, rule-based rollup**, not an LLM-
 
 ### Security and rollout
 
-- Migration `20261122200000_expert_recommendation_followup_reviews.sql` creates the review table with RLS enabled, no anonymous grants, and column-limited updates.
+- Migration `20261122151532_expert_recommendation_followup_reviews.sql` creates the review table with RLS enabled, no anonymous grants, and column-limited updates.
 - Read/insert/update policies verify the current authenticated user is the verified specialist on an accepted assignment for the recommendation's case. A previous or unrelated specialist cannot read or write the review.
 - No live Supabase schema was changed by adding this migration file. Apply only through the reviewed deployment process, then run role-switched tests for the assigned specialist, farmer, unrelated user, unverified specialist and former specialist after reassignment.
 - The dashboard's rollup reads are also constrained by the existing recommendation table RLS. If the migration is not applied, the UI reports the data retrieval error rather than fabricating results.
@@ -201,3 +201,17 @@ This first implementation is a **deterministic, rule-based rollup**, not an LLM-
 
 
 **Data API exposure check:** Supabase's November 2026 Data API defaults no longer automatically expose newly created public tables. Before enabling this UI after migration, verify that `expert_recommendation_reviews` is explicitly exposed through the project's Data API schema/table settings; the migration grants only the authenticated role and still relies on RLS for row access. Do not broaden anonymous access.
+
+
+### Production Supabase rollout record (2026-11-22)
+
+The following migrations were applied successfully to the connected Supabase project, and the migration filenames in this repository are aligned with the versions recorded by Supabase:
+
+- `20261122151525_expert_recommendation_weekly_schedule.sql`
+- `20261122151532_expert_recommendation_followup_reviews.sql`
+- `20261122151604_restrict_recommendation_trigger_function_execute.sql`
+- `20261122151651_index_recommendation_foreign_keys.sql`
+
+Post-apply checks confirmed both tables exist with RLS enabled; `anon` has no SELECT or INSERT privileges; `authenticated` has the intended table/column grants; author and original reviewer identity columns cannot be updated; both trigger helpers are non-callable by `PUBLIC`, `anon` and `authenticated`; and no security-advisor finding names either new table or trigger function.
+
+The connected project currently has zero expert requests, zero farmer-linked requests, and zero accepted verified specialist assignments. Consequently, a realistic role-switched end-to-end RLS test with assigned specialist, farmer, unrelated user and reassigned former specialist cannot yet be performed against real case fixtures. The access policies and privilege boundaries were verified from the live catalog; repeat role-switched tests when representative test accounts/cases exist, before production use with real cases.
