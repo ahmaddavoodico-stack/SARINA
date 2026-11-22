@@ -748,3 +748,17 @@
 .farmer-chat-heading h3{font-size:1rem;margin:4px 0 0;color:#294b3b}
 .farmer-chat-case-tag{white-space:nowrap;padding:6px 10px;border-radius:30px;background:#edf5ed;color:#4e7958;font-size:.72rem}
 @media(max-width:600px){.farmer-specialist-identity{align-items:flex-start;padding:13px}.farmer-specialist-avatar{width:48px;height:48px;flex-basis:48px}.farmer-chat-heading{align-items:flex-start;flex-direction:column}.farmer-chat-case-tag{align-self:flex-start}}
+
+
+/* Expert profile photo upload and farmer-facing specialist portraits */
+.expert-avatar img,.farmer-specialist-avatar img,.farmer-expert-list-avatar img{width:100%;height:100%;object-fit:cover;border-radius:inherit;display:block}
+.expert-avatar{overflow:hidden}
+.expert-avatar-upload{display:grid;gap:12px}
+.expert-avatar-upload p{margin:5px 0;color:var(--muted,#748078);font-size:.88rem;line-height:1.8}
+.expert-avatar-upload small{color:var(--muted,#748078);font-size:.75rem}
+.expert-avatar-upload-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.expert-avatar-file{display:inline-flex;align-items:center;min-height:42px;padding:8px 13px;border:1px dashed #a9bca9;border-radius:10px;cursor:pointer;color:#426b50}
+.expert-avatar-file input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+.farmer-specialist-avatar{overflow:hidden}
+.farmer-expert-list-avatar{width:44px;height:44px;flex:0 0 44px;display:grid;place-items:center;border-radius:14px;overflow:hidden;background:#e4efe4;color:#47734f}
+@media(max-width:600px){.expert-avatar-upload-row{align-items:stretch;flex-direction:column}.expert-avatar-file,.expert-avatar-upload-row .expert-primary{width:100%;justify-content:center}}
