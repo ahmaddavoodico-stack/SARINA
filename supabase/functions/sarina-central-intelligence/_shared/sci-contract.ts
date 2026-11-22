@@ -48,7 +48,11 @@ export function validateFarmContexts(
       !isFreshTimestamp(weather.retrieved_at, now) ||
       !isRecord(weather.location) ||
       typeof weather.location.latitude !== "number" ||
+      !Number.isFinite(weather.location.latitude) ||
+      weather.location.latitude < -90 || weather.location.latitude > 90 ||
       typeof weather.location.longitude !== "number" ||
+      !Number.isFinite(weather.location.longitude) ||
+      weather.location.longitude < -180 || weather.location.longitude > 180 ||
       !isRecord(weather.current) ||
       !Array.isArray(weather.forecast) || weather.forecast.length === 0) {
     issues.push({ code: "FARM_CONTEXT_MISMATCH_OR_STALE", field: "farm_weather_context" });

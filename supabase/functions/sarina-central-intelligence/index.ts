@@ -47,14 +47,80 @@ Deno.serve(async (req: Request) => {
     .from("farms").select("id").eq("id", farmId).maybeSingle();
   if (farmError || !farm) return reply(404, { ok: false, code: "FARM_ACCESS_DENIED" });
 
-  // Slice A intentionally stops before context retrieval, signing, routing, or provider calls.
-  // No user-supplied provider/model id or farm context is trusted at this boundary.
+  // Assemble minimum farm context through existing caller-JWT Edge Functions.
+  // These endpoints independently enforce the same user's RLS access; no
+  // service-role credential is forwarded or exposed to this orchestration layer.
+  const contextHeaders = {
+    Authorization: authorization,
+    apikey: publishableKey,
+    "Content-Type": "application/json",
+  };
+  let weatherPayload: Record<string, unknown>;
+  let landPayload: Record<string, unknown>;
+  try {
+    const [weatherResponse, landResponse] = await Promise.all([
+      fetch(`${supabaseUrl}/functions/v1/farm-weather-context`, {
+        method: "POST",
+        headers: contextHeaders,
+        body: JSON.stringify({ farm_id: farmId }),
+        signal: AbortSignal.timeout(18_000),
+      }),
+      fetch(`${supabaseUrl}/functions/v1/farm-land-context`, {
+        method: "POST",
+        headers: contextHeaders,
+        body: JSON.stringify({ farm_id: farmId }),
+        signal: AbortSignal.timeout(18_000),
+      }),
+    ]);
+    if (!weatherResponse.ok || !landResponse.ok) {
+      return reply(424, {
+        ok: false,
+        code: "FARM_CONTEXT_UNAVAILABLE",
+        weather_status: weatherResponse.status,
+        land_status: landResponse.status,
+        retryable: weatherResponse.status >= 500 || landResponse.status >= 500,
+      });
+    }
+    const [weatherJson, landJson] = await Promise.all([weatherResponse.json(), landResponse.json()]);
+    if (!weatherJson?.ok || !landJson?.ok || !weatherJson.context || !landJson.context) {
+      return reply(424, { ok: false, code: "FARM_CONTEXT_RESPONSE_INVALID", retryable: true });
+    }
+    weatherPayload = weatherJson.context as Record<string, unknown>;
+    landPayload = landJson.context as Record<string, unknown>;
+  } catch (error) {
+    console.error("SCI farm context assembly failed", error);
+    return reply(503, { ok: false, code: "FARM_CONTEXT_FETCH_FAILED", retryable: true });
+  }
+
+  const contextIssues = validateFarmContexts(farmId, weatherPayload, landPayload);
+  if (contextIssues.length) {
+    return reply(422, { ok: false, code: "FARM_CONTEXT_VALIDATION_FAILED", issues: contextIssues });
+  }
+
+  // Context is now assembled and validated. Dispatch intentionally remains
+  // disabled until SIACP canonicalization/signature verification, replay
+  // protection, registered adapter configuration, and result persistence pass.
   return reply(202, {
     ok: true,
     request_id: crypto.randomUUID(),
-    status: "accepted_for_validation",
-    next_step: "context_assembly_and_SIACP_signing_not_enabled_in_slice_a",
+    status: "context_assembled_pending_signed_adapter_dispatch",
     farm_access: "verified_under_caller_jwt_and_rls",
+    context_manifest: {
+      farm_id: farmId,
+      weather: {
+        source: weatherPayload.source,
+        retrieved_at: weatherPayload.retrieved_at,
+        forecast_days: Array.isArray(weatherPayload.forecast) ? weatherPayload.forecast.length : 0,
+      },
+      land: {
+        schema: landPayload.schema,
+        retrieved_at: landPayload.retrieved_at,
+        soil_test_count: Array.isArray(landPayload.soil_tests) ? landPayload.soil_tests.length : 0,
+        water_test_count: Array.isArray(landPayload.water_tests) ? landPayload.water_tests.length : 0,
+        farmer_report_count: Array.isArray(landPayload.farmer_reports) ? landPayload.farmer_reports.length : 0,
+        regional_context_status: (landPayload.regional_context as Record<string, unknown>)?.status ?? "unknown",
+      },
+    },
     model_invoked: false,
     provider_selected: false,
     physical_action_authorized: false,

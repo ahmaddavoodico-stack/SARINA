@@ -1,0 +1,24 @@
+name: Frontend build
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+      - run: npm ci
+      - name: Report dependency audit findings
+        run: |
+          npm audit --json > npm-audit.json || true
+          node -e 'const a=require("./npm-audit.json"); for (const [name,v] of Object.entries(a.vulnerabilities||{})) console.log(`${name}: ${v.severity}; direct=${v.isDirect}; fix=${JSON.stringify(v.fixAvailable)}`); console.log(`Total vulnerabilities: ${JSON.stringify(a.metadata?.vulnerabilities||{})}`)'
+      - run: npm run build
