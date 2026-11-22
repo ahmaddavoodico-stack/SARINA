@@ -882,3 +882,7 @@
 .expert-recommendation-integrity{display:flex;align-items:flex-start;gap:8px;margin:0;padding:12px;border-right:3px solid #86a78b;border-radius:8px;background:#f3f7f2;color:#5b6e5e;font-size:11px;line-height:1.9}
 @media(max-width:900px){.expert-recommendation-metrics{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:600px){.expert-recommendation-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.expert-recommendation-followup-top{display:grid}.expert-recommendation-review-form>div{align-items:flex-start;flex-direction:column}}
+
+.expert-recommendation-next-step{margin-top:10px;padding:10px 12px;border-right:3px solid #8da98e;border-radius:8px;background:#f4f8f3}
+.expert-recommendation-next-step b{font-size:11px;color:#3b6444}
+.expert-recommendation-next-step p{margin:5px 0 0;color:#617064;font-size:11px;line-height:1.8}
