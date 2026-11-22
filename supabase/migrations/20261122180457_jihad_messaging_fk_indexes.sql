@@ -1,0 +1,4 @@
+create index if not exists expert_authority_consents_organization_idx on public.expert_authority_consents(organization_id);
+create index if not exists institutional_message_threads_created_by_idx on public.institutional_message_threads(created_by_user_id);
+create index if not exists institutional_message_threads_recipient_country_idx on public.institutional_message_threads(recipient_country_id);
+create index if not exists institutional_messages_sender_idx on public.institutional_messages(sender_user_id);

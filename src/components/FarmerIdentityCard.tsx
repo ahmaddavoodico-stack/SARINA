@@ -6,6 +6,7 @@ type Organization={id:string;display_name:string;organization_type:string};
 type Consent={id:string;organization_id:string;consent_scopes:string[];purpose_code:string;status:string;granted_at:string;expires_at:string|null;revoked_at:string|null;created_at:string};
 const scopeOptions=[
  {value:"identity_summary",label:"شناسه و اطلاعات هویتی مختصر کشاورز",detail:"نام نمایشی و کد یکتای SARINA"},
+ {value:"institutional_messaging",label:"دریافت پیام رسمی از جهاد و نهادهای مجاز",detail:"اجازه ارسال پیام داخل SARINA؛ فقط برای سازمان تأییدشده و محدوده مجاز، قابل لغو در هر زمان"},
  {value:"farm_summary",label:"خلاصه مزارع و محدوده فعالیت",detail:"تعداد مزارع و نام محدوده اداری ثبت‌شده"},
  {value:"assigned_specialist",label:"متخصص مسئول پرونده",detail:"نام و وضعیت انتساب متخصص مرتبط"},
  {value:"institutional_support_history",label:"سوابق حمایت سازمانی",detail:"حمایت‌های ثبت‌شده و وضعیت تحویل"},
@@ -29,8 +30,8 @@ export default function FarmerIdentityCard({userId}:{userId:string}){
  const [error,setError]=useState("");
  const [copied,setCopied]=useState(false);
  const db=supabase as any;
- const activeOrganizationIds=useMemo(()=>new Set(consents.filter(x=>x.status==="active").map(x=>x.organization_id)),[consents]);
- const availableOrganizations=organizations.filter(x=>!activeOrganizationIds.has(x.id));
+ const activeMessagingOrganizationIds=useMemo(()=>new Set(consents.filter(x=>x.status==="active"&&(!x.expires_at||new Date(x.expires_at).getTime()>Date.now())&&x.consent_scopes.includes("identity_summary")&&x.consent_scopes.includes("institutional_messaging")).map(x=>x.organization_id)),[consents]);
+ const availableOrganizations=organizations.filter(x=>!activeMessagingOrganizationIds.has(x.id));
 
  async function refresh(){
   if(!db){setError("اتصال پایگاه داده در دسترس نیست.");setLoading(false);return;}
