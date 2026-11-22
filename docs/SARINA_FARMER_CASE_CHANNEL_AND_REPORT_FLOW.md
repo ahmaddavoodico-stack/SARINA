@@ -74,21 +74,30 @@ The current expert dashboard already provides a structured report form with:
 
 A verified specialist with an accepted assignment reviews the preview and explicitly confirms it. The report is persisted in `expert_request_reports` with its request, consultation and author identifiers. The specialist case detail reads these report records.
 
-### Missing farmer-facing delivery step
+### Verified database audit and missing farmer-facing delivery step
 
-The current reviewed farmer workspace does not yet read `expert_request_reports`, and the reviewed report-submit function only inserts the report row and refreshes the expert view. A report-to-farmer notification and external-channel delivery path was not verified.
+A read-only audit of the connected production schema confirmed:
 
-Implement this as a separate, forward-only slice after reviewing the report table's RLS and grants:
+- RLS is enabled on `expert_request_reports` and `expert_case_notifications`.
+- `expert_reports_participant_select` already permits the request owner to read reports for their own request; the specialist side is limited to an accepted assignment and a verified profile.
+- `expert_reports_assigned_expert_insert` allows report insertion only when the author is the current authenticated user, the profile is verified, and the assignment is accepted.
+- No trigger exists on `expert_request_reports` to create a farmer notification. Existing message notifications are triggered by inserts into `expert_consultation_messages`.
+- The reviewed farmer workspace does not query `expert_request_reports`; the report is therefore authorized for the farmer at the database layer but is not yet surfaced in the farmer UI.
+- SARINA Connect's routes, consent events, provider events and delivery jobs are present with RLS enabled and explicit client-deny policies. The outbox references canonical consultation-message IDs.
 
-1. On successful report insert, create a recipient-scoped `expert_case_notifications` event such as `report_ready` for the actual `expert_requests.requester_user_id`. Do not trust a client-supplied recipient.
-2. Make report creation and notification creation atomic, preferably in a server-side RPC/transaction. Enforce that the author is the currently assigned, verified specialist and the assignment is accepted.
-3. Add a farmer-visible report section in the case detail/workspace. The farmer can read only reports for their own requests; specialists can read reports only for cases assigned to them. No broad authenticated policy.
-4. For an active consented Bale/Telegram route, create a canonical farmer-visible consultation message representing the report (including the report ID/reference and the approved summary/recommendations/limitations), then enqueue an outbox row referencing that message. The structured `expert_request_reports` row remains the canonical report; the channel is a delivery copy, not a second report database.
+Implement the missing delivery slice as follows; do not widen the existing report RLS policy:
+
+1. After a successful report insert, create a recipient-scoped `expert_case_notifications` event such as `report_ready` for the actual `expert_requests.requester_user_id`. Derive the recipient from the request in trusted database code; never accept a client-supplied recipient.
+2. Make report creation and notification creation atomic, preferably in a server-side RPC/transaction. Preserve the existing author/verified-profile/accepted-assignment checks.
+3. Add a farmer-visible report section in the case detail/workspace using the existing owner-scoped SELECT policy. Add a role-switched negative test proving a different farmer cannot read it.
+4. For an active consented Bale/Telegram route, create a canonical farmer-visible consultation message representing the report (report reference plus approved summary/recommendations/limitations), then enqueue an outbox row referencing that message. The structured `expert_request_reports` row remains the canonical report; the channel is a delivery copy, not a second report database.
 5. Clearly identify the human specialist in every relayed report/message. Include a SARINA case reference and a safe in-app link when available.
 6. Track report saved, farmer notification created, provider delivery queued, sent, delivered or failed as separate states. Do not claim delivery from a successful database insert.
 7. If no external route exists or consent is revoked, the report remains available in the authenticated SARINA workspace and the farmer receives the in-app notification.
 
-The existing SARINA Connect outbox currently references `expert_consultation_messages`, not `expert_request_reports`. Do not attach a report row directly to that outbox without a reviewed schema contract. Create the canonical consultation message first, then enqueue its message ID.
+The existing SARINA Connect outbox references `expert_consultation_messages`, not `expert_request_reports`. Do not attach a report row directly to that outbox without a reviewed schema contract. Create the canonical consultation message first, then enqueue its message ID.
+
+**Important integrity note:** `expert_case_notifications` currently has recipient-scoped read/update policies, but its table-level UPDATE grant is broader than the intended `read_at`-only behavior. A separate least-privilege grant review is already recorded in the chat-completion workstream; verify all legitimate clients/RPCs before changing it.
 
 ## Expert secretary behavior
 
