@@ -1,7 +1,7 @@
 import {useEffect,useMemo,useState} from "react";
 import type {FormEvent} from "react";
 import type {Session} from "@supabase/supabase-js";
-import {AlertCircle,CheckCircle2,Clock3,FileText,Inbox,Landmark,MessageCircle,RefreshCw,Search,Send,ShieldCheck,UserRound} from "lucide-react";
+import {AlertCircle,CheckCircle2,FileText,Inbox,Landmark,MessageCircle,RefreshCw,Search,Send,ShieldCheck} from "lucide-react";
 import {supabase} from "../lib/supabase";
 
 type AuthorityOrg={id:string;display_name:string;legal_name:string;organization_type:string};
