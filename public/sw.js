@@ -1,5 +1,5 @@
 const CACHE="sarina-shell-v6";
-const SHELL=["/","/manifest.webmanifest","/sarina-logo.svg"];
+const SHELL=["/","/manifest.webmanifest","/sarina-logo.svg","/sarina-icon-192.webp","/apple-touch-icon.png"];
 
 self.addEventListener("install",event=>{
  event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(SHELL)));
