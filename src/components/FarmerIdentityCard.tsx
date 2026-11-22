@@ -30,7 +30,7 @@ export default function FarmerIdentityCard({userId}:{userId:string}){
  const [error,setError]=useState("");
  const [copied,setCopied]=useState(false);
  const db=supabase as any;
- const activeMessagingOrganizationIds=useMemo(()=>new Set(consents.filter(x=>x.status==="active"&&x.consent_scopes.includes("identity_summary")&&x.consent_scopes.includes("institutional_messaging")).map(x=>x.organization_id)),[consents]);
+ const activeMessagingOrganizationIds=useMemo(()=>new Set(consents.filter(x=>x.status==="active"&&(!x.expires_at||new Date(x.expires_at).getTime()>Date.now())&&x.consent_scopes.includes("identity_summary")&&x.consent_scopes.includes("institutional_messaging")).map(x=>x.organization_id)),[consents]);
  const availableOrganizations=organizations.filter(x=>!activeMessagingOrganizationIds.has(x.id));
 
  async function refresh(){
