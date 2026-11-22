@@ -42,11 +42,12 @@ export default function ExpertRecommendationFollowUp({profileId,sarinaUserId,ver
   completed:rows.filter(r=>r.status==="completed").length,
   overdue:rows.filter(r=>["approved","in_progress"].includes(r.status)&&!!r.due_on&&r.due_on<today).length,
   needsReview:rows.filter(r=>r.status==="needs_review").length,
-  noFeedback:rows.filter(r=>["approved","in_progress"].includes(r.status)&&!r.farmer_note&&!r.completed_at).length
+  noFeedback:rows.filter(r=>["in_progress","completed","needs_review"].includes(r.status)&&!r.farmer_note&&(!Array.isArray(r.evidence)||r.evidence.length===0)).length
  }),[rows,today]);
  const grouped=useMemo(()=>rows.reduce<Record<string,Recommendation[]>>((acc,r)=>{const key=r.request_id; (acc[key] ||= []).push(r);return acc;},{}),[rows]);
  async function saveReview(r:Recommendation){
   if(!supabase||!sarinaUserId)return;const d=drafts[r.id];if(!d?.summary.trim()){setNotice("برای ثبت ارزیابی، خلاصه بررسی متخصص را بنویسید.");return;}
+  if(d.status==="verified"&&d.evidence.trim().length<10){setNotice("برای تأیید نتیجه، مبنای شواهد را با حداقل ۱۰ نویسه توضیح دهید؛ بدون ثبت مبنای شواهد فقط می‌توانید گزارش را بررسی‌شده یا نیازمند پیگیری ثبت کنید.");return;}
   setBusy(r.id);setNotice("");
   const payload={recommendation_id:r.id,reviewer_user_id:sarinaUserId,outcome_status:d.status,outcome_summary:d.summary.trim(),evidence_assessment:d.evidence.trim()||null,reviewed_at:new Date().toISOString(),updated_at:new Date().toISOString()};
   const {data,error}=await db.from("expert_recommendation_reviews").upsert(payload,{onConflict:"recommendation_id"}).select("id,recommendation_id,reviewer_user_id,outcome_status,outcome_summary,evidence_assessment,reviewed_at,updated_at").single();
@@ -80,11 +81,11 @@ export default function ExpertRecommendationFollowUp({profileId,sarinaUserId,ver
     <div className="expert-recommendation-farmer-report"><b>گزارش کشاورز</b><p>{r.farmer_note||"هنوز یادداشت اجرایی ثبت نشده است."}</p><small>مدارک ساختاریافته ثبت‌شده: {Array.isArray(r.evidence)?r.evidence.length.toLocaleString("fa-IR"):"۰"} · ثبت تکمیل: {r.completed_at?new Date(r.completed_at).toLocaleString("fa-IR"):"ندارد"}</small></div>
     <div className="expert-recommendation-review-form">
      <div><b>ارزیابی مستقل متخصص</b>{review&&<small>آخرین بازبینی: {new Date(review.reviewed_at).toLocaleString("fa-IR")}</small>}</div>
-     <label>نتیجه بررسی<select value={d.status} onChange={e=>setDrafts(old=>({...old,[r.id]:{...d,status:e.target.value}}))}><option value="acknowledged">گزارش بررسی شد؛ تأیید نتیجه نشده</option><option value="verified">نتیجه با شواهد تأیید شد</option><option value="needs_followup">نیازمند پیگیری بیشتر</option></select></label>
+     <label>نتیجه بررسی<select value={d.status} onChange={e=>setDrafts(old=>({...old,[r.id]:{...d,status:e.target.value}}))}><option value="acknowledged">گزارش بررسی شد؛ تأیید نتیجه نشده</option><option value="verified" disabled={d.evidence.trim().length<10&&review?.outcome_status!=="verified"}>نتیجه با شواهد تأیید شد</option><option value="needs_followup">نیازمند پیگیری بیشتر</option></select></label>
      <label>خلاصه ارزیابی متخصص<textarea rows={2} maxLength={2000} value={d.summary} onChange={e=>setDrafts(old=>({...old,[r.id]:{...d,summary:e.target.value}}))} placeholder="آنچه از گزارش و شواهد قابل نتیجه‌گیری است را بنویسید..."/></label>
-     <label>ارزیابی کفایت شواهد (اختیاری)<textarea rows={2} maxLength={2000} value={d.evidence} onChange={e=>setDrafts(old=>({...old,[r.id]:{...d,evidence:e.target.value}}))} placeholder="مثلاً فقط اعلام کشاورز؛ تصویر قبل و بعد موجود نیست."/></label>
+     <label>ارزیابی کفایت شواهد (اختیاری)<textarea rows={2} maxLength={2000} value={d.evidence} onChange={e=>setDrafts(old=>({...old,[r.id]:{...d,evidence:e.target.value}}))} placeholder="مبنای ارزیابی را بنویسید؛ مثلاً بازدید میدانی در تاریخ ... یا بررسی عکس‌های قبل و بعد."/></label>
      <button className="expert-primary" disabled={busy===r.id||!d.summary.trim()} onClick={()=>void saveReview(r)}>{busy===r.id?"در حال ثبت...":"ثبت بازبینی تخصصی"} <CheckCircle2 size={15}/></button>
-     {review&&<small className="review-state">وضعیت کارشناسی: {outcomeLabel[review.outcome_status]||review.outcome_status}</small>}
+     {d.status==="verified"&&d.evidence.trim().length<10&&<small className="review-state">برای تأیید نتیجه، ابتدا مبنای شواهد را توضیح دهید.</small>}{review&&<small className="review-state">وضعیت کارشناسی: {outcomeLabel[review.outcome_status]||review.outcome_status}</small>}
     </div>
    </article>;})}
   </section>)}
