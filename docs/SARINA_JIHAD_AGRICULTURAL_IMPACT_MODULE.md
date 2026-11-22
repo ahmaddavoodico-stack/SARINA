@@ -89,7 +89,7 @@ Items to resolve or test before pilot:
 
 - `users` has no SARINA public farmer code. Do not overload UUID, phone, email or a sequential database ID as a human-facing identifier.
 - Existing authority consent is farm-specific and organization-specific, which is good for farm metrics, but a farmer identity card needs its own controlled sharing scope. A farmer can own multiple farms.
-- `organization_access_scopes` currently exposes country/user/farm scope fields but no explicit organizational region hierarchy target. The Jihad UI models national/province/county/service-center/expert levels, but the backend scope model must enforce that hierarchy rather than trusting a UI selector.
+- `organization_access_scopes` currently exposes global/country/user/farm scopes but no province/county/service-center hierarchy. The `organization_has_scoped_access` helper currently checks only global, country, user and farm scopes. Although `users.home_region_id` and `farms.home_region_id` reference `deployment_regions`, that table contains deployment/hosting-region metadata (region code, display name, hosting country and status), not a parent-child administrative geography. It must not be repurposed as the Jihad province/county tree. The Jihad UI models national/province/county/service-center levels, but the backend cannot enforce those levels yet.
 - Existing institutional requests record a service request, not the full lifecycle and accounting of a grant/subsidy/equipment/training support item.
 - Existing productivity records measure outcomes, but there is no dedicated versioned authority directive workflow with target audience, acknowledgment, implementation and expiry.
 - Specialist awards exist; a corresponding farmer recognition workflow is not yet represented by the same award tables.
@@ -116,10 +116,11 @@ Optional later mapping table `farmer_external_registry_links`:
 ### 3.2 Organizational geography and delegated access
 
 Extend the existing scope system rather than inventing a second role model:
-- Add a nullable `target_region_id` FK to the canonical `deployment_regions` hierarchy on `organization_access_scopes`.
-- Define explicit scope types: national, province, county, service_center, assigned_farm, assigned_farmer, expert_case.
-- Resolve descendants through a trusted server-side region hierarchy query; never accept a client-supplied list of arbitrary region descendants.
-- Update `organization_has_scoped_access` to evaluate capability + active membership + scope ancestry + target user/farm + country. Fail closed if a region is missing or ambiguous.
+- Create a separate `agricultural_admin_regions` table for the official administrative geography; do not use `deployment_regions`, which is for deployment/hosting regions. Include `id`, `parent_region_id`, `region_level` (national/province/county/service_center), `official_code`, `display_name`, `country_id`, `authority_namespace`, `status`, validity dates and source/version metadata. Enforce unique official codes within their authority namespace and valid parent-level relationships.
+- Add `farms.admin_region_id` to link each farm to a verified agricultural administrative region. Keep existing `home_region_id` semantics unchanged until its deployment-region purpose is separately resolved.
+- Add nullable `target_admin_region_id` to `organization_access_scopes` and explicit scope types: national, province, county, service_center, assigned_farm, assigned_farmer, expert_case.
+- Resolve descendants through a trusted server-side recursive hierarchy query; never accept a client-supplied list of arbitrary region descendants.
+- Update `organization_has_scoped_access` to evaluate capability + active membership + administrative-region ancestry + target user/farm + country. Fail closed if a region is missing or ambiguous.
 - Add capability codes (names are proposed): `farmer.identity.read`, `farmer.profile.summary.read`, `oversight.productivity.read`, `oversight.support.read`, `oversight.support.manage`, `oversight.directive.publish`, `oversight.directive.review`, `oversight.recognition.issue`, `oversight.expert.read`, `oversight.reports.export`.
 - Separate authority users from SARINA platform administrators. A platform admin is not automatically an authority employee; organization access requires active membership and capability.
 - A service-center officer sees only assigned service-center/farmer scope. County and province roles see descendants only within their granted scope. National role receives aggregate-first access; row-level farmer identity is a separate capability.
