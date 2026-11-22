@@ -4,6 +4,7 @@ create table if not exists public.expert_recommendation_reviews (
   id uuid primary key default gen_random_uuid(),
   recommendation_id uuid not null unique
     references public.expert_recommendation_actions(id) on delete cascade,
+  created_by_user_id uuid not null references public.users(id) on delete restrict,
   reviewer_user_id uuid not null references public.users(id) on delete restrict,
   outcome_status text not null
     check (outcome_status in ('acknowledged','verified','needs_followup')),
@@ -24,7 +25,7 @@ create index if not exists expert_recommendation_reviews_reviewer_idx
 alter table public.expert_recommendation_reviews enable row level security;
 revoke all on public.expert_recommendation_reviews from anon, authenticated;
 grant select, insert on public.expert_recommendation_reviews to authenticated;
-grant update (outcome_status, outcome_summary, evidence_assessment, reviewed_at, updated_at)
+grant update (reviewer_user_id, outcome_status, outcome_summary, evidence_assessment, reviewed_at, updated_at)
   on public.expert_recommendation_reviews to authenticated;
 
 -- Internal review notes are visible only to the currently assigned, verified specialist.
@@ -48,7 +49,8 @@ using (
 create policy expert_recommendation_review_assigned_expert_insert
 on public.expert_recommendation_reviews for insert to authenticated
 with check (
-  reviewer_user_id = public.current_sarina_user_id()
+  created_by_user_id = public.current_sarina_user_id()
+  and reviewer_user_id = public.current_sarina_user_id()
   and exists (
     select 1
     from public.expert_recommendation_actions ra
