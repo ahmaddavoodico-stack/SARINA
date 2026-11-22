@@ -13,7 +13,9 @@ create table if not exists public.expert_recommendation_reviews (
     check (evidence_assessment is null or length(evidence_assessment) <= 2000),
   reviewed_at timestamptz not null default now(),
   created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
+  updated_at timestamptz not null default now(),
+  constraint expert_recommendation_verified_needs_basis
+    check (outcome_status <> 'verified' or (evidence_assessment is not null and length(trim(evidence_assessment)) >= 10))
 );
 
 create index if not exists expert_recommendation_reviews_reviewer_idx
