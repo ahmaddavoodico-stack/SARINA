@@ -1,4 +1,4 @@
-const CACHE="sarina-shell-v4";
+const CACHE="sarina-shell-v5";
 const SHELL=["/","/manifest.webmanifest","/sarina-icon-192.webp","/sarina-icon-512.webp"];
 
 self.addEventListener("install",event=>{
