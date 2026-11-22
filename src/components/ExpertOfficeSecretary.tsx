@@ -16,6 +16,7 @@ export default function ExpertOfficeSecretary({name,caseCount,unreadCount,onNavi
     <b className="office-secretary-label">می‌خواهید کجا برویم؟</b>
     <button className="office-secretary-action" onClick={()=>{onNavigate("cases");setOpen(false)}}><span><BriefcaseBusiness/></span><div><b>رسیدگی به پرونده‌ها</b><small>مشاهده ارجاع‌ها و گفتگوهای کشاورزان</small></div><ChevronDown/></button>
     <button className="office-secretary-action" onClick={()=>{onNavigate("case-operations");setOpen(false)}}><span><ClipboardCheck/></span><div><b>میز عملیات پرونده‌ها</b><small>بررسی و مدیریت جریان کار تخصصی</small></div><ChevronDown/></button>
+    <button className="office-secretary-action" onClick={()=>{onNavigate("recommendation-followup");setOpen(false)}}><span><CalendarClock/></span><div><b>پیگیری نتیجه توصیه‌ها</b><small>مشاهده گزارش اجرا و ارزیابی شواهد کشاورز</small></div><ChevronDown/></button>
     <button className="office-secretary-action" onClick={()=>{onNavigate("signals");setOpen(false)}}><span><CalendarClock/></span><div><b>اعلان‌ها و پیگیری‌ها</b><small>مواردی که نیازمند توجه شما هستند</small></div><ChevronDown/></button>
     {sent&&<p className="office-secretary-note">پیام شما در این پیش‌نمایش ثبت شد. اتصال گفت‌وگوی هوشمند در مرحله یکپارچه‌سازی فعال می‌شود.</p>}
    </div>
