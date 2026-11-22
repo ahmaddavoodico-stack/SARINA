@@ -1,6 +1,6 @@
 import {useState} from "react";
 import type {FormEvent} from "react";
-import {ArrowUp,BriefcaseBusiness,CalendarClock,ChevronDown,ClipboardCheck,Inbox,MessageCircle,Paperclip,Send,Sparkles,X} from "lucide-react";
+import {ArrowUp,BriefcaseBusiness,CalendarClock,ChevronDown,ClipboardCheck,Inbox,MessageCircle,Sparkles,X} from "lucide-react";
 import SarinaCharacter from "./SarinaCharacter";
 
 type Props={name:string;caseCount:number;unreadCount:number;onNavigate:(tab:string)=>void};
