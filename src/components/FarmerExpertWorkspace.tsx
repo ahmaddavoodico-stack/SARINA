@@ -2,28 +2,37 @@ import {useEffect,useMemo,useState} from "react";
 import {ArrowLeft,CheckCircle2,MessageCircle,RefreshCw,Search,ShieldCheck,UserRound} from "lucide-react";
 import {supabase} from "../lib/supabase";
 
-type Expert={id:string;public_name:string;biography:string|null;avatar_path:string|null;years_experience:number|null;languages:any;country_id:string|null;availability?:{availability_status:string;pause_new_cases:boolean;status_note:string|null;vacation_start:string|null;vacation_end:string|null}};
-type Farm={id:string;farm_name:string|null};
+type Expert={id:string;public_name:string;biography:string|null;avatar_path:string|null;years_experience:number|null;languages:any;country_id:string|null;specialties?:{category_code:string;display_name:string}[];availability?:{availability_status:string;pause_new_cases:boolean;max_open_cases:number|null;status_note:string|null;vacation_start:string|null;vacation_end:string|null}};
+type Farm={id:string;farm_name:string|null;country_id:string|null};
 type Props={sarinaUserId:string};
 const db=supabase as any;
 export default function FarmerExpertWorkspace({sarinaUserId}:Props){
  const [experts,setExperts]=useState<Expert[]>([]),[farms,setFarms]=useState<Farm[]>([]),[specialties,setSpecialties]=useState<any[]>([]);
  const [selected,setSelected]=useState(""),[farmId,setFarmId]=useState(""),[subject,setSubject]=useState(""),[problem,setProblem]=useState(""),[category,setCategory]=useState(""),[filter,setFilter]=useState("");
+ const [referralMode,setReferralMode]=useState<"farmer_selected"|"sarina_suggested">("sarina_suggested");
+ const [originFilter,setOriginFilter]=useState<"all"|"domestic"|"foreign"|"unknown">("all");
  const [requests,setRequests]=useState<any[]>([]),[notifications,setNotifications]=useState<any[]>([]),[handovers,setHandovers]=useState<any[]>([]),[activeConsultation,setActiveConsultation]=useState<string|null>(null),[activeRequestId,setActiveRequestId]=useState<string|null>(null),[messages,setMessages]=useState<any[]>([]),[messageText,setMessageText]=useState(""),[busy,setBusy]=useState(false),[notice,setNotice]=useState(""),[loading,setLoading]=useState(true);
  async function refresh(){
   if(!supabase)return;setLoading(true);
   const [e,f,c,r,n]=await Promise.all([
    db.from("expert_profiles").select("id,public_name,biography,avatar_path,years_experience,languages,country_id").eq("verification_status","verified").in("profile_visibility",["directory","public"]).order("public_name").limit(100),
-   db.from("farms").select("id,farm_name").eq("owner_user_id",sarinaUserId).limit(100),
+   db.from("farms").select("id,farm_name,country_id").eq("owner_user_id",sarinaUserId).limit(100),
    db.from("expertise_categories").select("id,category_code,display_name").eq("is_active",true).order("display_name"),
-   db.from("expert_requests").select("id,subject,problem_description,status,created_at,expert_consultations(id,status),expert_request_assignments(assignment_status,expert_profiles(public_name,biography,years_experience,avatar_path))").eq("requester_user_id",sarinaUserId).order("created_at",{ascending:false}).limit(30),
+   db.from("expert_requests").select("id,subject,problem_description,status,created_at,referral_source,expert_consultations(id,status),expert_request_assignments(assignment_status,expert_profiles(public_name,biography,years_experience,avatar_path))").eq("requester_user_id",sarinaUserId).order("created_at",{ascending:false}).limit(30),
    db.from("expert_case_notifications").select("id,event_type,preview,created_at,read_at,request_id").eq("recipient_user_id",sarinaUserId).order("created_at",{ascending:false}).limit(30)
   ]);
   const errors=[e,f,c,r,n].filter(x=>x.error);
   if(errors.length)setNotice("برخی اطلاعات در دسترس نیستند: "+errors.map(x=>x.error.message).join(" · "));
-  const availabilityRows=e.data?.length?await db.from("expert_availability").select("expert_profile_id,availability_status,pause_new_cases,status_note,vacation_start,vacation_end").in("expert_profile_id",e.data.map((x:Expert)=>x.id)):({data:[],error:null} as any);
+  const expertIds=(e.data||[]).map((x:Expert)=>x.id);
+  const [availabilityRows,specialtyRows]=expertIds.length?await Promise.all([
+   db.from("expert_availability").select("expert_profile_id,availability_status,pause_new_cases,max_open_cases,status_note,vacation_start,vacation_end").in("expert_profile_id",expertIds),
+   db.from("expert_specialties").select("expert_profile_id,expertise_categories(category_code,display_name)").in("expert_profile_id",expertIds)
+  ]):[{data:[],error:null},{data:[],error:null}];
   const availabilityMap=new Map((availabilityRows.data||[]).map((x:any)=>[x.expert_profile_id,x]));
-  setExperts((e.data||[]).map((x:Expert)=>({...x,availability:availabilityMap.get(x.id)})));setFarms(f.data||[]);setSpecialties(c.data||[]);setRequests(r.data||[]);setNotifications(n.data||[]);
+  const specialtyMap=new Map<string,{category_code:string;display_name:string}[]>();
+  for(const row of specialtyRows.data||[]){const item=Array.isArray(row.expertise_categories)?row.expertise_categories[0]:row.expertise_categories;if(item?.category_code){const list=specialtyMap.get(row.expert_profile_id)||[];list.push({category_code:item.category_code,display_name:item.display_name});specialtyMap.set(row.expert_profile_id,list);}}
+  if(availabilityRows.error||specialtyRows.error)setNotice(old=>old||"اطلاعات ظرفیت یا تخصص برخی متخصصان در دسترس نیست.");
+  setExperts((e.data||[]).map((x:Expert)=>({...x,availability:availabilityMap.get(x.id),specialties:specialtyMap.get(x.id)||[]})));setFarms(f.data||[]);setSpecialties(c.data||[]);setRequests(r.data||[]);setNotifications(n.data||[]);
   const h=await db.from("expert_case_handovers").select("id,request_id,status,reason,initiated_at,from_expert_profile_id,to_expert_profile_id,from_expert:expert_profiles!expert_case_handovers_from_expert_profile_id_fkey(public_name),to_expert:expert_profiles!expert_case_handovers_to_expert_profile_id_fkey(public_name)").eq("requester_user_id",sarinaUserId).eq("status","awaiting_farmer_consent").order("initiated_at",{ascending:false});
   if(h.error)setNotice(old=>old||"درخواست‌های تغییر متخصص در دسترس نیست: "+h.error.message);setHandovers(h.data||[]);
   if(!farmId&&f.data?.[0])setFarmId(f.data[0].id);
@@ -38,27 +47,34 @@ export default function FarmerExpertWorkspace({sarinaUserId}:Props){
    .subscribe();
   return()=>{void client.removeChannel(channel);};
  },[sarinaUserId]);
+ const selectedFarm=farms.find(f=>f.id===farmId);
+ const originForExpert=(e:Expert):"domestic"|"foreign"|"unknown"=>!selectedFarm?.country_id||!e.country_id?"unknown":e.country_id===selectedFarm.country_id?"domestic":"foreign";
+ const expertUnavailable=(e?:Expert)=>{if(!e?.availability)return false;const now=Date.now();const vacationActive=!!e.availability.vacation_start&&now>=new Date(e.availability.vacation_start).getTime()&&(!e.availability.vacation_end||now<=new Date(e.availability.vacation_end).getTime());const awayActive=e.availability.availability_status==="away"&&(!e.availability.vacation_end||now<=new Date(e.availability.vacation_end).getTime());return e.availability.pause_new_cases||vacationActive||awayActive;};
+ const recommendationReasons=(e:Expert)=>{const language=(document.documentElement.lang||"fa").split("-")[0].toLowerCase();const languageValues=Array.isArray(e.languages)?e.languages.map((v:any)=>String(v).toLowerCase().split("-")[0]):[];const reasons:string[]=[];if(category&&e.specialties?.some(s=>s.category_code===category))reasons.push("specialty_match");if(languageValues.includes(language))reasons.push("language_match");if(!!e.availability&&e.availability.availability_status==="available"&&!expertUnavailable(e))reasons.push("availability_confirmed");if((e.years_experience||0)>0)reasons.push("experience_recorded");return reasons;};
+ const scoreExpert=(e:Expert)=>{const reasons=recommendationReasons(e);return (reasons.includes("specialty_match")?100:0)+(reasons.includes("language_match")?20:0)+(reasons.includes("availability_confirmed")?10:0)+Math.min(e.years_experience||0,20);};
  const visible=useMemo(()=>experts.filter(e=>{
-  const s=[e.public_name,e.biography||"",...(e.languages||[])].join(" ").toLowerCase();
-  return s.includes(filter.toLowerCase());
- }),[experts,filter]);
+  const s=[e.public_name,e.biography||"",...(Array.isArray(e.languages)?e.languages:[]),...(e.specialties||[]).map(x=>x.display_name)].join(" ").toLowerCase();
+  const matchesText=s.includes(filter.toLowerCase());const origin=originForExpert(e);return matchesText&&(originFilter==="all"||origin===originFilter);
+ }).sort((a,b)=>referralMode==="sarina_suggested"?scoreExpert(b)-scoreExpert(a):a.public_name.localeCompare(b.public_name)),[experts,filter,originFilter,referralMode,category,farmId]);
  const unread=notifications.filter(n=>!n.read_at).length;
  const selectedExpert=experts.find(e=>e.id===selected);
  const activeRequest=requests.find(r=>r.id===activeRequestId);
  const activeAssignment=activeRequest?.expert_request_assignments?.find((a:any)=>a.assignment_status!=="cancelled")||activeRequest?.expert_request_assignments?.[0];
  const activeExpert=activeAssignment?.expert_profiles;
- const expertUnavailable=(e?:Expert)=>{if(!e?.availability)return false;const now=Date.now();const vacationActive=!!e.availability.vacation_start&&now>=new Date(e.availability.vacation_start).getTime()&&(!e.availability.vacation_end||now<=new Date(e.availability.vacation_end).getTime());const awayWithoutExpiry=e.availability.availability_status==="away"&&!e.availability.vacation_end;return e.availability.pause_new_cases||vacationActive||awayWithoutExpiry;};
  async function submit(e:React.FormEvent){
   e.preventDefault();if(!selected||!farmId||!subject.trim()||!problem.trim()||!supabase)return;
+  if(referralMode==="sarina_suggested"&&!visible.slice(0,5).some(x=>x.id===selected)){setNotice("برای مسیر پیشنهاد سارینا، یکی از پنج گزینه نخست فهرست پیشنهادی را انتخاب کنید.");return;}
   setBusy(true);setNotice("");
   try{
    const {data:req,error}=await db.from("expert_requests").insert({
     requester_user_id:sarinaUserId,farm_id:farmId,assigned_expert_profile_id:selected,
+    referral_source:referralMode,
+    referral_context:{version:1,selection_mode:referralMode,origin_classification:originForExpert(selectedExpert!),farm_country_id:selectedFarm?.country_id||null,expert_country_id:selectedExpert?.country_id||null,request_category:category||"general",rule_based_score:referralMode==="sarina_suggested"?scoreExpert(selectedExpert!):null,rule_codes:referralMode==="sarina_suggested"?recommendationReasons(selectedExpert!):[]},
     subject:subject.trim(),problem_description:problem.trim(),request_type:category||"general",
     priority:"normal",status:"submitted",preferred_language:document.documentElement.lang||"fa",
     requested_mode:"in_app_message",consent_at:new Date().toISOString(),
     consent_scope:{farm_context:true,problem_description:true,expert_consultation:true,attachments:false},
-    consented_context_snapshot:{source:"farmer_expert_directory",captured_at:new Date().toISOString()}
+    consented_context_snapshot:{source:"farmer_expert_directory",referral_source:referralMode,captured_at:new Date().toISOString()}
    }).select("id").single();
    if(error)throw error;
    const {error:assignmentError}=await db.from("expert_request_assignments").insert({request_id:req.id,expert_profile_id:selected,assignment_status:"offered"});
@@ -76,32 +92,35 @@ export default function FarmerExpertWorkspace({sarinaUserId}:Props){
  async function respondHandover(id:string,accept:boolean){if(!supabase)return;setBusy(true);setNotice("");const {error}=await db.rpc("respond_to_expert_case_handover",{p_handover_id:id,p_accept:accept});setBusy(false);if(error){setNotice(error.message);return;}setNotice(accept?"رضایت شما ثبت شد؛ اکنون متخصص جایگزین باید ارجاع را بپذیرد.":"درخواست جایگزینی رد شد و پرونده نزد متخصص فعلی باقی می‌ماند.");await refresh();}
  return <section className="farmer-expert-workspace" dir="rtl">
   <div className="page-heading"><span className="eyebrow">شبکه متخصصان تأییدشده</span><h1>مشاوره تخصصی کشاورزی</h1><p>متخصص موردنیازتان را پیدا کنید، درخواست بفرستید و مسیر پرونده را در SARINA پیگیری کنید.</p></div>
+  <div className="expert-referral-mode" role="group" aria-label="روش انتخاب متخصص"><button type="button" className={referralMode==="sarina_suggested"?"expert-primary":"expert-link"} onClick={()=>{setReferralMode("sarina_suggested");setSelected("");}}>پیشنهاد سارینا</button><button type="button" className={referralMode==="farmer_selected"?"expert-primary":"expert-link"} onClick={()=>{setReferralMode("farmer_selected");setSelected("");}}>انتخاب مستقیم من</button><small>{referralMode==="sarina_suggested"?"سارینا گزینه‌ها را با معیارهای ثبت‌شده تخصص، زبان، وضعیت پذیرش پرونده و سابقه مرتب می‌کند؛ ارسال درخواست فقط پس از انتخاب و تأیید شما انجام می‌شود.":"فهرست را خودتان بررسی می‌کنید و متخصص موردنظر را مستقیماً انتخاب می‌کنید."}</small></div>
   {notice&&<div className="notice">{notice}</div>}
   <div className="expert-directory-layout">
    <div className="expert-directory-main">
+    <div className="expert-origin-filters" role="group" aria-label="تفکیک کشور متخصص"><button type="button" className={originFilter==="all"?"expert-primary":"expert-link"} onClick={()=>setOriginFilter("all")}>همه متخصصان</button><button type="button" className={originFilter==="domestic"?"expert-primary":"expert-link"} disabled={!selectedFarm?.country_id} onClick={()=>setOriginFilter("domestic")}>متخصصان داخلی</button><button type="button" className={originFilter==="foreign"?"expert-primary":"expert-link"} disabled={!selectedFarm?.country_id} onClick={()=>setOriginFilter("foreign")}>متخصصان خارجی</button><button type="button" className={originFilter==="unknown"?"expert-primary":"expert-link"} onClick={()=>setOriginFilter("unknown")}>کشور نامشخص</button></div>
+    {!selectedFarm?.country_id&&<div className="secure-note">برای تفکیک قطعی داخلی و خارجی، کشور مزرعه باید در پرونده آن ثبت شود. تا آن زمان هیچ متخصصی به‌صورت حدسی در یکی از دو گروه قرار نمی‌گیرد.</div>}
     <div className="search-box"><Search size={18}/><input value={filter} onChange={e=>setFilter(e.target.value)} placeholder="جست‌وجوی نام، حوزه فعالیت یا زبان کارشناس..."/></div>
-    {loading?<div className="empty-state">در حال دریافت فهرست متخصصان...</div>:visible.length===0?<div className="empty-state"><UserRound/><strong>متخصص تأییدشده‌ای برای نمایش پیدا نشد</strong><p>با تکمیل و تأیید پروفایل متخصصان، فهرست این بخش فعال می‌شود.</p></div>:<div className="service-grid">{visible.map(ex=><article className="service-card" key={ex.id}>
-      <div className="service-top"><span className="farmer-expert-list-avatar">{ex.avatar_path&&supabase?<img src={supabase.storage.from("expert-avatars").getPublicUrl(ex.avatar_path).data.publicUrl} alt={"تصویر "+ex.public_name}/>:<UserRound size={20}/>}</span><span className="verified"><ShieldCheck size={14}/> تأیید صلاحیت</span></div>
+    {loading?<div className="empty-state">در حال دریافت فهرست متخصصان...</div>:visible.length===0?<div className="empty-state"><UserRound/><strong>متخصص تأییدشده‌ای برای نمایش پیدا نشد</strong><p>با تکمیل و تأیید پروفایل متخصصان، فهرست این بخش فعال می‌شود.</p></div>:<div className="service-grid">{visible.map((ex,index)=><article className="service-card" key={ex.id}>
+      <div className="service-top"><span className="farmer-expert-list-avatar">{ex.avatar_path&&supabase?<img src={supabase.storage.from("expert-avatars").getPublicUrl(ex.avatar_path).data.publicUrl} alt={"تصویر "+ex.public_name}/>:<UserRound size={20}/>}</span><span className="verified"><ShieldCheck size={14}/> تأیید صلاحیت</span><span className="expert-origin-tag">{originForExpert(ex)==="domestic"?"داخلی":originForExpert(ex)==="foreign"?"خارجی":"کشور نامشخص"}</span>{referralMode==="sarina_suggested"&&index<5&&<span className="verified">پیشنهاد سارینا · رتبه {index+1}</span>}</div>
       <h3>{ex.public_name}</h3><p>{ex.biography||"معرفی تخصصی هنوز تکمیل نشده است."}</p>
-      <div className="service-meta"><span>{ex.years_experience??"—"} سال سابقه</span><span>{(ex.languages||[]).join("، ")||"زبان اعلام‌نشده"}</span></div>
+      <div className="service-meta"><span>{ex.years_experience??"—"} سال سابقه</span><span>{(Array.isArray(ex.languages)?ex.languages:[]).join("، ")||"زبان اعلام‌نشده"}</span></div>{(ex.specialties?.length??0)>0&&<small>حوزه‌ها: {ex.specialties?.map(x=>x.display_name).join("، ")}</small>}{referralMode==="sarina_suggested"&&index<5&&<small>دلایل پیشنهاد: {recommendationReasons(ex).map(x=>({specialty_match:"تطبیق تخصص",language_match:"تطبیق زبان",availability_confirmed:"پذیرش پرونده",experience_recorded:"سابقه ثبت‌شده"} as Record<string,string>)[x]).join(" · ")||"اطلاعات تکمیلی برای رتبه‌بندی محدود است"}</small>}
       <button className="expert-primary" onClick={()=>setSelected(ex.id)}>انتخاب برای مشاوره <ArrowLeft size={15}/></button>
     </article>)}</div>}
    </div>
    <aside className="expert-request-panel"><h2>ثبت درخواست مشاوره</h2><p>اطلاعات مزرعه و شرح مسئله فقط برای پرونده مشاوره انتخاب‌شده به اشتراک گذاشته می‌شود.</p>
     <form onSubmit={submit}>
      <label>کارشناس منتخب<select required value={selected} onChange={e=>setSelected(e.target.value)}><option value="">انتخاب کارشناس</option>{experts.map(e=><option key={e.id} value={e.id}>{e.public_name}</option>)}</select></label>
-     <label>مزرعه مرتبط<select required value={farmId} onChange={e=>setFarmId(e.target.value)}><option value="">انتخاب مزرعه</option>{farms.map(f=><option key={f.id} value={f.id}>{f.farm_name||"مزرعه بدون نام"}</option>)}</select></label>
+     <label>مزرعه مرتبط<select required value={farmId} onChange={e=>{setFarmId(e.target.value);setOriginFilter("all");setSelected("");}}><option value="">انتخاب مزرعه</option>{farms.map(f=><option key={f.id} value={f.id}>{f.farm_name||"مزرعه بدون نام"}</option>)}</select></label>
      <label>حوزه درخواست<select value={category} onChange={e=>setCategory(e.target.value)}><option value="">عمومی</option>{specialties.map(s=><option key={s.id} value={s.category_code}>{s.display_name}</option>)}</select></label>
      <label>موضوع<input required minLength={4} maxLength={160} value={subject} onChange={e=>setSubject(e.target.value)} placeholder="مثلاً بررسی زردی برگ‌های نخل"/></label>
      <label>شرح مسئله<textarea required minLength={10} maxLength={6000} rows={5} value={problem} onChange={e=>setProblem(e.target.value)} placeholder="علائم، زمان شروع و اقدام‌هایی که انجام داده‌اید..."/></label>
-     <div className="secure-note"><CheckCircle2 size={15}/> با ارسال درخواست، رضایت شما برای اشتراک همین اطلاعات با کارشناس منتخب ثبت می‌شود.</div>
+     <div className="secure-note"><CheckCircle2 size={15}/> با ارسال درخواست، رضایت شما برای اشتراک همین اطلاعات با کارشناس منتخب ثبت می‌شود. مسیر انتخاب متخصص نیز در پرونده ثبت خواهد شد.</div>
      <button className="expert-primary" disabled={busy||!farms.length||expertUnavailable(selectedExpert)}>{busy?"در حال ارسال...":expertUnavailable(selectedExpert)?"متخصص فعلاً پرونده نمی‌پذیرد":"ارسال درخواست مشاوره"} <ArrowLeft size={16}/></button>
      {!farms.length&&<small>برای ثبت درخواست ابتدا یک مزرعه در بخش «مزارع من» ثبت کنید.</small>}
     </form>
    </aside>
   </div>
   <div className="section-title"><div><span className="eyebrow">پیگیری پرونده‌ها</span><h2>درخواست‌های من</h2></div><button className="expert-link" onClick={()=>void refresh()}><RefreshCw size={15}/> تازه‌سازی</button></div>
-  <div className="request-list">{requests.length===0?<div className="empty-state">هنوز درخواست مشاوره‌ای ثبت نشده است.</div>:requests.map(r=><article className="request-row" key={r.id}><MessageCircle size={20}/><div><strong>{r.subject}</strong><small>{new Date(r.created_at).toLocaleDateString("fa-IR")}</small></div><span>{r.status==="submitted"?"ارسال‌شده":r.status==="assigned"?"ارجاع‌شده":r.status}</span><small>{r.expert_request_assignments?.[0]?.expert_profiles?.public_name||"کارشناس منتخب"}</small><button onClick={()=>void openConversation(r.id)}>گفت‌وگو</button></article>)}</div>
+  <div className="request-list">{requests.length===0?<div className="empty-state">هنوز درخواست مشاوره‌ای ثبت نشده است.</div>:requests.map(r=><article className="request-row" key={r.id}><MessageCircle size={20}/><div><strong>{r.subject}</strong><small>{new Date(r.created_at).toLocaleDateString("fa-IR")}</small></div><span>{r.status==="submitted"?"ارسال‌شده":r.status==="assigned"?"ارجاع‌شده":r.status}</span><small>{r.expert_request_assignments?.[0]?.expert_profiles?.public_name||"کارشناس منتخب"}</small><small>{r.referral_source==="sarina_suggested"?"پیشنهاد سارینا":"انتخاب مستقیم کشاورز"}</small><button onClick={()=>void openConversation(r.id)}>گفت‌وگو</button></article>)}</div>
   {activeConsultation&&<section className="expert-request-panel farmer-chat-panel"><div className="farmer-specialist-identity"><div className="farmer-specialist-avatar">{activeExpert?.avatar_path&&supabase?<img src={supabase.storage.from("expert-avatars").getPublicUrl(activeExpert.avatar_path).data.publicUrl} alt={"تصویر "+activeExpert.public_name}/>:<UserRound size={28}/>}</div><div className="farmer-specialist-copy"><span className="farmer-specialist-kicker">متخصص همراه مزرعه شما</span><h2>{activeExpert?.public_name||"متخصص پرونده شما"}</h2><span className="farmer-specialist-verified"><ShieldCheck size={14}/> متخصص تأییدشده SARINA</span></div></div><div className="farmer-specialist-intro"><strong>سلام، من {activeExpert?.public_name||"متخصص شما"} هستم.</strong><p>مسئول همراهی شما در مسیر افزایش بهره‌وری و شناسایی و رفع مشکلات مزرعه‌تان هستم. پرسش‌ها و اطلاعاتی را که در این پرونده می‌فرستید بررسی می‌کنم و راهنمایی تخصصی ارائه می‌دهم.</p>{activeExpert?.biography&&<small>{activeExpert.biography}</small>}{activeExpert?.years_experience!=null&&<span className="farmer-specialist-experience">{activeExpert.years_experience} سال سابقه حرفه‌ای</span>}</div><div className="farmer-chat-heading"><div><span className="eyebrow">ارتباط انسانی و تخصصی</span><h3>گفت‌وگوی پرونده: {activeRequest?.subject||"مزرعه شما"}</h3></div><span className="farmer-chat-case-tag">متصل به پرونده</span></div><div className="farmer-chat-messages">{messages.map(m=><article key={m.id} className={m.sender_user_id===sarinaUserId?"mine":"theirs"}><p>{m.message_text||"پیام پیوست‌دار"}</p><small>{new Date(m.created_at).toLocaleString("fa-IR")}</small></article>)}</div><form onSubmit={sendFarmerMessage}><textarea rows={2} value={messageText} onChange={e=>setMessageText(e.target.value)} placeholder="پیام خود را بنویسید..." required/><button className="expert-primary" disabled={busy||!messageText.trim()}>ارسال پیام</button></form></section>}
   <div className="section-title"><div><span className="eyebrow">اعلان‌های پرونده</span><h2>پیام‌ها و تغییر وضعیت‌ها {unread>0&&<span className="live-dot">{unread} جدید</span>}</h2></div></div>
   <div className="request-list">{notifications.length===0?<div className="empty-state">اعلانی ندارید.</div>:notifications.map(n=><article className="request-row" key={n.id}><BellIcon/><div><strong>{n.preview||"به‌روزرسانی پرونده"}</strong><small>{new Date(n.created_at).toLocaleString("fa-IR")}</small></div>{!n.read_at&&<button onClick={()=>void markRead(n.id)}>خواندم</button>}</article>)}</div>

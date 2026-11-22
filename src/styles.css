@@ -886,3 +886,15 @@
 .expert-recommendation-next-step{margin-top:10px;padding:10px 12px;border-right:3px solid #8da98e;border-radius:8px;background:#f4f8f3}
 .expert-recommendation-next-step b{font-size:11px;color:#3b6444}
 .expert-recommendation-next-step p{margin:5px 0 0;color:#617064;font-size:11px;line-height:1.8}
+
+
+/* Farm-relative expert origin filters and referral modes */
+.expert-referral-mode{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:14px 16px;background:var(--surface,#fff);border:1px solid var(--border,#e5e7eb);border-radius:14px}
+.expert-referral-mode button,.expert-origin-filters button{margin:0;min-height:36px;padding:8px 13px;border-radius:9px;font-size:11px}
+.expert-referral-mode small{flex-basis:100%;color:var(--muted,#667085);font-size:11px;line-height:1.8}
+.expert-origin-filters{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 12px}
+.expert-origin-filters button:disabled{opacity:.42;cursor:not-allowed}
+.expert-origin-tag{display:inline-flex;align-items:center;padding:4px 8px;border-radius:999px;background:#f0f4f1;color:#64776a;font-size:9px;white-space:nowrap}
+.service-top{gap:8px;flex-wrap:wrap}
+.service-top .verified{white-space:nowrap}
+@media(max-width:760px){.expert-referral-mode{align-items:stretch}.expert-referral-mode button{flex:1}.expert-origin-filters button{flex:1 1 calc(50% - 8px)}}
