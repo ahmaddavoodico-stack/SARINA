@@ -122,7 +122,7 @@ as $$
 declare
   expert_user uuid;
 begin
-  if new.status = 'completed' and old.status <> 'completed' then
+  if new.status in ('completed','needs_review') and old.status is distinct from new.status then
     select ep.user_id into expert_user
     from public.expert_profiles ep
     where ep.id = new.expert_profile_id;
@@ -132,7 +132,8 @@ begin
         (recipient_user_id, actor_user_id, request_id, consultation_id, event_type, preview)
       values
         (expert_user, public.current_sarina_user_id(), new.request_id, new.consultation_id,
-         'recommendation_completed', left('کشاورز اقدام توصیه‌شده را تکمیل کرد: ' || new.title, 240));
+         case when new.status = 'completed' then 'recommendation_completed' else 'recommendation_review_requested' end,
+         left(case when new.status = 'completed' then 'کشاورز اقدام توصیه‌شده را تکمیل کرد: ' else 'کشاورز برای توصیه درخواست بازبینی ثبت کرد: ' end || new.title, 240));
     end if;
   end if;
   return new;
