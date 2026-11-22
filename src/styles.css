@@ -762,3 +762,52 @@
 .farmer-specialist-avatar{overflow:hidden}
 .farmer-expert-list-avatar{width:44px;height:44px;flex:0 0 44px;display:grid;place-items:center;border-radius:14px;overflow:hidden;background:#e4efe4;color:#47734f}
 @media(max-width:600px){.expert-avatar-upload-row{align-items:stretch;flex-direction:column}.expert-avatar-file,.expert-avatar-upload-row .expert-primary{width:100%;justify-content:center}}
+
+
+/* Farmer-first quick destinations */
+.farmer-quick-links{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:18px 0}
+.farmer-quick-link{min-width:0;display:flex;align-items:center;gap:12px;text-align:right;padding:15px;border:1px solid var(--line);border-radius:15px;background:#fff;color:#284b39}
+.farmer-quick-link>span{width:42px;height:42px;flex:0 0 42px;border-radius:13px;display:grid;place-items:center;background:#edf5eb;color:#4b8055}
+.farmer-quick-link>div{flex:1;min-width:0}
+.farmer-quick-link strong,.farmer-quick-link small{display:block}
+.farmer-quick-link strong{font-size:12px}
+.farmer-quick-link small{font-size:9px;line-height:1.8;color:#87958b;margin-top:4px}
+.farmer-quick-link>svg{flex:0 0 auto;color:#8b9b8f}
+.farmer-quick-link.specialist>span{background:#eef3f8;color:#587b9b}
+.farmer-quick-link.institution>span{background:#f6f1e7;color:#9a7b43}
+.institutional-intro{display:flex;align-items:center;gap:13px;padding:17px;margin:0 0 17px;border:1px solid #e4e9dd;border-radius:15px;background:linear-gradient(110deg,#f7f9f2,#fbfaf6)}
+.institutional-intro>span{width:48px;height:48px;flex:0 0 48px;display:grid;place-items:center;border-radius:14px;background:#edf2e5;color:#6f8050}
+.institutional-intro strong{display:block;color:#38523b;font-size:13px}
+.institutional-intro p{margin:5px 0 0;color:#788579;font-size:10px;line-height:1.9}
+.weekly-plan-workspace{display:grid;gap:15px}
+.weekly-toolbar{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:15px;background:#fff;border:1px solid var(--line);border-radius:15px}
+.weekly-toolbar label{display:grid;gap:7px;min-width:220px;font-size:10px;color:#748278}
+.weekly-toolbar select,.weekly-add-form select,.weekly-add-form input{height:40px;min-width:0;border:1px solid #e1e9e1;border-radius:9px;padding:0 10px;background:#fff;color:#3c5144;font:inherit;font-size:11px}
+.weekly-progress{width:min(300px,45%);display:grid;grid-template-columns:1fr auto;gap:6px 12px;font-size:10px;color:#849187}
+.weekly-progress strong{color:#3d7650}
+.weekly-progress>div{grid-column:1/-1;height:6px;background:#edf1e9;border-radius:20px;overflow:hidden}
+.weekly-progress i{display:block;height:100%;border-radius:20px;background:#6c9a70}
+.weekly-add-form{display:grid;grid-template-columns:1.2fr 1fr 1.5fr 1fr auto;gap:9px;align-items:end;padding:15px;background:#fff;border:1px solid var(--line);border-radius:15px}
+.weekly-add-form>div{align-self:center}
+.weekly-add-form>div strong,.weekly-add-form>div small{display:block}
+.weekly-add-form>div strong{font-size:12px;color:#355641}
+.weekly-add-form>div small{font-size:9px;color:#8b978e;line-height:1.7;margin-top:4px}
+.weekly-add-form .primary-button{height:40px;white-space:nowrap}
+.weekly-days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px;align-items:stretch}
+.weekly-day{min-width:0;min-height:150px;padding:10px;border:1px solid var(--line);border-radius:13px;background:#fff}
+.weekly-day>header{display:flex;justify-content:space-between;gap:4px;align-items:center;padding-bottom:9px;border-bottom:1px solid #edf0eb}
+.weekly-day>header strong{font-size:10px;color:#3e6347}
+.weekly-day>header span{font-size:9px;color:#95a096}
+.weekly-empty{font-size:9px;color:#b0b8b1;text-align:center;margin:20px 0}
+.weekly-task{display:flex;align-items:flex-start;gap:6px;padding:9px 0;border-bottom:1px solid #f0f2ee}
+.weekly-task:last-child{border-bottom:0}
+.weekly-task-check{width:22px;height:22px;flex:0 0 22px;padding:0;border:0;background:transparent;color:#7e9b7d;display:grid;place-items:center}
+.weekly-task-check:disabled{color:#4c9861}
+.weekly-task>span{min-width:0}
+.weekly-task b,.weekly-task small{display:block;overflow-wrap:anywhere}
+.weekly-task b{font-size:9px;line-height:1.8;color:#405649}
+.weekly-task small{font-size:8px;line-height:1.7;color:#98a39a;margin-top:3px}
+.weekly-task.done b{text-decoration:line-through;color:#87958a}
+.weekly-footnote{padding:10px 13px;border-radius:10px;background:#f2f6ef;color:#748477;font-size:9px;line-height:1.9}
+@media(max-width:1100px){.weekly-days{grid-template-columns:repeat(4,minmax(0,1fr))}.weekly-add-form{grid-template-columns:repeat(2,minmax(0,1fr))}.weekly-add-form>div{grid-column:1/-1}}
+@media(max-width:760px){.farmer-quick-links{grid-template-columns:1fr}.farmer-quick-link{padding:13px}.institutional-intro{align-items:flex-start}.weekly-toolbar{align-items:stretch;flex-direction:column}.weekly-toolbar label{min-width:0}.weekly-progress{width:100%}.weekly-days{grid-template-columns:repeat(2,minmax(0,1fr))}.weekly-add-form{grid-template-columns:1fr}.weekly-add-form>div{grid-column:auto}}
