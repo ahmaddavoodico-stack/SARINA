@@ -68,7 +68,7 @@ with check (
     join public.expert_profiles ep on ep.id = a.expert_profile_id
     where r.id = request_id
       and c.id = consultation_id
-      and r.farm_id = farm_id
+      and r.farm_id = expert_recommendation_actions.farm_id
       and a.expert_profile_id = expert_recommendation_actions.expert_profile_id
       and a.assignment_status = 'accepted'
       and ep.user_id = public.current_sarina_user_id()
