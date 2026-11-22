@@ -10,7 +10,7 @@ Keep three experiences distinct:
 2. **Human farmer–specialist consultation**: a private, one-farmer ↔ one-assigned-verified-specialist thread. Its canonical records remain `expert_requests`, `expert_request_assignments`, `expert_consultations`, and `expert_consultation_messages`.
 3. **Expert office secretary**: a role-specific launcher for an expert's own queue, follow-ups and navigation. It must never expose another expert's cases or pretend a local preview note has been saved.
 
-The UI components integrated by this branch are presentation surfaces only. Their composer fields remain explicitly labelled as previews until connected to an authenticated persistence endpoint. Do not describe them as live AI chat, durable notes, or a connected Bale/Telegram bot.
+The farmer companion and expert office secretary launchers are integrated UI surfaces. The companion remains distinct from human specialist chat. Secretary composer content that is not explicitly persisted must remain labelled as a preview. Do not describe the companion as live model-backed AI, durable notes as saved without a successful write, or Bale/Telegram bots as connected.
 
 ## Verified current application flow
 
@@ -165,9 +165,9 @@ The weekly farmer plan is the execution surface for structured recommendations f
 
 ### Security and rollout
 
-- The migration `20261122151525_expert_recommendation_weekly_schedule.sql` is committed to the integration branch only and has **not** been applied to the connected Supabase project.
+- The migration `20261122151525_expert_recommendation_weekly_schedule.sql` has been applied to the connected Supabase project; see the production rollout record below.
 - The recommendation table has RLS for the request owner and the currently assigned verified specialist. Farmer updates are column-limited to execution status, note, evidence and completion metadata.
-- Do not merge or enable this feature until the migration is reviewed, role-switched RLS tests pass, and the frontend/PWA build checks complete.
+- Live catalog, RLS flags and grants were verified. Role-switched end-to-end tests remain pending because representative farmer/expert case fixtures do not yet exist.
 
 
 ## Specialist recommendation follow-up and outcome review
@@ -195,8 +195,8 @@ This first implementation is a **deterministic, rule-based rollup**, not an LLM-
 
 - Migration `20261122151532_expert_recommendation_followup_reviews.sql` creates the review table with RLS enabled, no anonymous grants, and column-limited updates.
 - Read/insert/update policies verify the current authenticated user is the verified specialist on an accepted assignment for the recommendation's case. A previous or unrelated specialist cannot read or write the review.
-- No live Supabase schema was changed by adding this migration file. Apply only through the reviewed deployment process, then run role-switched tests for the assigned specialist, farmer, unrelated user, unverified specialist and former specialist after reassignment.
-- The dashboard's rollup reads are also constrained by the existing recommendation table RLS. If the migration is not applied, the UI reports the data retrieval error rather than fabricating results.
+- The migration was applied to the connected Supabase project as `20261122151532_expert_recommendation_followup_reviews.sql`; post-apply table, RLS and privilege checks are recorded below.
+- The dashboard's rollup reads are also constrained by the existing recommendation table RLS. If a future environment has not applied the migration, the UI reports the data retrieval error rather than fabricating results.
 - This iteration does not invoke a language model or send external notifications. The current in-app farmer execution and specialist notification flow remains as previously documented.
 
 
@@ -215,3 +215,16 @@ The following migrations were applied successfully to the connected Supabase pro
 Post-apply checks confirmed both tables exist with RLS enabled; `anon` has no SELECT or INSERT privileges; `authenticated` has the intended table/column grants; author and original reviewer identity columns cannot be updated; both trigger helpers are non-callable by `PUBLIC`, `anon` and `authenticated`; and no security-advisor finding names either new table or trigger function.
 
 The connected project currently has zero expert requests, zero farmer-linked requests, and zero accepted verified specialist assignments. Consequently, a realistic role-switched end-to-end RLS test with assigned specialist, farmer, unrelated user and reassigned former specialist cannot yet be performed against real case fixtures. The access policies and privilege boundaries were verified from the live catalog; repeat role-switched tests when representative test accounts/cases exist, before production use with real cases.
+
+
+### Specialist profile avatar rollout
+
+The migration `20261122152754_expert_profile_avatars.sql` was applied successfully to the connected Supabase project. Live verification confirmed:
+
+- `expert_profiles.avatar_path` exists.
+- The public `expert-avatars` bucket is configured for JPEG, PNG and WebP files with a 5 MiB limit.
+- Owner-scoped insert and delete policies exist for the specialist's own profile folder.
+- `public.set_expert_profile_avatar(text)` is SECURITY DEFINER with an empty search path; execution is granted to `authenticated` and revoked from `PUBLIC` and `anon`.
+- The migration version `20261122152754` is present in Supabase migration history.
+
+The bucket is public-read by design so farmers can display a specialist portrait; upload and delete remain owner-controlled. The avatar migration file in this branch must retain the exact timestamp above to avoid migration-history drift.
