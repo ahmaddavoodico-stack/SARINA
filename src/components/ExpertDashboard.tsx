@@ -1,7 +1,7 @@
 import {useCallback,useEffect,useMemo,useState} from "react";
 import type {FormEvent,ReactNode} from "react";
 import type {Session} from "@supabase/supabase-js";
-import {Activity,Building2,Sparkles,ArrowLeft,Award,BriefcaseBusiness,CalendarClock,ChevronLeft,FileBadge,FlaskConical,GraduationCap,Inbox,LogOut,MessageCircle,Plus,RefreshCw,ShieldCheck,Sprout,UserRound} from "lucide-react";
+import {Activity,Building2,Sparkles,ArrowLeft,Award,BriefcaseBusiness,CalendarClock,ChevronLeft,ClipboardCheck,FileBadge,FlaskConical,GraduationCap,Inbox,LogOut,MessageCircle,Plus,RefreshCw,ShieldCheck,Sprout,UserRound} from "lucide-react";
 import {supabase} from "../lib/supabase";
 import ExpertCaseOperationsWorkspace from "./ExpertCaseOperationsWorkspace";
 import ExpertOfficeSecretary from "./ExpertOfficeSecretary";
