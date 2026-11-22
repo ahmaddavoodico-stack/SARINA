@@ -9,6 +9,7 @@ type FarmerResult={farmer_code:string;farmer_name:string|null;country_id:string|
 const authorityTypes=["government","regulator","support_agency","public_institution"];
 const labels:Record<string,string>={identity_summary:"شناسه و مشخصات مختصر",farm_summary:"خلاصه مزارع و محدوده فعالیت",assigned_specialist:"متخصص مسئول",institutional_support_history:"سوابق حمایت سازمانی",productivity_metrics:"شاخص‌های بهره‌وری",outcome_summary:"نتایج و ارزیابی",directive_delivery:"دستورالعمل و پیگیری اجرا"};
 export default function JihadAuthorityWorkspace({session}:{session:Session}){
+ const db=supabase as any;
  const [loading,setLoading]=useState(true),[orgs,setOrgs]=useState<AuthorityOrg[]>([]),[orgId,setOrgId]=useState("");
  const [code,setCode]=useState(""),[result,setResult]=useState<FarmerResult|null>(null),[searched,setSearched]=useState(false),[busy,setBusy]=useState(false),[error,setError]=useState("");
  const selected=useMemo(()=>orgs.find(x=>x.id===orgId)??null,[orgs,orgId]);
