@@ -26,7 +26,7 @@ export default function AdminDashboard({session,onLogout}:Props){
  const load=useCallback(async()=>{
   if(!supabase)return;setLoading(true);setError("");
   const{data,error:rpcError}=await supabase.rpc("admin_list_sarina_users" as never);
-  if(rpcError){setError("دریافت فهرست کاربران انجام نشد. ابتدا مهاجرت مدیریتی باید در پایگاه داده اعمال شود.");setLoading(false);return;}
+  if(rpcError){setError(`دریافت فهرست کاربران ناموفق بود: ${rpcError.message}${rpcError.code?` (کد: ${rpcError.code})`:""}`);setLoading(false);return;}
   const rows=(data??[]) as unknown as AdminUser[];
   setUsers(rows);setDrafts(Object.fromEntries(rows.map(user=>[user.id,(user.role_codes??[]).filter(code=>code!=="admin")])));
   setLoading(false);
@@ -34,11 +34,11 @@ export default function AdminDashboard({session,onLogout}:Props){
  useEffect(()=>{void load();},[load]);
  const filtered=useMemo(()=>users.filter(user=>[user.full_name,user.email,user.id].filter(Boolean).join(" ").toLocaleLowerCase().includes(search.toLocaleLowerCase())),[users,search]);
  function toggle(userId:string,code:string){setDrafts(current=>{const selected=current[userId]??[];return {...current,[userId]:selected.includes(code)?selected.filter(item=>item!==code):[...selected,code]};});}
- async function changeStatus(user:AdminUser,status:"active"|"suspended"){if(!supabase)return;setBusyStatus(user.id);setError("");setNotice("");const{error:statusError}=await (supabase as any).rpc("admin_set_sarina_user_status",{p_target_user_id:user.id,p_status:status});setBusyStatus(null);if(statusError){setError("تغییر وضعیت حساب انجام نشد. مهاجرت تأیید کاربران و دسترسی مدیر را بررسی کنید.");return;}setNotice(status==="active"?"حساب کاربر تأیید و فعال شد.":"حساب کاربر تعلیق شد.");await load();}
+ async function changeStatus(user:AdminUser,status:"active"|"suspended"){if(!supabase)return;setBusyStatus(user.id);setError("");setNotice("");const{error:statusError}=await (supabase as any).rpc("admin_set_sarina_user_status",{p_target_user_id:user.id,p_status:status});setBusyStatus(null);if(statusError){setError(`تغییر وضعیت حساب ناموفق بود: ${statusError.message}${statusError.code?` (کد: ${statusError.code})`:""}`);return;}setNotice(status==="active"?"حساب کاربر تأیید و فعال شد.":"حساب کاربر تعلیق شد.");await load();}
  async function save(user:AdminUser){
   if(!supabase)return;setBusyUser(user.id);setNotice("");setError("");
   const{error:saveError}=await supabase.rpc("admin_set_sarina_user_roles" as never,{p_target_user_id:user.id,p_role_codes:drafts[user.id]??[]} as never);
-  if(saveError){setError("ذخیره نقش‌ها ناموفق بود. دسترسی مدیر و وضعیت مهاجرت پایگاه داده را بررسی کنید.");setBusyUser(null);return;}
+  if(saveError){setError(`ذخیره نقش‌ها ناموفق بود: ${saveError.message}${saveError.code?` (کد: ${saveError.code})`:""}`);setBusyUser(null);return;}
   setNotice("نقش‌های کاربر با موفقیت به‌روزرسانی شد و در سابقه مدیریتی ثبت گردید.");
   await load();setBusyUser(null);
  }
