@@ -353,6 +353,7 @@ The first identity and consent foundation has now been applied to the active Sup
 | `20261122160654` | `sarina_farmer_identifier_role_guard` |
 | `20261122160807` | `sarina_farmer_consent_actor_index` |
 | `20261122160954` | `sarina_jihad_authority_capability_catalog` |
+| `20261122161100` | `sarina_guard_farm_administrative_region_assignment` |
 
 ### Delivered in this phase
 
@@ -360,7 +361,7 @@ The first identity and consent foundation has now been applied to the active Sup
 - `ensure_my_sarina_farmer_identifier()`: authenticated, active farmer-role-only issuance; the code is not an authentication factor or official government identifier.
 - `farmer_authority_consents`: organization-specific purpose-limited scopes, expiration, farmer-readable history, and a server-side revocation RPC. Direct client updates are revoked so the consent history cannot be rewritten.
 - `agricultural_admin_regions`: a separate official-geography hierarchy with parent-level, country, namespace and cycle validation. It is deliberately separate from `deployment_regions`.
-- `farms.admin_region_id` and `organization_access_scopes.target_admin_region_id`: links for later verified region assignment and regional access.
+- `farms.admin_region_id` and `organization_access_scopes.target_admin_region_id`: links for later verified region assignment and regional access. A database trigger prevents ordinary authenticated users from assigning or changing a farm's administrative region; only an authorized SARINA administrator or trusted service context can do so.
 - `organization_has_scoped_access`: region-descendant and assigned-farm scope support, with membership/capability checks and an empty function search path.
 - `organization_capabilities` now accepts the first Jihad identity, support, directive, recognition and reporting capability codes; the catalog is constrained rather than arbitrary free text.
 - `lookup_farmer_by_public_code(...)`: organization-scoped lookup that requires the `farmer.identity.read` capability and an active farmer consent containing `identity_summary`. Farm count and region names are returned only when `farm_summary` is also consented and the organization has `oversight.farm.read` in scope.
@@ -372,6 +373,7 @@ The first identity and consent foundation has now been applied to the active Sup
 - An expert-role negative test confirmed the farmer identifier RPC rejects non-farmer roles.
 - A temporary country → national → province → county → district → service-center hierarchy passed validation; invalid parent-level and cycle attempts were rejected. All test rows were rolled back.
 - An end-to-end transactional acceptance test created temporary farmer/authority users, two sibling counties and two farms; it proved the assigned county was visible, the sibling county was denied, identity-only consent did not expose farm data, farm-summary consent exposed only the scoped farm, and revocation immediately blocked lookup. The entire transaction was rolled back.
+- A separate role-switched test confirmed a farmer cannot set `farms.admin_region_id` during insert or update. Both attempts were rejected and the transaction was rolled back.
 - Privilege checks confirmed anon cannot execute the identifier or lookup RPCs; authenticated users cannot directly insert identifiers or directly rewrite consent rows.
 - After rollback, the live database still has zero farmer identifiers, zero consent rows, zero farms, zero organizations and zero seeded administrative regions. No synthetic user, consent, organization or geography data was retained.
 - The performance advisor's new unindexed consent-actor foreign key was addressed with the final index migration. Remaining unused indexes are expected while these tables have no operational rows.
