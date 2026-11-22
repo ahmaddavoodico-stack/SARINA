@@ -4,6 +4,7 @@ import type {Session} from "@supabase/supabase-js";
 import {Activity,Building2,Sparkles,ArrowLeft,Award,BriefcaseBusiness,CalendarClock,ChevronLeft,FileBadge,FlaskConical,GraduationCap,Inbox,LogOut,MessageCircle,Plus,RefreshCw,ShieldCheck,Sprout,UserRound} from "lucide-react";
 import {supabase} from "../lib/supabase";
 import ExpertCaseOperationsWorkspace from "./ExpertCaseOperationsWorkspace";
+import ExpertOfficeSecretary from "./ExpertOfficeSecretary";
 import SpecialistWorkspace from "../SpecialistWorkspace";
 import {SpecialistGreenCreditsPanel} from "./SpecialistEconomyWorkspace";
 import SpecialistAICreditWorkspace from "./SpecialistAICreditWorkspace";
@@ -97,5 +98,5 @@ export default function ExpertDashboard({session,sarinaUserId,onLogout}:Props){
  {tab==="case-operations"&&<ExpertCaseOperationsWorkspace profileId={profile.id} verified={verified}/>}
  {tab==="jihad-services"&&<JihadServiceLayerWorkspace mode="expert"/>}
  
- </div><footer className="expert-footer"><span>SARINA · هیچ کشاورزی تنها نیست</span><button onClick={()=>void refresh()}><RefreshCw size={14}/> به‌روزرسانی اطلاعات</button></footer></main></div>;
+ </div><ExpertOfficeSecretary name={profile.public_name} caseCount={assignments.length} unreadCount={unreadCases} onNavigate={setTab}/><footer className="expert-footer"><span>SARINA · هیچ کشاورزی تنها نیست</span><button onClick={()=>void refresh()}><RefreshCw size={14}/> به‌روزرسانی اطلاعات</button></footer></main></div>;
 }
