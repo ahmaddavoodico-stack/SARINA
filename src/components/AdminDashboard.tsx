@@ -23,8 +23,8 @@ export default function AdminDashboard({session,onLogout}:Props){
  const[busyStatus,setBusyStatus]=useState<string|null>(null);
  const[search,setSearch]=useState("");
  const[drafts,setDrafts]=useState<Record<string,string[]>>({});
- const load=useCallback(async()=>{
-  if(!supabase)return;setLoading(true);setError("");
+ const load=useCallback(async(silent=false)=>{
+  if(!supabase)return;if(!silent)setLoading(true);setError("");
   const{data,error:rpcError}=await supabase.rpc("admin_list_sarina_users" as never);
   if(rpcError){setError(`دریافت فهرست کاربران ناموفق بود: ${rpcError.message}${rpcError.code?` (کد: ${rpcError.code})`:""}`);setLoading(false);return;}
   const rows=((data??[]) as unknown as AdminUser[]).filter(user=>!(user.role_codes??[]).includes("admin"));
@@ -34,13 +34,13 @@ export default function AdminDashboard({session,onLogout}:Props){
  useEffect(()=>{void load();},[load]);
  const filtered=useMemo(()=>users.filter(user=>[user.full_name,user.email,user.id].filter(Boolean).join(" ").toLocaleLowerCase().includes(search.toLocaleLowerCase())),[users,search]);
  function toggle(userId:string,code:string){setDrafts(current=>{const selected=current[userId]??[];return {...current,[userId]:selected.includes(code)?selected.filter(item=>item!==code):[...selected,code]};});}
- async function changeStatus(user:AdminUser,status:"active"|"suspended"){if(!supabase||(user.role_codes??[]).includes("admin"))return;setBusyStatus(user.id);setError("");setNotice("");const{error:statusError}=await (supabase as any).rpc("admin_set_sarina_user_status",{p_target_user_id:user.id,p_status:status});setBusyStatus(null);if(statusError){setError(`تغییر وضعیت حساب ناموفق بود: ${statusError.message}${statusError.code?` (کد: ${statusError.code})`:""}`);return;}setNotice(status==="active"?"حساب کاربر تأیید و فعال شد.":"حساب کاربر تعلیق شد.");await load();}
+ async function changeStatus(user:AdminUser,status:"active"|"suspended"){if(!supabase||(user.role_codes??[]).includes("admin"))return;setBusyStatus(user.id);setError("");setNotice("");const{error:statusError}=await (supabase as any).rpc("admin_set_sarina_user_status",{p_target_user_id:user.id,p_status:status});setBusyStatus(null);if(statusError){setError(`تغییر وضعیت حساب ناموفق بود: ${statusError.message}${statusError.code?` (کد: ${statusError.code})`:""}`);return;}setUsers(current=>current.map(item=>item.id===user.id?{...item,account_status:status}:item));setNotice(status==="active"?"حساب کاربر تأیید و فعال شد؛ از وضعیت انتظار خارج شد.":"حساب کاربر تعلیق شد.");void load(true);}
  async function save(user:AdminUser){
   if(!supabase||(user.role_codes??[]).includes("admin"))return;setBusyUser(user.id);setNotice("");setError("");
   const{error:saveError}=await supabase.rpc("admin_set_sarina_user_roles" as never,{p_target_user_id:user.id,p_role_codes:drafts[user.id]??[]} as never);
   if(saveError){setError(`ذخیره نقش‌ها ناموفق بود: ${saveError.message}${saveError.code?` (کد: ${saveError.code})`:""}`);setBusyUser(null);return;}
   setNotice("نقش‌های کاربر با موفقیت به‌روزرسانی شد و در سابقه مدیریتی ثبت گردید.");
-  await load();setBusyUser(null);
+  await load(true);setBusyUser(null);
  }
  return <main className="admin-shell" dir="rtl">
   <header className="admin-topbar"><div className="admin-brand"><span><ShieldCheck size={22}/></span><div><strong>SARINA</strong><small>پنل مدیریت مرکزی</small></div></div><div className="admin-top-actions"><span>{session.user.email}</span><button onClick={onLogout}>خروج</button></div></header>
