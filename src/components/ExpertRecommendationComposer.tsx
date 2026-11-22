@@ -1,6 +1,7 @@
 import {useState} from "react";
 import {CalendarDays,CheckCircle2,Plus} from "lucide-react";
 import {supabase} from "../lib/supabase";
+const db=supabase as any;
 
 export default function ExpertRecommendationComposer({requestId,farmId,profileId}:{requestId:string;farmId:string|null;profileId:string}){
  const[title,setTitle]=useState(""),[instructions,setInstructions]=useState(""),[startsOn,setStartsOn]=useState(new Date().toISOString().slice(0,10)),[dueOn,setDueOn]=useState(""),[priority,setPriority]=useState("normal"),[busy,setBusy]=useState(false),[message,setMessage]=useState("");
@@ -9,9 +10,9 @@ export default function ExpertRecommendationComposer({requestId,farmId,profileId
   setBusy(true);setMessage("");
   try{
    const{data:{user},error:userError}=await supabase.auth.getUser();if(userError||!user)throw userError||new Error("نشست کاربری معتبر نیست.");
-   const{data:person,error:personError}=await supabase.from("users").select("id").eq("auth_user_id",user.id).single();if(personError)throw personError;
-   const{data:consultation,error:consultationError}=await supabase.from("expert_consultations").select("id").eq("request_id",requestId).maybeSingle();if(consultationError)throw consultationError;if(!consultation)throw new Error("پرونده هنوز جلسه مشاوره ثبت‌شده ندارد.");
-   const{error}=await supabase.from("expert_recommendation_actions").insert({request_id:requestId,consultation_id:consultation.id,farm_id:farmId,expert_profile_id:profileId,author_user_id:person.id,title:title.trim(),instructions:instructions.trim(),priority,starts_on:startsOn,due_on:dueOn||null,status:"approved",approved_at:new Date().toISOString()});
+   const{data:person,error:personError}=await db.from("users").select("id").eq("auth_user_id",user.id).single();if(personError)throw personError;
+   const{data:consultation,error:consultationError}=await db.from("expert_consultations").select("id").eq("request_id",requestId).maybeSingle();if(consultationError)throw consultationError;if(!consultation)throw new Error("پرونده هنوز جلسه مشاوره ثبت‌شده ندارد.");
+   const{error}=await db.from("expert_recommendation_actions").insert({request_id:requestId,consultation_id:consultation.id,farm_id:farmId,expert_profile_id:profileId,author_user_id:person.id,title:title.trim(),instructions:instructions.trim(),priority,starts_on:startsOn,due_on:dueOn||null,status:"approved",approved_at:new Date().toISOString()});
    if(error)throw error;
    setTitle("");setInstructions("");setDueOn("");setMessage("توصیه نهایی تأیید و در برنامه هفتگی کشاورز ثبت شد.");
   }catch(error){setMessage(error instanceof Error?error.message:"ثبت توصیه انجام نشد.");}
