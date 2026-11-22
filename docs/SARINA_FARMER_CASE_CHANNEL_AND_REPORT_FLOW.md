@@ -142,3 +142,29 @@ The existing SARINA Connect outbox references `expert_consultation_messages`, no
 - SARINA Connect's database routing/outbox foundation exists on `main`.
 - Live Bale/Telegram adapters, account-linking/consent flow, atomic bot intake, farmer report display/notification and provider delivery are not yet verified as implemented. They remain explicit integration work and must not be presented as live.
 - No production database migration, provider secret, bot webhook or external delivery was changed by this documentation/UI integration.
+
+
+## Approved specialist recommendations in the farmer weekly plan
+
+The weekly farmer plan is the execution surface for structured recommendations from the assigned specialist. Do not parse free-text consultation messages or reports into executable tasks.
+
+### Authoring and approval
+
+- A recommendation is attached to the canonical `expert_requests` case, its `expert_consultations` record and the request's farm.
+- Only the currently assigned, verified specialist with an accepted assignment can create a recommendation.
+- The specialist's explicit **final approval and save** action creates the row in `expert_recommendation_actions` with `status='approved'` and an approval timestamp. Draft text in a composer is not visible to the farmer.
+- Each recommendation contains an instruction, priority, start date and optional due date. It is not a fertilizer/pesticide prescription unless the specialist explicitly writes that instruction and has the appropriate qualifications.
+
+### Farmer execution and feedback
+
+- The farmer sees only recommendations for their own farm and case, with the specialist-approved text and schedule.
+- The farmer can mark an action in progress, submit an execution note, mark it complete, or request a specialist review.
+- Completion and review requests create recipient-scoped events in `expert_case_notifications` for the specialist attached to that recommendation. A notification row means the in-app event was created; it does not imply push, email, Bale or Telegram delivery.
+- The weekly plan keeps farmer-created improvement tasks separate from specialist recommendations. Farmers cannot edit the recommendation instructions, approval, author, case or schedule fields.
+- Photo/document evidence upload is a later extension; this slice stores a bounded evidence array but the UI currently collects text notes only.
+
+### Security and rollout
+
+- The migration `20261122180000_expert_recommendation_weekly_schedule.sql` is committed to the integration branch only and has **not** been applied to the connected Supabase project.
+- The recommendation table has RLS for the request owner and the currently assigned verified specialist. Farmer updates are column-limited to execution status, note, evidence and completion metadata.
+- Do not merge or enable this feature until the migration is reviewed, role-switched RLS tests pass, and the frontend/PWA build checks complete.
