@@ -20,6 +20,7 @@ export default function AdminDashboard({session,onLogout}:Props){
  const[busyUser,setBusyUser]=useState<string|null>(null);
  const[error,setError]=useState("");
  const[notice,setNotice]=useState("");
+ const[busyStatus,setBusyStatus]=useState<string|null>(null);
  const[search,setSearch]=useState("");
  const[drafts,setDrafts]=useState<Record<string,string[]>>({});
  const load=useCallback(async()=>{
@@ -33,6 +34,7 @@ export default function AdminDashboard({session,onLogout}:Props){
  useEffect(()=>{void load();},[load]);
  const filtered=useMemo(()=>users.filter(user=>[user.full_name,user.email,user.id].filter(Boolean).join(" ").toLocaleLowerCase().includes(search.toLocaleLowerCase())),[users,search]);
  function toggle(userId:string,code:string){setDrafts(current=>{const selected=current[userId]??[];return {...current,[userId]:selected.includes(code)?selected.filter(item=>item!==code):[...selected,code]};});}
+ async function changeStatus(user:AdminUser,status:"active"|"suspended"){if(!supabase)return;setBusyStatus(user.id);setError("");setNotice("");const{error:statusError}=await (supabase as any).rpc("admin_set_sarina_user_status",{p_target_user_id:user.id,p_status:status});setBusyStatus(null);if(statusError){setError("تغییر وضعیت حساب انجام نشد. مهاجرت تأیید کاربران و دسترسی مدیر را بررسی کنید.");return;}setNotice(status==="active"?"حساب کاربر تأیید و فعال شد.":"حساب کاربر تعلیق شد.");await load();}
  async function save(user:AdminUser){
   if(!supabase)return;setBusyUser(user.id);setNotice("");setError("");
   const{error:saveError}=await supabase.rpc("admin_set_sarina_user_roles" as never,{p_target_user_id:user.id,p_role_codes:drafts[user.id]??[]} as never);
@@ -56,7 +58,7 @@ export default function AdminDashboard({session,onLogout}:Props){
        <div className="admin-user-head"><div className="admin-user-avatar"><Users size={19}/></div><div className="admin-user-info"><strong>{user.full_name||"بدون نام ثبت‌شده"}</strong><span>{user.email||"بدون ایمیل"}</span><small>وضعیت حساب: {statusLabel(user.account_status)}</small></div>{(user.role_codes??[]).includes("admin")&&<span className="admin-protected"><ShieldCheck size={14}/> مدیر مرکزی</span>}</div>
        <div className="admin-role-label"><Building2 size={15}/> نوع فعالیت و نقش‌های عمومی</div>
        <div className="admin-role-options">{roleOptions.map(role=><label key={role.code} className={selected.includes(role.code)?"admin-role-option selected":"admin-role-option"}><input type="checkbox" checked={selected.includes(role.code)} onChange={()=>toggle(user.id,role.code)}/><span>{roleLabel(role.code)}</span>{selected.includes(role.code)&&<Check size={14}/>}</label>)}</div>
-       <div className="admin-user-footer"><small>عضویت: {new Date(user.created_at).toLocaleDateString("fa-IR")}</small><button onClick={()=>void save(user)} disabled={!changed||busyUser===user.id}>{busyUser===user.id?"در حال ذخیره...":"ذخیره تغییرات"}</button></div>
+       <div className="admin-user-footer"><small>عضویت: {new Date(user.created_at).toLocaleDateString("fa-IR")}</small><div className="admin-user-actions">{user.account_status==="pending"&&<button className="primary-button" onClick={()=>void changeStatus(user,"active")} disabled={busyStatus===user.id}>{busyStatus===user.id?"در حال ثبت...":"تأیید و فعال‌سازی حساب"}</button>}{user.account_status==="active"&&<button className="danger-action" onClick={()=>void changeStatus(user,"suspended")} disabled={busyStatus===user.id}>تعلیق حساب</button>}{user.account_status==="suspended"&&<button onClick={()=>void changeStatus(user,"active")} disabled={busyStatus===user.id}>فعال‌سازی مجدد</button>}<button onClick={()=>void save(user)} disabled={!changed||busyUser===user.id}>{busyUser===user.id?"در حال ذخیره...":"ذخیره نقش‌ها"}</button></div></div>
       </article>;
     })}</div>}
    </section>
