@@ -66,7 +66,7 @@ with check (
     join public.expert_consultations c on c.request_id = r.id
     join public.expert_request_assignments a on a.request_id = r.id
     join public.expert_profiles ep on ep.id = a.expert_profile_id
-    where r.id = request_id
+    where r.id = expert_recommendation_actions.request_id
       and c.id = expert_recommendation_actions.consultation_id
       and r.farm_id = expert_recommendation_actions.farm_id
       and a.expert_profile_id = expert_recommendation_actions.expert_profile_id
@@ -82,14 +82,14 @@ using (
   status in ('approved','in_progress')
   and exists (
     select 1 from public.expert_requests r
-    where r.id = request_id and r.requester_user_id = public.current_sarina_user_id()
+    where r.id = expert_recommendation_actions.request_id and r.requester_user_id = public.current_sarina_user_id()
   )
 )
 with check (
   status in ('in_progress','completed','needs_review')
   and exists (
     select 1 from public.expert_requests r
-    where r.id = request_id and r.requester_user_id = public.current_sarina_user_id()
+    where r.id = expert_recommendation_actions.request_id and r.requester_user_id = public.current_sarina_user_id()
   )
 );
 
