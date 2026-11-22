@@ -730,3 +730,21 @@
 .office-secretary-compose button:disabled{opacity:.4}
 .office-secretary-foot{padding:0 10px 9px;background:#fff;text-align:center;color:#99a69b;font-size:8px}
 @media(max-width:760px){.office-secretary{right:12px;bottom:12px;gap:9px}.office-secretary-launcher{min-width:225px;padding:6px 9px 6px 6px}.office-secretary-avatar{width:49px;height:49px;flex-basis:49px}.office-secretary-panel{height:min(535px,calc(100svh - 105px));min-height:365px}}
+
+
+/* Farmer-facing specialist identity and trusted consultation header */
+.farmer-specialist-identity{display:flex;align-items:center;gap:15px;padding:16px;border:1px solid #dce9dd;border-radius:16px;background:linear-gradient(120deg,#f0f7ef,#fbfcf8)}
+.farmer-specialist-avatar{width:58px;height:58px;flex:0 0 58px;border-radius:18px;display:grid;place-items:center;background:#dfeee0;color:#286647}
+.farmer-specialist-copy{min-width:0;display:grid;gap:4px}
+.farmer-specialist-kicker{font-size:.75rem;color:#718b77}
+.farmer-specialist-copy h2{font-size:1.12rem;margin:0;color:#234c39}
+.farmer-specialist-verified{display:inline-flex;align-items:center;gap:5px;color:#47845b;font-size:.75rem}
+.farmer-specialist-intro{padding:14px 16px;border-radius:13px;background:#f8faf7;border:1px solid #edf1e9;line-height:1.9}
+.farmer-specialist-intro strong{display:block;color:#315c43;font-size:.92rem}
+.farmer-specialist-intro p{margin:5px 0;color:#65766b;font-size:.84rem}
+.farmer-specialist-intro small{display:block;color:#829087;font-size:.78rem;margin-top:7px}
+.farmer-specialist-experience{display:inline-flex;margin-top:8px;padding:4px 9px;border-radius:30px;background:#edf4e9;color:#56765b;font-size:.72rem}
+.farmer-chat-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-bottom:10px;border-bottom:1px solid var(--line,#e6ece6)}
+.farmer-chat-heading h3{font-size:1rem;margin:4px 0 0;color:#294b3b}
+.farmer-chat-case-tag{white-space:nowrap;padding:6px 10px;border-radius:30px;background:#edf5ed;color:#4e7958;font-size:.72rem}
+@media(max-width:600px){.farmer-specialist-identity{align-items:flex-start;padding:13px}.farmer-specialist-avatar{width:48px;height:48px;flex-basis:48px}.farmer-chat-heading{align-items:flex-start;flex-direction:column}.farmer-chat-case-tag{align-self:flex-start}}
