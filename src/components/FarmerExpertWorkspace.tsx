@@ -44,6 +44,9 @@ export default function FarmerExpertWorkspace({sarinaUserId}:Props){
  }),[experts,filter]);
  const unread=notifications.filter(n=>!n.read_at).length;
  const selectedExpert=experts.find(e=>e.id===selected);
+ const activeRequest=requests.find(r=>r.id===activeRequestId);
+ const activeAssignment=activeRequest?.expert_request_assignments?.find((a:any)=>a.assignment_status!=="cancelled")||activeRequest?.expert_request_assignments?.[0];
+ const activeExpert=activeAssignment?.expert_profiles;
  const expertUnavailable=(e?:Expert)=>{if(!e?.availability)return false;const now=Date.now();const vacationActive=!!e.availability.vacation_start&&now>=new Date(e.availability.vacation_start).getTime()&&(!e.availability.vacation_end||now<=new Date(e.availability.vacation_end).getTime());const awayWithoutExpiry=e.availability.availability_status==="away"&&!e.availability.vacation_end;return e.availability.pause_new_cases||vacationActive||awayWithoutExpiry;};
  async function submit(e:React.FormEvent){
   e.preventDefault();if(!selected||!farmId||!subject.trim()||!problem.trim()||!supabase)return;
