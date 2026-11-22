@@ -6589,6 +6589,10 @@ export type Database = {
         }
         Returns: string
       }
+      admin_review_expert_profile: {
+        Args: { p_profile_id: string; p_status: string }
+        Returns: Json
+      }
       current_sarina_user_id: { Args: never; Returns: string }
       current_user_has_role: { Args: { p_role_code: string }; Returns: boolean }
       disablelongtransactions: { Args: never; Returns: string }
