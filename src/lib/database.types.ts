@@ -1723,6 +1723,7 @@ export type Database = {
       }
       expert_profiles: {
         Row: {
+          avatar_path: string | null
           biography: string | null
           consultation_modes: Json
           country_id: string | null
@@ -1737,6 +1738,7 @@ export type Database = {
           years_experience: number | null
         }
         Insert: {
+          avatar_path?: string | null
           biography?: string | null
           consultation_modes?: Json
           country_id?: string | null
@@ -1751,6 +1753,7 @@ export type Database = {
           years_experience?: number | null
         }
         Update: {
+          avatar_path?: string | null
           biography?: string | null
           consultation_modes?: Json
           country_id?: string | null

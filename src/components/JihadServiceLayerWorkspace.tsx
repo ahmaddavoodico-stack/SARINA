@@ -102,7 +102,7 @@ export default function JihadServiceLayerWorkspace({mode}:{mode:Mode}){
       {level:isExpert?"تقدیر کارشناسی":"تقدیر بهره‌وری مزرعه",name:isExpert?"اثرگذاری حرفه‌ای در بهبود مزارع":"بهبود پایدار عملکرد مزرعه",detail:isExpert?"نتیجه تأییدشده، کیفیت توصیه، پاسخ‌گویی و اثر قابل انتساب.":"روند بهبود نسبت به خط پایه و شرایط مشابه منطقه‌ای."},
       {level:"فرصت تشویقی",name:"اولویت در برنامه‌های حمایتی",detail:"امتیاز مثبت در برنامه‌های مشخص، مشروط به احراز سایر شرایط و ظرفیت."},
       {level:"یادگیری و توسعه",name:"آموزش و خدمات تخصصی",detail:"دسترسی به برنامه‌های آموزشی، مشاوره و فرصت‌های توسعه مهارت."}
-     ]).map((item,i)=><article className="jsl-award-card" key={item.level}><span className="jsl-award-tag">{item.level}</span><strong>{item.name}</strong><small>{item.detail}</small></article>)}
+     ]).map(item=><article className="jsl-award-card" key={item.level}><span className="jsl-award-tag">{item.level}</span><strong>{item.name}</strong><small>{item.detail}</small></article>)}
    </div>
    <div className="jsl-award-note">{isOrg?"سیاست امتیازدهی باید شفاف، قابل بازبینی و متناسب با محصول، منطقه، خط پایه و کیفیت داده باشد. تقدیرنامه به‌تنهایی تضمین‌کننده تسهیلات یا حق قانونی نیست. صدور واقعی فقط پس از تأیید مرجع مجاز و ثبت در زیرساخت موجود انجام می‌شود.":"در نسخه عملیاتی، تقدیرنامه‌های صادرشده از سوابق رسمی شما خوانده می‌شوند و فرصت‌های تشویقی فقط مطابق ضوابط منتشرشده هر برنامه محاسبه خواهند شد. این کارت‌ها فعلاً داده نمونه‌اند."}</div>
   </section>
