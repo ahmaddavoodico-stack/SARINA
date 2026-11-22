@@ -33,7 +33,7 @@ export default function JihadAuthorityOnboarding({session}:{session:Session}){
  }
  async function submit(e:FormEvent){
   e.preventDefault();if(!supabase)return;
-  if(!form.legalName.trim()||!form.displayName.trim()||!form.applicantName.trim()||!form.adminName.trim()||!form.adminEmail.trim()||!form.scopeDescription.trim()){
+  const requestedLocations=form.serviceLocations.split(/\\r?\\n/).flatMap(line=>line.split(/[،,]/)).map(x=>x.trim()).filter(Boolean);\n  if(!form.legalName.trim()||!form.displayName.trim()||!form.applicantName.trim()||!form.adminName.trim()||!form.adminEmail.trim()||!form.scopeDescription.trim()||!form.countryName.trim()||!requestedLocations.length){
    setError("نام رسمی سازمان، نام نمایشی، مشخصات متقاضی، مدیر پیشنهادی و شرح محدوده خدمات الزامی است.");return;
   }
   if(!files.length){setError("برای بررسی اولیه، دست‌کم یک مدرک رسمی یا معرفی‌نامه معتبر بارگذاری کنید.");return;}
