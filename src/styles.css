@@ -898,3 +898,5 @@
 .service-top{gap:8px;flex-wrap:wrap}
 .service-top .verified{white-space:nowrap}
 @media(max-width:760px){.expert-referral-mode{align-items:stretch}.expert-referral-mode button{flex:1}.expert-origin-filters button{flex:1 1 calc(50% - 8px)}}
+
+.admin-user-actions{display:flex;align-items:center;gap:7px;flex-wrap:wrap}.admin-user-footer .admin-user-actions button{width:auto}.admin-user-actions .danger-action{background:#fff1ed;color:#a45d4c}.admin-user-actions .primary-button{background:var(--g);color:#fff}
