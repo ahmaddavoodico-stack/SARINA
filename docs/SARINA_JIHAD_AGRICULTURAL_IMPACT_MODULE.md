@@ -335,3 +335,61 @@ Release acceptance:
 ## 10. Decision summary
 
 Build the Jihad module as an institutional layer over the existing SARINA farmer, farm, specialist, service-request and productivity systems. Add only the missing primitives: opaque farmer public identity, region-aware organization scope, farmer-level consent, support ledger, versioned directives, farmer recognition and access audit. Keep existing expert recognition and productivity engines canonical. The first release should be a county pilot with a verified authority tenant and fully tested scope/consent rules.
+
+
+---
+
+## 11. Phase 1 implementation record — 2026-11-22
+
+The first identity and consent foundation has now been applied to the active Supabase project and implemented in the farmer UI.
+
+### Applied remote migrations
+
+| Version | Migration |
+|---|---|
+| `20261122160504` | `sarina_farmer_identity_authority_scope_foundation` |
+| `20261122160526` | `sarina_farmer_consent_scope_and_revocation_guard` |
+| `20261122160624` | `sarina_farmer_consent_scope_and_revocation_guard_v2` |
+| `20261122160654` | `sarina_farmer_identifier_role_guard` |
+| `20261122160807` | `sarina_farmer_consent_actor_index` |
+| `20261122160954` | `sarina_jihad_authority_capability_catalog` |
+| `20261122161100` | `sarina_guard_farm_administrative_region_assignment` |
+| `20261122161154` | `sarina_admin_region_scope_fk_index` |
+| `20261122161306` | `sarina_admin_region_hierarchy_integrity_guard` |
+| `20261122161408` | `sarina_institutional_farmer_access_audit` |
+| `20261122161522` | `sarina_access_audit_indexes_and_policy_consolidation` |
+
+### Delivered in this phase
+
+- `farmer_public_identifiers`: opaque, random SARINA farmer code, one active code per farmer, retained retired-code history, and no client-side insert/update/delete.
+- `ensure_my_sarina_farmer_identifier()`: authenticated, active farmer-role-only issuance; the code is not an authentication factor or official government identifier.
+- `farmer_authority_consents`: organization-specific purpose-limited scopes, expiration, farmer-readable history, and a server-side revocation RPC. Direct client updates are revoked so the consent history cannot be rewritten.
+- `agricultural_admin_regions`: a separate official-geography hierarchy with parent-level, country, namespace and cycle validation. It is deliberately separate from `deployment_regions`.
+- `farms.admin_region_id` and `organization_access_scopes.target_admin_region_id`: links for later verified region assignment and regional access. A database trigger prevents ordinary authenticated users from assigning or changing a farm's administrative region; only an authorized SARINA administrator or trusted service context can do so.
+- `organization_has_scoped_access`: region-descendant and assigned-farm scope support, with membership/capability checks and an empty function search path.
+- `organization_capabilities` now accepts the first Jihad identity, support, directive, recognition and reporting capability codes; the catalog is constrained rather than arbitrary free text.
+- `lookup_farmer_by_public_code(...)`: organization-scoped lookup that requires the `farmer.identity.read` capability and an active farmer consent containing `identity_summary`. Farm count and region names are returned only when `farm_summary` is also consented and the organization has `oversight.farm.read` in scope.
+- `institutional_access_audit_events`: private, RLS-protected audit trail for lookup attempts and decisions. Successful, not-found, invalid, missing-consent and scope-denied outcomes are recorded without storing the farmer's raw lookup code. Audit reads require a separate `oversight.audit.read` capability and the relevant organization scope.
+- `FarmerIdentityCard`: farmer-facing code display/copy and a granular consent center, mounted in the farmer's Jihad-services page.
+
+### Verification performed
+
+- The active farmer's identifier issuance RPC succeeded inside a transaction; the transaction was rolled back.
+- An expert-role negative test confirmed the farmer identifier RPC rejects non-farmer roles.
+- A temporary country → national → province → county → district → service-center hierarchy passed validation; invalid parent-level and cycle attempts were rejected. All test rows were rolled back.
+- An end-to-end transactional acceptance test created temporary farmer/authority users, two sibling counties and two farms; it proved the assigned county was visible, the sibling county was denied, identity-only consent did not expose farm data, farm-summary consent exposed only the scoped farm, and revocation immediately blocked lookup. The entire transaction was rolled back.
+- A separate role-switched test confirmed a farmer cannot set `farms.admin_region_id` during insert or update. Both attempts were rejected and the transaction was rolled back.
+- Privilege checks confirmed anon cannot execute the identifier or lookup RPCs; authenticated users cannot directly insert identifiers or directly rewrite consent rows.
+- After rollback, the live database still has zero farmer identifiers, zero consent rows, zero farms, zero organizations and zero seeded administrative regions. No synthetic user, consent, organization or geography data was retained.
+- The performance advisor's new unindexed consent-actor, administrative-region-scope, and audit foreign keys were addressed with dedicated indexes. The new audit table's overlapping SELECT policies were consolidated. Remaining unused indexes are expected while these tables have no operational rows.
+- The health advisor returned no findings.
+
+### Pilot prerequisites still open
+
+- No verified Jihad organization, organization membership or organization capability records currently exist in the live project. Therefore, a positive organization lookup and region-isolation test cannot yet be performed against real organization fixtures.
+- The official province/county/service-center source and its versioned codes must be supplied/approved before importing any administrative geography. No sample geography was seeded.
+- Farm administrative-region assignment and organization regional scopes still need an authorized administration workflow.
+- The Jihad regional dashboard remains a clearly labeled design preview. It has not yet been replaced with live organization data.
+- Support ledger, directive publishing/acknowledgment, productivity impact reporting and farmer recognition are subsequent implementation phases.
+- Vercel Preview/Production deployment is not claimed; the account's build-rate quota remains an independent deployment constraint.
+
