@@ -69,10 +69,10 @@ export default function InstitutionalVerificationDesk(){
      <div><b style={{fontSize:12}}>مدارک اثباتی (دسترسی موقت و امن)</b><div className="iv-files" style={{marginTop:7}}>{(selected.evidence_document_paths??[]).map(path=><div className="iv-file" key={path}><span dir="auto">{path.split("/").slice(-1)[0]}</span><button onClick={()=>void openEvidence(path)}><Download size={14}/> دریافت امن</button></div>)}{!selected.evidence_document_paths?.length&&<small>مدرکی ثبت نشده است.</small>}</div></div>
      <div><b style={{fontSize:12}}>یادداشت تصمیم بررسی</b><textarea className="iv-note" value={notes} onChange={e=>setNotes(e.target.value)} placeholder="نتیجه بررسی، نواقص یا مستندات تکمیلی..."/></div>
      <div className="iv-actions">
-      <button className="iv-action" disabled={busy} onClick={()=>void review("under_review")}><Clock3 size={14}/> شروع / ادامه بررسی</button>
-      <button className="iv-action" disabled={busy||!notes.trim()} onClick={()=>void review("needs_correction")}>درخواست اصلاح</button>
-      <button className="iv-action primary" disabled={busy} onClick={()=>void review("approved")}>تأیید احراز هویت</button>
-      <button className="iv-action danger" disabled={busy||!notes.trim()} onClick={()=>void review("rejected")}>رد درخواست</button>
+      <button className="iv-action" disabled={busy||["approved","rejected","withdrawn"].includes(selected.status)} onClick={()=>void review("under_review")}><Clock3 size={14}/> شروع / ادامه بررسی</button>
+      <button className="iv-action" disabled={busy||!notes.trim()||["approved","rejected","withdrawn"].includes(selected.status)} onClick={()=>void review("needs_correction")}>درخواست اصلاح</button>
+      <button className="iv-action primary" disabled={busy||["approved","rejected","withdrawn"].includes(selected.status)} onClick={()=>void review("approved")}>تأیید احراز هویت</button>
+      <button className="iv-action danger" disabled={busy||!notes.trim()||["approved","rejected","withdrawn"].includes(selected.status)} onClick={()=>void review("rejected")}>رد درخواست</button>
      </div>
      <div><b style={{fontSize:12}}>تاریخچه ممیزی و تصمیم‌ها</b><div className="iv-events" style={{marginTop:8}}>{events.length?events.map(ev=><div className="iv-event" key={ev.id}><b style={{fontSize:11}}>{labels[ev.to_status]??ev.to_status}</b><small>{date(ev.occurred_at)} · شناسه بررسی‌کننده: {ev.actor_user_id??"سیستم ثبت درخواست"}</small>{ev.review_notes&&<span style={{fontSize:11,lineHeight:1.8}}>{ev.review_notes}</span>}</div>):<small>رویدادی برای نمایش ثبت نشده است.</small>}</div></div>
      <small style={{color:"#879287",fontSize:10,lineHeight:1.8}}>ثبت «تأیید احراز» فقط وضعیت پرونده را تأیید می‌کند. ایجاد سازمان، تطبیق و تخصیص مدیر، عضویت، قابلیت‌ها و محدوده جغرافیایی در مراحل جداگانه و با کنترل مدیر مرکزی انجام می‌شوند.</small>
