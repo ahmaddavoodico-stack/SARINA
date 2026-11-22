@@ -37,7 +37,7 @@ on public.expert_recommendation_actions for select to authenticated
 using (
   exists (
     select 1 from public.expert_requests r
-    where r.id = request_id
+    where r.id = expert_recommendation_actions.request_id
       and (
         r.requester_user_id = public.current_sarina_user_id()
         or exists (
@@ -67,7 +67,7 @@ with check (
     join public.expert_request_assignments a on a.request_id = r.id
     join public.expert_profiles ep on ep.id = a.expert_profile_id
     where r.id = request_id
-      and c.id = consultation_id
+      and c.id = expert_recommendation_actions.consultation_id
       and r.farm_id = expert_recommendation_actions.farm_id
       and a.expert_profile_id = expert_recommendation_actions.expert_profile_id
       and a.assignment_status = 'accepted'
