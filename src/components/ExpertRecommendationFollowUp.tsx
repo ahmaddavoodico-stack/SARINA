@@ -70,11 +70,11 @@ export default function ExpertRecommendationFollowUp({profileId,sarinaUserId,ver
   <div className="expert-recommendation-summary">
    <b><ClipboardCheck size={17}/> جمع‌بندی منشی پیگیری</b>
    <p>{counts.total===0?"هنوز توصیه تأییدشده‌ای برای پرونده‌های شما ثبت نشده است.":`در مجموع ${counts.total} توصیه ثبت شده؛ ${counts.completed} مورد را کشاورزان تکمیل‌شده اعلام کرده‌اند، ${counts.inProgress} مورد در حال اجراست و ${counts.overdue} مورد از موعد گذشته است.`}</p>
-   {counts.noFeedback>0&&<p className="attention-text"><AlertCircle size={15}/> برای ${counts.noFeedback} توصیه هنوز گزارش اجرایی از کشاورز ثبت نشده است.</p>}
+   {counts.noFeedback>0&&<p className="attention-text"><AlertCircle size={15}/> برای ${counts.noFeedback} توصیه هنوز گزارش اجرایی یا مدرک ثبت نشده است.</p>}
    <small>منبع: expert_recommendation_actions و expert_recommendation_reviews · آخرین محاسبه: {new Date().toLocaleString("fa-IR")}</small>
   </div>
   {loading?<div className="expert-empty">در حال دریافت سوابق توصیه‌ها...</div>:rows.length===0?<div className="expert-empty">هنوز توصیه‌ای برای پرونده‌های شما ثبت نشده است. پس از تأیید توصیه توسط متخصص و ثبت آن در برنامه کشاورز، اینجا ظاهر می‌شود.</div>:Object.entries(grouped).map(([requestId,items])=><section className="expert-panel expert-recommendation-case" key={requestId}>
-   <header><div><b>{items[0].expert_requests?.subject||"پرونده کشاورز"}</b><small>شناسه پرونده: {requestId.slice(0,8)} · {items.length.toLocaleString("fa-IR")} توصیه</small></div><ShieldCheck size={18}/></header>
+   <header><div><b>{items[0].expert_requests?.subject||"پرونده کشاورز"}</b><small>شناسه پرونده: {requestId.slice(0,8)} · مزرعه: {items[0].farm_id.slice(0,8)} · {items.length.toLocaleString("fa-IR")} توصیه</small></div><ShieldCheck size={18}/></header>
    {items.map(r=>{const d=drafts[r.id]||{status:"acknowledged",summary:"",evidence:""};const review=reviews[r.id];const overdue=!!r.due_on&&r.due_on<today&&["approved","in_progress"].includes(r.status);return <article className="expert-recommendation-followup-item" key={r.id}>
     <div className="expert-recommendation-followup-top"><div><b>{r.title}</b><small>شروع: {fmt(r.starts_on)} · مهلت: {fmt(r.due_on)}</small></div><span className={overdue?"expert-tag warning":"expert-tag"}>{overdue?"از موعد گذشته":r.status==="completed"?"کشاورز تکمیل را اعلام کرده":r.status==="needs_review"?"درخواست بازبینی":r.status==="in_progress"?"در حال اجرا":"تأییدشده / در انتظار اجرا"}</span></div>
     <p className="recommendation-instructions">{r.instructions}</p>
