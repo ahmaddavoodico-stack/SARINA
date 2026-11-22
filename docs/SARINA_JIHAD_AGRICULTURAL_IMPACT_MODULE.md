@@ -354,6 +354,7 @@ The first identity and consent foundation has now been applied to the active Sup
 | `20261122160807` | `sarina_farmer_consent_actor_index` |
 | `20261122160954` | `sarina_jihad_authority_capability_catalog` |
 | `20261122161100` | `sarina_guard_farm_administrative_region_assignment` |
+| `20261122161154` | `sarina_admin_region_scope_fk_index` |
 
 ### Delivered in this phase
 
@@ -376,7 +377,7 @@ The first identity and consent foundation has now been applied to the active Sup
 - A separate role-switched test confirmed a farmer cannot set `farms.admin_region_id` during insert or update. Both attempts were rejected and the transaction was rolled back.
 - Privilege checks confirmed anon cannot execute the identifier or lookup RPCs; authenticated users cannot directly insert identifiers or directly rewrite consent rows.
 - After rollback, the live database still has zero farmer identifiers, zero consent rows, zero farms, zero organizations and zero seeded administrative regions. No synthetic user, consent, organization or geography data was retained.
-- The performance advisor's new unindexed consent-actor foreign key was addressed with the final index migration. Remaining unused indexes are expected while these tables have no operational rows.
+- The performance advisor's new unindexed consent-actor and administrative-region-scope foreign keys were addressed with dedicated indexes. Remaining unused indexes are expected while these tables have no operational rows.
 - The health advisor returned no findings.
 
 ### Pilot prerequisites still open
