@@ -168,3 +168,33 @@ The weekly farmer plan is the execution surface for structured recommendations f
 - The migration `20261122180000_expert_recommendation_weekly_schedule.sql` is committed to the integration branch only and has **not** been applied to the connected Supabase project.
 - The recommendation table has RLS for the request owner and the currently assigned verified specialist. Farmer updates are column-limited to execution status, note, evidence and completion metadata.
 - Do not merge or enable this feature until the migration is reviewed, role-switched RLS tests pass, and the frontend/PWA build checks complete.
+
+
+## Specialist recommendation follow-up and outcome review
+
+The expert workspace includes a recommendation follow-up view that turns farmer execution updates into a concise, case-linked work queue.
+
+### What the secretary summarizes
+
+- Counts of approved/upcoming, in-progress, farmer-reported completed, overdue and review-requested recommendations.
+- Recommendations with no execution note yet, so the specialist can decide whether a reminder is appropriate.
+- The farmer's own execution note, due date, completion timestamp and count of structured evidence metadata.
+- Case reference, recommendation title and last update context.
+
+This first implementation is a **deterministic, rule-based rollup**, not an LLM-generated summary. It does not diagnose a crop, infer treatment success, or claim that a recommendation worked. The UI identifies its source tables and makes the calculation time visible. A future model-backed summary must be separately integrated, grounded to recommendation/case IDs and evidence provenance, and explicitly label insufficient evidence.
+
+### Farmer report versus specialist assessment
+
+- Farmer status and note remain in `expert_recommendation_actions`; a farmer marking an action complete is displayed as **farmer-reported completion**.
+- The specialist's independent assessment is stored in `expert_recommendation_reviews`, separate from the farmer's status.
+- Review outcomes are `acknowledged` (read, not outcome-verified), `verified` (specialist confirms the outcome based on available evidence), or `needs_followup`.
+- The specialist records an outcome summary and optional evidence sufficiency assessment. The review table is internal to the currently assigned, verified specialist; it is not a farmer-editable field or a public outcome claim.
+- A recommendation with no note or evidence remains insufficiently supported; the assistant does not upgrade its status automatically.
+
+### Security and rollout
+
+- Migration `20261122200000_expert_recommendation_followup_reviews.sql` creates the review table with RLS enabled, no anonymous grants, and column-limited updates.
+- Read/insert/update policies verify the current authenticated user is the verified specialist on an accepted assignment for the recommendation's case. A previous or unrelated specialist cannot read or write the review.
+- No live Supabase schema was changed by adding this migration file. Apply only through the reviewed deployment process, then run role-switched tests for the assigned specialist, farmer, unrelated user, unverified specialist and former specialist after reassignment.
+- The dashboard's rollup reads are also constrained by the existing recommendation table RLS. If the migration is not applied, the UI reports the data retrieval error rather than fabricating results.
+- This iteration does not invoke a language model or send external notifications. The current in-app farmer execution and specialist notification flow remains as previously documented.
