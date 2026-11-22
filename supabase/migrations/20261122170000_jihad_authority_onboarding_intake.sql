@@ -63,7 +63,43 @@ create policy authority_onboarding_applicant_submit
     and reviewed_at is null
     and not exists (
       select 1 from unnest(evidence_document_paths) as p(path)
-      where p.path !~ ('^' || applicant_user_id::text || '/[A-Za-z0-9._/-]+$')
+      where p.path !~ ('^' || (select auth.uid())::text || '/[A-Za-z0-9._/-]+
+    )
+  );
+
+drop policy if exists authority_onboarding_admin_review on public.authority_onboarding_requests;
+create policy authority_onboarding_admin_review
+  on public.authority_onboarding_requests for update to authenticated
+  using (coalesce(public.is_sarina_admin(), false))
+  with check (coalesce(public.is_sarina_admin(), false));
+
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('authority-onboarding-documents','authority-onboarding-documents',false,10485760,
+  array['application/pdf','image/jpeg','image/png']::text[])
+on conflict (id) do update set public=false,file_size_limit=10485760,
+  allowed_mime_types=array['application/pdf','image/jpeg','image/png']::text[];
+
+drop policy if exists authority_onboarding_docs_owner_insert on storage.objects;
+create policy authority_onboarding_docs_owner_insert on storage.objects for insert to authenticated
+with check (bucket_id='authority-onboarding-documents' and (storage.foldername(name))[1]=(select auth.uid())::text);
+
+drop policy if exists authority_onboarding_docs_owner_or_admin_read on storage.objects;
+create policy authority_onboarding_docs_owner_or_admin_read on storage.objects for select to authenticated
+using (bucket_id='authority-onboarding-documents' and (
+  (storage.foldername(name))[1]=(select auth.uid())::text or coalesce(public.is_sarina_admin(),false)
+));
+
+drop policy if exists authority_onboarding_docs_owner_delete on storage.objects;
+create policy authority_onboarding_docs_owner_delete on storage.objects for delete to authenticated
+using (bucket_id='authority-onboarding-documents' and (storage.foldername(name))[1]=(select auth.uid())::text);
+
+comment on table public.authority_onboarding_requests is
+  'Private intake and evidence workflow for government/public agricultural authority tenants; not an approved organization registry.';
+comment on column public.authority_onboarding_requests.requested_service_locations is
+  'Requested operational service coverage. Abadan, Choebdeh and Arvandkenar are the approved pilot request scope; labels do not assert official administrative codes.';
+comment on column public.authority_onboarding_requests.proposed_admin_email is
+  'Contact claim for a proposed organization administrator; approval must bind it to an authenticated user before membership provisioning.';
+)
     )
   );
 
