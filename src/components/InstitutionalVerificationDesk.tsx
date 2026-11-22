@@ -5,7 +5,7 @@ import {supabase} from "../lib/supabase";
 type RequestRow={
  id:string;organization_legal_name:string;organization_display_name:string;organization_type:string;
  registration_or_authority_reference:string|null;province_name:string;county_name:string;service_hub_name:string;
- requested_service_locations:string[];mandate_reference:string|null;applicant_contact_name:string;
+ country_name:string;requested_service_locations:string[];mandate_reference:string|null;applicant_contact_name:string;
  applicant_contact_email:string|null;applicant_contact_phone:string|null;proposed_admin_full_name:string;
  proposed_admin_email:string;proposed_admin_phone:string|null;service_scope_description:string;
  evidence_document_paths:string[];status:string;review_notes:string|null;reviewed_at:string|null;created_at:string;
@@ -52,14 +52,14 @@ export default function InstitutionalVerificationDesk(){
   {error&&<div className="iv-alert"><AlertCircle size={14} style={{verticalAlign:"middle",marginLeft:5}}/>{error}</div>}{message&&<div className="iv-success"><CheckCircle2 size={14} style={{verticalAlign:"middle",marginLeft:5}}/>{message}</div>}
   <div className="iv-layout">
    <aside className="iv-panel"><b style={{fontSize:13}}>درخواست‌های احراز ({rows.length.toLocaleString("fa-IR")})</b><div className="iv-toolbar">{[["open","باز"],["all","همه"],["approved","تأییدشده"],["rejected","ردشده"]].map(([v,l])=><button key={v} className={filter===v?"active":""} onClick={()=>setFilter(v)}>{l}</button>)}</div>
-    {loading?<div className="iv-empty">در حال دریافت پرونده‌ها…</div>:visible.length===0?<div className="iv-empty">درخواستی در این دسته وجود ندارد.</div>:<div className="iv-list">{visible.map(r=><button key={r.id} className={"iv-row"+(selected?.id===r.id?" selected":"")} onClick={()=>{setSelected(r);setNotes(r.review_notes??"");setMessage("");setError("");}}><b>{r.organization_display_name}</b><small>{r.organization_legal_name}</small><span className="iv-pill">{labels[r.status]??r.status}</span><small>{r.province_name} · {r.county_name} · {date(r.created_at)}</small></button>)}</div>}
+    {loading?<div className="iv-empty">در حال دریافت پرونده‌ها…</div>:visible.length===0?<div className="iv-empty">درخواستی در این دسته وجود ندارد.</div>:<div className="iv-list">{visible.map(r=><button key={r.id} className={"iv-row"+(selected?.id===r.id?" selected":"")} onClick={()=>{setSelected(r);setNotes(r.review_notes??"");setMessage("");setError("");}}><b>{r.organization_display_name}</b><small>{r.organization_legal_name}</small><span className="iv-pill">{labels[r.status]??r.status}</span><small>{r.country_name} · {r.province_name} · {r.county_name} · {date(r.created_at)}</small></button>)}</div>}
    </aside>
    <article className="iv-panel">
     {!selected?<div className="iv-empty">برای مشاهده جزئیات، یک درخواست را انتخاب کنید.</div>:<div className="iv-detail">
      <div><span className="iv-kicker"><FileText size={14}/> پرونده احراز سازمانی</span><h2 style={{fontSize:18,margin:"7px 0"}}>{selected.organization_display_name}</h2><span className="iv-pill">{labels[selected.status]??selected.status}</span></div>
      <div className="iv-grid">
       <div className="iv-field"><small>نام حقوقی</small><b>{selected.organization_legal_name}</b></div><div className="iv-field"><small>نوع نهاد</small><b>{types[selected.organization_type]??selected.organization_type}</b></div>
-      <div className="iv-field"><small>شماره ثبت / شناسه</small><b>{selected.registration_or_authority_reference||"ارائه نشده"}</b></div><div className="iv-field"><small>مرجع مأموریت</small><b>{selected.mandate_reference||"ارائه نشده"}</b></div>
+      <div className="iv-field"><small>کشور</small><b>{selected.country_name}</b></div><div className="iv-field"><small>استان / ایالت</small><b>{selected.province_name||"—"}</b></div><div className="iv-field"><small>شهرستان / ناحیه</small><b>{selected.county_name||"—"}</b></div><div className="iv-field"><small>مرکز خدمات</small><b>{selected.service_hub_name||"—"}</b></div><div className="iv-field"><small>شماره ثبت / شناسه</small><b>{selected.registration_or_authority_reference||"ارائه نشده"}</b></div><div className="iv-field"><small>مرجع مأموریت</small><b>{selected.mandate_reference||"ارائه نشده"}</b></div>
       <div className="iv-field"><small>متقاضی</small><b>{selected.applicant_contact_name} · {selected.applicant_contact_email||"بدون ایمیل"}</b></div><div className="iv-field"><small>تلفن متقاضی</small><b>{selected.applicant_contact_phone||"ارائه نشده"}</b></div>
       <div className="iv-field"><small>مدیر پیشنهادی</small><b>{selected.proposed_admin_full_name}</b></div><div className="iv-field"><small>ایمیل حساب مدیر پیشنهادی</small><b dir="ltr">{selected.proposed_admin_email}</b></div>
       <div className="iv-field"><small>تلفن مدیر پیشنهادی</small><b>{selected.proposed_admin_phone||"ارائه نشده"}</b></div><div className="iv-field"><small>محدوده درخواستی</small><b>{selected.requested_service_locations?.join("، ")||"—"}</b></div>
