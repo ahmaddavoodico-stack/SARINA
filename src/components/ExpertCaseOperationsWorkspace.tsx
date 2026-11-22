@@ -1,9 +1,10 @@
 import {useEffect,useMemo,useState} from "react";
 import {CalendarClock,ClipboardCheck,RefreshCw,ShieldCheck,Users} from "lucide-react";
 import {supabase} from "../lib/supabase";
+import ExpertRecommendationComposer from "./ExpertRecommendationComposer";
 
 type Props={profileId:string;verified:boolean};
-type CaseRow={id:string;requester_user_id:string;subject:string;problem_description:string;priority:string;status:string;created_at:string};
+type CaseRow={id:string;requester_user_id:string;farm_id:string|null;subject:string;problem_description:string;priority:string;status:string;created_at:string};
 type AssistantRow={request_id:string;assistant_status:string;completeness_status:string;missing_information:string[];assistant_summary:string|null;received_at:string};
 type ExpertRow={id:string;public_name:string};
 type Availability={availability_status:string;pause_new_cases:boolean;vacation_start:string|null;vacation_end:string|null;substitute_expert_profile_id:string|null;max_open_cases:number;status_note:string|null};
@@ -29,7 +30,7 @@ export default function ExpertCaseOperationsWorkspace({profileId,verified}:Props
   if(a.error)setNotice(a.error.message);
   if(a.data){setAvailability(a.data);setVacationStart(dateTime(a.data.vacation_start));setVacationEnd(dateTime(a.data.vacation_end));}
   setExperts(e.data||[]);
-  const q=await db.from("expert_requests").select("id,requester_user_id,subject,problem_description,priority,status,created_at").eq("assigned_expert_profile_id",profileId).in("status",["submitted","assigned","in_progress","waiting_user"]).order("created_at",{ascending:false}).limit(60);
+  const q=await db.from("expert_requests").select("id,requester_user_id,farm_id,subject,problem_description,priority,status,created_at").eq("assigned_expert_profile_id",profileId).in("status",["submitted","assigned","in_progress","waiting_user"]).order("created_at",{ascending:false}).limit(60);
   if(q.error)setNotice(q.error.message);
   const rows=(q.data||[]) as CaseRow[];setCases(rows);
   if(rows.length){
@@ -92,7 +93,7 @@ export default function ExpertCaseOperationsWorkspace({profileId,verified}:Props
     {aiPreparations[c.id].evidence_packet?.evidence?.map(item=><p key={item.id}><strong>{item.label} ({item.provenance}):</strong> {item.value}</p>)}
     <small>این خروجی تصمیم تخصصی یا تشخیص نهایی نیست؛ صحت شواهد و هر پیشنهاد باید توسط متخصص بررسی شود.</small>
    </div>}
-   <div className="expert-case-assistant-actions"><small>{a?.completeness_status==="missing_information"?"پرونده دارای اطلاعات ناقص است":a?.completeness_status==="appears_complete"?"اطلاعات اولیه ثبت شده؛ کامل بودن تخصصی تأیید نشده است":"کنترل کامل بودن هنوز انجام نشده"}</small><button className="expert-link" disabled={preparingCase===c.id||busy} onClick={()=>void prepareCase(c)}>{preparingCase===c.id?"در حال آماده‌سازی...":"تهیه پیش‌نویس هوشمند"}</button><button className="expert-primary" disabled={busy} onClick={()=>void saveCase(c)}><ClipboardCheck size={15}/> ثبت بررسی اولیه</button></div>
+   <div className="expert-case-assistant-actions"><small>{a?.completeness_status==="missing_information"?"پرونده دارای اطلاعات ناقص است":a?.completeness_status==="appears_complete"?"اطلاعات اولیه ثبت شده؛ کامل بودن تخصصی تأیید نشده است":"کنترل کامل بودن هنوز انجام نشده"}</small><button className="expert-link" disabled={preparingCase===c.id||busy} onClick={()=>void prepareCase(c)}>{preparingCase===c.id?"در حال آماده‌سازی...":"تهیه پیش‌نویس هوشمند"}</button><button className="expert-primary" disabled={busy} onClick={()=>void saveCase(c)}><ClipboardCheck size={15}/> ثبت بررسی اولیه</button></div>\n   <ExpertRecommendationComposer requestId={c.id} farmId={c.farm_id} profileId={profileId}/>
   </article>;})}
   <div className="expert-section-title expert-operations-subtitle"><span>مدیریت حضور و جانشینی</span><h2>حضور، مرخصی و جایگزینی متخصص</h2><p>در زمان مرخصی، پرونده‌ها خودکار و پنهانی منتقل نمی‌شوند؛ ابتدا رضایت کشاورز و سپس پذیرش متخصص جایگزین لازم است.</p></div>
   <form className="expert-panel expert-form-grid" onSubmit={saveAvailability}>
