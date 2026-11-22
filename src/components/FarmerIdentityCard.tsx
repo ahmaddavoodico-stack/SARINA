@@ -30,8 +30,8 @@ export default function FarmerIdentityCard({userId}:{userId:string}){
  const [error,setError]=useState("");
  const [copied,setCopied]=useState(false);
  const db=supabase as any;
- const activeOrganizationIds=useMemo(()=>new Set(consents.filter(x=>x.status==="active").map(x=>x.organization_id)),[consents]);
- const availableOrganizations=organizations.filter(x=>!activeOrganizationIds.has(x.id));
+ const activeMessagingOrganizationIds=useMemo(()=>new Set(consents.filter(x=>x.status==="active"&&x.consent_scopes.includes("identity_summary")&&x.consent_scopes.includes("institutional_messaging")).map(x=>x.organization_id)),[consents]);
+ const availableOrganizations=organizations.filter(x=>!activeMessagingOrganizationIds.has(x.id));
 
  async function refresh(){
   if(!db){setError("اتصال پایگاه داده در دسترس نیست.");setLoading(false);return;}
