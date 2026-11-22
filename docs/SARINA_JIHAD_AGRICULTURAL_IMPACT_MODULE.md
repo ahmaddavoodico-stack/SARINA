@@ -355,6 +355,7 @@ The first identity and consent foundation has now been applied to the active Sup
 | `20261122160954` | `sarina_jihad_authority_capability_catalog` |
 | `20261122161100` | `sarina_guard_farm_administrative_region_assignment` |
 | `20261122161154` | `sarina_admin_region_scope_fk_index` |
+| `20261122161306` | `sarina_admin_region_hierarchy_integrity_guard` |
 
 ### Delivered in this phase
 
