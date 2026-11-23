@@ -144,15 +144,15 @@ export default function FarmerSpecialistChatInbox({userId,mode,profileId,verifie
   setCreatingPlan(true);setNotice("");
   const {data:request,error:requestError}=await db.from("expert_requests").select("farm_id,field_id").eq("id",activeThread.requestId).maybeSingle();
   if(requestError||!request?.farm_id){setCreatingPlan(false);setNotice("برای این پرونده مزرعهٔ متصل و قابل دسترسی پیدا نشد؛ برنامه ایجاد نشد.");return;}
-  const {error}=await db.from("farm_improvement_plans").insert({
+  const {error}=await db.from("farm_improvement_plans").upsert({
    farm_id:request.farm_id,field_id:request.field_id||null,title:planTitle.trim(),
    description:planDescription.trim(),priority:"normal",status:"active",origin:"expert",
    target_metrics:[],requires_expert_review:false,created_by:userId,
    source_request_id:activeThread.requestId,source_consultation_id:active
-  });
+  },{onConflict:"source_request_id"});
   setCreatingPlan(false);
   if(error){setNotice("برنامه در برنامه‌ریز مزرعه ثبت نشد: "+error.message);return;}
-  setPlanTitle("");setPlanDescription("");setNotice("برنامهٔ اجراییِ تأییدشده به برنامه‌های بهبود مزرعه متصل شد.");
+  setPlanTitle("");setPlanDescription("");setNotice("برنامهٔ اجراییِ تأییدشده ایجاد یا به‌روزرسانی شد.");
  }
  async function loadOlder(){
   if(!active||!messages.length||loadingOlder)return;
