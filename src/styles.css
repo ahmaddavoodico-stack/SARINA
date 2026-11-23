@@ -471,6 +471,20 @@
 
 
 /* Shared farmer + specialist + SARINA conversation */
+.chat-case-facts{border:1px solid #d8e7d7;background:#f8fbf7;border-radius:12px;padding:12px;margin:0 0 12px}
+.chat-case-facts>b,.chat-plan-create>b{display:block;color:#2d6945;font-size:12px;margin-bottom:8px}
+.chat-case-facts article{padding:8px 0;border-top:1px solid #e4ece3}
+.chat-case-facts article span{font-size:10px;font-weight:800;color:#56735e}
+.chat-case-facts article p{margin:4px 0;color:#33463a;font-size:12px;white-space:pre-wrap}
+.chat-case-facts article small{font-size:9px;color:#87958a}
+.chat-fact-save{display:block;margin-top:7px;border:1px solid #d4e5d4;background:#f6fbf5;color:#326e48;border-radius:8px;padding:5px 9px;font:inherit;font-size:10px;cursor:pointer}
+.chat-fact-save:disabled{opacity:.55;cursor:wait}
+.chat-plan-create{display:grid;gap:8px;padding:12px;border:1px solid #dce8db;border-radius:12px;background:#fbfdf9;margin:0 0 10px}
+.chat-plan-create input,.chat-plan-create textarea{width:100%;border:1px solid #dce5db;border-radius:8px;padding:9px;background:#fff;color:inherit;font:inherit;font-size:12px}
+.chat-plan-create button{justify-self:start;border:0;border-radius:8px;padding:8px 12px;background:#2f774b;color:white;font:inherit;font-size:11px;font-weight:700;cursor:pointer}
+.chat-plan-create button:disabled{opacity:.55;cursor:not-allowed}
+.chat-plan-create small{font-size:10px;color:#819083}
+
 .chat-message{position:relative}
 .chat-message>b{display:block;margin:0 0 5px;color:#54715e;font-size:11px}
 .chat-message-sarina{border:1px solid #cfe3ce;background:linear-gradient(135deg,#f5fbf2,#eef7ed);margin-right:12px}
