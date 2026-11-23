@@ -1,0 +1,2 @@
+alter table public.farm_improvement_plans
+  add constraint farm_improvement_plans_source_request_id_key unique (source_request_id);
