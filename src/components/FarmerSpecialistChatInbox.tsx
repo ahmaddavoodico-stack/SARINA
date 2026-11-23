@@ -6,6 +6,7 @@ type Props={userId:string;mode:"farmer"|"expert";profileId?:string;verified?:boo
 type Thread={id:string;requestId:string;subject:string;status:string;createdAt:string;consultationStatus:string;otherParty:string;assignmentStatus:string;unread:number};
 type ChatMessage={id:string;sender_user_id:string;message_text:string|null;content_parts:any;created_at:string};
 type SarinaMessage={id:string;message_text:string;status:string;created_at:string};
+type CaseFact={id:string;fact_text:string;fact_kind:string;created_at:string};
 const db=supabase as any;
 const stamp=(value:string)=>new Date(value).toLocaleString("fa-IR",{dateStyle:"short",timeStyle:"short"});
 
@@ -16,6 +17,11 @@ export default function FarmerSpecialistChatInbox({userId,mode,profileId,verifie
  const [messages,setMessages]=useState<ChatMessage[]>([]);
  const [sarinaMessages,setSarinaMessages]=useState<SarinaMessage[]>([]);
  const [askingSarina,setAskingSarina]=useState(false);
+ const [caseFacts,setCaseFacts]=useState<CaseFact[]>([]);
+ const [savingFactId,setSavingFactId]=useState<string|null>(null);
+ const [planTitle,setPlanTitle]=useState("");
+ const [planDescription,setPlanDescription]=useState("");
+ const [creatingPlan,setCreatingPlan]=useState(false);
  const [draft,setDraft]=useState("");
  const [search,setSearch]=useState("");
  const [filter,setFilter]=useState<"all"|"unread">("all");
@@ -90,7 +96,7 @@ export default function FarmerSpecialistChatInbox({userId,mode,profileId,verifie
 
  const loadConversation=useCallback(async(consultationId:string)=>{
   if(!supabase)return;
-  setActive(consultationId);setMessages([]);setSarinaMessages([]);setLoadingMessages(true);setNotice("");
+  setActive(consultationId);setMessages([]);setSarinaMessages([]);setCaseFacts([]);setLoadingMessages(true);setNotice("");
   const {data,error}=await db.from("expert_consultation_messages").select("id,sender_user_id,message_text,content_parts,created_at").eq("consultation_id",consultationId).order("created_at",{ascending:false}).limit(50);
   setLoadingMessages(false);
   if(error){setNotice("دریافت پیام‌ها مجاز نبود یا با خطا روبه‌رو شد: "+error.message);return;}
@@ -98,6 +104,8 @@ export default function FarmerSpecialistChatInbox({userId,mode,profileId,verifie
   setMessages(chronological);setHasOlder((data||[]).length===50);
   const ai=await db.from("expert_consultation_ai_messages").select("id,message_text,status,created_at").eq("consultation_id",consultationId).order("created_at",{ascending:true}).limit(100);
   if(ai.error)setNotice("پیام‌های سارینا بارگذاری نشد: "+ai.error.message);else setSarinaMessages(ai.data||[]);
+  const factResult=await db.from("expert_case_conversation_facts").select("id,fact_text,fact_kind,created_at").eq("request_id",threads.find(t=>t.id===consultationId)?.requestId||"").eq("status","approved").order("created_at",{ascending:false}).limit(30);
+  if(!factResult.error)setCaseFacts(factResult.data||[]);
   await markConversationRead(consultationId);
  },[markConversationRead]);
 
@@ -117,6 +125,35 @@ export default function FarmerSpecialistChatInbox({userId,mode,profileId,verifie
   return()=>{void client.removeChannel(channel);};
  },[active,userId,markConversationRead,refresh]);
 
+ async function saveCaseFact(message:ChatMessage){
+  if(!active||!activeThread||mode!=="expert"||activeThread.assignmentStatus!=="accepted"||!verified||!message.message_text||savingFactId)return;
+  setSavingFactId(message.id);setNotice("");
+  const kind=message.sender_user_id===userId?"specialist_finding":"farmer_report";
+  const {data,error}=await db.from("expert_case_conversation_facts").insert({
+   request_id:activeThread.requestId,consultation_id:active,source_message_id:message.id,
+   fact_text:message.message_text,fact_kind:kind,status:"approved",created_by:userId,
+   reviewed_by:userId,reviewed_at:new Date().toISOString()
+  }).select("id,fact_text,fact_kind,created_at").single();
+  setSavingFactId(null);
+  if(error){setNotice(error.code==="23505"?"این پیام قبلاً به‌عنوان واقعیت پرونده ثبت شده است.":"ثبت در پرونده انجام نشد: "+error.message);return;}
+  setCaseFacts(old=>[data,...old]);setNotice("این پیام با تأیید شما به اطلاعات پرونده کشاورز افزوده شد.");
+ }
+ async function createImprovementPlan(event:React.FormEvent){
+  event.preventDefault();
+  if(!activeThread||mode!=="expert"||activeThread.assignmentStatus!=="accepted"||!verified||!planTitle.trim()||!planDescription.trim()||creatingPlan||!supabase)return;
+  setCreatingPlan(true);setNotice("");
+  const {data:request,error:requestError}=await db.from("expert_requests").select("farm_id,field_id").eq("id",activeThread.requestId).maybeSingle();
+  if(requestError||!request?.farm_id){setCreatingPlan(false);setNotice("برای این پرونده مزرعهٔ متصل و قابل دسترسی پیدا نشد؛ برنامه ایجاد نشد.");return;}
+  const {error}=await db.from("farm_improvement_plans").insert({
+   farm_id:request.farm_id,field_id:request.field_id||null,title:planTitle.trim(),
+   description:planDescription.trim(),priority:"normal",status:"active",origin:"expert",
+   target_metrics:[],requires_expert_review:false,created_by:userId,
+   source_request_id:activeThread.requestId,source_consultation_id:active
+  });
+  setCreatingPlan(false);
+  if(error){setNotice("برنامه در برنامه‌ریز مزرعه ثبت نشد: "+error.message);return;}
+  setPlanTitle("");setPlanDescription("");setNotice("برنامهٔ اجراییِ تأییدشده به برنامه‌های بهبود مزرعه متصل شد.");
+ }
  async function loadOlder(){
   if(!active||!messages.length||loadingOlder)return;
   setLoadingOlder(true);
@@ -161,9 +198,11 @@ export default function FarmerSpecialistChatInbox({userId,mode,profileId,verifie
     {!activeThread?<div className="chat-empty chat-select-prompt"><MessageCircle size={34}/><b>یک مکالمه را انتخاب کنید</b><p>سوابق پیام و پاسخ متخصص در این بخش نمایش داده می‌شود.</p></div>:<>
      <header className="chat-conversation-head"><button className="chat-back" onClick={()=>setActive(null)}><ArrowRight size={17}/> مکالمات</button><div><b>{activeThread.otherParty}</b><small>{activeThread.subject} · پرونده مرتبط</small></div><span className="chat-secure-label"><CheckCheck size={14}/> کشاورز · متخصص · سارینا</span></header>
      <div className="chat-message-history">
+      {caseFacts.length>0&&<section className="chat-case-facts"><b>اطلاعات تأییدشدهٔ پرونده</b>{caseFacts.map(fact=><article key={fact.id}><span>{fact.fact_kind==="specialist_finding"?"یافته متخصص":fact.fact_kind==="decision"?"تصمیم تأییدشده":fact.fact_kind==="follow_up"?"پیگیری":"گزارش کشاورز"}</span><p>{fact.fact_text}</p><small>{stamp(fact.created_at)}</small></article>)}</section>}
       {hasOlder&&<button className="chat-load-older" onClick={()=>void loadOlder()} disabled={loadingOlder}>{loadingOlder?<LoaderCircle size={14}/>:<ArrowDown size={14}/>} پیام‌های قدیمی‌تر</button>}
-      {loadingMessages?<div className="chat-empty"><LoaderCircle className="spin"/>در حال دریافت پیام‌ها...</div>:messages.length===0&&sarinaMessages.length===0?<div className="chat-empty"><MessageCircle size={24}/><b>هنوز پیامی ارسال نشده است</b><p>می‌توانید گفت‌وگو را با یک پیام کوتاه آغاز کنید.</p></div>:<>{[...messages.map(message=>({...message,kind:"human" as const,sortAt:message.created_at})),...sarinaMessages.map(message=>({...message,kind:"sarina" as const,sortAt:message.created_at}))].sort((a,b)=>new Date(a.sortAt).getTime()-new Date(b.sortAt).getTime()).map(message=>message.kind==="sarina"?<article key={"sarina-"+message.id} className="chat-message chat-message-sarina"><b>سارینا <span>همراه هوشمند</span></b><p>{message.message_text}</p><small>{stamp(message.created_at)}{message.status==="unavailable"?" · اتصال هوش مصنوعی فعال نیست":" · پاسخ هوشمند؛ نیازمند تأیید متخصص برای تصمیم تخصصی"}</small></article>:<article key={message.id} className={"chat-message"+(message.sender_user_id===userId?" mine":"")}><b>{message.sender_user_id===userId?(mode==="farmer"?"شما · کشاورز":"شما · متخصص"):mode==="farmer"?"متخصص پرونده":"کشاورز"}</b><p>{message.message_text||"این پیام دارای محتوای پیوست‌شده است که در این نسخه نمایش داده نمی‌شود."}</p><small>{stamp(message.created_at)}</small></article>)}{askingSarina&&<article className="chat-message chat-message-sarina"><b>سارینا</b><p>در حال بررسی پیام‌های گفت‌وگو…</p></article>}</>}
+      {loadingMessages?<div className="chat-empty"><LoaderCircle className="spin"/>در حال دریافت پیام‌ها...</div>:messages.length===0&&sarinaMessages.length===0?<div className="chat-empty"><MessageCircle size={24}/><b>هنوز پیامی ارسال نشده است</b><p>می‌توانید گفت‌وگو را با یک پیام کوتاه آغاز کنید.</p></div>:<>{[...messages.map(message=>({...message,kind:"human" as const,sortAt:message.created_at})),...sarinaMessages.map(message=>({...message,kind:"sarina" as const,sortAt:message.created_at}))].sort((a,b)=>new Date(a.sortAt).getTime()-new Date(b.sortAt).getTime()).map(message=>message.kind==="sarina"?<article key={"sarina-"+message.id} className="chat-message chat-message-sarina"><b>سارینا <span>همراه هوشمند</span></b><p>{message.message_text}</p><small>{stamp(message.created_at)}{message.status==="unavailable"?" · اتصال هوش مصنوعی فعال نیست":" · پاسخ هوشمند؛ نیازمند تأیید متخصص برای تصمیم تخصصی"}</small></article>:<article key={message.id} className={"chat-message"+(message.sender_user_id===userId?" mine":"")}><b>{message.sender_user_id===userId?(mode==="farmer"?"شما · کشاورز":"شما · متخصص"):mode==="farmer"?"متخصص پرونده":"کشاورز"}</b><p>{message.message_text||"این پیام دارای محتوای پیوست‌شده است که در این نسخه نمایش داده نمی‌شود."}</p><small>{stamp(message.created_at)}</small>{mode==="expert"&&activeThread.assignmentStatus==="accepted"&&message.message_text&&<button type="button" className="chat-fact-save" disabled={savingFactId===message.id} onClick={()=>void saveCaseFact(message)}>{savingFactId===message.id?"در حال ثبت...":"ثبت پیام به‌عنوان اطلاعات پرونده"}</button>}</article>)}{askingSarina&&<article className="chat-message chat-message-sarina"><b>سارینا</b><p>در حال بررسی پیام‌های گفت‌وگو…</p></article>}</>}
      </div>
+     {mode==="expert"&&activeThread.assignmentStatus==="accepted"&&<form className="chat-plan-create" onSubmit={createImprovementPlan}><b>ثبت برنامه اجرایی تأییدشده</b><input value={planTitle} onChange={e=>setPlanTitle(e.target.value)} placeholder="عنوان برنامه مزرعه" maxLength={160}/><textarea value={planDescription} onChange={e=>setPlanDescription(e.target.value)} placeholder="اقدام‌ها و زمان‌بندی تأییدشده توسط متخصص را بنویسید..." rows={2} maxLength={5000}/><button type="submit" disabled={creatingPlan||!planTitle.trim()||!planDescription.trim()}>{creatingPlan?"در حال ثبت...":"افزودن به برنامه بهبود مزرعه"}</button><small>فقط برنامه‌ای که متخصص مسئول تأیید کرده باشد در این بخش ثبت می‌شود.</small></form>}
      <form className="chat-compose" onSubmit={sendMessage}><textarea value={draft} onChange={e=>setDraft(e.target.value)} maxLength={6000} rows={2} placeholder="پیام خود را بنویسید..." disabled={sending}/><div><small>{draft.length.toLocaleString("fa-IR")}/۶۰۰۰ · ارسال متن</small><button type="submit" disabled={sending||!draft.trim()||draft.trim().length>6000}><Send size={16}/>{sending?"در حال ارسال...":"ارسال پیام"}</button></div></form>
     </>}
    </div>
