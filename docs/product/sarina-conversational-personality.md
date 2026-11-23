@@ -65,10 +65,39 @@ Only use this style when the location and forecast are actually available and cu
 
 ## Implementation boundaries and known blockers
 
-- Keep work on the integration/test branch and its draft pull request. Do not merge to `main` or alter Production without the owner's explicit approval.
-- Do not add or apply database migrations as part of this first step without separate explicit approval.
+- Owner-approved implementation target: work directly on `main`; do not create a feature branch. Keep changes additive, review the exact diff, run available checks, and never force-push or rewrite history.
+- Reuse the existing `ai_conversations` and `ai_messages` tables and their ownership/RLS policies. Do not add or apply database migrations until the existing schema, policies, and live migration history have been verified.
 - The existing `sarina-central-intelligence` Edge Function currently validates an authenticated request and farm access, then returns an accepted/validation response. It does not yet retrieve conversation context or invoke a model.
 - The live Supabase project currently reports the OpenAI provider as inactive with credentials pending; the registered model is inactive and its billing guard is disabled. No live AI call should be attempted until credentials, provider activation, model selection, and a spending limit are explicitly approved.
 - Existing AI conversation/message tables and RLS are present. Reuse and audit them before proposing schema changes.
 - The first deliverable is a working text conversation with continuity and the approved personality. Image input, voice input/output, proactive weather reminders, and deeper farm-context reasoning are staged follow-ups, not claims of current capability.
 - The app's current farm page is still an empty placeholder. Do not fabricate farm context; the chat must work in a general mode before a farm is registered and become farm-aware only after real farm records exist.
+
+
+## Unified farmer entry — approved product decision (2026-11-23)
+
+The farmer experience has one conversational doorway for all SARINA capabilities. Farmers must not be required to navigate separate modules to discover which service handles their request.
+
+- The existing farmer-facing SARINA companion is the single entry point for text, voice, images, and documents as those modalities become operational.
+- A central orchestration layer classifies intent and routes to existing farm, agronomy, official-services, marketplace, market/investment, and specialist workflows. Domain services remain separate internally; the farmer sees one conversation and one coherent response.
+- The assistant should reuse the signed-in farmer's authorized farm records and relevant conversation history. It must ask the farmer to select or confirm a farm before attaching farm-specific context.
+- Specialist workspaces remain professional and separate. A farmer can request a human specialist from the same SARINA conversation; expert consultation messages must remain separate from AI conversation history.
+- The farmer-facing personality is warm, plain-spoken, patient, and voice-first, while retaining text and accessible controls. The approved invitation is «من اینجام، چه خبر؟».
+- Official circulars and support-program guidance must be source-grounded. SARINA may explain requirements and perform a preliminary checklist, but must not claim to issue an official eligibility decision or approval.
+- Do not display a successful AI answer unless a provider was actually invoked and the assistant message was persisted. If provider configuration, budget guard, or persistence is unavailable, explain that clearly and preserve the user's draft/message for retry where safe.
+
+## Delivery sequence
+
+1. **Schema and security verification:** inspect the live and source-controlled ai_conversations / ai_messages policies, user-to-auth identity mapping, existing usage/budget controls, and current Edge Function deployment before changing persistence or routing.
+2. **Real text conversation:** authenticated request, ownership-scoped conversation creation/resume, short bounded history, provider invocation behind server-side secrets and a hard spending guard, persisted assistant response, idempotency, and transparent failure handling.
+3. **One-door orchestration:** intent classification and routing to existing services; never duplicate farm, expert, institutional, or marketplace records.
+4. **Voice and media:** Persian-capable speech-to-text and text-to-speech, then image/document intake with explicit consent and safe file handling.
+5. **Acceptance:** verify at least three coherent turns, conversation continuity, farm confirmation, cross-user isolation, RLS, cost guard, retry behavior, mobile usability, and no false claims when the model is unavailable.
+
+## Current implementation checkpoint
+
+- src/SarinaCompanion.tsx exists and is mounted for farmer accounts in src/App.tsx, but its current send handler is a local-only prototype; it does not call an AI endpoint or persist messages.
+- supabase/functions/sarina-central-intelligence/index.ts authenticates the caller and assembles farm context, but currently returns model_invoked: false; it is not yet a farmer chat endpoint.
+- A specialist-only ChatGPT Responses adapter exists. Its strict structured output is for specialist evidence preparation and must not be reused as the farmer's general conversational response schema.
+- Existing AI usage/budget tables are intentionally unseeded/disabled by default. No live model call should be made until the server-side provider secret, model allowlist, and approved hard spending cap are verified. The previously approved one-time $5 technical test budget remains a test-only ceiling; automatic recharge stays off.
+- No new schema migration or live database mutation is part of this checkpoint.
