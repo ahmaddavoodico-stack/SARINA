@@ -4,7 +4,7 @@ import {supabase} from "../lib/supabase";
 
 type Props={userId:string;mode:"farmer"|"expert";profileId?:string;verified?:boolean};
 type Thread={id:string;requestId:string;subject:string;status:string;createdAt:string;consultationStatus:string;otherParty:string;assignmentStatus:string;unread:number};
-type ChatMessage={id:string;sender_user_id:string;message_text:string|null;content_parts:any;created_at:string};
+type ChatMessage={id:string;sender_user_id:string;message_text:string|null;content_parts:any;created_at:string};\ntype SarinaMessage={id:string;message_text:string;status:string;created_at:string};
 const db=supabase as any;
 const stamp=(value:string)=>new Date(value).toLocaleString("fa-IR",{dateStyle:"short",timeStyle:"short"});
 
@@ -12,7 +12,7 @@ export default function FarmerSpecialistChatInbox({userId,mode,profileId,verifie
  const [threads,setThreads]=useState<Thread[]>([]);
  const [notifications,setNotifications]=useState<any[]>([]);
  const [active,setActive]=useState<string|null>(null);
- const [messages,setMessages]=useState<ChatMessage[]>([]);
+ const [messages,setMessages]=useState<ChatMessage[]>([]);\n const [sarinaMessages,setSarinaMessages]=useState<SarinaMessage[]>([]);\n const [askingSarina,setAskingSarina]=useState(false);
  const [draft,setDraft]=useState("");
  const [search,setSearch]=useState("");
  const [filter,setFilter]=useState<"all"|"unread">("all");
@@ -87,7 +87,7 @@ export default function FarmerSpecialistChatInbox({userId,mode,profileId,verifie
 
  const loadConversation=useCallback(async(consultationId:string)=>{
   if(!supabase)return;
-  setActive(consultationId);setMessages([]);setLoadingMessages(true);setNotice("");
+  setActive(consultationId);setMessages([]);setSarinaMessages([]);setLoadingMessages(true);setNotice("");
   const {data,error}=await db.from("expert_consultation_messages").select("id,sender_user_id,message_text,content_parts,created_at").eq("consultation_id",consultationId).order("created_at",{ascending:false}).limit(50);
   setLoadingMessages(false);
   if(error){setNotice("دریافت پیام‌ها مجاز نبود یا با خطا روبه‌رو شد: "+error.message);return;}
@@ -135,7 +135,7 @@ export default function FarmerSpecialistChatInbox({userId,mode,profileId,verifie
  if(mode==="expert"&&!verified)return <section className="chat-inbox" dir="rtl"><div className="chat-empty"><MessageCircle size={28}/><b>دسترسی مکالمات پس از تأیید صلاحیت فعال می‌شود.</b><p>برای حفاظت از اطلاعات کشاورزان، حساب‌های تأییدنشده به محتوای مکالمات دسترسی ندارند.</p></div></section>;
 
  return <section className="chat-inbox" dir="rtl">
-  <header className="chat-inbox-heading"><div><span className="eyebrow">{mode==="farmer"?"ارتباط انسانی با متخصصان":"ارتباط مستقیم با کشاورزان"}</span><h2>{mode==="farmer"?"گفت‌وگو با متخصصان":"مکالمات کشاورزان"}</h2><p>این صندوق فقط پیام‌های انسانی پرونده‌های مشاوره را نمایش می‌دهد و از «صحبت با سارینا» مستقل است.</p></div><div className="chat-inbox-count"><b>{unreadTotal.toLocaleString("fa-IR")}</b><small>پیام خوانده‌نشده</small></div></header>
+  <header className="chat-inbox-heading"><div><span className="eyebrow">{mode==="farmer"?"ارتباط انسانی با متخصصان":"ارتباط مستقیم با کشاورزان"}</span><h2>{mode==="farmer"?"گفت‌وگو با متخصصان":"مکالمات کشاورزان"}</h2><p>یک گفت‌وگوی مشترک میان کشاورز، متخصص پرونده و سارینا؛ همه پیام‌ها و پاسخ‌ها در همین پنجره و به‌ترتیب زمان نمایش داده می‌شوند.</p></div><div className="chat-inbox-count"><b>{unreadTotal.toLocaleString("fa-IR")}</b><small>پیام خوانده‌نشده</small></div></header>
   {notice&&<div className="notice">{notice}</div>}
   <div className="chat-inbox-layout">
    <aside className={"chat-thread-list"+(active?" mobile-hidden":"")}>
@@ -145,10 +145,10 @@ export default function FarmerSpecialistChatInbox({userId,mode,profileId,verifie
    </aside>
    <div className={"chat-conversation"+(!active?" mobile-hidden":"")}>
     {!activeThread?<div className="chat-empty chat-select-prompt"><MessageCircle size={34}/><b>یک مکالمه را انتخاب کنید</b><p>سوابق پیام و پاسخ متخصص در این بخش نمایش داده می‌شود.</p></div>:<>
-     <header className="chat-conversation-head"><button className="chat-back" onClick={()=>setActive(null)}><ArrowRight size={17}/> مکالمات</button><div><b>{activeThread.otherParty}</b><small>{activeThread.subject} · پرونده مرتبط</small></div><span className="chat-secure-label"><CheckCheck size={14}/> خصوصی</span></header>
+     <header className="chat-conversation-head"><button className="chat-back" onClick={()=>setActive(null)}><ArrowRight size={17}/> مکالمات</button><div><b>{activeThread.otherParty}</b><small>{activeThread.subject} · پرونده مرتبط</small></div><span className="chat-secure-label"><CheckCheck size={14}/> کشاورز · متخصص · سارینا</span></header>
      <div className="chat-message-history">
       {hasOlder&&<button className="chat-load-older" onClick={()=>void loadOlder()} disabled={loadingOlder}>{loadingOlder?<LoaderCircle size={14}/>:<ArrowDown size={14}/>} پیام‌های قدیمی‌تر</button>}
-      {loadingMessages?<div className="chat-empty"><LoaderCircle className="spin"/>در حال دریافت پیام‌ها...</div>:messages.length===0?<div className="chat-empty"><MessageCircle size={24}/><b>هنوز پیامی ارسال نشده است</b><p>می‌توانید گفت‌وگو را با یک پیام کوتاه آغاز کنید.</p></div>:messages.map(message=><article key={message.id} className={"chat-message"+(message.sender_user_id===userId?" mine":"") }><p>{message.message_text||"این پیام دارای محتوای پیوست‌شده است که در این نسخه نمایش داده نمی‌شود."}</p><small>{stamp(message.created_at)} {message.sender_user_id===userId?"· ارسال‌شده":""}</small></article>)}
+      {loadingMessages?<div className="chat-empty"><LoaderCircle className="spin"/>در حال دریافت پیام‌ها...</div>:messages.length===0&&sarinaMessages.length===0?<div className="chat-empty"><MessageCircle size={24}/><b>هنوز پیامی ارسال نشده است</b><p>می‌توانید گفت‌وگو را با یک پیام کوتاه آغاز کنید.</p></div>:<>{[...messages.map(message=>({...message,kind:"human" as const,sortAt:message.created_at})),...sarinaMessages.map(message=>({...message,kind:"sarina" as const,sortAt:message.created_at}))].sort((a,b)=>new Date(a.sortAt).getTime()-new Date(b.sortAt).getTime()).map(message=>message.kind==="sarina"?<article key={"sarina-"+message.id} className="chat-message chat-message-sarina"><b>سارینا <span>همراه هوشمند</span></b><p>{message.message_text}</p><small>{stamp(message.created_at)}{message.status==="unavailable"?" · اتصال هوش مصنوعی فعال نیست":" · پاسخ هوشمند؛ نیازمند تأیید متخصص برای تصمیم تخصصی"}</small></article>:<article key={message.id} className={"chat-message"+(message.sender_user_id===userId?" mine":"")}><b>{message.sender_user_id===userId?(mode==="farmer"?"شما · کشاورز":"شما · متخصص"):mode==="farmer"?"متخصص پرونده":"کشاورز"}</b><p>{message.message_text||"این پیام دارای محتوای پیوست‌شده است که در این نسخه نمایش داده نمی‌شود."}</p><small>{stamp(message.created_at)}</small></article>)}{askingSarina&&<article className="chat-message chat-message-sarina"><b>سارینا</b><p>در حال بررسی پیام‌های گفت‌وگو…</p></article>}</>}
      </div>
      <form className="chat-compose" onSubmit={sendMessage}><textarea value={draft} onChange={e=>setDraft(e.target.value)} maxLength={6000} rows={2} placeholder="پیام خود را بنویسید..." disabled={sending}/><div><small>{draft.length.toLocaleString("fa-IR")}/۶۰۰۰ · ارسال متن</small><button type="submit" disabled={sending||!draft.trim()||draft.trim().length>6000}><Send size={16}/>{sending?"در حال ارسال...":"ارسال پیام"}</button></div></form>
     </>}
