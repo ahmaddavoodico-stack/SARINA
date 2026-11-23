@@ -65,7 +65,7 @@ export default function ExpertDashboard({session,sarinaUserId,onLogout}:Props){
    setSignals(s.data||[]);setImpacts(i.data||[]);setAssignments(a.data||[]);setAwards(w.data||[]);setCredentials(c.data||[]);setApplications(ip.data||[]);setRecognitionRequests(rr.data||[]);setSettlements(st.data||[]);setContracts(ct.data||[]);setCaseNotifications(nn.data||[]);
   }catch(e){setError(e instanceof Error?e.message:"بارگذاری اطلاعات کارشناس با خطا روبه‌رو شد.");}
   finally{setLoading(false);}
- },[sarinaUserId]);
+ },[sarinaUserId,session.user.user_metadata?.has_shop]);
  useEffect(()=>{void refresh();},[refresh]);
  useEffect(()=>{const client=supabase;if(!client)return;const channel=client.channel("expert-notifications-"+sarinaUserId).on("postgres_changes",{event:"INSERT",schema:"public",table:"expert_case_notifications",filter:"recipient_user_id=eq."+sarinaUserId},payload=>setCaseNotifications(old=>[payload.new,...old.filter(n=>n.id!==(payload.new as any).id)])).subscribe();return()=>{void client.removeChannel(channel);};},[sarinaUserId]);
  useEffect(()=>{const client=supabase;if(!client||!consultationId)return;const channel=client.channel("expert-case-"+consultationId).on("postgres_changes",{event:"INSERT",schema:"public",table:"expert_consultation_messages",filter:"consultation_id=eq."+consultationId},payload=>{setMessages(old=>old.some(x=>x.id===(payload.new as any).id)?old:[...old,payload.new]);}).subscribe();return()=>{void client.removeChannel(channel);};},[consultationId]);
