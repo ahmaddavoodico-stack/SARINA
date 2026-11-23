@@ -107,7 +107,7 @@ export default function FarmerSpecialistChatInbox({userId,mode,profileId,verifie
   const factResult=await db.from("expert_case_conversation_facts").select("id,fact_text,fact_kind,created_at").eq("request_id",threads.find(t=>t.id===consultationId)?.requestId||"").eq("status","approved").order("created_at",{ascending:false}).limit(30);
   if(!factResult.error)setCaseFacts(factResult.data||[]);
   await markConversationRead(consultationId);
- },[markConversationRead]);
+ },[markConversationRead,threads]);
 
  useEffect(()=>{
   const client=supabase;
