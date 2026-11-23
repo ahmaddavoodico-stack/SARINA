@@ -1,11 +1,13 @@
-const CACHE="sarina-shell-v8";
+const CACHE="sarina-shell-v10";
 const SHELL=[
  "/",
  "/manifest.webmanifest",
  "/sarina-logo.svg",
- "/sarina-icon-192.webp",
- "/sarina-icon-512.webp",
- "/apple-touch-icon.png"
+ "/SARINA_Icon_192.png",
+ "/SARINA_Icon_512.png",
+ "/SARINA_Maskable_512-1.png",
+ "/apple-touch-icon.png",
+ "/SARINA_Apple_Touch_180.png"
 ];
 
 self.addEventListener("install",event=>{
