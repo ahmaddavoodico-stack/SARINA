@@ -34,7 +34,7 @@ export default function SarinaCompanion({isAdmin=false}:SarinaCompanionProps){
   setBusy(true);
   setStatus("در حال دریافت پاسخ آزمایشی از Groq...");
   try{
-   const{data,error}=await supabase.functions.invoke("sarina-central-intelligence",{
+   const{data,error}=await supabase.functions.invoke("sarina-admin-chat",{
     body:{
      mode:"admin_chat",
      messages:nextMessages.map(message=>({
