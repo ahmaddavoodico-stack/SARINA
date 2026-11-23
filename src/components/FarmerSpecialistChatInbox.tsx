@@ -1,6 +1,6 @@
 import {useCallback,useEffect,useMemo,useRef,useState} from "react";
 import type {ReactNode} from "react";
-import {ArrowDown,ArrowRight,CheckCheck,FileText,ImagePlus,LoaderCircle,MessageCircle,Mic,Paperclip,RefreshCw,Search,Send,Square,Volume2,X} from "lucide-react";
+import {ArrowDown,ArrowRight,CheckCheck,FileText,LoaderCircle,MessageCircle,Mic,Paperclip,RefreshCw,Search,Send,Square} from "lucide-react";
 import {supabase} from "../lib/supabase";
 
 type Props={userId:string;mode:"farmer"|"expert";profileId?:string;verified?:boolean;compact?:boolean;afterComposer?:ReactNode};
