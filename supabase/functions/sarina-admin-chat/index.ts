@@ -20,6 +20,8 @@ Deno.serve(async (req: Request) => {
 
   const authorization = req.headers.get("Authorization");
   if (!authorization?.startsWith("Bearer ")) return reply(401, { ok: false, code: "AUTH_REQUIRED" });
+  const accessToken = authorization.slice("Bearer ".length).trim();
+  if (!accessToken) return reply(401, { ok: false, code: "AUTH_REQUIRED" });
 
   let body: unknown;
   try { body = await req.json(); }
@@ -37,7 +39,7 @@ Deno.serve(async (req: Request) => {
     global: { headers: { Authorization: authorization } },
     auth: { persistSession: false, autoRefreshToken: false },
   });
-  const { data: auth, error: authError } = await client.auth.getUser();
+  const { data: auth, error: authError } = await client.auth.getUser(accessToken);
   if (authError || !auth.user) return reply(401, { ok: false, code: "INVALID_SESSION" });
 
   // Do not trust client-side role state or user-editable metadata.
