@@ -5,7 +5,7 @@ import {supabase} from "../lib/supabase";
 
 type Seller={id:string;display_name:string;description:string|null;country_code:string|null;region:string|null;city:string|null;contact_email:string|null;contact_phone:string|null;verification_status:string;verification_notes:string|null};
 type Category={id:string;code:string;name_fa:string;market_section:string};
-type Product={id:string;name:string;description:string|null;category_id:string;status:string;pricing_model:string;price:number|string|null;currency:string;unit_label:string;stock_qty:number|string|null;created_at:string};
+type Product={id:string;name:string;description:string|null;category_id:string;status:string;pricing_model:string;price:number|string|null;currency:string;unit_label:string;stock_qty:number|string|null;image_urls:unknown;created_at:string};
 type Order={id:string;order_number:string;status:string;payment_status:string;fulfillment_status:string;total_amount:number|string;currency:string;placed_at:string};
 
 const db=supabase as any;
@@ -22,8 +22,9 @@ export default function SpecialistStoreWorkspace({userId,enabled}:{userId:string
  const [error,setError]=useState("");
  const [notice,setNotice]=useState("");
  const [sellerForm,setSellerForm]=useState({display_name:"",description:"",country_code:"",region:"",city:"",contact_email:"",contact_phone:""});
- const [productForm,setProductForm]=useState({name:"",description:"",category_id:"",pricing_model:"fixed",price:"",currency:"USD",unit_label:"unit",minimum_order_qty:"1",stock_qty:""});
+ const [productForm,setProductForm]=useState({name:"",description:"",category_id:"",pricing_model:"fixed",price:"",currency:"USD",unit_label:"unit",minimum_order_qty:"1",stock_qty:"",image_url:""});
  const [showProductForm,setShowProductForm]=useState(false);
+ const [editingProductId,setEditingProductId]=useState<string|null>(null);
 
  const load=useCallback(async()=>{
   if(!supabase){setError("اتصال پایگاه داده در این محیط پیکربندی نشده است.");setLoading(false);return;}
@@ -38,7 +39,7 @@ export default function SpecialistStoreWorkspace({userId,enabled}:{userId:string
    if(own.data){
     setSellerForm({display_name:own.data.display_name||"",description:own.data.description||"",country_code:own.data.country_code||"",region:own.data.region||"",city:own.data.city||"",contact_email:own.data.contact_email||"",contact_phone:own.data.contact_phone||""});
     const [p,o]=await Promise.all([
-     db.from("marketplace_products").select("id,name,description,category_id,status,pricing_model,price,currency,unit_label,stock_qty,created_at").eq("seller_id",own.data.id).order("created_at",{ascending:false}).limit(100),
+     db.from("marketplace_products").select("id,name,description,category_id,status,pricing_model,price,currency,unit_label,stock_qty,image_urls,created_at").eq("seller_id",own.data.id).order("created_at",{ascending:false}).limit(100),
      db.from("marketplace_orders").select("id,order_number,status,payment_status,fulfillment_status,total_amount,currency,placed_at").eq("seller_id",own.data.id).order("placed_at",{ascending:false}).limit(50)
     ]);
     if(p.error)throw p.error;if(o.error)throw o.error;
@@ -71,14 +72,23 @@ export default function SpecialistStoreWorkspace({userId,enabled}:{userId:string
   if(productForm.pricing_model==="fixed"&&productForm.stock_qty.trim()===""){setError("برای قیمت ثابت، مقدار موجودی را نیز وارد کنید.");return;}
   setBusy(true);setError("");setNotice("");
   try{
-   const {error}=await db.from("marketplace_products").insert({seller_id:seller.id,category_id:productForm.category_id,market_section:"company_supplies",name:productForm.name.trim(),description:productForm.description.trim()||null,specifications:{},pricing_model:productForm.pricing_model,price,currency:productForm.currency,unit_label:productForm.unit_label.trim()||"unit",minimum_order_qty:Number(productForm.minimum_order_qty)||1,stock_qty:productForm.stock_qty.trim()===""?null:Number(productForm.stock_qty),status:"draft",regulated:false,regulatory_metadata:{}});
-   if(error)throw error;
-   setProductForm({name:"",description:"",category_id:"",pricing_model:"fixed",price:"",currency:"USD",unit_label:"unit",minimum_order_qty:"1",stock_qty:""});
-   setShowProductForm(false);setNotice("محصول به‌صورت پیش‌نویس ذخیره شد.");await load();
+   let imageUrls: string[]=[];
+   if(productForm.image_url.trim()){const url=new URL(productForm.image_url.trim());if(!["https:","http:"].includes(url.protocol))throw new Error("نشانی تصویر باید با HTTP یا HTTPS آغاز شود.");imageUrls=[url.toString()];}
+   const payload={seller_id:seller.id,category_id:productForm.category_id,market_section:"company_supplies",name:productForm.name.trim(),description:productForm.description.trim()||null,specifications:{},pricing_model:productForm.pricing_model,price,currency:productForm.currency,unit_label:productForm.unit_label.trim()||"unit",minimum_order_qty:Number(productForm.minimum_order_qty)||1,stock_qty:productForm.stock_qty.trim()===""?null:Number(productForm.stock_qty),image_urls:imageUrls};
+   const result=editingProductId
+    ?await db.from("marketplace_products").update(payload).eq("id",editingProductId).eq("seller_id",seller.id)
+    :await db.from("marketplace_products").insert({...payload,status:"draft",regulated:false,regulatory_metadata:{}});
+   if(result.error)throw result.error;
+   setProductForm({name:"",description:"",category_id:"",pricing_model:"fixed",price:"",currency:"USD",unit_label:"unit",minimum_order_qty:"1",stock_qty:"",image_url:""});
+   setEditingProductId(null);setShowProductForm(false);setNotice(editingProductId?"تغییرات محصول ذخیره شد.":"محصول به‌صورت پیش‌نویس ذخیره شد.");await load();
   }catch(e){setError(e instanceof Error?e.message:"ثبت محصول انجام نشد.");}
   finally{setBusy(false);}
  }
 
+ function editProduct(product:Product){
+  const image=Array.isArray(product.image_urls)?product.image_urls.find(x=>typeof x==="string") as string|undefined:"";
+  setEditingProductId(product.id);setProductForm({name:product.name,description:product.description||"",category_id:product.category_id,pricing_model:product.pricing_model,price:product.price===null?"":String(product.price),currency:product.currency,unit_label:product.unit_label,minimum_order_qty:"1",stock_qty:product.stock_qty===null?"":String(product.stock_qty),image_url:image||""});setShowProductForm(true);
+ }
  async function updateProductStatus(product:Product,status:"published"|"draft"){
   if(!supabase||!seller)return;
   setBusy(true);setError("");setNotice("");
@@ -104,20 +114,21 @@ export default function SpecialistStoreWorkspace({userId,enabled}:{userId:string
   </form></div>:<>
    <div className="specialist-store-stats"><article><small>وضعیت فروشندگی</small><strong>{statusLabels[seller.verification_status]||seller.verification_status}</strong></article><article><small>محصولات منتشرشده</small><strong>{publishedCount.toLocaleString("fa-IR")}</strong></article><article><small>کل محصولات</small><strong>{products.length.toLocaleString("fa-IR")}</strong></article><article><small>سفارش‌های دریافتی</small><strong>{orders.length.toLocaleString("fa-IR")}</strong></article></div>
    {seller.verification_status!=="verified"&&<div className="specialist-store-pending"><strong>فروشگاه شما هنوز تأیید نشده است</strong><p>{seller.verification_notes||"پس از بررسی اطلاعات فروشگاه، نتیجه در همین بخش نمایش داده می‌شود. تا آن زمان می‌توانید محصولات را به‌صورت پیش‌نویس ثبت کنید."}</p></div>}
-   <div className="specialist-store-actions"><div><h3>محصولات فروشگاه</h3><p>محصولات اینجا پس از انتشار مجاز در بازارگاه عمومی نمایش داده می‌شوند.</p></div><button type="button" onClick={()=>setShowProductForm(v=>!v)}><PackagePlus size={16}/>{showProductForm?"بستن فرم":"افزودن محصول"}</button></div>
-   {showProductForm&&<form className="specialist-store-form specialist-store-panel" onSubmit={saveProduct}>
+   <div className="specialist-store-actions"><div><h3>محصولات فروشگاه</h3><p>محصولات اینجا پس از انتشار مجاز در بازارگاه عمومی نمایش داده می‌شوند.</p></div><button type="button" onClick={()=>{setShowProductForm(v=>!v);if(showProductForm){setEditingProductId(null);setProductForm({name:"",description:"",category_id:"",pricing_model:"fixed",price:"",currency:"USD",unit_label:"unit",minimum_order_qty:"1",stock_qty:"",image_url:""});}}}><PackagePlus size={16}/>{showProductForm?"بستن فرم":"افزودن محصول"}</button></div>
+   {showProductForm&&<form className="specialist-store-form specialist-store-panel" onSubmit={saveProduct}><h3>{editingProductId?"ویرایش محصول":"ثبت محصول جدید"}</h3>
     <label>نام محصول<input required minLength={2} maxLength={160} value={productForm.name} onChange={e=>setProductForm({...productForm,name:e.target.value})}/></label>
     <label>دسته‌بندی<select required value={productForm.category_id} onChange={e=>setProductForm({...productForm,category_id:e.target.value})}><option value="">انتخاب دسته‌بندی</option>{categories.map(c=><option key={c.id} value={c.id}>{c.name_fa}</option>)}</select></label>
     <label>شرح محصول<textarea rows={3} value={productForm.description} onChange={e=>setProductForm({...productForm,description:e.target.value})}/></label>
+    <label>نشانی تصویر محصول (اختیاری)<input type="url" value={productForm.image_url} onChange={e=>setProductForm({...productForm,image_url:e.target.value})} placeholder="https://..."/></label>
     <label>مدل قیمت<select value={productForm.pricing_model} onChange={e=>setProductForm({...productForm,pricing_model:e.target.value})}><option value="fixed">قیمت ثابت</option><option value="request_quote">استعلام قیمت</option></select></label>
     {productForm.pricing_model==="fixed"&&<label>قیمت<input type="number" min="0.01" step="0.01" required value={productForm.price} onChange={e=>setProductForm({...productForm,price:e.target.value})}/></label>}
     <label>ارز<select value={productForm.currency} onChange={e=>setProductForm({...productForm,currency:e.target.value})}>{Object.keys(currencyLabels).map(k=><option key={k} value={k}>{currencyLabels[k]} ({k})</option>)}</select></label>
     <label>واحد فروش<input required value={productForm.unit_label} onChange={e=>setProductForm({...productForm,unit_label:e.target.value})} placeholder="کیلوگرم، بسته، عدد..."/></label>
     <label>حداقل مقدار سفارش<input type="number" min="0.01" step="0.01" required value={productForm.minimum_order_qty} onChange={e=>setProductForm({...productForm,minimum_order_qty:e.target.value})}/></label>
     <label>موجودی {productForm.pricing_model==="fixed"?"(الزامی برای قیمت ثابت)":"(اختیاری)"}<input type="number" min="0" step="0.01" required={productForm.pricing_model==="fixed"} value={productForm.stock_qty} onChange={e=>setProductForm({...productForm,stock_qty:e.target.value})}/></label>
-    <button type="submit" disabled={busy||!categories.length}>{busy?"در حال ذخیره...":"ذخیره پیش‌نویس محصول"}</button>
+    <button type="submit" disabled={busy||!categories.length}>{busy?"در حال ذخیره...":"{editingProductId?"ذخیره تغییرات":"ذخیره پیش‌نویس محصول"}"}</button>
    </form>}
-   <div className="specialist-store-list">{products.map(p=><article key={p.id}><div><strong>{p.name}</strong><p>{p.description||"بدون توضیحات"} · {p.pricing_model==="request_quote"?"قیمت با استعلام":Number(p.price||0).toLocaleString("fa-IR")+" "+(currencyLabels[p.currency]||p.currency)} / {p.unit_label}</p><small>{statusLabels[p.status]||p.status} · {new Date(p.created_at).toLocaleDateString("fa-IR")}</small></div><div className="specialist-store-row-actions">{p.status==="published"?<button type="button" disabled={busy} onClick={()=>void updateProductStatus(p,"draft")}>بازگردانی به پیش‌نویس</button>:<button type="button" disabled={busy||!verified} title={!verified?"انتشار پس از تأیید فروشنده فعال می‌شود":""} onClick={()=>void updateProductStatus(p,"published")}>انتشار در بازارگاه</button>}</div></article>)}{products.length===0&&<div className="specialist-store-empty">هنوز محصولی ثبت نشده است. می‌توانید اولین محصول را به‌صورت پیش‌نویس اضافه کنید.</div>}</div>
+   <div className="specialist-store-list">{products.map(p=><article key={p.id}><div><strong>{p.name}</strong><p>{p.description||"بدون توضیحات"} · {p.pricing_model==="request_quote"?"قیمت با استعلام":Number(p.price||0).toLocaleString("fa-IR")+" "+(currencyLabels[p.currency]||p.currency)} / {p.unit_label}</p><small>{statusLabels[p.status]||p.status} · {new Date(p.created_at).toLocaleDateString("fa-IR")}</small></div><div className="specialist-store-row-actions"><button type="button" disabled={busy} onClick={()=>editProduct(p)}>ویرایش</button>{p.status==="published"?<button type="button" disabled={busy} onClick={()=>void updateProductStatus(p,"draft")}>بازگردانی به پیش‌نویس</button>:<button type="button" disabled={busy||!verified} title={!verified?"انتشار پس از تأیید فروشنده فعال می‌شود":""} onClick={()=>void updateProductStatus(p,"published")}>انتشار در بازارگاه</button>}</div></article>)}{products.length===0&&<div className="specialist-store-empty">هنوز محصولی ثبت نشده است. می‌توانید اولین محصول را به‌صورت پیش‌نویس اضافه کنید.</div>}</div>
    <div className="specialist-store-actions"><div><h3><Truck size={18}/> سفارش‌های دریافتی</h3><p>سفارش‌های مربوط به فروشگاه شما پس از ثبت توسط خریداران در این بخش دیده می‌شوند.</p></div></div>
    <div className="specialist-store-list">{orders.map(o=><article key={o.id}><div><strong>سفارش {o.order_number}</strong><p>{Number(o.total_amount).toLocaleString("fa-IR")} {currencyLabels[o.currency]||o.currency}</p><small>{statusLabels[o.status]||o.status} · پرداخت: {statusLabels[o.payment_status]||o.payment_status} · {new Date(o.placed_at).toLocaleDateString("fa-IR")}</small></div></article>)}{orders.length===0&&<div className="specialist-store-empty">هنوز سفارشی برای این فروشگاه ثبت نشده است.</div>}</div>
   </>}
