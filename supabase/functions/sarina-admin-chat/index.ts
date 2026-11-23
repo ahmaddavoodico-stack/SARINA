@@ -13,6 +13,7 @@ function reply(status: number, payload: Record<string, unknown>) {
   return new Response(JSON.stringify(payload), { status, headers: corsHeaders });
 }
 
+// Admin-only experimental chat endpoint; the main SCI pipeline remains unchanged.
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return reply(405, { ok: false, code: "METHOD_NOT_ALLOWED" });
