@@ -14,12 +14,12 @@ export default function ExpertRecommendationComposer({requestId,farmId,profileId
    const{data:consultation,error:consultationError}=await db.from("expert_consultations").select("id").eq("request_id",requestId).maybeSingle();if(consultationError)throw consultationError;if(!consultation)throw new Error("پرونده هنوز جلسه مشاوره ثبت‌شده ندارد.");
    const{error}=await db.from("expert_recommendation_actions").insert({request_id:requestId,consultation_id:consultation.id,farm_id:farmId,expert_profile_id:profileId,author_user_id:person.id,title:title.trim(),instructions:instructions.trim(),priority,starts_on:startsOn,due_on:dueOn||null,status:"approved",approved_at:new Date().toISOString()});
    if(error)throw error;
-   setTitle("");setInstructions("");setDueOn("");setMessage("توصیه نهایی تأیید و در برنامه هفتگی کشاورز ثبت شد.");
+   setTitle("");setInstructions("");setDueOn("");setMessage("توصیه با تأیید شما ثبت شد؛ به‌صورت خودکار به برنامه اجرایی مزرعه افزوده و در گفت‌وگوی پرونده برای کشاورز نمایش داده می‌شود.");
   }catch(error){setMessage(error instanceof Error?error.message:"ثبت توصیه انجام نشد.");}
   finally{setBusy(false);}
  }
  return <form className="expert-recommendation-form" onSubmit={submit}>
-  <div className="expert-recommendation-heading"><span><CalendarDays size={16}/> توصیه تخصصی برای برنامه هفتگی</span><small>با ثبت این فرم، توصیه به‌صورت نهایی و تأییدشده برای کشاورز ارسال می‌شود.</small></div>
+  <div className="expert-recommendation-heading"><span><CalendarDays size={16}/> توصیه تخصصی برای برنامه هفتگی</span><small>با فشردن دکمه ثبت، شما توصیه را نهایی می‌کنید؛ SARINA آن را به برنامه اجرایی مزرعه متصل و در گفت‌وگوی پرونده نمایش می‌دهد.</small></div>
   <label>عنوان اقدام<input value={title} onChange={e=>setTitle(e.target.value)} required maxLength={180} placeholder="مثلاً بررسی شوری آب آبیاری"/></label>
   <label>شرح و دستور اجرای توصیه<textarea value={instructions} onChange={e=>setInstructions(e.target.value)} required maxLength={4000} rows={3} placeholder="مراحل اجرا، مقدار یا شرایط لازم و نکات احتیاطی را بنویسید..."/></label>
   <div className="expert-recommendation-fields">
@@ -28,6 +28,6 @@ export default function ExpertRecommendationComposer({requestId,farmId,profileId
    <label>اولویت<select value={priority} onChange={e=>setPriority(e.target.value)}><option value="normal">عادی</option><option value="low">کم</option><option value="high">بالا</option><option value="urgent">فوری</option></select></label>
   </div>
   {message&&<p className="expert-recommendation-message" role="status">{message}</p>}
-  <button className="expert-primary" disabled={busy||!farmId||!title.trim()||!instructions.trim()}><CheckCircle2 size={15}/>{busy?"در حال ثبت...":"تأیید نهایی و ارسال به برنامه کشاورز"} <Plus size={14}/></button>
+  <button className="expert-primary" disabled={busy||!farmId||!title.trim()||!instructions.trim()}><CheckCircle2 size={15}/>{busy?"در حال ثبت...":"تأیید نهایی و ثبت در برنامه کشاورز"} <Plus size={14}/></button>
  </form>;
 }
