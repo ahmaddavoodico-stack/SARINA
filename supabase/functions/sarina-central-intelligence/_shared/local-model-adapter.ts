@@ -40,7 +40,7 @@ export type LocalModelResult = {
   };
 };
 
-type AdapterOptions = {
+export type AdapterOptions = {
   baseUrl: string;
   model: string;
   allowedModels: string[];
