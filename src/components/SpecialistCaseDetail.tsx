@@ -1,5 +1,5 @@
 import {useCallback,useEffect,useMemo,useState} from "react";
-import {AlertCircle,BookOpen,ClipboardList,FileLock2,MessageCircle,Plus,RefreshCw,Send,ShieldCheck,Sparkles} from "lucide-react";
+import {AlertCircle,BookOpen,ClipboardList,FileLock2,Plus,RefreshCw,Send,ShieldCheck,Sparkles} from "lucide-react";
 import {supabase} from "../lib/supabase";
 
 type AssignmentStatus="offered"|"accepted"|"declined"|string;
@@ -9,7 +9,7 @@ type AssistantRow={assistant_status:string;completeness_status:string;missing_in
 type Note={id:string;note_type:string;body:string;source_refs:any;created_at:string;author_user_id:string};
 type Report={id:string;summary:string;recommendations:string|null;limitations:string|null;created_at:string};
 type TestRow={id:string;sampled_at:string;laboratory_name:string|null;ph:number|null;ec_ds_m:number|null;notes:string|null;report_file_ref:string|null;[key:string]:any};
-type Props={requestId:string;consultationId:string|null;userId:string;verified:boolean;assignmentStatus:AssignmentStatus;messages:CaseMessage[]};
+type Props={requestId:string;userId:string;verified:boolean;assignmentStatus:AssignmentStatus;messages:CaseMessage[]};
 const db=supabase as any;
 const faDate=(value:string|null|undefined)=>value?new Date(value).toLocaleString("fa-IR",{dateStyle:"medium",timeStyle:"short"}):"—";
 const statusLabel=(value:string)=>({submitted:"ثبت‌شده",assigned:"ارجاع‌شده",in_progress:"در حال بررسی",waiting_user:"منتظر پاسخ کشاورز",waiting_farmer:"منتظر پاسخ کشاورز",waiting_expert:"منتظر پاسخ متخصص",resolved:"حل‌شده",closed:"بسته‌شده",received:"دریافت‌شده",initial_review:"بررسی اولیه",needs_information:"نیازمند اطلاعات تکمیلی",awaiting_expert:"در انتظار نظر متخصص",expert_reviewed:"بررسی متخصص انجام شد"} as Record<string,string>)[value]||value||"ثبت نشده";
@@ -20,7 +20,7 @@ const contextEntries=(value:unknown,prefix=""):Array<{key:string;value:string}>=
 };
 const elapsed=(start:string,end:string)=>{const ms=Math.max(0,new Date(end).getTime()-new Date(start).getTime());const hours=Math.floor(ms/3600000);const days=Math.floor(hours/24);return days?days+" روز و "+(hours%24)+" ساعت":hours?hours+" ساعت":Math.max(1,Math.floor(ms/60000))+" دقیقه";};
 
-export default function SpecialistCaseDetail({requestId,consultationId,userId,verified,assignmentStatus,messages}:Props){
+export default function SpecialistCaseDetail({requestId,userId,verified,assignmentStatus,messages}:Props){
  const [tab,setTab]=useState<"case"|"conversation"|"assistant">("case");
  const [request,setRequest]=useState<CaseRow|null>(null),[assistant,setAssistant]=useState<AssistantRow|null>(null);
  const [notes,setNotes]=useState<Note[]>([]),[reports,setReports]=useState<Report[]>([]);
