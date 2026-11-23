@@ -47,9 +47,34 @@ Deno.serve(async (req: Request) => {
   if (roleError) return reply(503, { ok: false, code: "ADMIN_AUTHORIZATION_CHECK_FAILED" });
   if (isAdmin !== true) return reply(403, { ok: false, code: "ADMIN_ACCESS_REQUIRED" });
 
+  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  if (!serviceRoleKey) return reply(503, { ok: false, code: "ADMIN_CONTEXT_UNAVAILABLE" });
+  const adminClient = createClient(url, serviceRoleKey, { auth: { persistSession: false } });
+  const [{ data: roleRows, error: rolesError }, { data: assignments, error: assignmentsError }] = await Promise.all([
+    adminClient.from("roles").select("id,code,name,description").order("code"),
+    adminClient.from("user_roles").select("role_id").eq("scope_type", "global").is("scope_id", null),
+  ]);
+  if (rolesError || assignmentsError) {
+    return reply(503, { ok: false, code: "ADMIN_ROLE_CONTEXT_UNAVAILABLE" });
+  }
+  const roleCounts = new Map<string, number>();
+  for (const assignment of assignments ?? []) {
+    roleCounts.set(assignment.role_id, (roleCounts.get(assignment.role_id) ?? 0) + 1);
+  }
+  const verifiedAdminContext = JSON.stringify({
+    current_user_role: "admin",
+    role_catalog: (roleRows ?? []).map((role: any) => ({
+      code: role.code,
+      name: role.name,
+      description: role.description,
+      assigned_global_users: roleCounts.get(role.id) ?? 0,
+    })),
+  });
+
   try {
     const result = await invokeGroqAdminChat({
       apiKey: Deno.env.get("GROQ_API_KEY") ?? "",
+      systemContext: verifiedAdminContext,
       messages: (body as Record<string, unknown>).messages as { role: "user" | "assistant"; content: string }[],
     });
     return reply(200, {
