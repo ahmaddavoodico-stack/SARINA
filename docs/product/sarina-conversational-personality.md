@@ -74,6 +74,10 @@ Only use this style when the location and forecast are actually available and cu
 - The app's current farm page is still an empty placeholder. Do not fabricate farm context; the chat must work in a general mode before a farm is registered and become farm-aware only after real farm records exist.
 
 
+
+
+> **Canonical implementation brief:** The expanded, active workstream for unified farmer communication, selective Strata/OpenAI routing, secure photo intake, and parallel Phase 0/1 stabilization is documented in [SARINA — Unified Farmer Communication Experience & Multimodal AI Architecture](./sarina-unified-farmer-communication-experience.md).
+
 ## Unified farmer entry — approved product decision (2026-11-23)
 
 The farmer experience has one conversational doorway for all SARINA capabilities. Farmers must not be required to navigate separate modules to discover which service handles their request.
