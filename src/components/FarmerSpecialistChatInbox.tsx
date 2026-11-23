@@ -8,8 +8,12 @@ type Thread={id:string;requestId:string;subject:string;status:string;createdAt:s
 type ChatMessage={id:string;sender_user_id:string;message_text:string|null;content_parts:any;created_at:string};
 type SarinaMessage={id:string;message_text:string;status:string;created_at:string};
 type CaseFact={id:string;fact_text:string;fact_kind:string;created_at:string};
+type ExpertRecommendation={id:string;title:string;instructions:string;priority:string;starts_on:string;due_on:string|null;status:string;approved_at:string;created_at:string;farmer_note:string|null};
 const db=supabase as any;
 const stamp=(value:string)=>new Date(value).toLocaleString("fa-IR",{dateStyle:"short",timeStyle:"short"});
+const dayStamp=(value:string)=>new Date(value+"T00:00:00").toLocaleDateString("fa-IR");
+const recommendationStatus=(value:string)=>({approved:"تأییدشده و آماده اجرا",in_progress:"در حال اجرا",completed:"تکمیل‌شده",needs_review:"در انتظار بازبینی متخصص"} as Record<string,string>)[value]||"وضعیت نامشخص";
+const recommendationPriority=(value:string)=>({urgent:"فوری",high:"بالا",normal:"عادی",low:"کم"} as Record<string,string>)[value]||"ثبت‌شده";
 
 export default function FarmerSpecialistChatInbox({userId,mode,profileId,verified=true,compact=false,afterComposer}:Props){
  const [threads,setThreads]=useState<Thread[]>([]);
@@ -19,6 +23,7 @@ export default function FarmerSpecialistChatInbox({userId,mode,profileId,verifie
  const [sarinaMessages,setSarinaMessages]=useState<SarinaMessage[]>([]);
  const [askingSarina,setAskingSarina]=useState(false);
  const [caseFacts,setCaseFacts]=useState<CaseFact[]>([]);
+ const [recommendations,setRecommendations]=useState<ExpertRecommendation[]>([]);
  const [savingFactId,setSavingFactId]=useState<string|null>(null);
  const [planTitle,setPlanTitle]=useState("");
  const [planDescription,setPlanDescription]=useState("");
@@ -104,7 +109,7 @@ export default function FarmerSpecialistChatInbox({userId,mode,profileId,verifie
 
  const loadConversation=useCallback(async(consultationId:string)=>{
   if(!supabase)return;
-  setActive(consultationId);setMessages([]);setSarinaMessages([]);setCaseFacts([]);setLoadingMessages(true);setNotice("");
+  setActive(consultationId);setMessages([]);setSarinaMessages([]);setCaseFacts([]);setRecommendations([]);setLoadingMessages(true);setNotice("");
   const {data,error}=await db.from("expert_consultation_messages").select("id,sender_user_id,message_text,content_parts,created_at").eq("consultation_id",consultationId).order("created_at",{ascending:false}).limit(50);
   setLoadingMessages(false);
   if(error){setNotice("دریافت پیام‌ها مجاز نبود یا با خطا روبه‌رو شد: "+error.message);return;}
@@ -118,8 +123,11 @@ export default function FarmerSpecialistChatInbox({userId,mode,profileId,verifie
   setAttachmentUrls(current=>({...current,...Object.fromEntries(signed.flat())}));
   const ai=await db.from("expert_consultation_ai_messages").select("id,message_text,status,created_at").eq("consultation_id",consultationId).order("created_at",{ascending:true}).limit(100);
   if(ai.error)setNotice("پیام‌های سارینا بارگذاری نشد: "+ai.error.message);else setSarinaMessages(ai.data||[]);
-  const factResult=await db.from("expert_case_conversation_facts").select("id,fact_text,fact_kind,created_at").eq("request_id",threads.find(t=>t.id===consultationId)?.requestId||"").eq("status","approved").order("created_at",{ascending:false}).limit(30);
+  const requestId=threads.find(t=>t.id===consultationId)?.requestId||"";
+  const factResult=await db.from("expert_case_conversation_facts").select("id,fact_text,fact_kind,created_at").eq("request_id",requestId).eq("status","approved").order("created_at",{ascending:false}).limit(30);
   if(!factResult.error)setCaseFacts(factResult.data||[]);
+  const recommendationResult=await db.from("expert_recommendation_actions").select("id,title,instructions,priority,starts_on,due_on,status,approved_at,created_at,farmer_note").eq("request_id",requestId).order("approved_at",{ascending:false}).limit(50);
+  if(!recommendationResult.error)setRecommendations(recommendationResult.data||[]);
   await markConversationRead(consultationId);
  },[markConversationRead,threads]);
 
@@ -137,9 +145,12 @@ export default function FarmerSpecialistChatInbox({userId,mode,profileId,verifie
     const incoming=payload.new as ChatMessage;
     setMessages(old=>old.some(item=>item.id===incoming.id)?old:[...old,incoming]);
     if(incoming.sender_user_id!==userId){void markConversationRead(active);void refresh();}
+   })
+   .on("postgres_changes",{event:"*",schema:"public",table:"expert_recommendation_actions",filter:"request_id=eq."+(activeThread?.requestId||"")},()=>{
+    if(activeThread?.requestId)void db.from("expert_recommendation_actions").select("id,title,instructions,priority,starts_on,due_on,status,approved_at,created_at,farmer_note").eq("request_id",activeThread.requestId).order("approved_at",{ascending:false}).limit(50).then(({data,error}:any)=>{if(!error)setRecommendations(data||[]);});
    }).subscribe();
   return()=>{void client.removeChannel(channel);};
- },[active,userId,markConversationRead,refresh]);
+ },[active,activeThread?.requestId,userId,markConversationRead,refresh]);
 
  async function saveCaseFact(message:ChatMessage){
   if(!active||!activeThread||mode!=="expert"||activeThread.assignmentStatus!=="accepted"||!verified||!message.message_text||savingFactId)return;
@@ -254,7 +265,7 @@ export default function FarmerSpecialistChatInbox({userId,mode,profileId,verifie
    <div className="chat-embedded-stream">
     {currentThread?<><div className="chat-embedded-topic"><span><MessageCircle size={15}/></span><div><b>{currentThread.subject}</b><small>{currentThread.otherParty} · گفت‌وگوی پرونده</small></div><span className="chat-secure-label"><CheckCheck size={13}/> امن</span></div>
      <div className="chat-message-history chat-embedded-history">
-      {caseFacts.length>0&&<section className="chat-case-facts"><b>اطلاعات تأییدشده پرونده</b>{caseFacts.map(fact=><article key={fact.id}><span>{fact.fact_kind==="specialist_finding"?"یافته متخصص":fact.fact_kind==="decision"?"تصمیم تأییدشده":fact.fact_kind==="follow_up"?"پیگیری":"گزارش کشاورز"}</span><p>{fact.fact_text}</p><small>{stamp(fact.created_at)}</small></article>)}</section>}
+      {caseFacts.length>0&&<section className="chat-case-facts"><b>اطلاعات تأییدشده پرونده</b>{caseFacts.map(fact=><article key={fact.id}><span>{fact.fact_kind==="specialist_finding"?"یافته متخصص":fact.fact_kind==="decision"?"تصمیم تأییدشده":fact.fact_kind==="follow_up"?"پیگیری":"گزارش کشاورز"}</span><p>{fact.fact_text}</p><small>{stamp(fact.created_at)}</small></article>)}</section>}{mode==="farmer"&&recommendations.length>0&&<section className="chat-case-facts chat-approved-recommendations"><b>توصیه‌های تأییدشده متخصص</b>{recommendations.map(item=><article key={item.id}><span>اولویت {recommendationPriority(item.priority)} · {recommendationStatus(item.status)}</span><strong>{item.title}</strong><p>{item.instructions}</p><small>شروع اجرا: {dayStamp(item.starts_on)}{item.due_on?" · مهلت: "+dayStamp(item.due_on):""} · تأیید: {stamp(item.approved_at)}</small>{item.farmer_note&&<small>یادداشت کشاورز: {item.farmer_note}</small>}</article>)}</section>}
       {hasOlder&&<button className="chat-load-older" onClick={()=>void loadOlder()} disabled={loadingOlder}>{loadingOlder?<LoaderCircle size={14}/>:<ArrowDown size={14}/>} پیام‌های قدیمی‌تر</button>}
       {loadingMessages?<div className="chat-empty"><LoaderCircle className="spin"/>در حال دریافت پیام‌ها...</div>:rendered.length===0?<div className="chat-empty"><MessageCircle size={22}/><b>هنوز پیامی در این پرونده نیست</b><p>پیام خود را در کادر پایین بنویسید.</p></div>:rendered.map(message=>{
        if(message.kind==="sarina")return <article key={"sarina-"+message.id} className="chat-message chat-message-sarina"><b>سارینا <span>همراه هوشمند</span></b><p>{message.message_text}</p><small>{stamp(message.created_at)}{message.status==="unavailable"?" · پاسخ هوشمند در دسترس نیست":""}</small></article>;
@@ -303,7 +314,7 @@ export default function FarmerSpecialistChatInbox({userId,mode,profileId,verifie
     {!activeThread?<div className="chat-empty chat-select-prompt"><MessageCircle size={34}/><b>یک مکالمه را انتخاب کنید</b><p>سوابق پیام و پاسخ متخصص در این بخش نمایش داده می‌شود.</p></div>:<>
      <header className="chat-conversation-head"><button className="chat-back" onClick={()=>setActive(null)}><ArrowRight size={17}/> مکالمات</button><div><b>{activeThread.otherParty}</b><small>{activeThread.subject} · پرونده مرتبط</small></div><span className="chat-secure-label"><CheckCheck size={14}/> کشاورز · متخصص · سارینا</span></header>
      <div className="chat-message-history">
-      {caseFacts.length>0&&<section className="chat-case-facts"><b>اطلاعات تأییدشدهٔ پرونده</b>{caseFacts.map(fact=><article key={fact.id}><span>{fact.fact_kind==="specialist_finding"?"یافته متخصص":fact.fact_kind==="decision"?"تصمیم تأییدشده":fact.fact_kind==="follow_up"?"پیگیری":"گزارش کشاورز"}</span><p>{fact.fact_text}</p><small>{stamp(fact.created_at)}</small></article>)}</section>}
+      {caseFacts.length>0&&<section className="chat-case-facts"><b>اطلاعات تأییدشدهٔ پرونده</b>{caseFacts.map(fact=><article key={fact.id}><span>{fact.fact_kind==="specialist_finding"?"یافته متخصص":fact.fact_kind==="decision"?"تصمیم تأییدشده":fact.fact_kind==="follow_up"?"پیگیری":"گزارش کشاورز"}</span><p>{fact.fact_text}</p><small>{stamp(fact.created_at)}</small></article>)}</section>}{mode==="farmer"&&recommendations.length>0&&<section className="chat-case-facts chat-approved-recommendations"><b>توصیه‌های تأییدشده متخصص</b>{recommendations.map(item=><article key={item.id}><span>اولویت {recommendationPriority(item.priority)} · {recommendationStatus(item.status)}</span><strong>{item.title}</strong><p>{item.instructions}</p><small>شروع اجرا: {dayStamp(item.starts_on)}{item.due_on?" · مهلت: "+dayStamp(item.due_on):""} · تأیید: {stamp(item.approved_at)}</small>{item.farmer_note&&<small>یادداشت کشاورز: {item.farmer_note}</small>}</article>)}</section>}
       {hasOlder&&<button className="chat-load-older" onClick={()=>void loadOlder()} disabled={loadingOlder}>{loadingOlder?<LoaderCircle size={14}/>:<ArrowDown size={14}/>} پیام‌های قدیمی‌تر</button>}
       {loadingMessages?<div className="chat-empty"><LoaderCircle className="spin"/>در حال دریافت پیام‌ها...</div>:messages.length===0&&sarinaMessages.length===0?<div className="chat-empty"><MessageCircle size={24}/><b>هنوز پیامی ارسال نشده است</b><p>می‌توانید گفت‌وگو را با یک پیام کوتاه آغاز کنید.</p></div>:<>{[...messages.map(message=>({...message,kind:"human" as const,sortAt:message.created_at})),...sarinaMessages.map(message=>({...message,kind:"sarina" as const,sortAt:message.created_at}))].sort((a,b)=>new Date(a.sortAt).getTime()-new Date(b.sortAt).getTime()).map(message=>message.kind==="sarina"?<article key={"sarina-"+message.id} className="chat-message chat-message-sarina"><b>سارینا <span>همراه هوشمند</span></b><p>{message.message_text}</p><small>{stamp(message.created_at)}{message.status==="unavailable"?" · اتصال هوش مصنوعی فعال نیست":" · پاسخ هوشمند؛ نیازمند تأیید متخصص برای تصمیم تخصصی"}</small></article>:<article key={message.id} className={"chat-message"+(message.sender_user_id===userId?" mine":"")}><b>{message.sender_user_id===userId?(mode==="farmer"?"شما · کشاورز":"شما · متخصص"):mode==="farmer"?"متخصص پرونده":"کشاورز"}</b><p>{message.message_text||"این پیام دارای محتوای پیوست‌شده است که در این نسخه نمایش داده نمی‌شود."}</p><small>{stamp(message.created_at)}</small>{mode==="expert"&&activeThread.assignmentStatus==="accepted"&&message.message_text&&<button type="button" className="chat-fact-save" disabled={savingFactId===message.id} onClick={()=>void saveCaseFact(message)}>{savingFactId===message.id?"در حال ثبت...":"ثبت پیام به‌عنوان اطلاعات پرونده"}</button>}</article>)}{askingSarina&&<article className="chat-message chat-message-sarina"><b>سارینا</b><p>در حال بررسی پیام‌های گفت‌وگو…</p></article>}</>}
      </div>
