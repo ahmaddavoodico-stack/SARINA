@@ -25,6 +25,6 @@ jobs:
         with:
           deno-version: v2.x
       - name: Type-check SCI and specialist preparation Edge Functions
-        run: deno check supabase/functions/sarina-central-intelligence/_shared/sci-contract.ts supabase/functions/sarina-central-intelligence/_shared/siacp-security.ts supabase/functions/sarina-central-intelligence/_shared/provider-adapter.ts supabase/functions/sarina-central-intelligence/_shared/specialist-preparation.ts supabase/functions/sarina-central-intelligence/_shared/local-model-adapter.ts supabase/functions/sarina-central-intelligence/_shared/local-ai-routing.ts
+        run: deno check supabase/functions/sarina-central-intelligence/_shared/sci-contract.ts supabase/functions/sarina-central-intelligence/_shared/siacp-security.ts supabase/functions/sarina-central-intelligence/_shared/provider-adapter.ts supabase/functions/sarina-central-intelligence/_shared/specialist-preparation.ts supabase/functions/sarina-central-intelligence/_shared/local-model-adapter.ts supabase/functions/sarina-central-intelligence/_shared/local-ai-routing.ts supabase/functions/sarina-central-intelligence/_shared/groq-provider-adapter.ts supabase/functions/specialist-case-preparation/index.ts
       - name: Test SCI and SIACP contracts
         run: deno test --no-check supabase/functions/sarina-central-intelligence/_shared/*_test.ts
