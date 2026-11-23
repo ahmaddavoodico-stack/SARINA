@@ -110,3 +110,12 @@ This is a working foundation, not evidence that the full chat experience, attach
 - The normal specialist UI currently supplies the real `requester_user_id`, but client behavior is not a security boundary. This is a server-side authorization vulnerability, not merely a UI issue.
 - Required remediation on a development branch: replace the tautological predicate with `er.requester_user_id = expert_case_handovers.requester_user_id`; independently harden the RPC by joining the handover to its request and requiring `expert_requests.requester_user_id = current_sarina_user_id()`; review function EXECUTE grants and preserve only the intended farmer invocation. Add negative tests proving the assigned specialist cannot create or approve a handover as the farmer, while the actual farmer can approve/decline.
 - Treat handover and chat release as blocked until this migration is applied and tested in an isolated development database. No production changes have been made.
+
+
+## Superseding decision — 2026-11-23: one shared three-party conversation
+
+The earlier design in this workstream that explicitly separated “Talk to SARINA” from farmer–specialist chat is superseded for the farmer-facing case experience. The current product decision is one shared case conversation with the farmer, assigned verified specialist, and SARINA as visible participants. SARINA assists both sides, prepares concise explanations and case summaries, and helps promote important facts into the structured case file. Approved specialist decisions feed the farmer's operational plan.
+
+The existing specialist case records and AI conversation/cost records may remain separate internally where required for permissions and auditability, but the farmer and specialist must see one chronological shared room. Specialist-only internal notes remain private unless explicitly promoted to a shareable case update. AI drafts never become confirmed diagnoses or approved instructions without specialist approval.
+
+This decision is governed by `docs/product/sarina-unified-farmer-communication-experience.md` and `docs/product/sarina-three-party-farmer-conversation.md`. Do not implement the former two-chat user experience or create a second farmer-facing messenger.
