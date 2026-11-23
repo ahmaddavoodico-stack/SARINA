@@ -96,7 +96,8 @@ A previous SARINA decision called for two geographically separate local-AI syste
 - [x] Inspect repository deployment configuration: static Vite build to `dist`.
 - [x] Inspect Supabase function inventory snapshot and current documented Edge limits.
 - [x] Add a disabled, server-only OpenAI-compatible local adapter scaffold.
-- [ ] Run TypeScript/Deno checks for the adapter in the project's actual CI/runtime.
+- [x] Add isolated Deno contract tests and include the adapter in the SCI type-check workflow; tests have not yet been executed.
+- [ ] Run TypeScript/Deno checks for the adapter in the project's actual CI/runtime; branch checks were not triggered because the repository workflow currently runs on PR/push to main.
 - [ ] Obtain actual current host resource inventory; no SSH/host telemetry is available from this repository inspection.
 - [ ] Confirm exact Strata release and model compatibility; do not assume Qwen3.5 support.
 - [ ] Benchmark Qwen3.5 4B on a persistent test host using synthetic Persian/Arabic agricultural prompts.
