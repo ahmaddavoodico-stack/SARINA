@@ -5,7 +5,7 @@ import {supabase} from "../lib/supabase";
 
 type Seller={id:string;display_name:string;description:string|null;country_code:string|null;region:string|null;city:string|null;contact_email:string|null;contact_phone:string|null;verification_status:string;verification_notes:string|null};
 type Category={id:string;code:string;name_fa:string;market_section:string};
-type Product={id:string;name:string;description:string|null;category_id:string;status:string;pricing_model:string;price:number|string|null;currency:string;unit_label:string;stock_qty:number|string|null;image_urls:unknown;created_at:string};
+type Product={id:string;name:string;description:string|null;category_id:string;status:string;pricing_model:string;price:number|string|null;currency:string;unit_label:string;minimum_order_qty:number|string;stock_qty:number|string|null;image_urls:unknown;created_at:string};
 type Order={id:string;order_number:string;status:string;payment_status:string;fulfillment_status:string;total_amount:number|string;currency:string;placed_at:string};
 
 const db=supabase as any;
@@ -39,7 +39,7 @@ export default function SpecialistStoreWorkspace({userId,enabled}:{userId:string
    if(own.data){
     setSellerForm({display_name:own.data.display_name||"",description:own.data.description||"",country_code:own.data.country_code||"",region:own.data.region||"",city:own.data.city||"",contact_email:own.data.contact_email||"",contact_phone:own.data.contact_phone||""});
     const [p,o]=await Promise.all([
-     db.from("marketplace_products").select("id,name,description,category_id,status,pricing_model,price,currency,unit_label,stock_qty,image_urls,created_at").eq("seller_id",own.data.id).order("created_at",{ascending:false}).limit(100),
+     db.from("marketplace_products").select("id,name,description,category_id,status,pricing_model,price,currency,unit_label,minimum_order_qty,stock_qty,image_urls,created_at").eq("seller_id",own.data.id).order("created_at",{ascending:false}).limit(100),
      db.from("marketplace_orders").select("id,order_number,status,payment_status,fulfillment_status,total_amount,currency,placed_at").eq("seller_id",own.data.id).order("placed_at",{ascending:false}).limit(50)
     ]);
     if(p.error)throw p.error;if(o.error)throw o.error;
@@ -87,7 +87,7 @@ export default function SpecialistStoreWorkspace({userId,enabled}:{userId:string
 
  function editProduct(product:Product){
   const image=Array.isArray(product.image_urls)?product.image_urls.find(x=>typeof x==="string") as string|undefined:"";
-  setEditingProductId(product.id);setProductForm({name:product.name,description:product.description||"",category_id:product.category_id,pricing_model:product.pricing_model,price:product.price===null?"":String(product.price),currency:product.currency,unit_label:product.unit_label,minimum_order_qty:"1",stock_qty:product.stock_qty===null?"":String(product.stock_qty),image_url:image||""});setShowProductForm(true);
+  setEditingProductId(product.id);setProductForm({name:product.name,description:product.description||"",category_id:product.category_id,pricing_model:product.pricing_model,price:product.price===null?"":String(product.price),currency:product.currency,unit_label:product.unit_label,minimum_order_qty:String(product.minimum_order_qty),stock_qty:product.stock_qty===null?"":String(product.stock_qty),image_url:image||""});setShowProductForm(true);
  }
  async function updateProductStatus(product:Product,status:"published"|"draft"){
   if(!supabase||!seller)return;
