@@ -9,7 +9,7 @@ type AssistantRow={assistant_status:string;completeness_status:string;missing_in
 type Note={id:string;note_type:string;body:string;source_refs:any;created_at:string;author_user_id:string};
 type Report={id:string;summary:string;recommendations:string|null;limitations:string|null;created_at:string};
 type TestRow={id:string;sampled_at:string;laboratory_name:string|null;ph:number|null;ec_ds_m:number|null;notes:string|null;report_file_ref:string|null;[key:string]:any};
-type Props={requestId:string;consultationId:string|null;userId:string;verified:boolean;assignmentStatus:AssignmentStatus;messages:CaseMessage[];messageText:string;setMessageText:(value:string)=>void;onSendMessage:(event:React.FormEvent)=>void;busy:boolean};
+type Props={requestId:string;consultationId:string|null;userId:string;verified:boolean;assignmentStatus:AssignmentStatus;messages:CaseMessage[]};
 const db=supabase as any;
 const faDate=(value:string|null|undefined)=>value?new Date(value).toLocaleString("fa-IR",{dateStyle:"medium",timeStyle:"short"}):"—";
 const statusLabel=(value:string)=>({submitted:"ثبت‌شده",assigned:"ارجاع‌شده",in_progress:"در حال بررسی",waiting_user:"منتظر پاسخ کشاورز",waiting_farmer:"منتظر پاسخ کشاورز",waiting_expert:"منتظر پاسخ متخصص",resolved:"حل‌شده",closed:"بسته‌شده",received:"دریافت‌شده",initial_review:"بررسی اولیه",needs_information:"نیازمند اطلاعات تکمیلی",awaiting_expert:"در انتظار نظر متخصص",expert_reviewed:"بررسی متخصص انجام شد"} as Record<string,string>)[value]||value||"ثبت نشده";
@@ -20,7 +20,7 @@ const contextEntries=(value:unknown,prefix=""):Array<{key:string;value:string}>=
 };
 const elapsed=(start:string,end:string)=>{const ms=Math.max(0,new Date(end).getTime()-new Date(start).getTime());const hours=Math.floor(ms/3600000);const days=Math.floor(hours/24);return days?days+" روز و "+(hours%24)+" ساعت":hours?hours+" ساعت":Math.max(1,Math.floor(ms/60000))+" دقیقه";};
 
-export default function SpecialistCaseDetail({requestId,consultationId,userId,verified,assignmentStatus,messages,messageText,setMessageText,onSendMessage,busy}:Props){
+export default function SpecialistCaseDetail({requestId,consultationId,userId,verified,assignmentStatus,messages}:Props){
  const [tab,setTab]=useState<"case"|"conversation"|"assistant">("case");
  const [request,setRequest]=useState<CaseRow|null>(null),[assistant,setAssistant]=useState<AssistantRow|null>(null);
  const [notes,setNotes]=useState<Note[]>([]),[reports,setReports]=useState<Report[]>([]);
@@ -78,7 +78,7 @@ export default function SpecialistCaseDetail({requestId,consultationId,userId,ve
  if(!request)return <section className="expert-panel specialist-case-detail" dir="rtl"><b>جزئیات پرونده در دسترس نیست.</b>{notice&&<p>{notice}</p>}</section>;
  const canWork=verified&&assignmentStatus==="accepted";
  const waitingForFarmer=["waiting_user","waiting_farmer"].includes(request.status)||assistant?.assistant_status==="needs_information"||assistant?.completeness_status==="missing_information";
- const tabs=[{id:"case",label:"پرونده کارشناسی",icon:ClipboardList},{id:"conversation",label:"مکالمه انسانی",icon:MessageCircle},{id:"assistant",label:"دستیار هوشمند",icon:Sparkles}] as const;
+ const tabs=[{id:"case",label:"پرونده کارشناسی",icon:ClipboardList},{id:"assistant",label:"دستیار هوشمند",icon:Sparkles}] as const;
  return <section className="specialist-case-detail" dir="rtl">
   <header className="specialist-detail-heading"><div><span className="eyebrow">پرونده کارشناسی SARINA</span><h2>{request.subject}</h2><p>{request.problem_description}</p></div><div className="specialist-detail-status"><b>{statusLabel(request.status)}</b><small>اولویت: {request.priority==="urgent"?"فوری":request.priority==="high"?"زیاد":request.priority==="low"?"کم":"عادی"}</small></div></header>
   <nav className="specialist-detail-tabs" aria-label="بخش‌های پرونده">{tabs.map(item=>{const Icon=item.icon;return <button type="button" key={item.id} className={tab===item.id?"active":""} onClick={()=>setTab(item.id)}><Icon size={15}/>{item.label}</button>;})}</nav>
@@ -118,9 +118,6 @@ export default function SpecialistCaseDetail({requestId,consultationId,userId,ve
    <article className="expert-panel"><h3><AlertCircle size={16}/> پیگیری و یادآوری</h3><div className="specialist-detail-metrics"><article><small>تعداد یادآوری‌های ثبت‌شده</small><b>{assistant?.reminder_count??0}</b></article><article><small>آخرین یادآوری</small><b>{faDate(assistant?.last_reminded_at)}</b></article><article><small>وضعیت پیگیری</small><b>{latestMessage&&latestMessage.sender_user_id!==userId?"نیازمند پاسخ متخصص":"در انتظار اقدام بعدی"}</b></article></div><p className="specialist-source-note">این نما وضعیت پیگیری و سوابق یادآوری موجود را نشان می‌دهد. زمان‌بندی خودکار یادآوری‌ها هنوز به سرویس زمان‌بندی متصل نشده و در این نسخه ادعای ارسال خودکار نداریم.</p></article>
    <article className="expert-panel"><h3><FileLock2 size={16}/> تصاویر و مستندات</h3><p className="specialist-locked-note">نمایش و دریافت فایل‌ها موقتاً غیرفعال است. مخزن فعلی اسناد کشاورز خصوصی است، اما سیاست Storage و جدول farm_documents هنوز فقط دسترسی مالک مزرعه را می‌دهند؛ تا تکمیل سیاست رضایت‌محور و آزمون signed URL، فایل‌ها برای متخصص باز نمی‌شوند.</p></article>
   </>}
-  {tab==="conversation"&&<article className="expert-panel specialist-human-chat"><h3><MessageCircle size={16}/> مکالمه انسانی متخصص و کشاورز</h3><p className="specialist-source-note">این مکالمه مستقل از یادداشت کارشناسی و دستیار هوشمند است. پیام‌ها در جدول مکالمه فعلی SARINA ثبت می‌شوند.</p>
-   {!consultationId?<p className="expert-muted">برای این پرونده هنوز جلسه مکالمه‌ای ایجاد نشده است.</p>:<><div className="expert-chat">{messages.map(m=><div key={m.id} className={m.sender_user_id===userId?"mine":""}><p>{m.message_text||"محتوای غیرمتنی"}</p><small>{faDate(m.created_at)}</small></div>)}</div><form className="expert-inline-form" onSubmit={onSendMessage}><input value={messageText} onChange={e=>setMessageText(e.target.value)} placeholder="پیام به کشاورز..." required/><button className="expert-primary" disabled={!canWork||busy}><Send size={15}/></button></form></>}
-  </article>}
   {tab==="assistant"&&<div className="specialist-detail-grid">
    <article className="expert-panel"><h3><Sparkles size={16}/> خلاصه دستیار پرونده</h3><p className="specialist-source-note">منشأ مستقیم: فیلد assistant_summary از جدول expert_case_assistant_cases. این نمایش به‌تنهایی به معنی فراخوانی مدل زبانی در همین لحظه نیست.</p><p>{assistant?.assistant_summary||"خلاصه‌ای در پرونده ثبت نشده است."}</p><small>وضعیت: {statusLabel(assistant?.assistant_status||"received")} · دریافت اولیه: {faDate(assistant?.received_at)}</small><p className="specialist-source-note">کامل بودن اطلاعات: {assistant?.completeness_status==="appears_complete"?"اطلاعات اولیه ثبت شده؛ کامل بودن تخصصی تأیید نشده":assistant?.completeness_status==="missing_information"?"اطلاعات تکمیلی لازم است":"هنوز ارزیابی نشده"}</p></article>
    <article className="expert-panel"><h3>منشأ و محدودیت اطلاعات</h3><p>هر مقدار در بخش اطلاعات زمینه‌ای از snapshot رضایت‌محور درخواست آمده است. دستیار نباید داده مفقود را حدس بزند و متخصص باید شواهد را مستقلاً ارزیابی کند.</p><small>منشأ: expert_requests.consented_context_snapshot · آخرین بازبینی: {faDate(assistant?.reviewed_at)}</small></article>
