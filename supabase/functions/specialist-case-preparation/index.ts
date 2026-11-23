@@ -19,15 +19,15 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 function asRows(value: unknown): Record<string, unknown>[] {
   return Array.isArray(value) ? value.filter(isRecord) : [];
 }
-async function optionalSingle(client: ReturnType<typeof createClient>, table: string, columns: string, id: string) {
+async function optionalSingle(client: any, table: string, columns: string, id: string) {
   const { data, error } = await client.from(table).select(columns).eq("id", id).maybeSingle();
   return error ? null : (isRecord(data) ? data : null);
 }
-async function optionalScopedSingle(client: ReturnType<typeof createClient>, table: string, columns: string, id: string, farmId: string) {
+async function optionalScopedSingle(client: any, table: string, columns: string, id: string, farmId: string) {
   const { data, error } = await client.from(table).select(columns).eq("id", id).eq("farm_id", farmId).maybeSingle();
   return error ? null : (isRecord(data) ? data : null);
 }
-async function optionalRows(client: ReturnType<typeof createClient>, table: string, columns: string, farmId: string, limit = 10) {
+async function optionalRows(client: any, table: string, columns: string, farmId: string, limit = 10) {
   const { data, error } = await client.from(table).select(columns).eq("farm_id", farmId).limit(limit);
   return error ? [] : asRows(data);
 }
