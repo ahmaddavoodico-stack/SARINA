@@ -980,3 +980,15 @@
  .role-card{margin:0 auto;padding:20px 16px}
  .role-card form>.primary-button{bottom:4px;min-height:50px}
 }
+
+/* Role-specific signup follow-up */
+.signup-extra-panel{margin:18px 0;padding:16px;border:1px solid #dce8dd;border-radius:16px;background:linear-gradient(145deg,#fbfdfb,#f3f8f2);color:#284333}
+.signup-extra-panel>strong{display:block;font-size:15px;font-weight:800;color:#24583b}
+.signup-extra-panel>p{margin:7px 0 13px;color:#687a6d;font-size:12px;line-height:1.8}
+.signup-chip-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.signup-choice-row{display:flex;flex-wrap:wrap;gap:9px}
+.signup-chip{min-height:42px;padding:9px 12px;border:1px solid #d7e2d8;border-radius:11px;background:#fff;color:#35523e;font:inherit;font-size:12px;font-weight:650;text-align:center;cursor:pointer;transition:border-color .15s,background .15s}
+.signup-chip.selected{border-color:#2e8050;background:#e9f5eb;color:#205d39;box-shadow:inset 0 0 0 1px #2e8050}
+.signup-chip:focus-visible{outline:3px solid #b9d9c1;outline-offset:2px}
+.signup-extra-panel .welcome-input{margin-top:8px}
+@media(max-width:520px){.signup-chip-grid{grid-template-columns:1fr}.signup-extra-panel{padding:13px}.signup-chip{min-height:44px}}
