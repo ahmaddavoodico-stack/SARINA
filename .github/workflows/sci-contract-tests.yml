@@ -12,6 +12,7 @@ on:
     branches: [main, feature/local-ai-runtime-evaluation]
     paths:
       - "supabase/functions/sarina-central-intelligence/**"
+      - "supabase/functions/sarina-admin-chat/**"
       - "supabase/functions/specialist-case-preparation/**"
       - "supabase/migrations/*siacp*"
       - ".github/workflows/sci-contract-tests.yml"
