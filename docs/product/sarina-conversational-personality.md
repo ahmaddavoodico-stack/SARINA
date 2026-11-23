@@ -148,3 +148,14 @@ This requirement is part of the unified communication architecture and must be c
 - Do not move the authoritative database or uploaded media onto either local node as a shortcut.
 - First validate the existing system and the exact hardware/network/power conditions at both locations; then build and test the primary/standby setup.
 - Until both nodes and failover tests are verified, describe the second system as a planned backup—not as active high availability.
+
+
+### Power-outage scheduling decision (2026-11-23)
+
+The operator will coordinate the planned electricity outage schedules for the two sites so that their scheduled power cuts do not occur at the same time. This is an explicit operational measure intended to keep at least one local compute system powered and available during planned outages.
+
+- Record the expected outage windows for each site and keep them non-overlapping wherever the local utility schedule allows.
+- Before a planned outage at the active primary site, verify that the standby site is powered, reachable, healthy, and ready to accept eligible workloads; perform a controlled handover where needed.
+- Do not treat non-overlapping schedules as a guarantee against simultaneous outages. Unexpected faults, grid-wide interruptions, internet failures, and UPS exhaustion remain possible.
+- Continue to use live health checks, independent power/network paths where feasible, alerting, and tested failover/failback. The schedule supplements—not replaces—the technical failover mechanism.
+- If both sites become unavailable despite scheduling, use the documented graceful-degradation behavior and never claim that local inference completed when it did not.
