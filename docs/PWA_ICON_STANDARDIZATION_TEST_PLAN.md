@@ -1,28 +1,37 @@
 # SARINA PWA icon standardization — 2026-11-23
 
 ## Scope
-This branch standardizes the web app manifest icon declarations while preserving the approved SARINA mark (green and gold/orange human figures, leaves, protective arch).
+Connect the user-approved SARINA logo export to the PWA manifest, Apple home-screen metadata, and service-worker shell cache.
 
-## Changes prepared
-- Keep the verified 192×192 WebP icon as the regular 192 icon.
-- Add a 512×512 SVG wrapper using the same approved 192×192 artwork for scalable manifest delivery.
-- Add a dedicated 512×512 maskable SVG. Its source artwork is centered in a 280×280 square on a 512×512 white canvas; the artwork square's half-diagonal is about 198 px, inside the 204.8 px radius of the 40%-safe-zone circle.
-- Remove the visually inconsistent 512×512 WebP from the manifest declaration (the asset remains in the repository but is no longer selected by the manifest).
-- Bump the service-worker shell cache to v9 and precache both new SVG assets.
+## Assets uploaded to this branch
+- `public/SARINA_Icon_192.png` — regular 192×192 PNG icon.
+- `public/SARINA_Icon_512.png` — regular 512×512 PNG icon.
+- `public/SARINA_Maskable_512-1.png` — 512×512 maskable PNG icon (the uploaded filename includes the `-1` suffix).
+- `public/SARINA_Apple_Touch_180.png` — 180×180 Apple touch icon.
 
-## Important limitation
-The 512×512 SVG wraps the approved 192×192 WebP artwork; it is scalable as an SVG document but does not create new 512-pixel source detail. A clean, lossless 512×512 PNG/WebP export from the original approved master artwork remains the preferred production asset. Do not mark the icon task fully complete until that master export and real-device install tests are done.
+The assets were generated from the user-supplied 1536×1536 approved logo image, preserving the full supplied artwork and white background. The maskable variant uses the same artwork reduced and centered on a white canvas to provide padding for adaptive cropping.
+
+## Integration changes
+- `public/manifest.webmanifest` now declares the 192px, 512px, and maskable PNG files with `image/png` MIME types.
+- `index.html` now points the Apple touch icon link to `/SARINA_Apple_Touch_180.png`.
+- `public/sw.js` cache version is now `sarina-shell-v10` and precaches the four uploaded assets alongside the app shell.
+- The legacy icon files remain in the repository but are no longer selected by the manifest or Apple touch icon link.
 
 ## Acceptance checks
-1. Parse `public/manifest.webmanifest` as JSON.
-2. Confirm each manifest icon URL returns HTTP 200 with the declared MIME type.
-3. Confirm the 192 icon is 192×192, and both SVG documents render at 512×512.
-4. Validate the maskable artwork stays inside the central 80% safe zone using Android adaptive-icon previews.
-5. Inspect manifest and service worker in Chrome DevTools; ensure no failed precache requests.
-6. Run production build and relevant CI checks on this branch.
-7. On a real Android device in current Chrome: open the deployed HTTPS origin, verify install eligibility, install, launch, inspect home-screen icon and splash screen, update once, then verify offline shell behavior.
+1. Parse `public/manifest.webmanifest` as JSON and verify all three manifest icon paths exactly match uploaded filenames.
+2. Verify the Apple touch icon link matches the uploaded 180px PNG.
+3. Verify the service worker cache version is v10 and all four new asset paths are included in precache.
+4. Confirm actual image dimensions and HTTP 200/MIME types from a deployed preview.
+5. Run production build and relevant CI checks on this branch.
+6. Validate maskable rendering with Android adaptive-icon previews; confirm no important artwork is clipped.
+7. On a real Android device in current Chrome: open deployed HTTPS origin, verify install eligibility, install, launch, inspect home-screen icon and splash screen, update once, then verify offline shell behavior.
 8. On iOS Safari: add to Home Screen and inspect the 180×180 Apple touch icon.
 9. Record device model, OS, browser version, deployment URL, date, screenshots, and each pass/fail result.
 
-## Status
-Prepared on an isolated branch. Build, deployed HTTP/MIME checks, browser tests, and real-device tests are pending. No changes are merged to `main`.
+## Current status
+- User upload to the isolated branch: confirmed by fetching all four files from GitHub.
+- Manifest, Apple touch link, and service-worker references: updated and committed to this branch.
+- Static cross-file consistency: pending final verification.
+- Build / deployed HTTP and MIME checks: pending. Previous Vercel check failed due to `build-rate-limit`; this is a quota signal, not a code-level build result.
+- Browser and real-device tests: pending.
+- No changes are merged to `main`.
