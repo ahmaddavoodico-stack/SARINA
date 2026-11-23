@@ -105,3 +105,46 @@ The farmer experience has one conversational doorway for all SARINA capabilities
 - A specialist-only ChatGPT Responses adapter exists. Its strict structured output is for specialist evidence preparation and must not be reused as the farmer's general conversational response schema.
 - Existing AI usage/budget tables are intentionally unseeded/disabled by default. No live model call should be made until the server-side provider secret, model allowlist, and approved hard spending cap are verified. The previously approved one-time $5 technical test budget remains a test-only ceiling; automatic recharge stays off.
 - No new schema migration or live database mutation is part of this checkpoint.
+
+
+## High availability: two geographically separate compute systems (2026-11-23)
+
+**Approved infrastructure requirement:** Because the primary operating location has power reliability problems, SARINA's local AI/Strata capability must be designed around two physical systems in different locations. The second system is a standby/failover system and must be able to take over when the primary system loses power or becomes unreachable.
+
+This requirement is part of the unified communication architecture and must be considered alongside Phase 0/1 stabilization. It is not permission to assume the second system is already installed or operational.
+
+### Architecture principles
+
+- Use a primary/standby design initially. The primary system serves Strata/local inference while healthy; the secondary system remains powered, monitored, and ready to take over.
+- The two systems must be in genuinely separate physical locations and must not share the same vulnerable power source or single point of failure. Their independent power and internet paths must be verified.
+- Detect failure using health checks and a defined timeout. Fail over to the secondary system when the primary is unavailable; return to primary only through a controlled failback procedure after it is stable.
+- Prevent split-brain: at most one system should be the active writer/processor for any stateful job. Use a central coordinator/lease or another explicit leader-election mechanism; do not rely on two independent machines simply deciding they are active.
+- Keep inference nodes as stateless as practical. Conversation history, farmer/farm records, message status, and uploaded media should remain in the authoritative secure cloud data/storage layer, not exist only on one local machine.
+- Do not create two independently writable copies of farmer records or conversation history. Preserve one source of truth and use durable queues/idempotency for jobs that may be retried after failover.
+- Keep model versions, runtime configuration, approved routing rules, and deployment artifacts synchronized and versioned across both systems. Store secrets securely on each authorized node; never copy secrets into the browser, repository, or logs.
+- Expose local inference only through an authenticated, encrypted private connection/tunnel or a secured gateway. Never expose an unauthenticated Strata/local model API directly to the public internet.
+- Record health, active node, failover events, queue depth, model availability, and recovery status so operators can see which system is serving requests.
+
+### Failover behavior
+
+1. Farmer conversations and durable records continue to be served by SARINA's cloud application and authoritative database/storage.
+2. If the primary local AI node loses power or connectivity, the health monitor marks it unavailable and routes eligible Strata tasks to the secondary node.
+3. If the secondary node is also unavailable, SARINA must degrade gracefully: continue non-AI/source-retrieval workflows where possible, queue safe retryable tasks, or use the approved cloud escalation path only within its explicit budget and policy. Do not silently claim local analysis succeeded.
+4. When the primary returns, keep traffic on the healthy active node until controlled failback is approved; drain or reconcile in-flight work safely.
+5. Test abrupt power loss, network loss, node restart, duplicate/retried jobs, and recovery—not just a planned manual switch.
+
+### Required validation before production
+
+- Confirm each site's power independence, backup power/UPS runtime where applicable, cooling, physical security, and internet-provider/path independence.
+- Benchmark both systems for the actual selected Strata model, Persian text quality, image/vision capability if used, throughput, memory/VRAM, latency, and thermal stability.
+- Verify secure node-to-SARINA connectivity, authentication, authorization, encryption, firewall rules, and secret handling.
+- Demonstrate automatic or operator-controlled failover within an agreed recovery-time objective, without data loss or duplicate side effects.
+- Demonstrate safe failback and ensure an outage at one location does not disable the other.
+- Define and test recovery-point and recovery-time objectives for the cloud data layer separately from the local inference nodes.
+
+### Scope and sequencing
+
+- This two-site requirement applies first to the Strata/local AI compute layer. It does not automatically require duplicating the Supabase database or the entire SARINA production stack on two personal computers.
+- Do not move the authoritative database or uploaded media onto either local node as a shortcut.
+- First validate the existing system and the exact hardware/network/power conditions at both locations; then build and test the primary/standby setup.
+- Until both nodes and failover tests are verified, describe the second system as a planned backup—not as active high availability.
