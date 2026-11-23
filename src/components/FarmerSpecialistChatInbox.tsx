@@ -4,7 +4,8 @@ import {supabase} from "../lib/supabase";
 
 type Props={userId:string;mode:"farmer"|"expert";profileId?:string;verified?:boolean};
 type Thread={id:string;requestId:string;subject:string;status:string;createdAt:string;consultationStatus:string;otherParty:string;assignmentStatus:string;unread:number};
-type ChatMessage={id:string;sender_user_id:string;message_text:string|null;content_parts:any;created_at:string};\ntype SarinaMessage={id:string;message_text:string;status:string;created_at:string};
+type ChatMessage={id:string;sender_user_id:string;message_text:string|null;content_parts:any;created_at:string};
+type SarinaMessage={id:string;message_text:string;status:string;created_at:string};
 const db=supabase as any;
 const stamp=(value:string)=>new Date(value).toLocaleString("fa-IR",{dateStyle:"short",timeStyle:"short"});
 
@@ -12,7 +13,9 @@ export default function FarmerSpecialistChatInbox({userId,mode,profileId,verifie
  const [threads,setThreads]=useState<Thread[]>([]);
  const [notifications,setNotifications]=useState<any[]>([]);
  const [active,setActive]=useState<string|null>(null);
- const [messages,setMessages]=useState<ChatMessage[]>([]);\n const [sarinaMessages,setSarinaMessages]=useState<SarinaMessage[]>([]);\n const [askingSarina,setAskingSarina]=useState(false);
+ const [messages,setMessages]=useState<ChatMessage[]>([]);
+ const [sarinaMessages,setSarinaMessages]=useState<SarinaMessage[]>([]);
+ const [askingSarina,setAskingSarina]=useState(false);
  const [draft,setDraft]=useState("");
  const [search,setSearch]=useState("");
  const [filter,setFilter]=useState<"all"|"unread">("all");
@@ -93,6 +96,8 @@ export default function FarmerSpecialistChatInbox({userId,mode,profileId,verifie
   if(error){setNotice("دریافت پیام‌ها مجاز نبود یا با خطا روبه‌رو شد: "+error.message);return;}
   const chronological=(data||[]).reverse();
   setMessages(chronological);setHasOlder((data||[]).length===50);
+  const ai=await db.from("expert_consultation_ai_messages").select("id,message_text,status,created_at").eq("consultation_id",consultationId).order("created_at",{ascending:true}).limit(100);
+  if(ai.error)setNotice("پیام‌های سارینا بارگذاری نشد: "+ai.error.message);else setSarinaMessages(ai.data||[]);
   await markConversationRead(consultationId);
  },[markConversationRead]);
 
@@ -100,6 +105,10 @@ export default function FarmerSpecialistChatInbox({userId,mode,profileId,verifie
   const client=supabase;
   if(!client||!active)return;
   const channel=client.channel("chat-thread-"+active)
+   .on("postgres_changes",{event:"INSERT",schema:"public",table:"expert_consultation_ai_messages",filter:"consultation_id=eq."+active},payload=>{
+    const incoming=payload.new as SarinaMessage;
+    setSarinaMessages(old=>old.some(item=>item.id===incoming.id)?old:[...old,incoming]);
+   })
    .on("postgres_changes",{event:"INSERT",schema:"public",table:"expert_consultation_messages",filter:"consultation_id=eq."+active},payload=>{
     const incoming=payload.new as ChatMessage;
     setMessages(old=>old.some(item=>item.id===incoming.id)?old:[...old,incoming]);
@@ -129,6 +138,11 @@ export default function FarmerSpecialistChatInbox({userId,mode,profileId,verifie
   setSending(false);
   if(error){setNotice("پیام ارسال نشد؛ متن در کادر باقی مانده است. "+error.message);return;}
   setDraft("");
+  setAskingSarina(true);
+  const assistant=await supabase.functions.invoke("sarina-case-chat",{body:{consultation_id:active}});
+  setAskingSarina(false);
+  if(assistant.data?.message){setSarinaMessages(old=>old.some(item=>item.id===assistant.data.message.id)?old:[...old,assistant.data.message]);}
+  else if(assistant.error||assistant.data?.ok===false){setNotice("پیام شما ارسال شد؛ اما سارینا نتوانست در این نوبت پاسخ دهد. گفت‌وگوی کشاورز و متخصص برقرار است.");}
   await refresh();
  }
 
