@@ -67,7 +67,8 @@ export default function SpecialistStoreWorkspace({userId,enabled}:{userId:string
  async function saveProduct(e:FormEvent){
   e.preventDefault();if(!supabase||!seller)return;
   const price=productForm.pricing_model==="fixed"?Number(productForm.price):null;
-  if(productForm.pricing_model==="fixed"&&(!Number.isFinite(price)||price!<=0)){setError("برای فروش با قیمت ثابت، مبلغ معتبر وارد کنید.");return;}\n  if(productForm.pricing_model==="fixed"&&productForm.stock_qty.trim()===""){setError("برای قیمت ثابت، مقدار موجودی را نیز وارد کنید.");return;}
+  if(productForm.pricing_model==="fixed"&&(!Number.isFinite(price)||price!<=0)){setError("برای فروش با قیمت ثابت، مبلغ معتبر وارد کنید.");return;}
+  if(productForm.pricing_model==="fixed"&&productForm.stock_qty.trim()===""){setError("برای قیمت ثابت، مقدار موجودی را نیز وارد کنید.");return;}
   setBusy(true);setError("");setNotice("");
   try{
    const {error}=await db.from("marketplace_products").insert({seller_id:seller.id,category_id:productForm.category_id,market_section:"company_supplies",name:productForm.name.trim(),description:productForm.description.trim()||null,specifications:{},pricing_model:productForm.pricing_model,price,currency:productForm.currency,unit_label:productForm.unit_label.trim()||"unit",minimum_order_qty:Number(productForm.minimum_order_qty)||1,stock_qty:productForm.stock_qty.trim()===""?null:Number(productForm.stock_qty),status:"draft",regulated:false,regulatory_metadata:{}});
