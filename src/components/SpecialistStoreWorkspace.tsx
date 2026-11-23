@@ -1,6 +1,6 @@
 import {useCallback,useEffect,useMemo,useState} from "react";
 import type {FormEvent} from "react";
-import {BadgeCheck,PackagePlus,RefreshCw,ShoppingBag,Store,Truck} from "lucide-react";
+import {BadgeCheck,PackagePlus,RefreshCw,Store,Truck} from "lucide-react";
 import {supabase} from "../lib/supabase";
 
 type Seller={id:string;display_name:string;description:string|null;country_code:string|null;region:string|null;city:string|null;contact_email:string|null;contact_phone:string|null;verification_status:string;verification_notes:string|null};
@@ -57,7 +57,7 @@ export default function SpecialistStoreWorkspace({userId,enabled}:{userId:string
   e.preventDefault();if(!supabase||!enabled)return;
   setBusy(true);setError("");setNotice("");
   try{
-   const {data,error}=await db.from("marketplace_sellers").insert({seller_type:"specialist",owner_user_id:userId,display_name:sellerForm.display_name.trim(),description:sellerForm.description.trim()||null,country_code:sellerForm.country_code.trim().toUpperCase()||null,region:sellerForm.region.trim()||null,city:sellerForm.city.trim()||null,contact_email:sellerForm.contact_email.trim()||null,contact_phone:sellerForm.contact_phone.trim()||null,verification_status:"pending"}).select("id").single();
+   const {error}=await db.from("marketplace_sellers").insert({seller_type:"specialist",owner_user_id:userId,display_name:sellerForm.display_name.trim(),description:sellerForm.description.trim()||null,country_code:sellerForm.country_code.trim().toUpperCase()||null,region:sellerForm.region.trim()||null,city:sellerForm.city.trim()||null,contact_email:sellerForm.contact_email.trim()||null,contact_phone:sellerForm.contact_phone.trim()||null,verification_status:"pending"}).select("id").single();
    if(error)throw error;
    setNotice("درخواست ایجاد فروشگاه ثبت شد. پس از بررسی و تأیید فروشنده، امکان انتشار محصولات فعال می‌شود.");
    await load();
