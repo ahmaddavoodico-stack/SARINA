@@ -150,8 +150,7 @@ function HomePage({session,sarinaUserId,requests,services,loading,go}:{session:S
     <span className="farmer-sarina-secure"><ShieldCheck size={15}/> پرونده‌محور و امن</span>
    </header>
    <div className="farmer-sarina-first-message"><SarinaCharacter/><div><b>سلام! من سارینا هستم 🌱</b><p>من اینجام تا در مسیر مزرعه همراهت باشم. هر پرونده و متخصصی که اضافه کنی، گفت‌وگو را همین‌جا ادامه می‌دهیم.</p></div></div>
-   {sarinaUserId?<FarmerSpecialistChatInbox key={chatRefresh} userId={sarinaUserId} mode="farmer"/>:<div className="empty-state"><MessageCircle size={28}/><strong>برای شروع گفت‌وگو، حساب کشاورز باید تکمیل شود.</strong></div>}
-   <div className="farmer-sarina-actions"><div><strong>نیاز به همراهی تخصصی داری؟</strong><small>متخصص تأییدشده را به پرونده و گفت‌وگوی خود اضافه کن.</small></div><button type="button" className="farmer-add-expert" onClick={()=>setShowExpertPicker(true)}><Users size={17}/> افزودن متخصص به گفتگو</button></div>
+   {sarinaUserId?<FarmerSpecialistChatInbox key={chatRefresh} userId={sarinaUserId} mode="farmer" compact afterComposer={<div className="farmer-sarina-actions"><div><strong>نیاز به همراهی تخصصی داری؟</strong><small>متخصص تأییدشده را به پرونده و همین گفت‌وگو اضافه کن.</small></div><button type="button" className="farmer-add-expert" onClick={()=>setShowExpertPicker(true)}><Users size={17}/> افزودن متخصص به گفتگو</button></div>}/> :<div className="empty-state"><MessageCircle size={28}/><strong>برای شروع گفت‌وگو، حساب کشاورز باید تکمیل شود.</strong></div>}
   </section>
   {sarinaUserId&&<FarmerCreditSummaryCard userId={sarinaUserId} onOpen={()=>go("credits")}/>}
   <div className="section-title"><div><span className="eyebrow">نمای سریع</span><h2>وضعیت فضای کشاورز</h2></div><span className="live-dot">نمای حساب</span></div>
