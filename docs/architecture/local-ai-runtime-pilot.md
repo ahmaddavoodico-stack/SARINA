@@ -1,6 +1,6 @@
 # SARINA Local AI Runtime Pilot
 
-**Status:** isolated implementation scaffold; not deployed; model dispatch remains disabled.
+**Status:** isolated implementation scaffold plus tested routing-policy module; not deployed; model dispatch remains disabled.
 **Work branch:** `feature/local-ai-runtime-evaluation`
 **Baseline:** `feature/farmer-portal-foundation`
 **Decision scope:** select open-weight models, add a provider-neutral server-side adapter, and assess whether the current hosting can run inference.
@@ -97,13 +97,14 @@ A previous SARINA decision called for two geographically separate local-AI syste
 - [x] Inspect Supabase function inventory snapshot and current documented Edge limits.
 - [x] Add a disabled, server-only OpenAI-compatible local adapter scaffold.
 - [x] Add isolated Deno contract tests and include the adapter in the SCI type-check workflow; tests have not yet been executed.
-- [ ] Run TypeScript/Deno checks for the adapter in the project's actual CI/runtime; branch checks were not triggered because the repository workflow currently runs on PR/push to main.
+- [x] Add a provider-routing policy module with local-first routine tasks, explicit OpenAI escalation gates, and an atomic budget-reservation interface; contract tests added (CI execution pending).
+- [ ] Run TypeScript/Deno checks for the adapter and routing policy in the project's actual CI/runtime; inspect job-level results before marking passed.
 - [ ] Obtain actual current host resource inventory; no SSH/host telemetry is available from this repository inspection.
 - [ ] Confirm exact Strata release and model compatibility; do not assume Qwen3.5 support.
 - [ ] Benchmark Qwen3.5 4B on a persistent test host using synthetic Persian/Arabic agricultural prompts.
 - [ ] Benchmark Qwen3.5 9B only if the first model's quality is insufficient and resources permit.
 - [ ] Validate image support separately with controlled farm images and specialist adjudication.
-- [ ] Add provider routing, schema validation, audit/usage records, consent and hard limits.
+- [x] Add a testable provider-routing policy contract; production handler wiring, structured-output validation, audit/usage persistence, consent capture and a real atomic USD budget ledger remain open.
 - [ ] Keep production dispatch disabled until security, quality, reliability and owner acceptance gates pass.
 
 ## 9. References
