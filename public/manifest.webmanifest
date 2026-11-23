@@ -18,21 +18,21 @@
   ],
   "icons": [
     {
-      "src": "/sarina-icon-192.webp",
+      "src": "/SARINA_Icon_192.png",
       "sizes": "192x192",
-      "type": "image/webp",
+      "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/sarina-icon-512.svg",
+      "src": "/SARINA_Icon_512.png",
       "sizes": "512x512",
-      "type": "image/svg+xml",
+      "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/sarina-icon-maskable.svg",
+      "src": "/SARINA_Maskable_512-1.png",
       "sizes": "512x512",
-      "type": "image/svg+xml",
+      "type": "image/png",
       "purpose": "maskable"
     }
   ]
