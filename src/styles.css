@@ -946,3 +946,14 @@
 @media(max-width:1150px){.executive-metrics{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:760px){.executive-home{gap:16px}.executive-welcome{align-items:stretch;flex-direction:column;padding:19px}.executive-date{min-width:0;border-right:0;border-top:1px solid #dbe6d8;padding:12px 0 0}.executive-metrics{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.executive-metric{padding:12px}.executive-metric strong{font-size:22px}.executive-workspace-grid{grid-template-columns:1fr}.executive-card{padding:15px}.executive-section-head{align-items:flex-start;flex-direction:column}}
 @media(prefers-reduced-motion:reduce){.executive-metric{transition:none}.executive-metric:hover{transform:none}}
+
+
+/* Registration and role onboarding: keep the next action reachable on short mobile screens. */
+.role-onboarding{align-items:start;overflow-y:auto;overscroll-behavior-y:contain}
+.role-card{margin:auto}
+.role-card form>.primary-button{position:sticky;bottom:8px;z-index:3;box-shadow:0 8px 22px #21473526}
+@media(max-width:560px){
+ .role-onboarding{min-height:100svh;padding:16px 12px max(24px,env(safe-area-inset-bottom))}
+ .role-card{margin:0 auto;padding:20px 16px}
+ .role-card form>.primary-button{bottom:4px;min-height:50px}
+}
