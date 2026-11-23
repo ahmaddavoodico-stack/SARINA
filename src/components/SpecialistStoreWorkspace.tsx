@@ -28,7 +28,7 @@ export default function SpecialistStoreWorkspace({userId,enabled}:{userId:string
   if(!supabase){setError("اتصال پایگاه داده در این محیط پیکربندی نشده است.");setLoading(false);return;}
   setLoading(true);setError("");
   try{
-   const own=await db.from("marketplace_sellers").select("id,display_name,description,country_code,region,city,contact_email,contact_phone,verification_status,verification_notes").eq("owner_user_id",userId).eq("seller_type","individual").maybeSingle();
+   const own=await db.from("marketplace_sellers").select("id,display_name,description,country_code,region,city,contact_email,contact_phone,verification_status,verification_notes").eq("owner_user_id",userId).eq("seller_type","specialist").maybeSingle();
    if(own.error)throw own.error;
    setSeller(own.data as Seller|null);
    const cats=await db.from("marketplace_categories").select("id,code,name_fa,market_section").eq("market_section","company_supplies").eq("is_active",true).order("sort_order",{ascending:true});
@@ -55,7 +55,7 @@ export default function SpecialistStoreWorkspace({userId,enabled}:{userId:string
   e.preventDefault();if(!supabase||!enabled)return;
   setBusy(true);setError("");setNotice("");
   try{
-   const {data,error}=await db.from("marketplace_sellers").insert({seller_type:"individual",owner_user_id:userId,display_name:sellerForm.display_name.trim(),description:sellerForm.description.trim()||null,country_code:sellerForm.country_code.trim().toUpperCase()||null,region:sellerForm.region.trim()||null,city:sellerForm.city.trim()||null,contact_email:sellerForm.contact_email.trim()||null,contact_phone:sellerForm.contact_phone.trim()||null,verification_status:"pending"}).select("id").single();
+   const {data,error}=await db.from("marketplace_sellers").insert({seller_type:"specialist",owner_user_id:userId,display_name:sellerForm.display_name.trim(),description:sellerForm.description.trim()||null,country_code:sellerForm.country_code.trim().toUpperCase()||null,region:sellerForm.region.trim()||null,city:sellerForm.city.trim()||null,contact_email:sellerForm.contact_email.trim()||null,contact_phone:sellerForm.contact_phone.trim()||null,verification_status:"pending"}).select("id").single();
    if(error)throw error;
    setNotice("درخواست ایجاد فروشگاه ثبت شد. پس از بررسی و تأیید فروشنده، امکان انتشار محصولات فعال می‌شود.");
    await load();
