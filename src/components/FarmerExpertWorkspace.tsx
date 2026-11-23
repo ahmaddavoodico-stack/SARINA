@@ -4,9 +4,9 @@ import {supabase} from "../lib/supabase";
 
 type Expert={id:string;public_name:string;biography:string|null;avatar_path:string|null;years_experience:number|null;languages:any;country_id:string|null;specialties?:{category_code:string;display_name:string}[];availability?:{availability_status:string;pause_new_cases:boolean;max_open_cases:number|null;status_note:string|null;vacation_start:string|null;vacation_end:string|null}};
 type Farm={id:string;farm_name:string|null;country_id:string|null};
-type Props={sarinaUserId:string};
+type Props={sarinaUserId:string;compact?:boolean;onRequestCreated?:()=>void};
 const db=supabase as any;
-export default function FarmerExpertWorkspace({sarinaUserId}:Props){
+export default function FarmerExpertWorkspace({sarinaUserId,compact=false,onRequestCreated}:Props){
  const [experts,setExperts]=useState<Expert[]>([]),[farms,setFarms]=useState<Farm[]>([]),[specialties,setSpecialties]=useState<any[]>([]);
  const [selected,setSelected]=useState(""),[farmId,setFarmId]=useState(""),[subject,setSubject]=useState(""),[problem,setProblem]=useState(""),[category,setCategory]=useState(""),[filter,setFilter]=useState("");
  const [referralMode,setReferralMode]=useState<"farmer_selected"|"sarina_suggested">("sarina_suggested");
@@ -82,7 +82,7 @@ export default function FarmerExpertWorkspace({sarinaUserId}:Props){
    const {error:consultationError}=await db.from("expert_consultations").insert({request_id:req.id,consultation_mode:"in_app_message",status:"scheduled"});
    if(consultationError)throw consultationError;
    setNotice("درخواست مشاوره ثبت شد و برای کارشناس ارسال گردید. پس از پاسخ او، گفت‌وگو در پرونده فعال می‌شود.");
-   setSubject("");setProblem("");setSelected("");await refresh();
+   setSubject("");setProblem("");setSelected("");await refresh();onRequestCreated?.();
   }catch(err){setNotice(err instanceof Error?err.message:"ثبت درخواست مشاوره انجام نشد.");}
   finally{setBusy(false);}
  }
@@ -119,12 +119,14 @@ export default function FarmerExpertWorkspace({sarinaUserId}:Props){
     </form>
    </aside>
   </div>
+{!compact&&<>
   <div className="section-title"><div><span className="eyebrow">پیگیری پرونده‌ها</span><h2>درخواست‌های من</h2></div><button className="expert-link" onClick={()=>void refresh()}><RefreshCw size={15}/> تازه‌سازی</button></div>
   <div className="request-list">{requests.length===0?<div className="empty-state">هنوز درخواست مشاوره‌ای ثبت نشده است.</div>:requests.map(r=><article className="request-row" key={r.id}><MessageCircle size={20}/><div><strong>{r.subject}</strong><small>{new Date(r.created_at).toLocaleDateString("fa-IR")}</small></div><span>{r.status==="submitted"?"ارسال‌شده":r.status==="assigned"?"ارجاع‌شده":r.status}</span><small>{r.expert_request_assignments?.[0]?.expert_profiles?.public_name||"کارشناس منتخب"}</small><small>{r.referral_source==="sarina_suggested"?"پیشنهاد سارینا":"انتخاب مستقیم کشاورز"}</small><button onClick={()=>void openConversation(r.id)}>گفت‌وگو</button></article>)}</div>
   {activeConsultation&&<section className="expert-request-panel farmer-chat-panel"><div className="farmer-specialist-identity"><div className="farmer-specialist-avatar">{activeExpert?.avatar_path&&supabase?<img src={supabase.storage.from("expert-avatars").getPublicUrl(activeExpert.avatar_path).data.publicUrl} alt={"تصویر "+activeExpert.public_name}/>:<UserRound size={28}/>}</div><div className="farmer-specialist-copy"><span className="farmer-specialist-kicker">متخصص همراه مزرعه شما</span><h2>{activeExpert?.public_name||"متخصص پرونده شما"}</h2><span className="farmer-specialist-verified"><ShieldCheck size={14}/> متخصص تأییدشده SARINA</span></div></div><div className="farmer-specialist-intro"><strong>سلام، من {activeExpert?.public_name||"متخصص شما"} هستم.</strong><p>مسئول همراهی شما در مسیر افزایش بهره‌وری و شناسایی و رفع مشکلات مزرعه‌تان هستم. پرسش‌ها و اطلاعاتی را که در این پرونده می‌فرستید بررسی می‌کنم و راهنمایی تخصصی ارائه می‌دهم.</p>{activeExpert?.biography&&<small>{activeExpert.biography}</small>}{activeExpert?.years_experience!=null&&<span className="farmer-specialist-experience">{activeExpert.years_experience} سال سابقه حرفه‌ای</span>}</div><div className="farmer-chat-heading"><div><span className="eyebrow">ارتباط انسانی و تخصصی</span><h3>گفت‌وگوی پرونده: {activeRequest?.subject||"مزرعه شما"}</h3></div><span className="farmer-chat-case-tag">متصل به پرونده</span></div><div className="farmer-chat-messages">{messages.map(m=><article key={m.id} className={m.sender_user_id===sarinaUserId?"mine":"theirs"}><p>{m.message_text||"پیام پیوست‌دار"}</p><small>{new Date(m.created_at).toLocaleString("fa-IR")}</small></article>)}</div><form onSubmit={sendFarmerMessage}><textarea rows={2} value={messageText} onChange={e=>setMessageText(e.target.value)} placeholder="پیام خود را بنویسید..." required/><button className="expert-primary" disabled={busy||!messageText.trim()}>ارسال پیام</button></form></section>}
   <div className="section-title"><div><span className="eyebrow">اعلان‌های پرونده</span><h2>پیام‌ها و تغییر وضعیت‌ها {unread>0&&<span className="live-dot">{unread} جدید</span>}</h2></div></div>
   <div className="request-list">{notifications.length===0?<div className="empty-state">اعلانی ندارید.</div>:notifications.map(n=><article className="request-row" key={n.id}><BellIcon/><div><strong>{n.preview||"به‌روزرسانی پرونده"}</strong><small>{new Date(n.created_at).toLocaleString("fa-IR")}</small></div>{!n.read_at&&<button onClick={()=>void markRead(n.id)}>خواندم</button>}</article>)}</div>
   {handovers.length>0&&<section className="expert-request-panel farmer-handover-panel"><h2>درخواست تأیید جایگزینی متخصص</h2><p>متخصص فعلی درخواست کرده پرونده شما به متخصص تأییدشده دیگری واگذار شود. انتقال فقط با رضایت شما و پذیرش متخصص جدید انجام می‌شود.</p>{handovers.map(h=><article className="request-row" key={h.id}><div><strong>{requests.find(r=>r.id===h.request_id)?.subject||"پرونده مشاوره"}</strong><small>متخصص فعلی: {h.from_expert?.public_name||"متخصص فعلی"} · جایگزین پیشنهادی: {h.to_expert?.public_name||"متخصص تأییدشده"}</small><small>{h.reason||"دلیل دیگری ثبت نشده است"}</small></div><div className="farmer-handover-actions"><button className="expert-primary" disabled={busy} onClick={()=>void respondHandover(h.id,true)}>تأیید جایگزینی</button><button className="expert-link" disabled={busy} onClick={()=>void respondHandover(h.id,false)}>رد درخواست</button></div></article>)}</section>}
+  </>}
  </section>;
 }
 function BellIcon(){return <MessageCircle size={19}/>;}
