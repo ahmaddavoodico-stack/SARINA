@@ -1,4 +1,5 @@
 import {useCallback,useEffect,useMemo,useState} from "react";
+import type {FormEvent} from "react";
 import {BadgeCheck,PackagePlus,RefreshCw,ShoppingBag,Store,Truck} from "lucide-react";
 import {supabase} from "../lib/supabase";
 
@@ -31,7 +32,7 @@ export default function SpecialistStoreWorkspace({userId,enabled}:{userId:string
    const own=await db.from("marketplace_sellers").select("id,display_name,description,country_code,region,city,contact_email,contact_phone,verification_status,verification_notes").eq("owner_user_id",userId).eq("seller_type","specialist").maybeSingle();
    if(own.error)throw own.error;
    setSeller(own.data as Seller|null);
-   const cats=await db.from("marketplace_categories").select("id,code,name_fa,market_section").eq("market_section","company_supplies").eq("is_active",true).order("sort_order",{ascending:true});
+   const cats=await db.from("marketplace_categories").select("id,code,name_fa,market_section").eq("market_section","company_supplies").eq("is_active",true).neq("code","crop_protection").order("sort_order",{ascending:true});
    if(cats.error)throw cats.error;
    setCategories((cats.data||[]) as Category[]);
    if(own.data){
@@ -51,7 +52,7 @@ export default function SpecialistStoreWorkspace({userId,enabled}:{userId:string
  const verified=seller?.verification_status==="verified";
  const publishedCount=useMemo(()=>products.filter(p=>p.status==="published").length,[products]);
 
- async function createSeller(e:React.FormEvent){
+ async function createSeller(e:FormEvent){
   e.preventDefault();if(!supabase||!enabled)return;
   setBusy(true);setError("");setNotice("");
   try{
@@ -63,10 +64,10 @@ export default function SpecialistStoreWorkspace({userId,enabled}:{userId:string
   finally{setBusy(false);}
  }
 
- async function saveProduct(e:React.FormEvent){
+ async function saveProduct(e:FormEvent){
   e.preventDefault();if(!supabase||!seller)return;
   const price=productForm.pricing_model==="fixed"?Number(productForm.price):null;
-  if(productForm.pricing_model==="fixed"&&(!Number.isFinite(price)||price!<=0)){setError("برای فروش با قیمت ثابت، مبلغ معتبر وارد کنید.");return;}
+  if(productForm.pricing_model==="fixed"&&(!Number.isFinite(price)||price!<=0)){setError("برای فروش با قیمت ثابت، مبلغ معتبر وارد کنید.");return;}\n  if(productForm.pricing_model==="fixed"&&productForm.stock_qty.trim()===""){setError("برای قیمت ثابت، مقدار موجودی را نیز وارد کنید.");return;}
   setBusy(true);setError("");setNotice("");
   try{
    const {error}=await db.from("marketplace_products").insert({seller_id:seller.id,category_id:productForm.category_id,market_section:"company_supplies",name:productForm.name.trim(),description:productForm.description.trim()||null,specifications:{},pricing_model:productForm.pricing_model,price,currency:productForm.currency,unit_label:productForm.unit_label.trim()||"unit",minimum_order_qty:Number(productForm.minimum_order_qty)||1,stock_qty:productForm.stock_qty.trim()===""?null:Number(productForm.stock_qty),status:"draft",regulated:false,regulatory_metadata:{}});
@@ -112,7 +113,7 @@ export default function SpecialistStoreWorkspace({userId,enabled}:{userId:string
     <label>ارز<select value={productForm.currency} onChange={e=>setProductForm({...productForm,currency:e.target.value})}>{Object.keys(currencyLabels).map(k=><option key={k} value={k}>{currencyLabels[k]} ({k})</option>)}</select></label>
     <label>واحد فروش<input required value={productForm.unit_label} onChange={e=>setProductForm({...productForm,unit_label:e.target.value})} placeholder="کیلوگرم، بسته، عدد..."/></label>
     <label>حداقل مقدار سفارش<input type="number" min="0.01" step="0.01" required value={productForm.minimum_order_qty} onChange={e=>setProductForm({...productForm,minimum_order_qty:e.target.value})}/></label>
-    <label>موجودی (اختیاری)<input type="number" min="0" step="0.01" value={productForm.stock_qty} onChange={e=>setProductForm({...productForm,stock_qty:e.target.value})}/></label>
+    <label>موجودی {productForm.pricing_model==="fixed"?"(الزامی برای قیمت ثابت)":"(اختیاری)"}<input type="number" min="0" step="0.01" required={productForm.pricing_model==="fixed"} value={productForm.stock_qty} onChange={e=>setProductForm({...productForm,stock_qty:e.target.value})}/></label>
     <button type="submit" disabled={busy||!categories.length}>{busy?"در حال ذخیره...":"ذخیره پیش‌نویس محصول"}</button>
    </form>}
    <div className="specialist-store-list">{products.map(p=><article key={p.id}><div><strong>{p.name}</strong><p>{p.description||"بدون توضیحات"} · {p.pricing_model==="request_quote"?"قیمت با استعلام":Number(p.price||0).toLocaleString("fa-IR")+" "+(currencyLabels[p.currency]||p.currency)} / {p.unit_label}</p><small>{statusLabels[p.status]||p.status} · {new Date(p.created_at).toLocaleDateString("fa-IR")}</small></div><div className="specialist-store-row-actions">{p.status==="published"?<button type="button" disabled={busy} onClick={()=>void updateProductStatus(p,"draft")}>بازگردانی به پیش‌نویس</button>:<button type="button" disabled={busy||!verified} title={!verified?"انتشار پس از تأیید فروشنده فعال می‌شود":""} onClick={()=>void updateProductStatus(p,"published")}>انتشار در بازارگاه</button>}</div></article>)}{products.length===0&&<div className="specialist-store-empty">هنوز محصولی ثبت نشده است. می‌توانید اولین محصول را به‌صورت پیش‌نویس اضافه کنید.</div>}</div>
