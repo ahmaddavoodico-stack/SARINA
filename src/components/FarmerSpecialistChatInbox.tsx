@@ -193,7 +193,7 @@ export default function FarmerSpecialistChatInbox({userId,mode,profileId,verifie
  }
  async function uploadAndSend(file:File|Blob,kind:"image"|"document"|"audio"){
   if(!active||!supabase||uploading)return;
-  const mime=file.type||"application/octet-stream";
+  const mime=(file.type||"application/octet-stream").split(";")[0];
   const allowed=kind==="image"?["image/jpeg","image/png","image/webp"]:kind==="document"?["application/pdf"]:["audio/webm","audio/ogg","audio/mp4","audio/mpeg","audio/wav","audio/x-wav","audio/aac","audio/3gpp","audio/3gpp2","audio/flac"];
   const max=kind==="audio"?20*1024*1024:10*1024*1024;
   if(!allowed.includes(mime)){setNotice("قالب این فایل پشتیبانی نمی‌شود.");return;}
