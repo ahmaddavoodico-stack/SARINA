@@ -470,6 +470,15 @@
 @media(max-width:760px){.farmer-credit-stats,.specialist-ai-credit-stats{grid-template-columns:1fr}.farmer-credit-columns,.specialist-ai-credit-actions{grid-template-columns:1fr}.farmer-credit-heading,.specialist-ai-credit-heading{align-items:flex-start;flex-direction:column}.farmer-credit-table-head,.farmer-credit-table article{grid-template-columns:minmax(0,1fr) 88px 65px;gap:7px}.farmer-credit-stats strong{font-size:22px}.farmer-credit-summary{padding:13px}.farmer-credit-summary-copy strong{font-size:16px}}
 
 
+/* Shared farmer + specialist + SARINA conversation */
+.chat-message{position:relative}
+.chat-message>b{display:block;margin:0 0 5px;color:#54715e;font-size:11px}
+.chat-message-sarina{border:1px solid #cfe3ce;background:linear-gradient(135deg,#f5fbf2,#eef7ed);margin-right:12px}
+.chat-message-sarina>b{color:#277344}
+.chat-message-sarina>b span{font-weight:500;color:#829487;margin-right:5px}
+.chat-secure-label{white-space:nowrap}
+@media(max-width:680px){.chat-message-sarina{margin-right:5px}.chat-secure-label{font-size:9px}}
+ 
 /* Independent farmer-specialist human chat inbox */
 .chat-inbox{display:grid;gap:16px;min-width:0}
 .chat-inbox-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:18px}
