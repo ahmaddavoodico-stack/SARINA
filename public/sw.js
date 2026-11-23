@@ -1,10 +1,11 @@
-const CACHE="sarina-shell-v8";
+const CACHE="sarina-shell-v9";
 const SHELL=[
  "/",
  "/manifest.webmanifest",
  "/sarina-logo.svg",
  "/sarina-icon-192.webp",
- "/sarina-icon-512.webp",
+ "/sarina-icon-512.svg",
+ "/sarina-icon-maskable.svg",
  "/apple-touch-icon.png"
 ];
 
