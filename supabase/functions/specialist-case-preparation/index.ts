@@ -1,6 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
 import { createChatGPTAdapterFromEnv, ProviderAdapterRegistry } from "../sarina-central-intelligence/_shared/provider-adapter.ts";
+import { createGroqAdapterFromEnv } from "../sarina-central-intelligence/_shared/groq-provider-adapter.ts";
 import { signSiacpEnvelope, verifySignedSiacpTask, type NonceStore } from "../sarina-central-intelligence/_shared/siacp-security.ts";
 import { buildSpecialistCaseEvidence } from "../sarina-central-intelligence/_shared/specialist-preparation.ts";
 
@@ -113,6 +114,21 @@ Deno.serve(async (req: Request) => {
     });
   }
 
+  const selectedProvider = Deno.env.get("SARINA_SPECIALIST_PREPARATION_PROVIDER") ?? "chatgpt";
+  if (selectedProvider !== "chatgpt" && selectedProvider !== "groq") {
+    return reply(503, { ok: false, code: "SPECIALIST_PREPARATION_PROVIDER_NOT_ALLOWED", retryable: false });
+  }
+
+  // Groq is a temporary external test provider. Restrict it to explicitly
+  // allowlisted synthetic test requests until a farmer-consent workflow exists.
+  if (selectedProvider === "groq") {
+    const testRequestIds = (Deno.env.get("SARINA_GROQ_TEST_REQUEST_IDS") ?? "")
+      .split(",").map((value) => value.trim()).filter(Boolean);
+    if (!testRequestIds.includes(request.id)) {
+      return reply(403, { ok: false, code: "GROQ_SYNTHETIC_TEST_REQUEST_ONLY", retryable: false });
+    }
+  }
+
   const signingKey = Deno.env.get("SARINA_SIACP_SIGNING_KEY") ?? "";
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
   if (!signingKey || signingKey.length < 32 || !serviceRoleKey) {
@@ -154,8 +170,12 @@ Deno.serve(async (req: Request) => {
 
   try {
     const registry = new ProviderAdapterRegistry();
-    registry.register(createChatGPTAdapterFromEnv());
-    const adapter = registry.resolve("chatgpt");
+    if (selectedProvider === "groq") {
+      registry.register(createGroqAdapterFromEnv());
+    } else {
+      registry.register(createChatGPTAdapterFromEnv());
+    }
+    const adapter = registry.resolve(selectedProvider);
     const result = await adapter.invoke({
       task: "specialist_case_preparation",
       correlationId: verified.correlationId,
