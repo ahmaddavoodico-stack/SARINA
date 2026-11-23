@@ -70,7 +70,7 @@ export default function SarinaCompanion({isAdmin=false}:SarinaCompanionProps){
     <button type="button" className="sarina-chat-close" onClick={()=>setOpen(false)} aria-label="بستن گفتگو"><X size={18}/></button>
    </header>
    <div className="sarina-chat-body">
-    <div className="sarina-welcome-message"><span className="sarina-sparkle"><Sparkles size={15}/></span><strong>سلام! من سارینا هستم 🌱</strong><p>{isAdmin?"برای آزمودن اتصال هوش مصنوعی، پیام آزمایشی خود را بنویس.":"از مزرعه‌ات برام بگو؛ چه چیزی ذهنت رو مشغول کرده؟"}</p></div>
+    <div className="sarina-welcome-message"><span className="sarina-sparkle"><Sparkles size={15}/></span><strong>سلام! من سارینا هستم 🌱</strong><p>{isAdmin?"من نقش مدیر مرکزی شما را می‌شناسم. می‌توانم درباره کاربران، نقش‌ها، درخواست‌ها و وضعیت سامانه کمک کنم؛ لازم نیست اطلاعات مزرعه شخصی‌تان را وارد کنید.":"از مزرعه‌ات برام بگو؛ چه چیزی ذهنت رو مشغول کرده؟"}</p></div>
     {messages.map(message=><div key={message.id} className={"sarina-message "+(message.role==="farmer"?"from-farmer":"from-sarina")}>{message.text}</div>)}
     {showNotice&&<div className="sarina-prototype-note">پیامت در این پیش‌نمایش ثبت شد. اتصال پاسخ‌گوی هوشمند برای این نقش هنوز فعال نشده است.</div>}
     {status&&<div className="sarina-prototype-note" role="status">{status}</div>}
