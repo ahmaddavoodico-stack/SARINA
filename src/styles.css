@@ -1036,3 +1036,55 @@
 .specialist-store-empty h2{margin:0;color:#345840}
 .specialist-store-empty p{margin:0;max-width:460px}
 @media(max-width:700px){.specialist-store-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.specialist-store-form{grid-template-columns:1fr}.specialist-store-form label:has(textarea){grid-column:auto}.specialist-store-heading,.specialist-store-actions{align-items:flex-start;flex-direction:column}.specialist-store-list article{align-items:flex-start;flex-direction:column}.specialist-store-row-actions{width:100%}}
+
+/* Farmer central SARINA conversation hub */
+.farmer-sarina-hub{direction:rtl;margin:0 0 28px;background:#fff;border:1px solid #dfe9df;border-radius:22px;overflow:hidden;box-shadow:0 12px 36px #244b3510}
+.farmer-sarina-brandbar{display:flex;align-items:center;gap:14px;padding:20px 23px;background:linear-gradient(115deg,#eef5e9,#f8f8f1);border-bottom:1px solid #e7eee4}
+.farmer-sarina-mark{width:64px;height:64px;flex:0 0 64px;padding:4px;border-radius:19px;background:#fff;box-shadow:0 4px 16px #315c3b15}
+.farmer-sarina-mark svg{width:100%;height:100%}
+.farmer-sarina-brandcopy{flex:1;min-width:0}
+.farmer-sarina-brandcopy>span{font-size:10px;color:#789078}
+.farmer-sarina-brandcopy h2{font-size:20px;color:#234b38;margin:3px 0 4px}
+.farmer-sarina-brandcopy p{font-size:10px;color:#829187;margin:0;line-height:1.8}
+.farmer-sarina-secure{display:flex;align-items:center;gap:6px;padding:8px 10px;border:1px solid #dce9dc;border-radius:999px;background:#ffffffa8;color:#64836b;font-size:9px;white-space:nowrap}
+.farmer-sarina-intro{display:flex;align-items:flex-start;gap:10px;margin:17px 20px 10px;padding:13px 14px;background:#f8faf6;border:1px solid #edf1e9;border-radius:13px}
+.farmer-sarina-intro-icon{width:31px;height:31px;flex:0 0 31px;display:grid;place-items:center;border-radius:10px;background:#e8f1e5;color:#4c805a}
+.farmer-sarina-intro b{font-size:11px;color:#45634e}
+.farmer-sarina-intro p{font-size:9px;color:#87948b;margin:4px 0 0;line-height:1.8}
+.farmer-sarina-hub .chat-inbox{padding:0 18px 14px}
+.farmer-sarina-hub .chat-inbox-heading{display:none}
+.farmer-sarina-hub .chat-inbox-layout{min-height:420px;border-radius:15px;overflow:hidden}
+.farmer-sarina-hub .chat-thread-list{min-height:420px}
+.farmer-sarina-hub .chat-conversation{min-height:420px}
+.farmer-sarina-actions{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:15px 20px;background:#fbfcfa;border-top:1px solid #edf1eb}
+.farmer-sarina-actions>div{display:flex;flex-direction:column;gap:4px}
+.farmer-sarina-actions strong{font-size:11px;color:#385a45}
+.farmer-sarina-actions small{font-size:9px;color:#8b9890}
+.farmer-add-expert{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:11px;background:#245f45;color:#fff;padding:11px 15px;font-size:10px;font-weight:700;white-space:nowrap}
+.farmer-add-expert:hover{background:#194a35}
+.farmer-expert-modal-backdrop{position:fixed;inset:0;z-index:80;display:flex;align-items:center;justify-content:center;padding:20px;background:#10271f88}
+.farmer-expert-modal{width:min(1050px,100%);max-height:min(90vh,900px);overflow:auto;background:#f8faf7;border-radius:20px;box-shadow:0 25px 80px #10271f55;padding:18px}
+.farmer-expert-modal>header{display:flex;align-items:flex-start;justify-content:space-between;gap:15px;padding:4px 5px 15px;border-bottom:1px solid #e6ece5;margin-bottom:15px}
+.farmer-expert-modal>header h2{font-size:19px;color:#234b38;margin:5px 0}
+.farmer-expert-modal>header p{font-size:10px;color:#829188;margin:0;line-height:1.8}
+.farmer-expert-modal>header>button{width:34px;height:34px;border:0;border-radius:10px;background:#edf3eb;color:#59735e;font-size:22px}
+.farmer-expert-modal .page-heading{display:none}
+.farmer-expert-modal .expert-directory-layout{grid-template-columns:minmax(0,1fr) 320px}
+.farmer-expert-modal .expert-directory-main{min-width:0}
+.farmer-expert-modal .expert-request-panel{position:sticky;top:0;align-self:start}
+@media(max-width:760px){
+ .farmer-sarina-brandbar{padding:16px;gap:10px;flex-wrap:wrap}
+ .farmer-sarina-mark{width:53px;height:53px;flex-basis:53px}
+ .farmer-sarina-brandcopy h2{font-size:17px}
+ .farmer-sarina-secure{margin-right:63px}
+ .farmer-sarina-intro{margin:12px 12px 8px}
+ .farmer-sarina-hub .chat-inbox{padding:0 10px 10px}
+ .farmer-sarina-hub .chat-inbox-layout{min-height:380px}
+ .farmer-sarina-hub .chat-thread-list,.farmer-sarina-hub .chat-conversation{min-height:380px}
+ .farmer-sarina-actions{align-items:stretch;flex-direction:column;padding:14px}
+ .farmer-add-expert{width:100%}
+ .farmer-expert-modal-backdrop{padding:8px}
+ .farmer-expert-modal{max-height:94vh;padding:12px;border-radius:15px}
+ .farmer-expert-modal .expert-directory-layout{grid-template-columns:1fr}
+ .farmer-expert-modal .expert-request-panel{position:static}
+}
