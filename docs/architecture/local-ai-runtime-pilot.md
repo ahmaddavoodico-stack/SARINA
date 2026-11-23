@@ -116,3 +116,39 @@ A previous SARINA decision called for two geographically separate local-AI syste
 - Strata project: https://github.com/Niko1221/Strata
 - Vercel Function limits: https://vercel.com/docs/functions/limitations
 - Supabase Edge Function limits: https://supabase.com/docs/guides/functions/limits
+
+
+## 10. Temporary hosted inference bridge for the first end-to-end workflow
+
+**Status:** Groq adapter and provider selection are committed on the isolated work branch. It is not deployed or enabled. No Groq credential or synthetic request ID has been configured.
+
+- Temporary provider: Groq Chat Completions API, OpenAI-compatible endpoint.
+- Initial model candidate: `openai/gpt-oss-20b`. This is a hosted MoE model with 3.6B active parameters, not the future local model. It supports strict JSON Schema output on Groq.
+- The specialist case-preparation Edge Function can select `groq` only through the server-side `SARINA_SPECIALIST_PREPARATION_PROVIDER` setting. Provider/model cannot be selected by the client.
+- Groq execution requires all of: `SARINA_SPECIALIST_PREPARATION_ENABLED=true`, `SARINA_SPECIALIST_PREPARATION_PROVIDER=groq`, `GROQ_API_KEY`, `SARINA_GROQ_MODEL`, `SARINA_GROQ_ALLOWED_MODELS`, and `SARINA_GROQ_TEST_REQUEST_IDS`.
+- For the first trial, the test request allowlist must contain only a synthetic/de-identified request ID. Requests not on that allowlist are rejected before the external model call. This is a temporary test boundary, not a substitute for a farmer-consent workflow.
+- Existing SIACP signature verification, replay protection, caller-JWT authorization, verified-specialist check, structured output validation and human-review requirement remain in the flow.
+- The provider returns a draft to the specialist workspace; it does not create an autonomous diagnosis, dosage, fertilizer/pesticide recommendation, irrigation command, or physical action.
+- The draft is returned to the specialist UI for review. Saving the reviewed summary/status remains a deliberate human action.
+- No fallback to OpenAI occurs automatically. The selected provider is explicit and failures remain visible.
+- Adapter tests use mocked HTTP responses. Passing those tests proves the adapter contract only; it does not prove Groq credentials, account quota, real model quality, deployed Edge Function behavior, or a complete live workflow.
+- Before the first real API call, inspect Groq account limits/pricing and configure a strict spend/usage alert. Do not assume a free quota or enable auto-recharge.
+
+### Temporary provider switch-back
+
+Set `SARINA_SPECIALIST_PREPARATION_PROVIDER=chatgpt` only when the existing OpenAI provider is intentionally approved and its existing server-side gates are satisfied. The future self-hosted Qwen adapter will implement the same `ModelProviderAdapter` contract; switching providers must not change farmer-facing workflow or case-evidence construction.
+
+### First pilot acceptance gates
+
+- [x] Add a Groq Chat Completions adapter with strict structured output and server-side model allowlist.
+- [x] Add mocked adapter contract tests.
+- [x] Add provider selection to specialist case preparation without changing the default provider.
+- [x] Restrict Groq execution to server-allowlisted synthetic test request IDs.
+- [x] Include the new adapter and Edge Function in the SCI CI type-check command.
+- [ ] Confirm GitHub Actions type-check and Deno test jobs pass with job-level evidence.
+- [ ] Add Groq API key and allowlist settings to Supabase secrets; do not place secrets in Git or client code.
+- [ ] Create/identify one synthetic specialist case and allowlist only its request ID.
+- [ ] Confirm the Groq account's model access, quota and billing settings before the first call.
+- [ ] Invoke the Edge Function from the verified specialist workspace and capture the returned structured draft.
+- [ ] Have a specialist review and save the draft; verify the persisted case summary/status.
+- [ ] Measure latency, token use, failures and Persian output quality; then decide whether to proceed to the five-user sequential pilot.
