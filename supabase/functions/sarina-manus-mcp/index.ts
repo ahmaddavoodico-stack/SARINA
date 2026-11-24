@@ -54,29 +54,49 @@ mcp.tool(
     description: "Check that Manus can reach the authenticated SARINA integration gateway. Does not access farmer or production business data.",
     inputSchema: z.object({}),
   },
-  async () => ({
-    content: [{
-      type: "text",
-      text: JSON.stringify({
-        ok: true,
-        service: SERVER_NAME,
-        version: SERVER_VERSION,
-        database_configured: Boolean(
-          Deno.env.get("SUPABASE_URL") && Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")
-        ),
-        access_scope: [
-          "read integration capabilities",
-          "save agricultural market research drafts",
-          "list and retrieve those drafts",
-        ],
-        protected_resources: [
-          "production product catalog",
-          "farmer identities and farm records",
-          "orders, payments, and marketplace publication",
-        ],
-      }),
-    }],
-  }),
+  async () => {
+    const databaseConfigured = Boolean(
+      Deno.env.get("SUPABASE_URL") && Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")
+    );
+    let databaseConnected = false;
+    let draftStoreReady = false;
+    if (databaseConfigured) {
+      try {
+        const { error } = await getAdminClient()
+          .from("sarina_manus_market_research_drafts")
+          .select("id")
+          .limit(1);
+        databaseConnected = !error;
+        draftStoreReady = !error;
+      } catch {
+        databaseConnected = false;
+        draftStoreReady = false;
+      }
+    }
+    return {
+      content: [{
+        type: "text",
+        text: JSON.stringify({
+          ok: true,
+          service: SERVER_NAME,
+          version: SERVER_VERSION,
+          database_configured: databaseConfigured,
+          database_connected: databaseConnected,
+          draft_store_ready: draftStoreReady,
+          access_scope: [
+            "read integration capabilities",
+            "save agricultural market research drafts",
+            "list and retrieve those drafts",
+          ],
+          protected_resources: [
+            "production product catalog",
+            "farmer identities and farm records",
+            "orders, payments, and marketplace publication",
+          ],
+        }),
+      }],
+    };
+  },
 );
 
 mcp.tool(
@@ -244,7 +264,19 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    const response = await mcpHandler(req);
+    let mcpRequest = req;
+    if (req.method === "POST") {
+      const body = await req.arrayBuffer();
+      if (body.byteLength > MAX_REQUEST_BYTES) {
+        return jsonResponse(413, { ok: false, error: "REQUEST_TOO_LARGE" });
+      }
+      mcpRequest = new Request(req.url, {
+        method: req.method,
+        headers: req.headers,
+        body,
+      });
+    }
+    const response = await mcpHandler(mcpRequest);
     const headers = new Headers(response.headers);
     headers.set("cache-control", "no-store");
     return new Response(response.body, { status: response.status, headers });
