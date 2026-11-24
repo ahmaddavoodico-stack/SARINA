@@ -67,10 +67,31 @@ Deno.serve(async (req: Request) => {
     return reply(401, { ok: false, code: "SIGNATURE_EXPIRED" });
   }
 
-  const rawBody = await req.text();
-  if (new TextEncoder().encode(rawBody).byteLength > MAX_BODY_BYTES) {
+  const declaredLength = Number(req.headers.get("content-length") ?? "0");
+  if (Number.isFinite(declaredLength) && declaredLength > MAX_BODY_BYTES) {
     return reply(413, { ok: false, code: "PAYLOAD_TOO_LARGE" });
   }
+  if (!req.body) return reply(400, { ok: false, code: "EMPTY_BODY" });
+  const reader = req.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let totalBytes = 0;
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    totalBytes += value.byteLength;
+    if (totalBytes > MAX_BODY_BYTES) {
+      await reader.cancel();
+      return reply(413, { ok: false, code: "PAYLOAD_TOO_LARGE" });
+    }
+    chunks.push(value);
+  }
+  const rawBytes = new Uint8Array(totalBytes);
+  let offset = 0;
+  for (const chunk of chunks) {
+    rawBytes.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  const rawBody = new TextDecoder().decode(rawBytes);
   let valid = false;
   try {
     valid = await verifySignature(secret, timestamp, rawBody, signature);
