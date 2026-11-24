@@ -1,0 +1,26 @@
+name: SARINA Manus MCP checks
+
+on:
+  pull_request:
+    paths:
+      - "supabase/functions/sarina-manus-mcp/**"
+      - "supabase/migrations/*sarina_manus_direct_mcp*"
+      - ".github/workflows/sarina-manus-mcp.yml"
+  push:
+    branches:
+      - "feature/sarina-manus-mcp-direct"
+    paths:
+      - "supabase/functions/sarina-manus-mcp/**"
+      - "supabase/migrations/*sarina_manus_direct_mcp*"
+      - ".github/workflows/sarina-manus-mcp.yml"
+
+jobs:
+  deno-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Type-check direct Manus MCP Edge Function
+        run: deno check --config supabase/functions/sarina-manus-mcp/deno.json supabase/functions/sarina-manus-mcp/index.ts
