@@ -52,7 +52,7 @@ mcp.tool(
   "sarina_connection_check",
   {
     description: "Check that Manus can reach the authenticated SARINA integration gateway. Does not access farmer or production business data.",
-    inputSchema: z.object({}),,
+    inputSchema: z.object({}),
     handler: async () => {
     const databaseConfigured = Boolean(
       Deno.env.get("SUPABASE_URL") && Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")
@@ -103,7 +103,7 @@ mcp.tool(
   "sarina_integration_capabilities",
   {
     description: "Describe the limited actions available to Manus through SARINA.",
-    inputSchema: z.object({}),,
+    inputSchema: z.object({}),
     handler: async () => ({
     content: [{
       type: "text",
@@ -151,7 +151,7 @@ mcp.tool(
       findings: z.array(z.string().min(1).max(1500)).max(30),
       sources: z.array(sourceSchema).max(30),
       recommendations: z.array(z.string().min(1).max(1500)).max(20),
-    }),,
+    }),
     handler: async (args) => {
     try {
       const supabase = getAdminClient();
@@ -192,7 +192,7 @@ mcp.tool(
   "list_market_research_drafts",
   {
     description: "List recent private market research drafts submitted through the Manus integration.",
-    inputSchema: z.object({ limit: z.number().int().min(1).max(50).default(20) }),,
+    inputSchema: z.object({ limit: z.number().int().min(1).max(50).default(20) }),
     handler: async ({ limit }) => {
     try {
       const { data, error } = await getAdminClient()
@@ -214,7 +214,7 @@ mcp.tool(
   "get_market_research_draft",
   {
     description: "Retrieve one private market research draft by its SARINA draft ID.",
-    inputSchema: z.object({ draft_id: z.string().uuid() }),,
+    inputSchema: z.object({ draft_id: z.string().uuid() }),
     handler: async ({ draft_id }) => {
     try {
       const { data, error } = await getAdminClient()
