@@ -1,6 +1,6 @@
 # SARINA Self-hosted Voice Runtime
 
-This service provides Persian speech-to-text and text-to-speech on SARINA-controlled compute. It does not call an external AI inference API.
+This service provides multilingual Persian and Arabic speech-to-text, plus Persian and Arabic text-to-speech, on SARINA-controlled compute. It does not call an external AI inference API.
 
 ## Components
 
