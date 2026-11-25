@@ -45,6 +45,10 @@ The service enforces audio-size and duration limits, a single inference slot for
 
 The default configuration targets a modest CPU server: Whisper small / INT8, four CPU threads, one inference at a time, and a Piper medium voice. This is a starting point, not a performance guarantee. Benchmark latency, peak RAM, concurrent requests, and Persian accuracy on the actual SARINA host before enabling it for users.
 
-## Important integration boundary
+## Conversation scope
 
-The repository currently has no mounted general-purpose SARINA AI chat workspace for either farmer or administrator. Do not mount these controls into the farmer-specialist consultation inbox: that is a separate human-to-human workflow. The React voice controls are reusable and should be embedded in the shared AI chat composer for both roles once that chat workspace is implemented. No database migration, storage policy change, Edge Function deployment, or production server change is included here.
+The voice runtime serves three roles: farmers, administrators, and assigned verified specialists. Farmer and administrator voice belongs in the unified SARINA AI chat. Farmer–specialist voice notes belong in the existing human consultation thread and must remain separate from the AI assistant history. The specialist workflow uses asynchronous recorded voice notes, not live calling.
+
+The React controls are reusable across these composers. The parent conversation must upload audio to SARINA's private, participant-scoped storage, persist a message descriptor in the existing conversation store, and render authenticated playback. Do not expose public audio URLs or let the voice runtime write directly to consultation tables. The runtime only performs STT/TTS.
+
+The repository's current chat UI does not yet render voice payloads end-to-end. Existing voice-note SQL and storage policies must be verified against the active migration history and current database before relying on them. No database migration, storage policy change, Edge Function deployment, or production server change is included here.
