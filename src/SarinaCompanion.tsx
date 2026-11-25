@@ -3,6 +3,7 @@ import type {FormEvent} from "react";
 import {ArrowUp,ChevronDown,ChevronLeft,CircleHelp,ClipboardList,Leaf,MessageCircle,PlayCircle,Sparkles,UserRound,X,PanelRightClose,PanelRightOpen} from "lucide-react";
 import {supabase} from "./lib/supabase";
 import SarinaCharacter from "./components/SarinaCharacter";
+import PwaInstall from "./PwaInstall";
 
 type ChatMessage={id:number;role:"farmer"|"sarina";text:string};
 type NavTarget="learning"|"experts"|"expert-chat";
@@ -53,6 +54,7 @@ export default function SarinaCompanion({isAdmin=false,onNavigate}:SarinaCompani
     <div className="sarina-guide-highlight"><span className="sarina-guide-leaf"><Leaf size={22}/></span><b>به SARINA خوش آمدید</b><p>با چند راهنمای کوتاه، بدون نیاز به پرسش‌های پیچیده شروع کنید.</p></div>
     <div className="sarina-guide-list">{guideItems.map(item=><button key={item.title} type="button" onClick={()=>go(item.target)}><item.icon size={19}/><span><b>{item.title}</b><small>{item.description}</small></span><ChevronLeft size={15}/></button>)}</div>
     <div className="sarina-guide-contact"><span>راه‌های ارتباطی</span><button type="button" onClick={()=>setDrawerOpen(false)}><Leaf size={18}/><span><b>گفت‌وگو با سارینا</b><small>راهنمایی اولیه و پرسش‌های شما</small></span></button><button type="button" onClick={()=>go("experts")}><UserRound size={18}/><span><b>ارتباط با متخصص</b><small>مشاوره تخصصی و انسانی</small></span><ChevronLeft size={15}/></button></div>
+    <PwaInstall/>
     <button className="sarina-guide-collapse" type="button" onClick={()=>setDrawerOpen(false)}><ChevronDown size={15}/> بستن پنل راهنما</button>
    </aside>}
    <div className="sarina-chat-main">
