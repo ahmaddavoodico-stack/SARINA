@@ -57,7 +57,7 @@ export default function FarmerStoreWorkspace({userId,enabled}:{userId:string;ena
   e.preventDefault();if(!supabase||!enabled)return;
   setBusy(true);setError("");setNotice("");
   try{
-   const {error}=await db.from("marketplace_sellers").insert({seller_type:"farmer",owner_user_id:userId,display_name:sellerForm.display_name.trim(),description:sellerForm.description.trim()||null,country_code:sellerForm.country_code.trim().toUpperCase()||null,region:sellerForm.region.trim()||null,city:sellerForm.city.trim()||null,contact_email:sellerForm.contact_email.trim()||null,contact_phone:sellerForm.contact_phone.trim()||null,verification_status:"pending"}).select("id").single();
+   const {error}=await db.from("marketplace_sellers").insert({seller_type:"farmer",owner_user_id:userId,display_name:sellerForm.display_name.trim(),description:sellerForm.description.trim()||null,country_code:sellerForm.country_code.trim().toUpperCase()||null,region:sellerForm.region.trim()||null,city:sellerForm.city.trim()||null,contact_email:sellerForm.contact_email.trim()||null,contact_phone:sellerForm.contact_phone.trim()||null}).select("id").single();
    if(error)throw error;
    setNotice("درخواست ایجاد فروشگاه ثبت شد. پس از بررسی و تأیید فروشنده، امکان انتشار محصولات فعال می‌شود.");
    await load();
