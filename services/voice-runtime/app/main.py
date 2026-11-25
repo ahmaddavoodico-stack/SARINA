@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Any
 
 import httpx
-from fastapi import Depends, FastAPI, File, Header, HTTPException, UploadFile
+from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
@@ -23,7 +23,8 @@ WHISPER_MODEL_NAME = os.getenv("WHISPER_MODEL", "small")
 WHISPER_DEVICE = os.getenv("WHISPER_DEVICE", "cpu")
 WHISPER_COMPUTE_TYPE = os.getenv("WHISPER_COMPUTE_TYPE", "int8")
 WHISPER_CPU_THREADS = int(os.getenv("WHISPER_CPU_THREADS", "4"))
-PIPER_MODEL_PATH = Path(os.getenv("PIPER_MODEL_PATH", "/models/fa_IR-amir-medium.onnx"))
+PIPER_FA_MODEL_PATH = Path(os.getenv("PIPER_FA_MODEL_PATH", os.getenv("PIPER_MODEL_PATH", "/models/piper/fa_IR-amir-medium.onnx")))
+PIPER_AR_MODEL_PATH = Path(os.getenv("PIPER_AR_MODEL_PATH", "/models/piper/ar_JO-kareem-medium.onnx"))
 PIPER_EXECUTABLE = os.getenv("PIPER_EXECUTABLE", "piper")
 SUPABASE_URL = os.getenv("SUPABASE_URL", "").rstrip("/")
 SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY", "")
@@ -108,11 +109,11 @@ def _probe_audio_duration(path: str) -> float:
     return duration
 
 
-def _transcribe_file(path: str) -> dict[str, Any]:
+def _transcribe_file(path: str, language_hint: str | None = None) -> dict[str, Any]:
     model = _get_whisper_model()
     segments, info = model.transcribe(
         path,
-        language=None,
+        language=language_hint,
         beam_size=3,
         vad_filter=True,
         condition_on_previous_text=False,
@@ -132,9 +133,9 @@ def _transcribe_file(path: str) -> dict[str, Any]:
     }
 
 
-def _synthesize_file(text: str, output_path: str) -> None:
-    if not PIPER_MODEL_PATH.is_file():
-        raise RuntimeError("Persian Piper voice model is not installed")
+def _synthesize_file(text: str, output_path: str, model_path: Path) -> None:
+    if not model_path.is_file():
+        raise RuntimeError("Piper voice model is not installed: " + model_path.name)
     command = [
         PIPER_EXECUTABLE,
         "--model",
@@ -164,7 +165,8 @@ async def health() -> dict[str, Any]:
         "speech_to_text": "faster-whisper",
         "text_to_speech": "piper",
         "whisper_model_loaded": _whisper_model is not None,
-        "piper_model_configured": PIPER_MODEL_PATH.is_file(),
+        "piper_models_configured": {"fa": PIPER_FA_MODEL_PATH.is_file(), "ar": PIPER_AR_MODEL_PATH.is_file()},
+        "whisper_languages": ["fa", "ar", "auto"],
         "execution": "local",
     }
 
@@ -172,9 +174,15 @@ async def health() -> dict[str, Any]:
 @app.post("/v1/transcribe")
 async def transcribe(
     file: UploadFile = File(...),
+    language: str = Form(default="auto"),
     user: dict[str, Any] = Depends(require_authenticated_user),
 ) -> dict[str, Any]:
     del user
+    language_hint = language.strip().lower()
+    if language_hint not in {"auto", "fa", "ar"}:
+        raise HTTPException(status_code=422, detail="Language must be auto, fa, or ar")
+    if language_hint == "auto":
+        language_hint = None
     content_type = (file.content_type or "").split(";")[0].lower()
     allowed_types = {
         "audio/webm",
@@ -219,7 +227,7 @@ async def transcribe(
             raise HTTPException(status_code=429, detail="Voice service is busy; retry shortly") from exc
         try:
             try:
-                result = await asyncio.to_thread(_transcribe_file, temp_path)
+                result = await asyncio.to_thread(_transcribe_file, temp_path, language_hint)
             except Exception as exc:
                 raise HTTPException(status_code=503, detail="Speech recognition is temporarily unavailable") from exc
         finally:
@@ -238,8 +246,13 @@ async def synthesize(
     user: dict[str, Any] = Depends(require_authenticated_user),
 ) -> FileResponse:
     del user
-    if payload.language not in {"fa", "fa-IR", "fa_IR"}:
-        raise HTTPException(status_code=422, detail="Only Persian synthesis is enabled in this release")
+    language = payload.language.strip().lower().replace("_", "-")
+    if language in {"fa", "fa-ir"}:
+        voice_model = PIPER_FA_MODEL_PATH
+    elif language in {"ar", "ar-jo"}:
+        voice_model = PIPER_AR_MODEL_PATH
+    else:
+        raise HTTPException(status_code=422, detail="Supported synthesis languages are fa and ar")
 
     output_path: str | None = None
     try:
@@ -250,7 +263,7 @@ async def synthesize(
         except TimeoutError as exc:
             raise HTTPException(status_code=429, detail="Voice service is busy; retry shortly") from exc
         try:
-            await asyncio.to_thread(_synthesize_file, payload.text.strip(), output_path)
+            await asyncio.to_thread(_synthesize_file, payload.text.strip(), output_path, voice_model)
         finally:
             _inference_lock.release()
         return FileResponse(
