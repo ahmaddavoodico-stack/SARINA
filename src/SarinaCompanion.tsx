@@ -102,7 +102,7 @@ export default function SarinaCompanion({isAdmin=false,onNavigate}:SarinaCompani
     </header>
     <div className="sarina-chat-body">
      <div className="sarina-welcome-message"><span className="sarina-sparkle"><Sparkles size={15}/></span><strong>سلام! به SARINA خوش آمدید 🌱</strong><p>{isAdmin?"من نقش مدیر مرکزی شما را می‌شناسم. می‌توانم درباره کاربران، نقش‌ها، درخواست‌ها و وضعیت سامانه کمک کنم؛ لازم نیست اطلاعات مزرعه شخصی‌تان را وارد کنید.":"من همراه کشاورزی شما هستم. برای آشنایی بهتر با امکانات سارینا، می‌توانید از راهنمای سریع کنار گفتگو استفاده کنید. هیچ کشاورزی تنها نیست."}</p></div>
-     {messages.map(message=><div key={message.id} className={"sarina-message "+(message.role==="farmer"?"from-farmer":"from-sarina")}>{message.audioUrl&&<audio controls preload="metadata" src={message.audioUrl} aria-label="پخش پیام صوتی"/>}{message.text}</div>)}
+     {messages.map(message=><div key={message.id} className={"sarina-message "+(message.role==="farmer"?"from-farmer":"from-sarina")}><b className="sarina-message-sender">{message.role==="farmer"?"شما":"SARINA"}</b>{message.audioUrl&&<audio controls preload="metadata" src={message.audioUrl} aria-label={"پیام صوتی از "+(message.role==="farmer"?"شما":"SARINA")}/ >}{message.text}</div>)}
      {showNotice&&<div className="sarina-prototype-note">پیامت در این پیش‌نمایش ثبت شد. اتصال پاسخ‌گوی هوشمند برای این نقش هنوز فعال نشده است.</div>}
      {status&&<div className="sarina-prototype-note" role="status">{status}</div>}
     </div>
