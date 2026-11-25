@@ -4,7 +4,10 @@ on:
     branches: [main]
     paths:
       - "supabase/functions/sarina-central-intelligence/**"
+      - "supabase/functions/sai-evidence-assembler/**"
+      - "src/lib/sai/**"
       - "supabase/functions/sarina-admin-chat/**"
+      - "deno.json"
       - "supabase/functions/specialist-case-preparation/**"
       - "supabase/migrations/*siacp*"
       - ".github/workflows/sci-contract-tests.yml"
@@ -28,5 +31,7 @@ jobs:
           deno-version: v2.x
       - name: Type-check SCI and specialist preparation Edge Functions
         run: deno check supabase/functions/sarina-central-intelligence/_shared/sci-contract.ts supabase/functions/sarina-central-intelligence/_shared/siacp-security.ts supabase/functions/sarina-central-intelligence/_shared/provider-adapter.ts supabase/functions/sarina-central-intelligence/_shared/specialist-preparation.ts supabase/functions/sarina-central-intelligence/_shared/local-model-adapter.ts supabase/functions/sarina-central-intelligence/_shared/local-ai-routing.ts supabase/functions/sarina-central-intelligence/_shared/groq-provider-adapter.ts supabase/functions/sarina-central-intelligence/_shared/task-orchestrator.ts supabase/functions/sarina-central-intelligence/_shared/task-lifecycle.ts supabase/functions/sarina-central-intelligence/_shared/sci-dry-run.ts supabase/functions/sarina-central-intelligence/index.ts supabase/functions/sarina-admin-chat/_shared/admin-chat.ts supabase/functions/sarina-admin-chat/index.ts supabase/functions/specialist-case-preparation/index.ts
-      - name: Test SCI and SIACP contracts
-        run: deno test --no-check supabase/functions/sarina-central-intelligence/_shared/*_test.ts supabase/functions/sarina-admin-chat/_shared/*_test.ts
+      - name: Type-check SAI evidence contract and read-only assembler
+        run: deno check src/lib/sai/evidence-contract.ts supabase/functions/sarina-central-intelligence/_shared/sai-evidence-contract_test.ts supabase/functions/sai-evidence-assembler/index.ts supabase/functions/sai-evidence-assembler/_shared/assembler.ts supabase/functions/sai-evidence-assembler/_shared/assembler_test.ts
+      - name: Test SCI, SIACP and SAI contracts
+        run: deno test --no-check supabase/functions/sarina-central-intelligence/_shared/*_test.ts supabase/functions/sarina-admin-chat/_shared/*_test.ts supabase/functions/sai-evidence-assembler/_shared/*_test.ts
