@@ -67,6 +67,13 @@ export default function SarinaCompanion({isAdmin=false,onNavigate}:SarinaCompani
   pendingVoiceIdRef.current=id;
   setStatus("پیام صوتی ضبط شد؛ در حال تبدیل محلی گفتار به متن در سرویس SARINA...");
  }
+ function receiveVoiceReplyAudio(payload:VoicePayload){
+  const latest=[...messagesRef.current].reverse().find(message=>message.role==="sarina");
+  if(!latest)return;
+  const audioUrl=URL.createObjectURL(payload.audio);
+  const next=messagesRef.current.map(message=>message.id===latest.id?{...message,audioUrl}:message);
+  commitMessages(next);
+ }
  function receiveTranscription(text:string){
   const id=pendingVoiceIdRef.current;
   const next=messagesRef.current.map(message=>message.id===id?{...message,text:"🎙 "+text}:message);
@@ -100,7 +107,7 @@ export default function SarinaCompanion({isAdmin=false,onNavigate}:SarinaCompani
      {status&&<div className="sarina-prototype-note" role="status">{status}</div>}
     </div>
     <form className={"sarina-chat-compose"+(isAdmin?" sarina-chat-compose-admin":"")} onSubmit={send}>
-     {isAdmin&&<VoiceMessageControls onVoiceMessage={receiveVoiceMessage} onTranscription={receiveTranscription} textToSpeak={latestSarinaReply} speechLanguage="fa" autoSpeak={voiceReplyPending&&!busy&&messages[messages.length-1]?.role==="sarina"} onAutoSpeakAttempt={()=>setVoiceReplyPending(false)} disabled={busy}/>}
+     {isAdmin&&<VoiceMessageControls onVoiceMessage={receiveVoiceMessage} onTranscription={receiveTranscription} textToSpeak={latestSarinaReply} speechLanguage="fa" autoGenerateAudio={voiceReplyPending&&!busy&&messages[messages.length-1]?.role==="sarina"} onVoiceReplyAudio={receiveVoiceReplyAudio} onAudioGenerationComplete={()=>setVoiceReplyPending(false)} disabled={busy}/>}
      <input value={draft} onChange={e=>setDraft(e.target.value)} placeholder="اینجا برای سارینا بنویس..." aria-label="پیام شما به سارینا" maxLength={2000} disabled={busy}/>
      <button type="submit" disabled={!draft.trim()||busy} aria-label="ارسال پیام">{busy?<span className="sarina-chat-spinner"/>:<ArrowUp size={18}/>}</button>
     </form>
