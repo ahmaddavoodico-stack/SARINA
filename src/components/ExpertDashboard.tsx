@@ -100,7 +100,7 @@ export default function ExpertDashboard({session,sarinaUserId,onLogout}:Props){
     const {error:credentialError}=await db.from("expert_credentials").insert({expert_profile_id:profileId,...credentialForm,document_ref:uploadedPath,verification_status:"pending"});
     if(credentialError)throw credentialError;
    }
-   setCredentialFile(null);setPendingProfileId(null);if(selectedFile)setShopQuestionPending(true);else setProfileSubmitted(true);
+   setCredentialFile(null);setPendingProfileId(null);if(selectedFile&&hasShop===null)setShopQuestionPending(true);else setProfileSubmitted(true);
   }catch(e){
    if(uploadedPath)await supabase.storage.from("expert-credentials").remove([uploadedPath]);
    setNotice(e instanceof Error?e.message:"ثبت پروفایل یا مدرک انجام نشد. لطفاً دوباره تلاش کنید.");
