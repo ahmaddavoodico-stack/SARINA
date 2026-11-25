@@ -67,6 +67,13 @@ export default function SarinaCompanion({isAdmin=false,onNavigate}:SarinaCompani
   pendingVoiceIdRef.current=id;
   setStatus("پیام صوتی ضبط شد؛ در حال تبدیل محلی گفتار به متن در سرویس SARINA...");
  }
+ function receiveVoiceReplyAudio(payload:VoicePayload){
+  const latest=[...messagesRef.current].reverse().find(message=>message.role==="sarina");
+  if(!latest)return;
+  const audioUrl=URL.createObjectURL(payload.audio);
+  const next=messagesRef.current.map(message=>message.id===latest.id?{...message,audioUrl}:message);
+  commitMessages(next);
+ }
  function receiveTranscription(text:string){
   const id=pendingVoiceIdRef.current;
   const next=messagesRef.current.map(message=>message.id===id?{...message,text:"🎙 "+text}:message);
@@ -95,12 +102,12 @@ export default function SarinaCompanion({isAdmin=false,onNavigate}:SarinaCompani
     </header>
     <div className="sarina-chat-body">
      <div className="sarina-welcome-message"><span className="sarina-sparkle"><Sparkles size={15}/></span><strong>سلام! به SARINA خوش آمدید 🌱</strong><p>{isAdmin?"من نقش مدیر مرکزی شما را می‌شناسم. می‌توانم درباره کاربران، نقش‌ها، درخواست‌ها و وضعیت سامانه کمک کنم؛ لازم نیست اطلاعات مزرعه شخصی‌تان را وارد کنید.":"من همراه کشاورزی شما هستم. برای آشنایی بهتر با امکانات سارینا، می‌توانید از راهنمای سریع کنار گفتگو استفاده کنید. هیچ کشاورزی تنها نیست."}</p></div>
-     {messages.map(message=><div key={message.id} className={"sarina-message "+(message.role==="farmer"?"from-farmer":"from-sarina")}>{message.audioUrl&&<audio controls preload="metadata" src={message.audioUrl} aria-label="پخش پیام صوتی"/>}{message.text}</div>)}
+     {messages.map(message=><div key={message.id} className={"sarina-message "+(message.role==="farmer"?"from-farmer":"from-sarina")}><b className="sarina-message-sender">{message.role==="farmer"?"شما":"SARINA"}</b>{message.audioUrl&&<audio controls preload="metadata" src={message.audioUrl} aria-label={"پیام صوتی از "+(message.role==="farmer"?"شما":"SARINA")}/>}{message.text}</div>)}
      {showNotice&&<div className="sarina-prototype-note">پیامت در این پیش‌نمایش ثبت شد. اتصال پاسخ‌گوی هوشمند برای این نقش هنوز فعال نشده است.</div>}
      {status&&<div className="sarina-prototype-note" role="status">{status}</div>}
     </div>
     <form className={"sarina-chat-compose"+(isAdmin?" sarina-chat-compose-admin":"")} onSubmit={send}>
-     {isAdmin&&<VoiceMessageControls onVoiceMessage={receiveVoiceMessage} onTranscription={receiveTranscription} textToSpeak={latestSarinaReply} speechLanguage="fa" autoSpeak={voiceReplyPending&&!busy&&messages[messages.length-1]?.role==="sarina"} onAutoSpeakAttempt={()=>setVoiceReplyPending(false)} disabled={busy}/>}
+     {isAdmin&&<VoiceMessageControls onVoiceMessage={receiveVoiceMessage} onTranscription={receiveTranscription} textToSpeak={latestSarinaReply} speechLanguage="fa" autoGenerateAudio={voiceReplyPending&&!busy&&messages[messages.length-1]?.role==="sarina"} onVoiceReplyAudio={receiveVoiceReplyAudio} onAudioGenerationComplete={()=>setVoiceReplyPending(false)} disabled={busy}/>}
      <input value={draft} onChange={e=>setDraft(e.target.value)} placeholder="اینجا برای سارینا بنویس..." aria-label="پیام شما به سارینا" maxLength={2000} disabled={busy}/>
      <button type="submit" disabled={!draft.trim()||busy} aria-label="ارسال پیام">{busy?<span className="sarina-chat-spinner"/>:<ArrowUp size={18}/>}</button>
     </form>
