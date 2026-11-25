@@ -1,7 +1,7 @@
 import {useEffect,useMemo,useState} from "react";
 import type {FormEvent} from "react";
 import type {Session} from "@supabase/supabase-js";
-import {Activity,ArrowLeft,ArrowRight,Bell,BookOpen,Building2,CreditCard,CalendarDays,CheckCircle2,ChevronLeft,ClipboardList,CloudSun,Home,Landmark,LogOut,Menu,MessageCircle,Plus,Search,ShieldCheck,ShoppingBag,Sprout,Tractor,TrendingUp,UserRound,Users,Sparkles,FlaskConical,HelpCircle,PanelRightClose,PanelRightOpen} from "lucide-react";
+import {Activity,ArrowLeft,ArrowRight,Bell,BookOpen,Building2,CreditCard,CalendarDays,CheckCircle2,ChevronLeft,ClipboardList,CloudSun,Home,Landmark,LogOut,Menu,MessageCircle,Plus,Search,ShieldCheck,ShoppingBag,Sprout,Tractor,TrendingUp,UserRound,Users,Sparkles,PanelRightClose,PanelRightOpen} from "lucide-react";
 import {isSupabaseConfigured,supabase} from "./lib/supabase";
 import OrganizationPortal from "./OrganizationPortal";
 import FarmWorkspace from "./FarmWorkspace";
