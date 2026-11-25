@@ -65,6 +65,7 @@ export type TaskRecord = {
   availableAt: string;
   lease?: { workerId: string; expiresAt: string };
   result?: TaskResult;
+  approvals: ApprovalRecord[];
   events: TaskEvent[];
   updatedAt: string;
 };
@@ -163,6 +164,7 @@ export class InMemoryTaskManager {
       status: "received",
       attemptCount: 0,
       availableAt: new Date(now).toISOString(),
+      approvals: [],
       events: [],
       updatedAt: new Date(now).toISOString(),
     };
@@ -295,6 +297,30 @@ export class InMemoryTaskManager {
 
   cancelTask(taskId: string, actor: string, reason: string, now = Date.now()): TaskRecord {
     return this.transition(taskId, "cancelled", actor, reason || "CANCELLED_BY_REQUEST", now);
+  }
+
+  recordApproval(taskId: string, action: ApprovalAction, approvedBy: string, confirmationId: string, now = Date.now()): TaskRecord {
+    const task = this.requireTask(taskId);
+    if (!approvedBy.trim() || approvedBy === "system" || !confirmationId.trim()) {
+      throw new TaskLifecycleError("EXPLICIT_APPROVAL_REQUIRED", "A verified human approver and confirmation reference are required.");
+    }
+    if (task.status !== "running" && task.status !== "waiting_for_human") {
+      throw new TaskLifecycleError("APPROVAL_NOT_EXPECTED", "Approval can be recorded only for an active task.");
+    }
+    if (task.approvals.some((item) => item.action === action)) {
+      throw new TaskLifecycleError("APPROVAL_ALREADY_RECORDED", "An approval for this action already exists.");
+    }
+    task.approvals.push({ action, approvedBy, approvedAt: new Date(now).toISOString(), confirmationId });
+    task.updatedAt = new Date(now).toISOString();
+    this.appendEvent(task, task.status, task.status, approvedBy, `USER_APPROVAL_RECORDED:${action}`, now);
+    return structuredClone(task);
+  }
+
+  assertActionApproved(taskId: string, action: ApprovalAction): void {
+    const task = this.requireTask(taskId);
+    if (requiresExplicitApproval(action) && !task.approvals.some((item) => item.action === action)) {
+      throw new TaskLifecycleError("EXPLICIT_APPROVAL_REQUIRED", `Explicit user approval is required for ${action}.`);
+    }
   }
 
   private requireTask(taskId: string): TaskRecord {
