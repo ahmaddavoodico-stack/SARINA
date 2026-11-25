@@ -1,5 +1,5 @@
 import {useEffect,useState} from "react";
-import {Download,Share2,Copy,Check,X} from "lucide-react";
+import {Download,Share2,X} from "lucide-react";
 
 type InstallPromptEvent=Event&{prompt:()=>Promise<void>;userChoice:Promise<{outcome:"accepted"|"dismissed"}>};
 
