@@ -1,6 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
 import { validateFarmContexts, validateSciRequest } from "./_shared/sci-contract.ts";
+import { runSciDryRun } from "./_shared/sci-dry-run.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -97,13 +98,21 @@ Deno.serve(async (req: Request) => {
     return reply(422, { ok: false, code: "FARM_CONTEXT_VALIDATION_FAILED", issues: contextIssues });
   }
 
-  // Context is now assembled and validated. Dispatch intentionally remains
-  // disabled until SIACP canonicalization/signature verification, replay
-  // protection, registered adapter configuration, and result persistence pass.
+  // Execute only the deterministic router and a synthetic in-memory worker.
+  // No real agent, model, provider, or domain side effect is invoked.
+  const requestId = crypto.randomUUID();
+  const dryRun = runSciDryRun({
+    farmId,
+    question: (body as Record<string, unknown>).question as string,
+    requestId,
+    modalities: ["text"],
+  });
   return reply(202, {
     ok: true,
-    request_id: crypto.randomUUID(),
-    status: "context_assembled_pending_signed_adapter_dispatch",
+    request_id: requestId,
+    status: "simulated_task_lifecycle_completed_or_held_for_review",
+    execution_mode: "simulated",
+    orchestration: dryRun,
     farm_access: "verified_under_caller_jwt_and_rls",
     context_manifest: {
       farm_id: farmId,
