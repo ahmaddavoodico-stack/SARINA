@@ -43,6 +43,7 @@ export default function SarinaCompanion({isAdmin=false,onNavigate}:SarinaCompani
    commitMessages([...messagesRef.current,{id:Date.now()+1,role:"sarina" as const,text:data.answer}].slice(-12));
    setStatus(`پاسخ آزمایشی از Groq · ${data.model||"مدل تأییدشده"}`);
   }catch(error){
+   setVoiceReplyPending(false);
    const code=error instanceof Error?error.message:"ADMIN_CHAT_REQUEST_FAILED";
    setStatus(code.includes("ADMIN_ACCESS_REQUIRED")?"این قابلیت فقط برای مدیر تأییدشده فعال است.":code.includes("GROQ_CHAT_KEY_MISSING")?"کلید Groq در محیط تابع سرور در دسترس نیست.":code.includes("GROQ_CHAT_HTTP_401")?"سرویس Groq کلید را نپذیرفت؛ اعتبار کلید باید بررسی شود.":code.includes("GROQ_CHAT_HTTP_429")?"سهمیه یا محدودیت درخواست Groq مانع پاسخ شد.":"ارتباط با پاسخ‌گوی آزمایشی برقرار نشد. وضعیت تابع سرور و گزارش خطا را بررسی کنید.");
   }finally{setBusy(false);}
