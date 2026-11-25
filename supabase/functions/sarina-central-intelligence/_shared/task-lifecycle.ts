@@ -210,13 +210,9 @@ export class InMemoryTaskManager {
     if (next === "running") {
       throw new TaskLifecycleError("TASK_CLAIM_REQUIRED", "Tasks must enter running through claimTask so a worker lease is acquired.");
     }
-    if (next === "running" && task.attemptCount >= task.envelope.retryPolicy.maxAttempts) {
-      throw new TaskLifecycleError("RETRY_LIMIT_REACHED", "Maximum execution attempts reached.");
-    }
     const previous = task.status;
     task.status = next;
-    if (next === "running") task.attemptCount += 1;
-    if (next !== "running") delete task.lease;
+    delete task.lease;
     task.updatedAt = new Date(now).toISOString();
     this.appendEvent(task, previous, next, actor, reason, now);
     return structuredClone(task);
