@@ -45,7 +45,7 @@ The service enforces audio-size and duration limits, a single inference slot for
 
 ## Resource profile
 
-The default configuration targets a modest CPU server: Whisper small multilingual / INT8, four CPU threads, one inference at a time, and two Piper medium voices. Arabic speech recognition supports Modern Standard Arabic and may understand regional speech with variable accuracy; the Jordanian Piper voice is not a southern-Iraqi/Khuzestani dialect voice. This is a starting point, not a performance guarantee. Benchmark latency, peak RAM, concurrent requests, and Persian accuracy on the actual SARINA host before enabling it for users.
+The default configuration targets a modest CPU server: Whisper small multilingual / INT8, four CPU threads, one inference at a time, and two Piper medium voices. Arabic speech recognition supports Modern Standard Arabic and may understand regional speech with variable accuracy; the Jordanian Piper voice is not a southern-Iraqi/Khuzestani dialect voice. This is a starting point, not a performance guarantee. Benchmark latency, peak RAM, concurrent requests, and Persian/Arabic (including local dialect and mixed-language) accuracy on the actual SARINA host before enabling it for users.
 
 ## Conversation scope
 
