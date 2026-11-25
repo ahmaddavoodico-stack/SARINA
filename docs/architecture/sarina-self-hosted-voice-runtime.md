@@ -4,7 +4,7 @@ Status: implementation foundation committed to the development branch; not deplo
 
 ## Product scope
 
-The same reusable voice controls are intended for the unified SARINA AI conversation in both farmer and administrator workspaces. The farmer-specialist consultation inbox is a separate human-to-human workflow and must not be repurposed as the AI chat.
+Voice support covers three roles and two distinct conversation types:\n- Farmer and administrator use voice in their unified SARINA AI conversation.\n- Farmers and assigned, verified specialists may exchange asynchronous voice notes inside their existing human consultation thread.\n- The specialist conversation remains separate from “Talk to SARINA”; do not merge human and AI histories or route specialist audio through the AI chat.\n\nVoice notes are asynchronous recordings in this release, not live calls or always-on microphone sessions.
 
 ## Runtime
 
@@ -40,8 +40,8 @@ The parent chat must persist the audio in private storage and link it to the aut
 1. Install the service on a SARINA-controlled host and cache model weights.
 2. Configure exact CORS origins, Supabase Auth validation, HTTPS reverse proxy and resource limits.
 3. Benchmark Persian speech, farm noise, southern accents, CPU latency, peak memory and concurrency.
-4. Integrate the reusable control into the single AI chat composer shared by farmer and admin roles.
+4. Integrate the reusable control into the single AI chat composer shared by farmer and admin roles.\n4a. Integrate recording, private upload, message descriptors, and authenticated playback into the existing farmer–specialist consultation thread for the farmer and assigned verified specialist.
 5. Connect persisted assistant responses to the TTS playback control.
-6. Test cross-user isolation, expired tokens, unsupported media, oversize recordings, retries and mobile microphone permissions.
+6. Test farmer/specialist participant authorization, reassignment and revoked-specialist access, plus cross-user isolation, expired tokens, unsupported media, oversize recordings, retries and mobile microphone permissions.
 
 No Supabase migration, RLS change, production deployment, DNS change, server operation, or paid API was performed by this repository change.
