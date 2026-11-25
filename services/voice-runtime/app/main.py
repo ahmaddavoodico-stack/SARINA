@@ -88,6 +88,25 @@ def _get_whisper_model() -> Any:
     return _whisper_model
 
 
+def _probe_audio_duration(path: str) -> float:
+    result = subprocess.run(
+        ["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "default=noprint_wrappers=1:nokey=1", path],
+        capture_output=True,
+        text=True,
+        timeout=10,
+        check=False,
+    )
+    if result.returncode != 0:
+        raise ValueError("Audio container could not be decoded")
+    try:
+        duration = float(result.stdout.strip())
+    except (TypeError, ValueError) as exc:
+        raise ValueError("Audio duration could not be determined") from exc
+    if duration <= 0:
+        raise ValueError("Audio duration is invalid")
+    return duration
+
+
 def _transcribe_file(path: str) -> dict[str, Any]:
     model = _get_whisper_model()
     segments, info = model.transcribe(
@@ -186,15 +205,19 @@ async def transcribe(
         if total == 0:
             raise HTTPException(status_code=400, detail="Audio file is empty")
 
+        try:
+            duration = await asyncio.to_thread(_probe_audio_duration, temp_path)
+        except (ValueError, subprocess.SubprocessError) as exc:
+            raise HTTPException(status_code=400, detail="Audio file could not be decoded") from exc
+        if duration > MAX_AUDIO_SECONDS:
+            raise HTTPException(status_code=413, detail="Audio duration exceeds the allowed limit")
+
         async with _inference_lock:
             try:
                 result = await asyncio.to_thread(_transcribe_file, temp_path)
             except Exception as exc:
                 raise HTTPException(status_code=503, detail="Speech recognition is temporarily unavailable") from exc
 
-        duration = result.get("duration_seconds")
-        if isinstance(duration, (int, float)) and duration > MAX_AUDIO_SECONDS:
-            raise HTTPException(status_code=413, detail="Audio duration exceeds the allowed limit")
         return {"ok": True, **result, "processing": "local"}
     finally:
         await file.close()
