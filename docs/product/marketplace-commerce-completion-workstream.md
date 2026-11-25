@@ -204,7 +204,7 @@ The branch now restores the available applied migration sources:
 - The assertions confirmed all 19 marketplace tables have RLS enabled, the expected anonymous catalog-only read grants, no anonymous checkout/quote/cancel RPC execution, and no anon/authenticated `TRUNCATE`, `MAINTAIN`, `REFERENCES` or `TRIGGER` privileges on the marketplace tables.
 - Seller/product RLS policies, product-section helper, column grants and relevant constraints were inspected read-only.
 - The seller verification status column defaults to `pending` and is not client-insertable; the farmer seller UI therefore omits it.
-- GitHub Actions PWA build passed on head commit `0bee37bb3b70d0f66d51c9589f4a6b66809209b6` (run #1186), including farmer, specialist and company seller workspaces. Vercel preview status remains pending; no deployed preview or production release is claimed.
+- GitHub Actions PWA build passed on head commit `0bee37bb3b70d0f66d51c9589f4a6b66809209b6` (run #1186), including farmer, specialist and company seller workspaces. Vercel preview check is now successful on the latest branch head; browser E2E and production release remain unverified.
 - No authenticated browser workflow has been exercised with a real test buyer/seller account.
 
 ### Remaining release blockers
@@ -227,4 +227,6 @@ The current code is a first usable commerce workflow slice, not a production-rea
 - Important: these are **source changes only**. The migration has not been applied to live Supabase; no admin review RPC is claimed operational yet. The migration-history/source reconciliation and isolated database validation remain prerequisites. Do not approve or publish real sellers/products until the migration is reviewed, applied to a test environment, and the regression and authenticated E2E tests pass.
 - The farmer portal already exposes a dedicated “بازارگاه کشاورزی” navigation entry, and its workspace includes catalog, cart/orders, and “محصولات من” tabs. The remaining release gates are secure admin backend activation, browser E2E, and preview validation.
 
-- Follow-up build validation: GitHub Actions PWA build run #1194 passed on head `996c9a26fb1e3769b416c0e1f0d772aafab8ef3a`, including the new admin review UI and migration source. Vercel check remains pending; no preview deployment is confirmed.
+- Follow-up build validation: GitHub Actions PWA build run #1194 passed on head `996c9a26fb1e3769b416c0e1f0d772aafab8ef3a`, including the new admin review UI and migration source. Vercel check passed on the latest branch head; authenticated browser end-to-end flows remain untested.
+
+- Latest branch head `744a96c4e2581aaa6a3f5d5043da2c22e29a2207`: GitHub Actions PWA build run #1195 passed and the Vercel status check returned success. This confirms CI/preview check status only, not authenticated user acceptance or production deployment.
