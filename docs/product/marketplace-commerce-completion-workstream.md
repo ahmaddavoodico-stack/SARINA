@@ -226,3 +226,5 @@ The current code is a first usable commerce workflow slice, not a production-rea
 - Added read-only privilege regression assertions in `supabase/tests/marketplace_admin_review_privilege_regression.sql`.
 - Important: these are **source changes only**. The migration has not been applied to live Supabase; no admin review RPC is claimed operational yet. The migration-history/source reconciliation and isolated database validation remain prerequisites. Do not approve or publish real sellers/products until the migration is reviewed, applied to a test environment, and the regression and authenticated E2E tests pass.
 - The farmer portal already exposes a dedicated “بازارگاه کشاورزی” navigation entry, and its workspace includes catalog, cart/orders, and “محصولات من” tabs. The remaining release gates are secure admin backend activation, browser E2E, and preview validation.
+
+- Follow-up build validation: GitHub Actions PWA build run #1194 passed on head `996c9a26fb1e3769b416c0e1f0d772aafab8ef3a`, including the new admin review UI and migration source. Vercel check remains pending; no preview deployment is confirmed.
