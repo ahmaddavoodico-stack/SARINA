@@ -1,7 +1,7 @@
 import {useEffect,useMemo,useState} from "react";
 import type {FormEvent} from "react";
 import type {Session} from "@supabase/supabase-js";
-import {Activity,ArrowLeft,ArrowRight,Bell,BookOpen,Building2,CreditCard,CalendarDays,CheckCircle2,ChevronLeft,ClipboardList,CloudSun,Home,Landmark,LogOut,Menu,MessageCircle,Plus,Search,ShieldCheck,ShoppingBag,Sprout,Tractor,TrendingUp,UserRound,Users} from "lucide-react";
+import {Activity,ArrowLeft,ArrowRight,Bell,BookOpen,Building2,CreditCard,CalendarDays,CheckCircle2,ChevronLeft,ClipboardList,CloudSun,Home,Landmark,LogOut,Menu,MessageCircle,Plus,Search,ShieldCheck,ShoppingBag,Sprout,Tractor,TrendingUp,UserRound,Users,Sparkles,FlaskConical,HelpCircle,PanelRightClose,PanelRightOpen} from "lucide-react";
 import {isSupabaseConfigured,supabase} from "./lib/supabase";
 import OrganizationPortal from "./OrganizationPortal";
 import FarmWorkspace from "./FarmWorkspace";
@@ -140,13 +140,24 @@ return <main className="role-onboarding"><section className="role-card"><Brand/>
 function Heading({eyebrow,title,description}:{eyebrow:string;title:string;description:string}){return <div className="page-heading"><span className="eyebrow">{eyebrow}</span><h1>{title}</h1><p>{description}</p></div>}
 function HomePage({session,sarinaUserId,requests,services,loading,go}:{session:Session;sarinaUserId:string|null;requests:RequestRow[];services:Service[];loading:boolean;go:(p:Page)=>void}){
  const first=session.user.user_metadata?.full_name?.split(" ")[0]||"کشاورز عزیز";
- const[showExpertPicker,setShowExpertPicker]=useState(false);
+ const[showExpertPicker,setShowExpertPicker]=useState(false);const[showQuickTools,setShowQuickTools]=useState(false);
  const[chatRefresh,setChatRefresh]=useState(0);
  return <section className="farmer-home">
   <div className="welcome-row"><div><span className="eyebrow">امروز، فرصتی تازه برای رشد</span><h1>سلام {first}، خوش آمدید 🌱</h1><p>بیایید وضعیت مزرعه و مسیر پیشرفتتان را دنبال کنیم.</p></div><div className="weather-card"><CloudSun size={25}/><div><strong>آب‌وهوا</strong><span>پس از ثبت موقعیت مزرعه فعال می‌شود</span></div></div></div>
   <section className="farmer-sarina-hub" aria-label="گفت‌وگوی یکپارچه با سارینا و متخصص">
    <div className="farmer-sarina-first-message"><SarinaCharacter/><div><b>سلام! من سارینا هستم 🌱</b><p>من اینجام تا در مسیر مزرعه همراهت باشم. هر پرونده و متخصصی که اضافه کنی، گفت‌وگو را همین‌جا ادامه می‌دهیم.</p></div></div>
-   {sarinaUserId?<FarmerSpecialistChatInbox key={chatRefresh} userId={sarinaUserId} mode="farmer" compact afterComposer={<div className="farmer-sarina-actions"><div><strong>نیاز به همراهی تخصصی داری؟</strong><small>متخصص تأییدشده را به پرونده و همین گفت‌وگو اضافه کن.</small></div><button type="button" className="farmer-add-expert" onClick={()=>setShowExpertPicker(true)}><Users size={17}/> افزودن متخصص به گفتگو</button></div>}/> :<div className="empty-state"><MessageCircle size={28}/><strong>برای شروع گفت‌وگو، حساب کشاورز باید تکمیل شود.</strong></div>}
+   <div className={showQuickTools?"farmer-sarina-workspace tools-open":"farmer-sarina-workspace tools-closed"}>
+    <aside className="farmer-chat-tools" aria-label="امکانات و راهنمای سارینا">
+     <button type="button" className="farmer-chat-tools-toggle" aria-expanded={showQuickTools} onClick={()=>setShowQuickTools(value=>!value)} title={showQuickTools?"بستن امکانات":"باز کردن امکانات"}>{showQuickTools?<PanelRightClose size={19}/>:<PanelRightOpen size={19}/>}<span>{showQuickTools?"بستن امکانات":"امکانات"}</span></button>
+     {showQuickTools&&<div className="farmer-chat-tools-content"><div className="farmer-chat-tools-heading"><Sparkles size={18}/><div><strong>امکانات مفید</strong><small>بدون خروج از گفت‌وگو</small></div><button type="button" onClick={()=>setShowQuickTools(false)} aria-label="بستن امکانات"><PanelRightClose size={17}/></button></div>
+      <button type="button" className="farmer-chat-tool-item" onClick={()=>{go("farms");setShowQuickTools(false);}}><Sprout size={20}/><span><b>ثبت و مدیریت مزرعه</b><small>اطلاعات زمین و محصولات</small></span><ChevronLeft size={16}/></button>
+      <button type="button" className="farmer-chat-tool-item" onClick={()=>{go("weekly-plan");setShowQuickTools(false);}}><CalendarDays size={20}/><span><b>برنامه هفتگی و آبیاری</b><small>کارها و زمان‌بندی مزرعه</small></span><ChevronLeft size={16}/></button>
+      <button type="button" className="farmer-chat-tool-item" onClick={()=>{go("learning");setShowQuickTools(false);}}><BookOpen size={20}/><span><b>آموزش و راهنما</b><small>مطالب و منابع آموزشی</small></span><ChevronLeft size={16}/></button>
+      <button type="button" className="farmer-chat-tool-item" onClick={()=>{setShowExpertPicker(true);setShowQuickTools(false);}}><Users size={20}/><span><b>ارتباط با متخصص</b><small>افزودن متخصص به همین گفتگو</small></span><ChevronLeft size={16}/></button>
+     </div>}
+    </aside>
+    <div className="farmer-chat-primary">{sarinaUserId?<FarmerSpecialistChatInbox key={chatRefresh} userId={sarinaUserId} mode="farmer" compact afterComposer={<div className="farmer-sarina-actions"><div><strong>نیاز به همراهی تخصصی داری؟</strong><small>متخصص تأییدشده را به پرونده و همین گفت‌وگو اضافه کن.</small></div><button type="button" className="farmer-add-expert" onClick={()=>setShowExpertPicker(true)}><Users size={17}/> افزودن متخصص به گفتگو</button></div>}/> :<div className="empty-state"><MessageCircle size={28}/><strong>برای شروع گفت‌وگو، حساب کشاورز باید تکمیل شود.</strong></div>}</div>
+   </div>
   </section>
   {sarinaUserId&&<FarmerCreditSummaryCard userId={sarinaUserId} onOpen={()=>go("credits")}/>}
   <div className="section-title"><div><span className="eyebrow">نمای سریع</span><h2>وضعیت فضای کشاورز</h2></div><span className="live-dot">نمای حساب</span></div>
