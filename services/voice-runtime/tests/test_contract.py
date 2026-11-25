@@ -67,38 +67,30 @@ def test_whisper_uses_multilingual_mode_and_language_hint(monkeypatch):
     assert result["transcript"] == "مرحبا"
 
 
-def test_piper_uses_vendored_api_and_selected_local_voice(monkeypatch, tmp_path):
+def test_piper_uses_vendored_runner_and_selected_local_voice(monkeypatch, tmp_path):
     model_path = tmp_path / "ar_JO-kareem-medium.onnx"
     model_path.write_bytes(b"model")
     output_path = tmp_path / "speech.wav"
     calls = {}
 
-    class FakeVoice:
-        def synthesize_wav(self, text, wav_file):
-            calls["text"] = text
+    def fake_run(command, **kwargs):
+        calls["command"] = command
+        calls["input"] = kwargs["input"]
+        assert voice_runtime.PIPER_CLI_PATH.is_file()
+        model_index = command.index("--model") + 1
+        output_index = command.index("--output_file") + 1
+        assert command[model_index] == str(model_path)
+        with wave.open(command[output_index], "wb") as wav_file:
             wav_file.setnchannels(1)
             wav_file.setsampwidth(2)
             wav_file.setframerate(22050)
             wav_file.writeframes(bytes(128))
+        return SimpleNamespace(returncode=0, stderr="", stdout="")
 
-    class FakePiperVoice:
-        @staticmethod
-        def load(path, espeak_data_dir):
-            calls["path"] = Path(path)
-            calls["espeak_data_dir"] = espeak_data_dir
-            return FakeVoice()
-
-    piper_module = ModuleType("piper")
-    piper_module.PiperVoice = FakePiperVoice
-    phonemizer_module = ModuleType("piper.phonemize_espeak")
-    phonemizer_module.ESPEAK_DATA_DIR = tmp_path
-    monkeypatch.setitem(sys.modules, "piper", piper_module)
-    monkeypatch.setitem(sys.modules, "piper.phonemize_espeak", phonemizer_module)
-    monkeypatch.setattr(voice_runtime, "_piper_voices", {})
-
+    monkeypatch.setattr(voice_runtime.subprocess, "run", fake_run)
     voice_runtime._synthesize_file("مرحبا", str(output_path), model_path)
 
-    assert calls["path"] == model_path
-    assert calls["text"] == "مرحبا"
+    assert calls["input"] == "مرحبا"
+    assert str(voice_runtime.PIPER_CLI_PATH) in calls["command"]
     with wave.open(str(output_path), "rb") as wav_file:
         assert wav_file.getnframes() == 64
