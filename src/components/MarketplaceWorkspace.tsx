@@ -66,7 +66,7 @@ export default function MarketplaceWorkspace({userId}:{userId:string|null}){
    setError(err instanceof Error?err.message:"دریافت اطلاعات بازارگاه با مشکل روبه‌رو شد.");
   }finally{setLoading(false);}
  }
- useEffect(()=>{void load();},[]);
+ useEffect(()=>{if(view==="catalog")void load();},[view]);
  const visibleCategories=useMemo(()=>categories.filter(item=>item.market_section===section),[categories,section]);
  const visibleProducts=useMemo(()=>products.filter(item=>item.market_section===section&&(categoryId==="all"||item.category_id===categoryId)&&[item.name,item.description,item.origin_country,item.origin_region].filter(Boolean).join(" ").toLocaleLowerCase().includes(search.trim().toLocaleLowerCase())),[products,section,categoryId,search,categories]);
  const categoryNames=useMemo(()=>Object.fromEntries(categories.map(item=>[item.id,item.name_fa])),[categories]);
