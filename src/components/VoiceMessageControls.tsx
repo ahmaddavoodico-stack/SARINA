@@ -49,7 +49,8 @@ export default function VoiceMessageControls({onTranscription,onVoiceMessage,tex
 
   async function startRecording(){
     setNotice("");
-    if(!onVoiceMessage){setNotice("ذخیره پیام صوتی در این گفتگو هنوز فعال نشده است.");return;}\n    if(!apiBase){setNotice("سرویس صوتی SARINA هنوز به این محیط متصل نشده است.");return;}
+    if(!onVoiceMessage){setNotice("ذخیره پیام صوتی در این گفتگو هنوز فعال نشده است.");return;}
+    if(!apiBase){setNotice("سرویس صوتی SARINA هنوز به این محیط متصل نشده است.");return;}
     if(!navigator.mediaDevices?.getUserMedia||typeof MediaRecorder==="undefined"){setNotice("مرورگر این دستگاه امکان ضبط صدا را فراهم نمی‌کند.");return;}
     try{
       const stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}});
