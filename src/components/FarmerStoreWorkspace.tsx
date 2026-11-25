@@ -7,16 +7,19 @@ type Seller={id:string;display_name:string;description:string|null;country_code:
 type Category={id:string;code:string;name_fa:string;market_section:string};
 type Product={id:string;name:string;description:string|null;category_id:string;status:string;pricing_model:string;price:number|string|null;currency:string;unit_label:string;minimum_order_qty:number|string;stock_qty:number|string|null;image_urls:unknown;specifications:Record<string,unknown>;origin_country:string|null;origin_region:string|null;quality_grade:string|null;harvest_at:string|null;created_at:string};
 type Order={id:string;order_number:string;status:string;payment_status:string;fulfillment_status:string;total_amount:number|string;currency:string;placed_at:string};
+type Quote={id:string;product_id:string|null;quantity:number|string|null;unit_label:string|null;message:string;status:string;seller_response:string|null;created_at:string};
 
 const db=supabase as any;
 const currencyLabels:Record<string,string>={IRR:"ریال",USD:"دلار",EUR:"یورو",AED:"درهم",TRY:"لیر",AZN:"منات"};
-const statusLabels:Record<string,string>={pending:"در انتظار بررسی",verified:"تأییدشده",rejected:"نیازمند اصلاح",suspended:"تعلیق‌شده",draft:"پیش‌نویس",published:"منتشرشده",archived:"بایگانی‌شده",awaiting_payment:"در انتظار پرداخت",paid:"پرداخت‌شده",cancelled:"لغوشده",processing:"در حال آماده‌سازی",shipped:"ارسال‌شده",delivered:"تحویل‌شده"};
+const statusLabels:Record<string,string>={pending:"در انتظار بررسی",verified:"تأییدشده",rejected:"نیازمند اصلاح",suspended:"تعلیق‌شده",draft:"پیش‌نویس",published:"منتشرشده",archived:"بایگانی‌شده",open:"در انتظار پاسخ",responded:"پاسخ داده‌شده",declined:"ردشده",closed:"بسته‌شده",awaiting_payment:"در انتظار پرداخت",paid:"پرداخت‌شده",cancelled:"لغوشده",processing:"در حال آماده‌سازی",shipped:"ارسال‌شده",delivered:"تحویل‌شده"};
 
 export default function FarmerStoreWorkspace({userId,enabled}:{userId:string;enabled:boolean}){
  const [seller,setSeller]=useState<Seller|null>(null);
  const [categories,setCategories]=useState<Category[]>([]);
  const [products,setProducts]=useState<Product[]>([]);
  const [orders,setOrders]=useState<Order[]>([]);
+ const [quotes,setQuotes]=useState<Quote[]>([]);
+ const [quoteDrafts,setQuoteDrafts]=useState<Record<string,string>>({});
  const [loading,setLoading]=useState(true);
  const [busy,setBusy]=useState(false);
  const [error,setError]=useState("");
@@ -38,13 +41,14 @@ export default function FarmerStoreWorkspace({userId,enabled}:{userId:string;ena
    setCategories((cats.data||[]) as Category[]);
    if(own.data){
     setSellerForm({display_name:own.data.display_name||"",description:own.data.description||"",country_code:own.data.country_code||"",region:own.data.region||"",city:own.data.city||"",contact_email:own.data.contact_email||"",contact_phone:own.data.contact_phone||""});
-    const [p,o]=await Promise.all([
+    const [p,o,q]=await Promise.all([
      db.from("marketplace_products").select("id,name,description,category_id,status,pricing_model,price,currency,unit_label,minimum_order_qty,stock_qty,image_urls,specifications,origin_country,origin_region,quality_grade,harvest_at,created_at").eq("seller_id",own.data.id).order("created_at",{ascending:false}).limit(100),
-     db.from("marketplace_orders").select("id,order_number,status,payment_status,fulfillment_status,total_amount,currency,placed_at").eq("seller_id",own.data.id).order("placed_at",{ascending:false}).limit(50)
+     db.from("marketplace_orders").select("id,order_number,status,payment_status,fulfillment_status,total_amount,currency,placed_at").eq("seller_id",own.data.id).order("placed_at",{ascending:false}).limit(50),
+     db.from("marketplace_quote_requests").select("id,product_id,quantity,unit_label,message,status,seller_response,created_at").eq("seller_id",own.data.id).order("created_at",{ascending:false}).limit(50)
     ]);
-    if(p.error)throw p.error;if(o.error)throw o.error;
-    setProducts((p.data||[]) as Product[]);setOrders((o.data||[]) as Order[]);
-   }else{setProducts([]);setOrders([]);}
+    if(p.error)throw p.error;if(o.error)throw o.error;if(q.error)throw q.error;
+    setProducts((p.data||[]) as Product[]);setOrders((o.data||[]) as Order[]);setQuotes((q.data||[]) as Quote[]);
+   }else{setProducts([]);setOrders([]);setQuotes([]);}
   }catch(e){setError(e instanceof Error?e.message:"دریافت اطلاعات فروشگاه انجام نشد.");}
   finally{setLoading(false);}
  },[userId]);
@@ -89,6 +93,16 @@ export default function FarmerStoreWorkspace({userId,enabled}:{userId:string;ena
   const image=Array.isArray(product.image_urls)?product.image_urls.find(x=>typeof x==="string") as string|undefined:"";
   setEditingProductId(product.id);setProductForm({name:product.name,description:product.description||"",category_id:product.category_id,pricing_model:product.pricing_model,price:product.price===null?"":String(product.price),currency:product.currency,unit_label:product.unit_label,minimum_order_qty:String(product.minimum_order_qty),stock_qty:product.stock_qty===null?"":String(product.stock_qty),image_url:image||"",origin_country:product.origin_country||"",origin_region:product.origin_region||"",quality_grade:product.quality_grade||"",harvest_at:product.harvest_at||"",variety:typeof product.specifications?.variety==="string"?product.specifications.variety:""});setShowProductForm(true);
  }
+ async function respondToQuote(quote:Quote,decision:"responded"|"declined"){
+  if(!supabase||!seller)return;
+  const response=(quoteDrafts[quote.id]||"").trim();
+  if(decision==="responded"&&response.length<3){setError("برای پاسخ به درخواست، توضیح کوتاهی بنویسید.");return;}
+  setBusy(true);setError("");setNotice("");
+  try{const {error}=await db.from("marketplace_quote_requests").update({status:decision,seller_response:response||null}).eq("id",quote.id).eq("seller_id",seller.id);if(error)throw error;setNotice(decision==="responded"?"پاسخ قیمت برای خریدار ثبت شد.":"درخواست قیمت رد شد.");await load();}
+  catch(e){setError(e instanceof Error?e.message:"ثبت پاسخ درخواست قیمت انجام نشد.");}
+  finally{setBusy(false);}
+ }
+
  async function updateProductStatus(product:Product,status:"published"|"draft"){
   if(!supabase||!seller)return;
   setBusy(true);setError("");setNotice("");
@@ -134,6 +148,8 @@ export default function FarmerStoreWorkspace({userId,enabled}:{userId:string;ena
     <button type="submit" disabled={busy||!categories.length}>{busy?"در حال ذخیره...":editingProductId?"ذخیره تغییرات":"ذخیره پیش‌نویس محصول"}</button>
    </form>}
    <div className="specialist-store-list">{products.map(p=><article key={p.id}><div><strong>{p.name}</strong><p>{p.description||"بدون توضیحات"} · {p.pricing_model==="request_quote"?"قیمت با استعلام":Number(p.price||0).toLocaleString("fa-IR")+" "+(currencyLabels[p.currency]||p.currency)} / {p.unit_label}</p><small>{[p.origin_region,p.origin_country,p.quality_grade].filter(Boolean).join(" · ")}</small><small>{statusLabels[p.status]||p.status} · {new Date(p.created_at).toLocaleDateString("fa-IR")}</small></div><div className="specialist-store-row-actions"><button type="button" disabled={busy} onClick={()=>editProduct(p)}>ویرایش</button>{p.status==="published"?<button type="button" disabled={busy} onClick={()=>void updateProductStatus(p,"draft")}>بازگردانی به پیش‌نویس</button>:<button type="button" disabled={busy||!verified} title={!verified?"انتشار پس از تأیید فروشنده فعال می‌شود":""} onClick={()=>void updateProductStatus(p,"published")}>انتشار در بازارگاه</button>}</div></article>)}{products.length===0&&<div className="specialist-store-empty">هنوز محصولی ثبت نشده است. می‌توانید اولین محصول را به‌صورت پیش‌نویس اضافه کنید.</div>}</div>
+   <div className="specialist-store-actions"><div><h3>درخواست‌های قیمت</h3><p>پاسخ شما برای خریدار در بخش سبد و سفارش‌های او نمایش داده می‌شود.</p></div></div>
+   <div className="specialist-store-quotes">{quotes.map(q=><article key={q.id}><div><strong>{products.find(p=>p.id===q.product_id)?.name||"درخواست عمومی قیمت"}</strong><small>{new Date(q.created_at).toLocaleDateString("fa-IR")} · {statusLabels[q.status]||q.status}</small></div><p>{q.message}</p>{q.quantity&&<small>مقدار درخواستی: {Number(q.quantity).toLocaleString("fa-IR")} {q.unit_label||""}</small>}{q.status==="open"?<><textarea rows={2} value={quoteDrafts[q.id]||""} onChange={e=>setQuoteDrafts({...quoteDrafts,[q.id]:e.target.value})} placeholder="قیمت پیشنهادی، شرایط عرضه و زمان تحویل را بنویسید."/><div className="specialist-store-row-actions"><button type="button" disabled={busy} onClick={()=>void respondToQuote(q,"responded")}>ارسال پاسخ</button><button type="button" disabled={busy} onClick={()=>void respondToQuote(q,"declined")}>رد درخواست</button></div></>:q.seller_response&&<p className="specialist-store-quote-response">{q.seller_response}</p>}</article>)}{quotes.length===0&&<div className="specialist-store-empty">هنوز درخواست استعلام قیمتی دریافت نکرده‌اید.</div>}</div>
    <div className="specialist-store-actions"><div><h3><Truck size={18}/> سفارش‌های دریافتی</h3><p>سفارش‌های مربوط به فروشگاه شما پس از ثبت توسط خریداران در این بخش دیده می‌شوند.</p></div></div>
    <div className="specialist-store-list">{orders.map(o=><article key={o.id}><div><strong>سفارش {o.order_number}</strong><p>{Number(o.total_amount).toLocaleString("fa-IR")} {currencyLabels[o.currency]||o.currency}</p><small>{statusLabels[o.status]||o.status} · پرداخت: {statusLabels[o.payment_status]||o.payment_status} · {new Date(o.placed_at).toLocaleDateString("fa-IR")}</small></div></article>)}{orders.length===0&&<div className="specialist-store-empty">هنوز سفارشی برای این فروشگاه ثبت نشده است.</div>}</div>
   </>}
