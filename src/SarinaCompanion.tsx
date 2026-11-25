@@ -1,6 +1,6 @@
 import {useState} from "react";
 import type {FormEvent} from "react";
-import {ArrowUp,BookOpen,ChevronDown,ChevronLeft,CircleHelp,ClipboardList,Leaf,MessageCircle,PlayCircle,Sparkles,UserRound,X,PanelRightClose,PanelRightOpen} from "lucide-react";
+import {ArrowUp,ChevronDown,ChevronLeft,CircleHelp,ClipboardList,Leaf,MessageCircle,PlayCircle,Sparkles,UserRound,X,PanelRightClose,PanelRightOpen} from "lucide-react";
 import {supabase} from "./lib/supabase";
 import SarinaCharacter from "./components/SarinaCharacter";
 
