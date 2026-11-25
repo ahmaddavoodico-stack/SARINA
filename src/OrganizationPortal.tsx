@@ -1,8 +1,9 @@
 import {useEffect,useState} from "react";
 import type {ChangeEvent} from "react";
 import type {Session} from "@supabase/supabase-js";
-import {ArrowLeft,Building2,CheckCircle2,Save,ShieldCheck,UploadCloud} from "lucide-react";
+import {ArrowLeft,Building2,CheckCircle2,Save,ShieldCheck,Store,UploadCloud} from "lucide-react";
 import {supabase} from "./lib/supabase";
+import CompanyStoreWorkspace from "./components/CompanyStoreWorkspace";
 
 type Profile = {
   legal_name:string; display_name:string; organization_type:string; registration_number:string;
@@ -41,6 +42,7 @@ function toPayload(f:Profile){
 }
 export default function OrganizationPortal({session,onLogout}:{session:Session;onLogout:()=>void}){
  const [form,setForm]=useState<Profile>(empty),[percent,setPercent]=useState(0),[status,setStatus]=useState("draft"),[application,setApplication]=useState<any>(null),[busy,setBusy]=useState(false),[uploading,setUploading]=useState(false),[loading,setLoading]=useState(true),[message,setMessage]=useState("");
+ const [portalView,setPortalView]=useState<"profile"|"store">("profile");
  const locked=["under_review","verified","suspended"].includes(status);
  const statusText:Record<string,string>={draft:"پیش‌نویس؛ قابل تکمیل",needs_correction:"نیازمند اصلاح",under_review:"در حال بررسی سارینا",verified:"تأییدشده",suspended:"تعلیق‌شده"};
  async function refresh(){
@@ -96,8 +98,9 @@ export default function OrganizationPortal({session,onLogout}:{session:Session;o
  const field=(label:string,key:keyof Profile,placeholder="",type="text")=><label className="org-field">{label}<input type={type} value={form[key]} onChange={set(key)} placeholder={placeholder} disabled={locked} dir={["website_url","contact_email","latitude","longitude"].includes(key)?"ltr":"auto"}/></label>;
  if(loading)return <div className="loading-screen">در حال آماده‌سازی پنل شرکت...</div>;
  return <div className="org-shell" dir="rtl">
-  <header className="org-top"><div className="org-brand"><span><Building2/></span><div><b>SARINA</b><small>پنل سازمانی</small></div></div><div className="org-user"><span>{session.user.email}</span><button onClick={onLogout}>خروج</button></div></header>
+  <header className="org-top"><div className="org-brand"><span><Building2/></span><div><b>SARINA</b><small>پنل سازمانی</small></div></div><div className="org-user"><button type="button" onClick={()=>setPortalView(portalView==="profile"?"store":"profile")}><Store size={15}/>{portalView==="profile"?"فروشگاه سازمانی":"پروفایل سازمان"}</button><span>{session.user.email}</span><button onClick={onLogout}>خروج</button></div></header>
   <main className="org-main">
+   {portalView==="store"?<CompanyStoreWorkspace session={session}/>:<>
    <div className="org-welcome"><div><span className="eyebrow">فضای اختصاصی شرکت‌ها</span><h1>به سارینا خوش آمدید</h1><p>اطلاعات شرکت را هر زمان خواستید تکمیل کنید؛ برای آشنایی با محیط نیازی به تکمیل همه مدارک نیست.</p></div><div className="org-status"><ShieldCheck/><b>{statusText[status]||"پیش‌نویس"}</b></div></div>
    <section className="org-progress"><div><strong>تکمیل پروفایل شرکت</strong><b>{percent.toLocaleString("fa-IR")}٪</b></div><div className="org-track"><span style={{width:percent+"%"}}/></div><small>پیشرفت ذخیره می‌شود و می‌توانید بعداً از همین‌جا ادامه دهید.</small></section>
    {message&&<div className="notice">{message}</div>}
@@ -129,6 +132,7 @@ export default function OrganizationPortal({session,onLogout}:{session:Session;o
    <section className="org-section"><h2>۵. مدارک قانونی</h2><p>مدارک را می‌توانید همین حالا یا بعداً بارگذاری کنید. فایل‌ها خصوصی هستند و فقط برای بررسی سازمانی استفاده می‌شوند.</p><label className="org-field">بارگذاری مدارک (PDF، JPG، PNG)<input type="file" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" multiple disabled={locked||uploading} onChange={uploadDocuments}/></label><label className="org-field">فهرست مدارک بارگذاری‌شده<textarea value={form.legal_documents} readOnly rows={4} placeholder="پس از بارگذاری، نام و مسیر خصوصی مدارک اینجا نمایش داده می‌شود."/></label><div className="org-hint"><UploadCloud size={18}/> حداکثر حجم هر فایل ۱۰ مگابایت است. ارسال درخواست بررسی به حداقل یک مدرک بارگذاری‌شده نیاز دارد.</div></section><section className="org-gate"><ShieldCheck/><div><b>مجوز فروش پس از تأیید فعال می‌شود</b><p>ورود به پنل، آشنایی با محیط و ذخیره اطلاعات آزاد است. انتشار محصول و فروش تا تکمیل و تأیید اطلاعات و مدارک ضروری غیرفعال می‌ماند.</p></div></section>
    <div className="org-actions"><button className="primary-button" onClick={save} disabled={busy||uploading||locked}><Save size={17}/>{busy?"در حال ذخیره...":"ذخیره و ادامه در آینده"}</button><button className="org-submit" onClick={submit} disabled={busy||uploading||locked}>ارسال اطلاعات برای بررسی <ArrowLeft size={17}/></button></div>
    <footer className="org-footer">SARINA · هیچ کشاورزی تنها نیست · پنل سازمانی</footer>
+   </>}
   </main>
  </div>;
 }
