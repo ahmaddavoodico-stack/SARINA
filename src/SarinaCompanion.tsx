@@ -79,7 +79,7 @@ export default function SarinaCompanion({isAdmin=false,onNavigate}:SarinaCompani
   const next=messagesRef.current.map(message=>message.id===id?{...message,text:"🎙 "+text}:message);
   pendingVoiceIdRef.current=null;
   commitMessages(next);
-  if(isAdmin){setVoiceReplyPending(true);void requestAdminReply(next);}
+  if(isAdmin){setVoiceReplyPending(true);void requestAdminReply(next);}else{setShowNotice(true);setStatus("پیام صوتی ضبط و به متن تبدیل شد؛ پاسخ‌گویی هوشمند در گفت‌وگوی عمومی هنوز فعال نشده است.");}
  }
 
  const latestSarinaReply=[...messages].reverse().find(message=>message.role==="sarina")?.text;
@@ -107,7 +107,7 @@ export default function SarinaCompanion({isAdmin=false,onNavigate}:SarinaCompani
      {status&&<div className="sarina-prototype-note" role="status">{status}</div>}
     </div>
     <form className={"sarina-chat-compose"+(isAdmin?" sarina-chat-compose-admin":"")} onSubmit={send}>
-     {isAdmin&&<VoiceMessageControls onVoiceMessage={receiveVoiceMessage} onTranscription={receiveTranscription} textToSpeak={latestSarinaReply} speechLanguage="fa" autoGenerateAudio={voiceReplyPending&&!busy&&messages[messages.length-1]?.role==="sarina"} onVoiceReplyAudio={receiveVoiceReplyAudio} onAudioGenerationComplete={()=>setVoiceReplyPending(false)} disabled={busy}/>}
+     <VoiceMessageControls onVoiceMessage={receiveVoiceMessage} onTranscription={receiveTranscription} textToSpeak={latestSarinaReply} speechLanguage="fa" autoGenerateAudio={isAdmin&&voiceReplyPending&&!busy&&messages[messages.length-1]?.role==="sarina"} onVoiceReplyAudio={receiveVoiceReplyAudio} onAudioGenerationComplete={()=>setVoiceReplyPending(false)} disabled={busy}/>
      <input value={draft} onChange={e=>setDraft(e.target.value)} placeholder="اینجا برای سارینا بنویس..." aria-label="پیام شما به سارینا" maxLength={2000} disabled={busy}/>
      <button type="submit" disabled={!draft.trim()||busy} aria-label="ارسال پیام">{busy?<span className="sarina-chat-spinner"/>:<ArrowUp size={18}/>}</button>
     </form>
