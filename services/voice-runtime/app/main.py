@@ -41,8 +41,8 @@ def _resolve_piper_cli_path() -> Path:
 
 
 PIPER_CLI_PATH = _resolve_piper_cli_path()
-SUPABASE_URL = os.getenv("SUPABASE_URL", "").rstrip("/")
-SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY", "")
+SUPABASE_URL = os.getenv("SUPABASE_URL", os.getenv("VITE_SUPABASE_URL", "")).rstrip("/")
+SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY", os.getenv("VITE_SUPABASE_PUBLISHABLE_KEY", ""))
 CORS_ORIGINS = [item.strip() for item in os.getenv("CORS_ORIGINS", "").split(",") if item.strip()]
 
 app = FastAPI(title="SARINA Self-hosted Voice Runtime", version=APP_VERSION)
