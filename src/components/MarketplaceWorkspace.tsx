@@ -1,6 +1,7 @@
 import {useEffect,useMemo,useState} from "react";
 import {BadgeCheck,Leaf,PackageSearch,RefreshCw,Search,ShieldCheck,ShoppingBag,Store} from "lucide-react";
 import {supabase} from "../lib/supabase";
+import FarmerStoreWorkspace from "./FarmerStoreWorkspace";
 
 type Category={id:string;code:string;name_fa:string;name_en:string;market_section:string;sort_order:number};
 type Product={id:string;seller_id:string;category_id:string;market_section:string;name:string;description:string|null;specifications:Record<string,unknown>;pricing_model:string;price:number|string|null;currency:string;unit_label:string;minimum_order_qty:number|string;stock_qty:number|string|null;origin_country:string|null;origin_region:string|null;quality_grade:string|null;image_urls:unknown;regulated:boolean;regulatory_status:string;regulatory_reviewed_at:string|null;is_sarina_premium:boolean};
@@ -19,7 +20,8 @@ function formatPrice(value:number|string|null,currency:string,unit:string){
  return amount.toLocaleString("fa-IR",{maximumFractionDigits:2})+" "+(currencyLabels[currency]||currency)+" / "+unit;
 }
 
-export default function MarketplaceWorkspace(){
+export default function MarketplaceWorkspace({userId}:{userId:string|null}){
+ const[view,setView]=useState<"catalog"|"my-store">("catalog");
  const[categories,setCategories]=useState<Category[]>([]);
  const[products,setProducts]=useState<Product[]>([]);
  const[sellers,setSellers]=useState<Record<string,Seller>>({});
@@ -65,6 +67,11 @@ export default function MarketplaceWorkspace(){
 
  function changeSection(next:"farmer_products"|"company_supplies"){setSection(next);setCategoryId("all");setSearch("");}
  return <section className="marketplace-workspace" dir="rtl">
+  <div className="marketplace-mode-tabs" role="tablist" aria-label="بخش‌های بازارگاه">
+   <button type="button" role="tab" aria-selected={view==="catalog"} className={view==="catalog"?"active":""} onClick={()=>setView("catalog")}><ShoppingBag size={17}/>مشاهده بازارگاه</button>
+   <button type="button" role="tab" aria-selected={view==="my-store"} className={view==="my-store"?"active":""} onClick={()=>setView("my-store")}><Store size={17}/>محصولات من</button>
+  </div>
+  {view==="my-store"?<FarmerStoreWorkspace userId={userId||""} enabled={Boolean(userId)}/>:<>
   <div className="marketplace-heading">
    <div><span className="marketplace-eyebrow">بازار مطمئن کشاورزی</span><h1>بازارگاه SARINA</h1><p>محصولات کشاورزان و نهاده‌های تأمین‌کنندگان را در یک فضای شفاف ببینید.</p></div>
    <button className="marketplace-refresh" type="button" onClick={()=>void load()} disabled={loading}><RefreshCw size={16}/>{loading?"در حال به‌روزرسانی":"به‌روزرسانی"}</button>
