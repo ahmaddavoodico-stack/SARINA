@@ -8,11 +8,12 @@ services:
     env_file:
       - .env
     environment:
-      PIPER_MODEL_PATH: /models/piper/fa_IR-amir-medium.onnx
+      PIPER_FA_MODEL_PATH: /models/piper/fa_IR-amir-medium.onnx
+      PIPER_AR_MODEL_PATH: /models/piper/ar_JO-kareem-medium.onnx
       WHISPER_MODEL: small
       WHISPER_DEVICE: cpu
       WHISPER_COMPUTE_TYPE: int8
-      WHISPER_CPU_THREADS: 4
+      WHISPER_CPU_THREADS: 2
       HF_HOME: /models/huggingface
     volumes:
       - ./models:/models/piper:ro
@@ -27,7 +28,7 @@ services:
     tmpfs:
       - /tmp:size=256m,noexec,nosuid
     mem_limit: 5g
-    cpus: 3.5
+    cpus: 1.8
 
 volumes:
   whisper-cache:

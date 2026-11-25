@@ -1,15 +1,15 @@
 # SARINA Self-hosted Voice Runtime
 
-This service provides Persian speech-to-text and text-to-speech on SARINA-controlled compute. It does not call an external AI inference API.
+This service provides multilingual Persian and Arabic speech-to-text, plus Persian and Arabic text-to-speech, on SARINA-controlled compute. It does not call an external AI inference API.
 
 ## Components
 
 - STT: faster-whisper, CPU INT8 by default, with the multilingual `small` model.
-- TTS: Piper with the Persian `fa_IR-amir-medium` voice.
+- TTS: Piper with the Persian `fa_IR-amir-medium` voice and Arabic `ar_JO-kareem-medium` voice (Jordanian Arabic voice; not a Khuzestani dialect clone).
 - Authentication: validates the caller's existing Supabase access token against SARINA's own Supabase Auth endpoint. This is identity validation, not an AI inference provider.
 - Audio processing: runs locally in this container. Audio is held in a temporary file during transcription and removed afterward; this service does not persist recordings.
 
-The Persian Piper voice is listed in the upstream voice catalog. Its model card identifies Persian (Iran), medium quality, and a CC0 training dataset. Review the current upstream model card before redistribution. See the [voice model card](https://huggingface.co/rhasspy/piper-voices/blob/main/fa/fa_IR/amir/medium/MODEL_CARD) and [Piper voice catalog](https://github.com/rhasspy/piper/blob/master/VOICES.md).
+The Persian and Arabic voices are listed in the Piper voice catalog. Review each upstream model card and voice license before redistribution. See the [Persian voice model card](https://huggingface.co/rhasspy/piper-voices/blob/main/fa/fa_IR/amir/medium/MODEL_CARD), [Arabic voice model card](https://huggingface.co/rhasspy/piper-voices/blob/main/ar/ar_JO/kareem/medium/MODEL_CARD), and [Piper voice catalog](https://github.com/rhasspy/piper/blob/master/VOICES.md).
 
 ## First-time setup
 
@@ -19,6 +19,8 @@ The Persian Piper voice is listed in the upstream voice catalog. Its model card 
 mkdir -p models
 curl -L "https://huggingface.co/rhasspy/piper-voices/resolve/b22aa2aa275d5e8d528994782814cd8bf9d0337f/fa/fa_IR/amir/medium/fa_IR-amir-medium.onnx?download=true" -o models/fa_IR-amir-medium.onnx
 curl -L "https://huggingface.co/rhasspy/piper-voices/resolve/b22aa2aa275d5e8d528994782814cd8bf9d0337f/fa/fa_IR/amir/medium/fa_IR-amir-medium.onnx.json?download=true" -o models/fa_IR-amir-medium.onnx.json
+curl -L "https://huggingface.co/rhasspy/piper-voices/resolve/3ec800dafed75d43bbca3a82f2e67acddbcaf9ac/ar/ar_JO/kareem/medium/ar_JO-kareem-medium.onnx?download=true" -o models/ar_JO-kareem-medium.onnx
+curl -L "https://huggingface.co/rhasspy/piper-voices/resolve/3ec800dafed75d43bbca3a82f2e67acddbcaf9ac/ar/ar_JO/kareem/medium/ar_JO-kareem-medium.onnx.json?download=true" -o models/ar_JO-kareem-medium.onnx.json
 ```
 3. Build and start the service:
 
@@ -35,15 +37,15 @@ After model weights are cached, inference is local. If the server must be comple
 
 ## API
 
-- `POST /v1/transcribe`: multipart field `file`, plus a SARINA Supabase access token. Returns transcript, detected language and duration.
-- `POST /v1/synthesize`: JSON `{"text":"...","language":"fa"}`, plus a SARINA Supabase access token. Returns WAV audio.
+- `POST /v1/transcribe`: multipart fields `file` and optional `language=auto|fa|ar`, plus a SARINA Supabase access token. Returns transcript, detected language and duration. The multilingual Whisper model auto-detects by default; an explicit hint can help distinguish Persian from Arabic.
+- `POST /v1/synthesize`: JSON `{"text":"...","language":"fa"}` or `{"text":"...","language":"ar"}`, plus a SARINA Supabase access token. Returns WAV audio from the matching Piper voice.
 - `GET /healthz`: basic service health only.
 
-The service enforces audio-size and duration limits, a single inference slot for CPU protection, and Persian-only synthesis in this first release. It does not accept arbitrary model names or user-selected filesystem paths.
+The service enforces audio-size and duration limits, a single inference slot for CPU protection, and Persian/Arabic synthesis using two fixed, locally installed Piper voices. It does not accept arbitrary model names or user-selected filesystem paths.
 
 ## Resource profile
 
-The default configuration targets a modest CPU server: Whisper small / INT8, four CPU threads, one inference at a time, and a Piper medium voice. This is a starting point, not a performance guarantee. Benchmark latency, peak RAM, concurrent requests, and Persian accuracy on the actual SARINA host before enabling it for users.
+The default configuration targets a modest CPU server: Whisper small multilingual / INT8, two CPU threads by default, one inference at a time (raise to four on a 4-vCPU host), and two Piper medium voices. Arabic speech recognition supports Modern Standard Arabic and may understand regional speech with variable accuracy; the Jordanian Piper voice is not a southern-Iraqi/Khuzestani dialect voice. This is a starting point, not a performance guarantee. Benchmark latency, peak RAM, concurrent requests, and Persian/Arabic (including local dialect and mixed-language) accuracy on the actual SARINA host before enabling it for users.
 
 ## Conversation scope
 
