@@ -39,7 +39,7 @@ function credentialMime(file:File):string{
 function Tag({children,tone="muted"}:{children:ReactNode;tone?:string}){return <span className={`expert-tag ${tone}`}>{children}</span>}
 function SectionTitle({eyebrow,title,description}:{eyebrow:string;title:string;description:string}){return <div className="expert-section-title"><span>{eyebrow}</span><h2>{title}</h2><p>{description}</p></div>}
 export default function ExpertDashboard({session,sarinaUserId,onLogout}:Props){
- const [mobileMenuOpen,setMobileMenuOpen]=useState(false),[profile,setProfile]=useState<Profile|null>(null),[loading,setLoading]=useState(true),[error,setError]=useState(""),[tab,setTab]=useState("overview"),[tabHistory,setTabHistory]=useState<string[]>([]),[signals,setSignals]=useState<Signal[]>([]),[impacts,setImpacts]=useState<Impact[]>([]),[assignments,setAssignments]=useState<Assignment[]>([]),[awards,setAwards]=useState<Award[]>([]),[credentials,setCredentials]=useState<Credential[]>([]),[applications,setApplications]=useState<IpApplication[]>([]),[recognitionRequests,setRecognitionRequests]=useState<RecognitionRequest[]>([]),[settlements,setSettlements]=useState<Settlement[]>([]),[contracts,setContracts]=useState<Contract[]>([]),[selectedRequest,setSelectedRequest]=useState<string|null>(null),[consultationId,setConsultationId]=useState<string|null>(null),[messages,setMessages]=useState<any[]>([]),[caseNotifications,setCaseNotifications]=useState<any[]>([]),[credentialFile,setCredentialFile]=useState<File|null>(null),[pendingProfileId,setPendingProfileId]=useState<string|null>(null),[avatarFile,setAvatarFile]=useState<File|null>(null),[report,setReport]=useState({summary:"",recommendations:"",limitations:""}),[reportPreview,setReportPreview]=useState(false),[busy,setBusy]=useState(false),[notice,setNotice]=useState(""),[profileSubmitted,setProfileSubmitted]=useState(false),[shopQuestionPending,setShopQuestionPending]=useState(false),[welcomeVisible,setWelcomeVisible]=useState(true),[hasShop,setHasShop]=useState(false);
+ const [mobileMenuOpen,setMobileMenuOpen]=useState(false),[profile,setProfile]=useState<Profile|null>(null),[loading,setLoading]=useState(true),[error,setError]=useState(""),[tab,setTab]=useState("overview"),[tabHistory,setTabHistory]=useState<string[]>([]),[signals,setSignals]=useState<Signal[]>([]),[impacts,setImpacts]=useState<Impact[]>([]),[assignments,setAssignments]=useState<Assignment[]>([]),[awards,setAwards]=useState<Award[]>([]),[credentials,setCredentials]=useState<Credential[]>([]),[applications,setApplications]=useState<IpApplication[]>([]),[recognitionRequests,setRecognitionRequests]=useState<RecognitionRequest[]>([]),[settlements,setSettlements]=useState<Settlement[]>([]),[contracts,setContracts]=useState<Contract[]>([]),[selectedRequest,setSelectedRequest]=useState<string|null>(null),[consultationId,setConsultationId]=useState<string|null>(null),[messages,setMessages]=useState<any[]>([]),[caseNotifications,setCaseNotifications]=useState<any[]>([]),[credentialFile,setCredentialFile]=useState<File|null>(null),[pendingProfileId,setPendingProfileId]=useState<string|null>(null),[avatarFile,setAvatarFile]=useState<File|null>(null),[report,setReport]=useState({summary:"",recommendations:"",limitations:""}),[reportPreview,setReportPreview]=useState(false),[busy,setBusy]=useState(false),[notice,setNotice]=useState(""),[profileSubmitted,setProfileSubmitted]=useState(false),[shopQuestionPending,setShopQuestionPending]=useState(false),[welcomeVisible,setWelcomeVisible]=useState(true),[hasShop,setHasShop]=useState<boolean|null>(null);
  const [profileForm,setProfileForm]=useState({public_name:session.user.user_metadata?.full_name||"",biography:"",years_experience:""});
  const [credentialForm,setCredentialForm]=useState({credential_type:"degree",issuing_body:"",credential_ref:""});
  const [ipForm,setIpForm]=useState({impact_record_id:"",application_type:"patent",title:"",novelty_summary:"",legal_jurisdiction:""});
@@ -53,7 +53,7 @@ export default function ExpertDashboard({session,sarinaUserId,onLogout}:Props){
     db.from("users").select("has_shop").eq("id",sarinaUserId).maybeSingle()
    ]);
    if(p.error)throw p.error;setProfile(p.data);
-   setHasShop(shopPreference.data?.has_shop===true);
+   setHasShop(typeof shopPreference.data?.has_shop==="boolean"?shopPreference.data.has_shop:null);
    if(!p.data){setLoading(false);return;}
    const id=p.data.id;
    const [s,i,a,w,c,ip,rr,st,ct,nn]=await Promise.all([
@@ -69,7 +69,7 @@ export default function ExpertDashboard({session,sarinaUserId,onLogout}:Props){
     db.from("expert_case_notifications").select("id,event_type,preview,created_at,read_at,request_id,consultation_id").eq("recipient_user_id",sarinaUserId).order("created_at",{ascending:false}).limit(30)
    ]);
    for(const r of [s,i,a,w,c,ip,rr,st,ct,nn])if(r.error)throw r.error;
-   setSignals(s.data||[]);setImpacts(i.data||[]);setAssignments(a.data||[]);setAwards(w.data||[]);setCredentials(c.data||[]);setApplications(ip.data||[]);setRecognitionRequests(rr.data||[]);setSettlements(st.data||[]);setContracts(ct.data||[]);setCaseNotifications(nn.data||[]);
+   setSignals(s.data||[]);setImpacts(i.data||[]);setAssignments(a.data||[]);setAwards(w.data||[]);setCredentials(c.data||[]);if((c.data||[]).length>0&&shopPreference.data?.has_shop==null)setShopQuestionPending(true);setApplications(ip.data||[]);setRecognitionRequests(rr.data||[]);setSettlements(st.data||[]);setContracts(ct.data||[]);setCaseNotifications(nn.data||[]);
   }catch(e){setError(e instanceof Error?e.message:"بارگذاری اطلاعات کارشناس با خطا روبه‌رو شد.");}
   finally{setLoading(false);}
  },[sarinaUserId]);
@@ -100,7 +100,7 @@ export default function ExpertDashboard({session,sarinaUserId,onLogout}:Props){
     const {error:credentialError}=await db.from("expert_credentials").insert({expert_profile_id:profileId,...credentialForm,document_ref:uploadedPath,verification_status:"pending"});
     if(credentialError)throw credentialError;
    }
-   setCredentialFile(null);setPendingProfileId(null);setShopQuestionPending(true);
+   setCredentialFile(null);setPendingProfileId(null);if(selectedFile)setShopQuestionPending(true);else setProfileSubmitted(true);
   }catch(e){
    if(uploadedPath)await supabase.storage.from("expert-credentials").remove([uploadedPath]);
    setNotice(e instanceof Error?e.message:"ثبت پروفایل یا مدرک انجام نشد. لطفاً دوباره تلاش کنید.");
@@ -121,7 +121,7 @@ export default function ExpertDashboard({session,sarinaUserId,onLogout}:Props){
    if(upload.error)throw upload.error;
    const {error}=await db.from("expert_credentials").insert({expert_profile_id:profile.id,...credentialForm,document_ref:uploadedPath,verification_status:"pending"});
    if(error)throw error;
-   setCredentialForm({credential_type:"degree",issuing_body:"",credential_ref:""});setCredentialFile(null);setNotice("مدرک و فایل خصوصی آن برای بررسی ثبت شد.");await refresh();
+   setCredentialForm({credential_type:"degree",issuing_body:"",credential_ref:""});setCredentialFile(null);if(hasShop===null)setShopQuestionPending(true);setNotice("مدرک و فایل خصوصی آن برای بررسی ثبت شد.");await refresh();
   }catch(e){if(uploadedPath)await supabase.storage.from("expert-credentials").remove([uploadedPath]);setNotice(e instanceof Error?e.message:"ثبت مدرک انجام نشد.");}
   finally{setBusy(false);}
  }
