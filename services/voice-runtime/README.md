@@ -14,9 +14,12 @@ The Persian Piper voice is listed in the upstream voice catalog. Its model card 
 ## First-time setup
 
 1. Copy `.env.example` to `.env` and set the Supabase URL, publishable/anon key, and the exact SARINA web origins.
-2. Download the Persian Piper model and its matching JSON configuration from the official voice repository into `models/`:
-   - `fa_IR-amir-medium.onnx`
-   - `fa_IR-amir-medium.onnx.json`
+2. Download the Persian Piper model and its matching JSON configuration from the pinned upstream revision into `models/`:
+```sh
+mkdir -p models
+curl -L "https://huggingface.co/rhasspy/piper-voices/resolve/b22aa2aa275d5e8d528994782814cd8bf9d0337f/fa/fa_IR/amir/medium/fa_IR-amir-medium.onnx?download=true" -o models/fa_IR-amir-medium.onnx
+curl -L "https://huggingface.co/rhasspy/piper-voices/resolve/b22aa2aa275d5e8d528994782814cd8bf9d0337f/fa/fa_IR/amir/medium/fa_IR-amir-medium.onnx.json?download=true" -o models/fa_IR-amir-medium.onnx.json
+```
 3. Build and start the service:
 
 ```sh
@@ -24,7 +27,11 @@ docker compose -f compose.yml up -d --build
 ```
 
 4. Check `http://127.0.0.1:8090/healthz` from the server. Put the service behind SARINA's HTTPS reverse proxy; do not expose port 8090 directly to the public internet.
-5. The Whisper model is downloaded into the persistent model cache on first use. After the model is cached, inference is local. If the server must be completely offline from first boot, pre-populate the cache before disconnecting it.
+5. The Whisper model is downloaded into the persistent model cache on first use. To pre-cache it before enabling users, run:
+```sh
+docker compose -f compose.yml run --rm sarina-voice-runtime python -c "from faster_whisper import WhisperModel; WhisperModel('small', device='cpu', compute_type='int8')"
+```
+After model weights are cached, inference is local. If the server must be completely offline from first boot, pre-populate the cache before disconnecting it.
 
 ## API
 
