@@ -5,7 +5,7 @@ const FARM = "11111111-1111-4111-8111-111111111111";
 const NOW = Date.parse("2026-11-25T12:00:00.000Z");
 
 Deno.test("SCI dry-run completes a synthetic non-sensitive task", () => {
-  const result = runSciDryRun({ farmId: FARM, requestId: "request-knowledge-0001", question: "لطفاً یک مقاله علمی درباره مدیریت خاک معرفی کن", now: NOW });
+  const result = runSciDryRun({ farmId: FARM, requestId: "request-knowledge-0001", question: "لطفاً یک منبع علمی درباره یک موضوع عمومی معرفی کن", now: NOW });
   assertEquals(result.mode, "simulated");
   assertEquals(result.route.agentId, "knowledge_research");
   assertEquals(result.route.modelPolicy, "none");
