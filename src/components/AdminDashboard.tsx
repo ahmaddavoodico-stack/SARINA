@@ -2,6 +2,7 @@ import {useCallback,useEffect,useMemo,useState} from "react";
 import type {Session} from "@supabase/supabase-js";
 import {Building2,Check,RefreshCw,Search,ShieldCheck,Users} from "lucide-react";
 import {supabase} from "../lib/supabase";
+import MarketplaceAdminReviewWorkspace from "./MarketplaceAdminReviewWorkspace";
 
 type Props={session:Session;onLogout:()=>void};
 type AdminUser={id:string;full_name:string|null;email:string|null;account_status:string;created_at:string;role_codes:string[]};
@@ -69,6 +70,7 @@ export default function AdminDashboard({session,onLogout}:Props){
     })}</div>}
    </section>
    <p className="admin-footnote">این نسخه فقط مدیریت نقش‌های عمومی و مشاهده حساب‌ها را فعال می‌کند. سطح دسترسی‌های جزئی سازمانی، تعلیق حساب و حذف امن در مرحله بعد و پس از تکمیل سیاست‌های دسترسی و آزمون امنیتی اضافه می‌شوند.</p>
+   <MarketplaceAdminReviewWorkspace />
   </div>
  </main>;
 }
