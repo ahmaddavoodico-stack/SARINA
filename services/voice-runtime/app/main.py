@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import os
+import math
 import subprocess
 import tempfile
 from pathlib import Path
@@ -102,7 +103,7 @@ def _probe_audio_duration(path: str) -> float:
         duration = float(result.stdout.strip())
     except (TypeError, ValueError) as exc:
         raise ValueError("Audio duration could not be determined") from exc
-    if duration <= 0:
+    if not math.isfinite(duration) or duration <= 0:
         raise ValueError("Audio duration is invalid")
     return duration
 
@@ -212,11 +213,17 @@ async def transcribe(
         if duration > MAX_AUDIO_SECONDS:
             raise HTTPException(status_code=413, detail="Audio duration exceeds the allowed limit")
 
-        async with _inference_lock:
+        try:
+            await asyncio.wait_for(_inference_lock.acquire(), timeout=3)
+        except TimeoutError as exc:
+            raise HTTPException(status_code=429, detail="Voice service is busy; retry shortly") from exc
+        try:
             try:
                 result = await asyncio.to_thread(_transcribe_file, temp_path)
             except Exception as exc:
                 raise HTTPException(status_code=503, detail="Speech recognition is temporarily unavailable") from exc
+        finally:
+            _inference_lock.release()
 
         return {"ok": True, **result, "processing": "local"}
     finally:
@@ -238,8 +245,14 @@ async def synthesize(
     try:
         with tempfile.NamedTemporaryFile(prefix="sarina-out-", suffix=".wav", delete=False) as temp:
             output_path = temp.name
-        async with _inference_lock:
+        try:
+            await asyncio.wait_for(_inference_lock.acquire(), timeout=3)
+        except TimeoutError as exc:
+            raise HTTPException(status_code=429, detail="Voice service is busy; retry shortly") from exc
+        try:
             await asyncio.to_thread(_synthesize_file, payload.text.strip(), output_path)
+        finally:
+            _inference_lock.release()
         return FileResponse(
             output_path,
             media_type="audio/wav",
