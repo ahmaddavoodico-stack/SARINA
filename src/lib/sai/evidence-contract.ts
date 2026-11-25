@@ -386,7 +386,8 @@ export function validateSaiCaseEnvelope(value: unknown): SaiValidationIssue[] {
        governance.reviewState !== "approved")) {
     issues.push({ code: "SHARED_KNOWLEDGE_GOVERNANCE_GATE_FAILED", field: "governance" });
   }
-  if (governance.eligibleForSharedKnowledge === true && Array.isArray(value.evidence) &&
+  if (isSaiRecord(governance) && governance.eligibleForSharedKnowledge === true &&
+      Array.isArray(value.evidence) &&
       value.evidence.some((item) => isSaiRecord(item) && isSaiRecord(item.source) &&
         item.source.sourceType === "ai_generated_unverified")) {
     issues.push({ code: "UNVERIFIED_AI_EVIDENCE_BLOCKS_SHARED_KNOWLEDGE", field: "evidence" });
