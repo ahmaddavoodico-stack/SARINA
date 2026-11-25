@@ -9,7 +9,7 @@ on:
       - "supabase/migrations/*siacp*"
       - ".github/workflows/sci-contract-tests.yml"
   push:
-    branches: [main, feature/local-ai-runtime-evaluation]
+    branches: [main, feature/local-ai-runtime-evaluation, feature/sci-task-orchestrator-v1]
     paths:
       - "supabase/functions/sarina-central-intelligence/**"
       - "supabase/functions/sarina-admin-chat/**"
