@@ -26,4 +26,4 @@ jobs:
           cache: pip
           cache-dependency-path: services/voice-runtime/requirements-test.txt
       - run: pip install -r requirements-test.txt
-      - run: pytest -q
+      - run: PYTHONPATH=. pytest -q
