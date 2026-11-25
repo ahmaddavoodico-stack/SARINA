@@ -171,3 +171,46 @@ No live schema, RLS policy, grant, RPC, Storage bucket, secret, production setti
 ## 7. Immediate next implementation slice
 
 The first code slice after this audit should be a controlled port of the verified-seller catalog and seller product-management experience into this branch, with a farmer seller path added using the existing `farmer` seller type and `farmer_products` market section. Before enabling any write UI, verify the exact current RLS/grants and the schema migration source. Buyer cart/checkout follows only after the catalog and seller paths pass security and UI tests.
+
+
+## 8. Implementation progress — 2026-11-25
+
+### Code now present on the isolated feature branch
+
+- Added the verified-seller catalog to the current farmer portal navigation.
+- Added two catalog sections: farmer-produced goods and supplier/company supplies.
+- Added a farmer seller application and product-management workspace. Seller status is not supplied by the browser; the database default creates applications as `pending`.
+- Farmer product drafts capture category, description, origin country/region, variety, seller-reported quality grade, harvest date, unit, currency, pricing model, minimum order, stock and an optional HTTPS image reference.
+- Added buyer cart actions for fixed-price products, minimum-order and available-stock checks, seller-specific checkout through `create_marketplace_order`, unpaid-order cancellation through `cancel_marketplace_order`, and quote requests through `create_marketplace_quote_request`.
+- Added buyer views for cart, order history and quote-request status, with explicit unpaid and unconfigured shipping/tax notices.
+- Added seller responses to quote requests using only the existing permitted `status` and `seller_response` columns.
+- Added a read-only marketplace privilege regression SQL test.
+
+### Migration source recovery
+
+The branch now restores the available applied migration sources:
+
+- Marketplace foundation and policy migrations 019–027 from the older integration branch.
+- `20261121195239_marketplace_client_privilege_hardening`.
+- The two specialist seller migrations, with filenames aligned to their actually applied migration versions `20261123173027` and `20261123173155`.
+
+**Source-history gap remains:** live migration history includes migrations 035–042 (including `039_link_sales_tasks_to_farm_planner`), but the corresponding source files were not found in the reviewed default, main, integration or marketplace feature branches. Do not run a new marketplace schema migration or treat the local migration directory as fully reconciled until these missing historical sources are recovered or a separately reviewed schema-baseline strategy is approved. The existing live schema was not changed.
+
+### Live validation completed
+
+- The read-only `supabase/tests/marketplace_privilege_regression.sql` assertions were executed against the connected live project and completed without an exception.
+- The assertions confirmed all 19 marketplace tables have RLS enabled, the expected anonymous catalog-only read grants, no anonymous checkout/quote/cancel RPC execution, and no anon/authenticated `TRUNCATE`, `MAINTAIN`, `REFERENCES` or `TRIGGER` privileges on the marketplace tables.
+- Seller/product RLS policies, product-section helper, column grants and relevant constraints were inspected read-only.
+- The seller verification status column defaults to `pending` and is not client-insertable; the farmer seller UI therefore omits it.
+- GitHub Actions PWA build passed through commit `17d36f908c7ac19bd0cb6d4b671bb44798c69313`. A newer build for the seller quote-response update is pending at the time of this note.
+- No authenticated browser workflow has been exercised with a real test buyer/seller account.
+
+### Remaining release blockers
+
+1. No seller-verification admin RPC or Edge Function exists in the live project. Do not add a client-side verification action. Build a narrow authenticated admin review endpoint with explicit admin authorization and an audit record.
+2. No marketplace product-media Storage upload workflow has been implemented. Current farmer product form accepts an optional HTTPS image reference only.
+3. No payment provider/webhook, real tax calculation, shipping quote or payout/settlement integration is configured. The current checkout creates an unpaid order and a draft invoice only.
+4. Seller profiles and product tables are empty in the live project; no catalog item or seller has been seeded.
+5. Complete browser end-to-end tests are still required for farmer application, product draft, admin approval, publication, cart, quote response, checkout, cancellation and participant-only order visibility.
+
+The current code is a first usable commerce workflow slice, not a production-ready marketplace. Keep PR #144 draft and isolated until the remaining security, browser and operational gates pass.
