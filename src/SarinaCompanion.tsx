@@ -97,8 +97,8 @@ export default function SarinaCompanion({isAdmin=false,onNavigate}:SarinaCompani
      {showNotice&&<div className="sarina-prototype-note">پیامت در این پیش‌نمایش ثبت شد. اتصال پاسخ‌گوی هوشمند برای این نقش هنوز فعال نشده است.</div>}
      {status&&<div className="sarina-prototype-note" role="status">{status}</div>}
     </div>
-    {isAdmin&&<div className="sarina-chat-voice"><VoiceMessageControls onVoiceMessage={receiveVoiceMessage} onTranscription={receiveTranscription} textToSpeak={latestSarinaReply} disabled={busy}/></div>}
-    <form className="sarina-chat-compose" onSubmit={send}>
+    <form className={"sarina-chat-compose"+(isAdmin?" sarina-chat-compose-admin":"")} onSubmit={send}>
+     {isAdmin&&<VoiceMessageControls onVoiceMessage={receiveVoiceMessage} onTranscription={receiveTranscription} textToSpeak={latestSarinaReply} disabled={busy}/>}
      <input value={draft} onChange={e=>setDraft(e.target.value)} placeholder="اینجا برای سارینا بنویس..." aria-label="پیام شما به سارینا" maxLength={2000} disabled={busy}/>
      <button type="submit" disabled={!draft.trim()||busy} aria-label="ارسال پیام">{busy?<span className="sarina-chat-spinner"/>:<ArrowUp size={18}/>}</button>
     </form>
