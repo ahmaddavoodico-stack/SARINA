@@ -27,7 +27,18 @@ WHISPER_COMPUTE_TYPE = os.getenv("WHISPER_COMPUTE_TYPE", "int8")
 WHISPER_CPU_THREADS = int(os.getenv("WHISPER_CPU_THREADS", "4"))
 PIPER_FA_MODEL_PATH = Path(os.getenv("PIPER_FA_MODEL_PATH", os.getenv("PIPER_MODEL_PATH", "/models/piper/fa_IR-amir-medium.onnx")))
 PIPER_AR_MODEL_PATH = Path(os.getenv("PIPER_AR_MODEL_PATH", "/models/piper/ar_JO-kareem-medium.onnx"))
-PIPER_CLI_PATH = Path(os.getenv("PIPER_CLI_PATH", str(Path(__file__).resolve().parents[1] / "vendor" / "piper_cli.py")))
+def _resolve_piper_cli_path() -> Path:
+    configured = os.getenv("PIPER_CLI_PATH")
+    if configured:
+        return Path(configured)
+    for parent in Path(__file__).resolve().parents:
+        candidate = parent / "vendor" / "piper_cli.py"
+        if candidate.is_file():
+            return candidate
+    return Path("/app/vendor/piper_cli.py")
+
+
+PIPER_CLI_PATH = _resolve_piper_cli_path()
 SUPABASE_URL = os.getenv("SUPABASE_URL", "").rstrip("/")
 SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY", "")
 CORS_ORIGINS = [item.strip() for item in os.getenv("CORS_ORIGINS", "").split(",") if item.strip()]
