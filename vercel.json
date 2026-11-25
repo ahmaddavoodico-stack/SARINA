@@ -6,10 +6,7 @@
   "functions": {
     "api/voice.py": {
       "maxDuration": 300,
-      "includeFiles": [
-        "vendor/**/*",
-        "services/voice-runtime/app/**/*"
-      ]
+      "includeFiles": "{vendor/**/*,services/voice-runtime/app/**/*}"
     }
   }
 }
