@@ -2,12 +2,12 @@
 
 This service provides multilingual Persian and Arabic speech-to-text, plus Persian and Arabic text-to-speech, on SARINA-controlled compute. It does not call an external AI inference API.
 
-**The inference source code is vendored inside this SARINA repository** under `vendor/faster_whisper/` and `vendor/piper/`. The container imports those local source files. CTranslate2, ONNX Runtime, Piper's native eSpeak bridge and its language data are platform-specific binary/runtime dependencies installed at image build time; they are not inference APIs. Their upstream licenses and pinned source revisions are recorded in [vendor/VOICE_ENGINE_NOTICES.md](../../vendor/VOICE_ENGINE_NOTICES.md).
+**The inference source code is vendored inside this SARINA repository** under `vendor/faster_whisper/` and `vendor/piper/`. The container imports the vendored faster-whisper source directly. The GPL-licensed Piper source is executed by a separate local runner process (`vendor/piper_cli.py`), not imported into the FastAPI service. CTranslate2, ONNX Runtime, Piper's native eSpeak bridge and its language data are platform-specific binary/runtime dependencies installed at image build time; they are not inference APIs. Their upstream licenses and pinned source revisions are recorded in [vendor/VOICE_ENGINE_NOTICES.md](../../vendor/VOICE_ENGINE_NOTICES.md).
 
 ## Components
 
 - STT: SARINA-vendored faster-whisper source, CTranslate2 CPU INT8 backend, with the multilingual `small` model loaded from a local directory.
-- TTS: SARINA-vendored Piper Python inference source with the Persian `fa_IR-amir-medium` voice and Arabic `ar_JO-kareem-medium` voice (Jordanian Arabic voice; not a Khuzestani dialect clone).
+- TTS: SARINA-vendored Piper Python inference source, invoked as a separate local process with the Persian `fa_IR-amir-medium` voice and Arabic `ar_JO-kareem-medium` voice (Jordanian Arabic voice; not a Khuzestani dialect clone).
 - Authentication: validates the caller's existing Supabase access token against SARINA's own Supabase Auth endpoint. This is identity validation, not an AI inference provider.
 - Audio processing: runs locally in this container. Audio is held in a temporary file during transcription and removed afterward; this service does not persist recordings.
 
