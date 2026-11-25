@@ -1,8 +1,8 @@
 services:
   sarina-voice-runtime:
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ../..
+      dockerfile: services/voice-runtime/Dockerfile
     container_name: sarina-voice-runtime
     restart: unless-stopped
     env_file:
