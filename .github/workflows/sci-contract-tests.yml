@@ -9,7 +9,7 @@ on:
       - "supabase/migrations/*siacp*"
       - ".github/workflows/sci-contract-tests.yml"
   push:
-    branches: [main, feature/local-ai-runtime-evaluation, feature/sci-task-orchestrator-v1]
+    branches: [main, feature/local-ai-runtime-evaluation, feature/sci-task-orchestrator-v1, feature/sci-task-lifecycle-v1]
     paths:
       - "supabase/functions/sarina-central-intelligence/**"
       - "supabase/functions/sarina-admin-chat/**"
@@ -27,6 +27,6 @@ jobs:
         with:
           deno-version: v2.x
       - name: Type-check SCI and specialist preparation Edge Functions
-        run: deno check supabase/functions/sarina-central-intelligence/_shared/sci-contract.ts supabase/functions/sarina-central-intelligence/_shared/siacp-security.ts supabase/functions/sarina-central-intelligence/_shared/provider-adapter.ts supabase/functions/sarina-central-intelligence/_shared/specialist-preparation.ts supabase/functions/sarina-central-intelligence/_shared/local-model-adapter.ts supabase/functions/sarina-central-intelligence/_shared/local-ai-routing.ts supabase/functions/sarina-central-intelligence/_shared/groq-provider-adapter.ts supabase/functions/sarina-central-intelligence/_shared/task-orchestrator.ts supabase/functions/sarina-central-intelligence/index.ts supabase/functions/sarina-admin-chat/_shared/admin-chat.ts supabase/functions/sarina-admin-chat/index.ts supabase/functions/specialist-case-preparation/index.ts
+        run: deno check supabase/functions/sarina-central-intelligence/_shared/sci-contract.ts supabase/functions/sarina-central-intelligence/_shared/siacp-security.ts supabase/functions/sarina-central-intelligence/_shared/provider-adapter.ts supabase/functions/sarina-central-intelligence/_shared/specialist-preparation.ts supabase/functions/sarina-central-intelligence/_shared/local-model-adapter.ts supabase/functions/sarina-central-intelligence/_shared/local-ai-routing.ts supabase/functions/sarina-central-intelligence/_shared/groq-provider-adapter.ts supabase/functions/sarina-central-intelligence/_shared/task-orchestrator.ts supabase/functions/sarina-central-intelligence/_shared/task-lifecycle.ts supabase/functions/sarina-central-intelligence/index.ts supabase/functions/sarina-admin-chat/_shared/admin-chat.ts supabase/functions/sarina-admin-chat/index.ts supabase/functions/specialist-case-preparation/index.ts
       - name: Test SCI and SIACP contracts
         run: deno test --no-check supabase/functions/sarina-central-intelligence/_shared/*_test.ts supabase/functions/sarina-admin-chat/_shared/*_test.ts
