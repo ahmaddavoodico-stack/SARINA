@@ -4,6 +4,7 @@ import asyncio
 import os
 import math
 import subprocess
+import sys
 import tempfile
 import wave
 from pathlib import Path
@@ -26,6 +27,7 @@ WHISPER_COMPUTE_TYPE = os.getenv("WHISPER_COMPUTE_TYPE", "int8")
 WHISPER_CPU_THREADS = int(os.getenv("WHISPER_CPU_THREADS", "4"))
 PIPER_FA_MODEL_PATH = Path(os.getenv("PIPER_FA_MODEL_PATH", os.getenv("PIPER_MODEL_PATH", "/models/piper/fa_IR-amir-medium.onnx")))
 PIPER_AR_MODEL_PATH = Path(os.getenv("PIPER_AR_MODEL_PATH", "/models/piper/ar_JO-kareem-medium.onnx"))
+PIPER_CLI_PATH = Path(os.getenv("PIPER_CLI_PATH", str(Path(__file__).resolve().parents[1] / "vendor" / "piper_cli.py")))
 SUPABASE_URL = os.getenv("SUPABASE_URL", "").rstrip("/")
 SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY", "")
 CORS_ORIGINS = [item.strip() for item in os.getenv("CORS_ORIGINS", "").split(",") if item.strip()]
@@ -42,7 +44,6 @@ app.add_middleware(
 _model_lock = asyncio.Lock()
 _inference_lock = asyncio.Semaphore(1)
 _whisper_model: Any | None = None
-_piper_voices: dict[str, Any] = {}
 
 
 class SynthesisRequest(BaseModel):
@@ -145,20 +146,30 @@ def _transcribe_file(path: str, language_hint: str | None = None) -> dict[str, A
 def _synthesize_file(text: str, output_path: str, model_path: Path) -> None:
     if not model_path.is_file():
         raise RuntimeError("Piper voice model is not installed: " + model_path.name)
+    if not PIPER_CLI_PATH.is_file():
+        raise RuntimeError("Vendored Piper runner is missing")
 
-    model_key = str(model_path.resolve())
-    voice = _piper_voices.get(model_key)
-    if voice is None:
-        # Import the SARINA-vendored Piper inference source. The installed
-        # piper-tts wheel supplies only the native espeak bridge and data assets.
-        from piper import PiperVoice
-        from piper.phonemize_espeak import ESPEAK_DATA_DIR
-
-        voice = PiperVoice.load(model_path, espeak_data_dir=ESPEAK_DATA_DIR)
-        _piper_voices[model_key] = voice
-
-    with wave.open(output_path, "wb") as wav_file:
-        voice.synthesize_wav(text, wav_file)
+    # Run the GPL-licensed Piper engine as a separate process. The FastAPI
+    # service does not import/link the Piper library into its own process.
+    command = [
+        sys.executable,
+        str(PIPER_CLI_PATH),
+        "--model",
+        str(model_path),
+        "--output_file",
+        output_path,
+    ]
+    result = subprocess.run(
+        command,
+        input=text,
+        text=True,
+        capture_output=True,
+        timeout=90,
+        check=False,
+    )
+    if result.returncode != 0 or not Path(output_path).is_file():
+        detail = (result.stderr or result.stdout or "Piper synthesis failed")[-1200:]
+        raise RuntimeError(detail)
 
 
 @app.get("/healthz")
@@ -172,7 +183,7 @@ async def health() -> dict[str, Any]:
         "whisper_model_loaded": _whisper_model is not None,
         "whisper_model_path_configured": WHISPER_MODEL_PATH.is_dir(),
         "whisper_model_source": "local-vendored-code-and-local-weights",
-        "piper_engine_source": "SARINA-vendored-Piper",
+        "piper_engine_source": "SARINA-vendored-Piper-subprocess",
         "piper_models_configured": {"fa": PIPER_FA_MODEL_PATH.is_file(), "ar": PIPER_AR_MODEL_PATH.is_file()},
         "whisper_languages": ["fa", "ar", "auto"],
         "execution": "local",
