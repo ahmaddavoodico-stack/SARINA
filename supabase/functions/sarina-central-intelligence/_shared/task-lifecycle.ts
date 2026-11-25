@@ -4,7 +4,7 @@
  * Pure orchestration primitives only: no database, queue transport, model call,
  * external provider, or domain side effect is performed by this module.
  */
-import type { AgentId, TaskDomain, TaskModality } from "./task-orchestrator.ts";
+import { getRegisteredAgent, type AgentId, type TaskDomain, type TaskModality } from "./task-orchestrator.ts";
 
 export type TaskStatus =
   | "received" | "validated" | "queued" | "assigned" | "running"
@@ -116,8 +116,13 @@ export function validateTaskEnvelope(value: unknown, now = Date.now()): string[]
   if (!Array.isArray(e.payloadRefs) || e.payloadRefs.some((x) => typeof x !== "string")) issues.push("INVALID_PAYLOAD_REFS");
   if (!Array.isArray(e.modalities) || e.modalities.length === 0) issues.push("INVALID_MODALITIES");
   if (!Array.isArray(e.permissions) || e.permissions.some((x) => typeof x !== "string")) issues.push("INVALID_PERMISSIONS");
-  if (typeof e.assignedAgent !== "string" || !e.assignedAgent) issues.push("INVALID_ASSIGNED_AGENT");
+  const agent = typeof e.assignedAgent === "string" ? getRegisteredAgent(e.assignedAgent as AgentId) : undefined;
+  if (!agent) issues.push("INVALID_ASSIGNED_AGENT");
   if (!["conversation", "agronomy", "crop_diagnostics", "knowledge", "marketplace", "specialist", "account"].includes(e.domain ?? "")) issues.push("INVALID_DOMAIN");
+  else if (agent && agent.domain !== e.domain) issues.push("AGENT_DOMAIN_MISMATCH");
+  if (!Array.isArray(e.modalities) || e.modalities.some((item) => !["text", "image", "document", "audio", "other"].includes(item))) {
+    if (!issues.includes("INVALID_MODALITIES")) issues.push("INVALID_MODALITIES");
+  }
   if (!["low", "normal", "high", "urgent"].includes(e.priority ?? "")) issues.push("INVALID_PRIORITY");
   if (!["low", "medium", "high", "critical"].includes(e.risk ?? "")) issues.push("INVALID_RISK");
   const created = Date.parse(e.createdAt ?? "");
@@ -301,8 +306,10 @@ export class InMemoryTaskManager {
 
   recordApproval(taskId: string, action: ApprovalAction, approvedBy: string, confirmationId: string, now = Date.now()): TaskRecord {
     const task = this.requireTask(taskId);
+    // The caller must bind this actor to an authenticated human session. This
+    // pure module records the assertion but does not authenticate the actor.
     if (!approvedBy.trim() || approvedBy === "system" || !confirmationId.trim()) {
-      throw new TaskLifecycleError("EXPLICIT_APPROVAL_REQUIRED", "A verified human approver and confirmation reference are required.");
+      throw new TaskLifecycleError("EXPLICIT_APPROVAL_REQUIRED", "An authenticated human actor and confirmation reference are required.");
     }
     if (task.status !== "running" && task.status !== "waiting_for_human") {
       throw new TaskLifecycleError("APPROVAL_NOT_EXPECTED", "Approval can be recorded only for an active task.");
