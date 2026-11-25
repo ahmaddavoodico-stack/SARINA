@@ -10,9 +10,11 @@ type Props={
   textToSpeak?:string;
   speechLanguage?:"fa"|"ar";
   disabled?:boolean;
+  autoSpeak?:boolean;
+  onAutoSpeakAttempt?:()=>void;
 };
 
-const apiBase=(import.meta.env.VITE_SARINA_VOICE_API_URL||"").replace(/\/$/,"");
+const apiBase=(import.meta.env.VITE_SARINA_VOICE_API_URL||"/api/voice").replace(/\/$/,"");
 
 async function accessToken():Promise<string>{
   if(!supabase)throw new Error("نشست کاربری در دسترس نیست.");
@@ -21,7 +23,7 @@ async function accessToken():Promise<string>{
   return data.session.access_token;
 }
 
-export default function VoiceMessageControls({onTranscription,onVoiceMessage,textToSpeak,speechLanguage="fa",disabled=false}:Props){
+export default function VoiceMessageControls({onTranscription,onVoiceMessage,textToSpeak,speechLanguage="fa",disabled=false,autoSpeak=false,onAutoSpeakAttempt}:Props){
   const [recording,setRecording]=useState(false);
   const [processing,setProcessing]=useState(false);
   const [speaking,setSpeaking]=useState(false);
@@ -31,6 +33,7 @@ export default function VoiceMessageControls({onTranscription,onVoiceMessage,tex
   const chunksRef=useRef<BlobPart[]>([]);
   const audioRef=useRef<HTMLAudioElement|null>(null);
   const audioUrlRef=useRef<string|null>(null);
+  const lastAutoSpokenRef=useRef<string>("");
 
   useEffect(()=>()=>{streamRef.current?.getTracks().forEach(track=>track.stop());audioRef.current?.pause();if(audioUrlRef.current)URL.revokeObjectURL(audioUrlRef.current);},[]);
 
@@ -101,6 +104,15 @@ export default function VoiceMessageControls({onTranscription,onVoiceMessage,tex
       await audio.play();
     }catch(error){setSpeaking(false);setNotice(error instanceof Error?error.message:"پاسخ صوتی در دسترس نیست.");}
   }
+
+  useEffect(()=>{
+    const text=textToSpeak?.trim();
+    if(autoSpeak&&text&&text!==lastAutoSpokenRef.current){
+      lastAutoSpokenRef.current=text;
+      void speakText();
+      onAutoSpeakAttempt?.();
+    }
+  },[autoSpeak,textToSpeak]);
 
   return <div className="sarina-voice-controls" dir="rtl">
     <div className="sarina-voice-actions">
