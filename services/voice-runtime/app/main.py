@@ -11,7 +11,6 @@ from pathlib import Path
 from typing import Any
 
 import httpx
-import av
 from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
@@ -157,6 +156,8 @@ def _get_whisper_model() -> Any:
 
 
 def _probe_audio_duration(path: str) -> float:
+    import av
+
     try:
         with av.open(path) as container:
             duration = container.duration / av.time_base if container.duration is not None else None
