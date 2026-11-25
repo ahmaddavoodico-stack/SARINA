@@ -39,7 +39,7 @@ export default function SarinaCompanion({isAdmin=false,onNavigate}:SarinaCompani
   try{
    const{data,error}=await supabase.functions.invoke("sarina-admin-chat",{body:{mode:"admin_chat",messages:nextMessages.map(message=>({role:message.role==="farmer"?"user":"assistant",content:message.text})).filter(message=>message.content.trim())}});
    if(error||!data?.ok||typeof data.answer!=="string")throw new Error(typeof data?.code==="string"?data.code:"ADMIN_CHAT_REQUEST_FAILED");
-   commitMessages([...messagesRef.current,{id:Date.now()+1,role:"sarina",text:data.answer}].slice(-12));
+   commitMessages([...messagesRef.current,{id:Date.now()+1,role:"sarina" as const,text:data.answer}].slice(-12));
    setStatus(`پاسخ آزمایشی از Groq · ${data.model||"مدل تأییدشده"}`);
   }catch(error){
    const code=error instanceof Error?error.message:"ADMIN_CHAT_REQUEST_FAILED";
