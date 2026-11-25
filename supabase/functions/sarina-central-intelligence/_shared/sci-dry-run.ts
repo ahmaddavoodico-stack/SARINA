@@ -1,0 +1,1 @@
+// Simulated SCI dispatch adapter.
