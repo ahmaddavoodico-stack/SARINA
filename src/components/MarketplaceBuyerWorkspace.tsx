@@ -1,5 +1,5 @@
 import {useCallback,useEffect,useMemo,useState} from "react";
-import {ClipboardList,Package,RefreshCw,ShoppingCart,Truck} from "lucide-react";
+import {ClipboardList,Package,RefreshCw,ShoppingCart} from "lucide-react";
 import {supabase} from "../lib/supabase";
 
 type CartRow={id:string;product_id:string;quantity:number|string};
@@ -54,6 +54,8 @@ export default function MarketplaceBuyerWorkspace({userId}:{userId:string}){
     db.from("marketplace_quote_requests").select("id,seller_id,product_id,quantity,unit_label,message,status,seller_response,created_at").eq("buyer_user_id",userId).order("created_at",{ascending:false}).limit(30)
    ]);
    if(o.error)throw o.error;if(q.error)throw q.error;
+   const allSellerIds=[...new Set([...Object.values(nextProducts).map(item=>item.seller_id),...(o.data||[]).map((item:any)=>item.seller_id),...(q.data||[]).map((item:any)=>item.seller_id)])];
+   if(allSellerIds.length){const sellerResult=await db.from("marketplace_sellers").select("id,display_name,verification_status").in("id",allSellerIds);if(sellerResult.error)throw sellerResult.error;nextSellers=Object.fromEntries(((sellerResult.data||[]) as Seller[]).map(item=>[item.id,item]));}
    setCart(nextCart);setProducts(nextProducts);setSellers(nextSellers);setOrders((o.data||[]) as Order[]);setQuotes((q.data||[]) as Quote[]);
   }catch(e){setError(e instanceof Error?e.message:"دریافت سبد و سفارش‌ها انجام نشد.");}
   finally{setLoading(false);}
@@ -67,6 +69,7 @@ export default function MarketplaceBuyerWorkspace({userId}:{userId:string}){
   return grouped;
  },[cart,products]);
  const cartCount=cart.reduce((sum,item)=>sum+Number(item.quantity||0),0);
+ const orphanItems=cart.filter(item=>!products[item.product_id]);
 
  async function changeQuantity(item:CartRow,delta:number){
   if(!supabase)return;
@@ -112,6 +115,7 @@ export default function MarketplaceBuyerWorkspace({userId}:{userId:string}){
   {loading?<div className="marketplace-empty"><Package size={30}/><strong>در حال دریافت اطلاعات خرید...</strong></div>:<>
    <div className="marketplace-buyer-stats"><span>تعداد اقلام سبد: <b>{cartCount.toLocaleString("fa-IR")}</b></span><span>سفارش‌ها: <b>{orders.length.toLocaleString("fa-IR")}</b></span><span>درخواست‌های قیمت: <b>{quotes.length.toLocaleString("fa-IR")}</b></span></div>
    <h3>سبد خرید</h3>
+   {orphanItems.length>0&&<div className="marketplace-cart-orphans">{orphanItems.map(item=><div key={item.id}><span>یکی از محصولات سبد دیگر برای خرید در دسترس نیست.</span><button type="button" disabled={busy} onClick={()=>void removeItem(item)}>حذف از سبد</button></div>)}</div>}
    {Object.keys(groups).length===0?<div className="marketplace-empty"><ShoppingCart size={30}/><strong>سبد خرید شما خالی است</strong><p>از بخش بازارگاه، محصولات دارای قیمت ثابت را به سبد اضافه کنید.</p></div>:Object.entries(groups).map(([sellerId,items])=>{
     const seller=sellers[sellerId];const total=items.reduce((sum,item)=>{const p=products[item.product_id];return sum+(p?.price===null?0:Number(p?.price||0)*Number(item.quantity));},0);const currency=products[items[0]?.product_id]?.currency||"";
     return <article className="marketplace-cart-seller" key={sellerId}>
@@ -130,7 +134,7 @@ export default function MarketplaceBuyerWorkspace({userId}:{userId:string}){
       <label>شهر<input value={shipping.city} onChange={e=>setShipping({...shipping,city:e.target.value})}/></label>
       <label>کشور<input value={shipping.country} onChange={e=>setShipping({...shipping,country:e.target.value})}/></label>
       <label>توضیح برای فروشنده (اختیاری)<textarea rows={2} value={buyerNote} onChange={e=>setBuyerNote(e.target.value)}/></label>
-      <p>ثبت سفارش باعث رزرو موقت موجودی به مدت ۳۰ دقیقه می‌شود. این مرحله پرداخت نیست و هیچ مبلغی دریافت نمی‌شود.</p>
+      <p>ثبت سفارش باعث رزرو موقت موجودی به مدت ۳۰ دقیقه می‌شود. این مرحله پرداخت نیست و هیچ مبلغی دریافت نمی‌شود. هزینه حمل و مالیات هنوز محاسبه نشده‌اند؛ مبلغ فعلی جمع محصولات است، نه مبلغ نهایی پرداخت.</p>
       <div><button type="button" disabled={busy} onClick={()=>void checkout(sellerId)}>{busy?"در حال ثبت...":"ثبت سفارش و پیش‌نویس فاکتور"}</button><button type="button" disabled={busy} onClick={()=>setCheckoutSellerId(null)}>انصراف</button></div>
      </div>:<button className="marketplace-checkout-start" type="button" disabled={busy} onClick={()=>setCheckoutSellerId(sellerId)}>ثبت سفارش برای این فروشنده</button>}
     </article>;
