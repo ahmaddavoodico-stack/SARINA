@@ -160,7 +160,7 @@ begin
   if auth.uid() is null or not private.is_sarina_admin() then
     raise exception 'Central administrator access required' using errcode = '42501';
   end if;
-  if p_status not in ('verified', 'rejected') then
+  if p_status is null or p_status not in ('verified', 'rejected') then
     raise exception 'Unsupported marketplace product review status' using errcode = '22023';
   end if;
 
