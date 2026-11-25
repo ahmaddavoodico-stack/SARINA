@@ -1,7 +1,7 @@
 name: SCI contract tests
 on:
   pull_request:
-    branches: [main]
+    branches: [main, feature/farmer-portal-foundation]
     paths:
       - "supabase/functions/sarina-central-intelligence/**"
       - "supabase/functions/specialist-case-preparation/**"
@@ -25,6 +25,6 @@ jobs:
         with:
           deno-version: v2.x
       - name: Type-check SCI and specialist preparation Edge Functions
-        run: deno check supabase/functions/sarina-central-intelligence/_shared/sci-contract.ts supabase/functions/sarina-central-intelligence/_shared/siacp-security.ts supabase/functions/sarina-central-intelligence/_shared/provider-adapter.ts supabase/functions/sarina-central-intelligence/_shared/specialist-preparation.ts
+        run: deno check supabase/functions/sarina-central-intelligence/_shared/sci-contract.ts supabase/functions/sarina-central-intelligence/_shared/siacp-security.ts supabase/functions/sarina-central-intelligence/_shared/provider-adapter.ts supabase/functions/sarina-central-intelligence/_shared/specialist-preparation.ts supabase/functions/sarina-central-intelligence/_shared/task-orchestrator.ts supabase/functions/sarina-central-intelligence/_shared/task-lifecycle.ts supabase/functions/sarina-central-intelligence/_shared/sci-dry-run.ts supabase/functions/sarina-central-intelligence/index.ts
       - name: Test SCI and SIACP contracts
         run: deno test --no-check supabase/functions/sarina-central-intelligence/_shared/*_test.ts
