@@ -8,6 +8,7 @@ type Props={
   onTranscription:(text:string)=>void;
   onVoiceMessage:(payload:VoicePayload)=>void|Promise<void>;
   textToSpeak?:string;
+  speechLanguage?:"fa"|"ar";
   disabled?:boolean;
 };
 
@@ -20,7 +21,7 @@ async function accessToken():Promise<string>{
   return data.session.access_token;
 }
 
-export default function VoiceMessageControls({onTranscription,onVoiceMessage,textToSpeak,disabled=false}:Props){
+export default function VoiceMessageControls({onTranscription,onVoiceMessage,textToSpeak,speechLanguage="fa",disabled=false}:Props){
   const [recording,setRecording]=useState(false);
   const [processing,setProcessing]=useState(false);
   const [speaking,setSpeaking]=useState(false);
@@ -87,7 +88,7 @@ export default function VoiceMessageControls({onTranscription,onVoiceMessage,tex
     setSpeaking(true);
     try{
       const token=await accessToken();
-      const response=await fetch(apiBase+"/v1/synthesize",{method:"POST",headers:{Authorization:"Bearer "+token,"Content-Type":"application/json"},body:JSON.stringify({text,language:"fa"})});
+      const response=await fetch(apiBase+"/v1/synthesize",{method:"POST",headers:{Authorization:"Bearer "+token,"Content-Type":"application/json"},body:JSON.stringify({text,language:speechLanguage})});
       if(!response.ok){const payload=await response.json().catch(()=>({}));throw new Error(payload.detail||"تولید پاسخ صوتی انجام نشد.");}
       const blob=await response.blob();
       if(audioUrlRef.current)URL.revokeObjectURL(audioUrlRef.current);
