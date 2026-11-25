@@ -415,3 +415,48 @@ Whisper multilingual supports Persian as a language code, and its code/model wei
 SARINA should feel to the farmer like one attentive, reliable companion—not a collection of disconnected tools. Internally, however, every action must be routed to the right service, use the right evidence and model, respect permissions, and report honestly what did and did not happen.
 
 **From 2026-11-23 onward, the farmer communication experience is an active top-level product workstream, pursued alongside Phase 0 and Phase 1 stabilization.**
+
+
+## 18. Final owner confirmation — one persistent SARINA chatbox and design authority (2026-11-25)
+
+**Decision status:** Explicitly confirmed by the product owner. This section consolidates the approved target experience and is the governing product direction for subsequent design and implementation work.
+
+### 18.1 The single chatbox is the product experience
+
+- There is exactly one primary farmer-facing SARINA conversation surface: the existing main SARINA chatbox.
+- Text, voice notes, photos, images, documents, audio replies, specialist-referral updates and service results all appear in the same conversation timeline. Do not create separate voice-chat pages, specialist chatboxes, store chatboxes, or independent AI chat interfaces for the farmer.
+- Voice is an input/output modality of the same message composer and conversation, not a separate product mode. Recording, preview, sending, transcription status, audio playback and retry states must fit naturally into this chatbox.
+- The farmer never has to select an agent, department, model or provider. SARINA identifies intent and routes work internally.
+- The visible identity remains SARINA throughout routing and handoffs. The farmer should not experience a change of page, assistant identity or conversation when a specialist, store workflow, support service or another internal capability is engaged.
+- Specialist workspaces and internal operational tools may remain separate for their authorized staff. Their existence must not fragment the farmer-facing conversation. Only authorized, relevant updates and explicitly approved information return to the farmer's SARINA thread.
+- All modalities and routed tasks must preserve conversation continuity, message ordering, delivery/processing status, authorization and the correct confirmed farm context. A farm must never be attached merely because a client supplied an identifier.
+
+### 18.2 One central intelligence, multiple delivery channels
+
+- The web app, Telegram and Baleh are channel adapters to the same central SARINA conversation and orchestration services.
+- Channel adapters normalize channel-specific message and media formats, authenticate the sender, and deliver the response. They must not implement separate routing policies, independent agent brains or divergent conversation histories.
+- Where channel platform limitations differ, preserve the same underlying task and conversation semantics and provide a clear, honest fallback in that channel.
+- A task may continue asynchronously after the farmer sends a message. Its progress and final result must return to the same conversation thread, without requiring the farmer to open a different module.
+
+### 18.3 Mandatory design and implementation alignment
+
+This approved document is the source of truth for the farmer communication experience, voice, Front Desk, Orchestrator, routing, and multimodal interaction. Every related design, prototype, architecture decision, implementation plan, API contract and acceptance test must be checked against it.
+
+Before accepting a related design or implementation, verify that it:
+1. Preserves the single main SARINA chatbox and one continuous farmer conversation.
+2. Keeps text, voice, images and documents in that same message timeline.
+3. Leaves agent/model/provider selection and routing to SARINA behind the scenes.
+4. Maintains one consistent SARINA identity through internal service handoffs.
+5. Uses the shared central orchestration and channel-adapter architecture.
+6. Follows local-first, cost-aware processing and the approved privacy, security, authorization and human-confirmation boundaries.
+7. Provides clear status and never claims an upload, transcription, analysis, task or response succeeded unless it actually did.
+
+If a proposed design conflicts with these requirements, do not silently implement or treat it as approved. Record the conflict, explain its user and technical impact, and obtain the product owner's decision before proceeding. Existing screens and workflows should be adapted toward this target incrementally; do not introduce a parallel chat experience.
+
+### 18.4 Roadmap is approved; execution remains gated
+
+The product direction and staged roadmap in this document are approved as the basis for upcoming work. Approval of the roadmap is not approval to bypass technical audits, security reviews, test gates, spending controls or release acceptance.
+
+Implementation should begin with a verified inventory of the current code, conversation schema, RLS, storage, authentication, deployment and available compute. Then proceed in small, reviewable increments, keeping Phase 0/1 stabilization visible alongside the communication workstream. Record each item accurately as planned, implemented, tested, accepted or deployed. Do not mark a capability complete based solely on a design, commit or successful build.
+
+No merge to `main`, production deployment, schema/security mutation, provider activation or paid usage is authorized merely by this product-direction confirmation. Continue using the isolated feature-branch and explicit acceptance process.
