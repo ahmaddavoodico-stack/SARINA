@@ -114,6 +114,7 @@ def _transcribe_file(path: str, language_hint: str | None = None) -> dict[str, A
     segments, info = model.transcribe(
         path,
         language=language_hint,
+        multilingual=True,
         beam_size=3,
         vad_filter=True,
         condition_on_previous_text=False,
