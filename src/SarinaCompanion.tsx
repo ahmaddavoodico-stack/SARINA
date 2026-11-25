@@ -1,13 +1,15 @@
-import {useState} from "react";
+import {useEffect,useRef,useState} from "react";
 import type {FormEvent} from "react";
 import {ArrowUp,ChevronDown,ChevronLeft,CircleHelp,ClipboardList,Leaf,MessageCircle,PlayCircle,Sparkles,UserRound,X,PanelRightClose,PanelRightOpen} from "lucide-react";
 import {supabase} from "./lib/supabase";
 import SarinaCharacter from "./components/SarinaCharacter";
 import PwaInstall from "./PwaInstall";
+import VoiceMessageControls from "./components/VoiceMessageControls";
 
-type ChatMessage={id:number;role:"farmer"|"sarina";text:string};
+type ChatMessage={id:number;role:"farmer"|"sarina";text:string;audioUrl?:string};
 type NavTarget="learning"|"experts"|"expert-chat";
 type SarinaCompanionProps={isAdmin?:boolean;onNavigate?:(destination:NavTarget)=>void};
+type VoicePayload={audio:Blob;mimeType:string};
 
 const guideItems=[
  {title:"فیلم معرفی SARINA",description:"آشنایی کوتاه با امکانات سامانه",icon:PlayCircle,target:"learning" as NavTarget},
@@ -23,23 +25,21 @@ export default function SarinaCompanion({isAdmin=false,onNavigate}:SarinaCompani
  const[showNotice,setShowNotice]=useState(false);
  const[busy,setBusy]=useState(false);
  const[status,setStatus]=useState("");
+ const messagesRef=useRef<ChatMessage[]>([]);
+ const pendingVoiceIdRef=useRef<number|null>(null);
 
+ function commitMessages(next:ChatMessage[]){messagesRef.current=next;setMessages(next);}
+ useEffect(()=>()=>{for(const message of messagesRef.current){if(message.audioUrl)URL.revokeObjectURL(message.audioUrl);}},[]);
  function closePanel(){setOpen(false);if(!isAdmin){try{localStorage.setItem("sarina-guide-dismissed","1");}catch{}}}
  function go(target:NavTarget){closePanel();onNavigate?.(target);}
- async function send(e:FormEvent){
-  e.preventDefault();
-  const text=draft.trim();
-  if(!text||busy)return;
-  const farmerMessage:ChatMessage={id:Date.now(),role:"farmer",text};
-  const nextMessages=[...messages,farmerMessage].slice(-10);
-  setMessages(nextMessages);setDraft("");
-  if(!isAdmin){setShowNotice(true);return;}
-  if(!supabase){setStatus("اتصال به سرویس سارینا پیکربندی نشده است.");return;}
+
+ async function requestAdminReply(nextMessages:ChatMessage[]){
+  if(!isAdmin||!supabase)return;
   setBusy(true);setStatus("در حال دریافت پاسخ آزمایشی از Groq...");
   try{
-   const{data,error}=await supabase.functions.invoke("sarina-admin-chat",{body:{mode:"admin_chat",messages:nextMessages.map(message=>({role:message.role==="farmer"?"user":"assistant",content:message.text}))}});
+   const{data,error}=await supabase.functions.invoke("sarina-admin-chat",{body:{mode:"admin_chat",messages:nextMessages.map(message=>({role:message.role==="farmer"?"user":"assistant",content:message.text})).filter(message=>message.content.trim())}});
    if(error||!data?.ok||typeof data.answer!=="string")throw new Error(typeof data?.code==="string"?data.code:"ADMIN_CHAT_REQUEST_FAILED");
-   setMessages(current=>[...current,{id:Date.now()+1,role:"sarina",text:data.answer}]);
+   commitMessages([...messagesRef.current,{id:Date.now()+1,role:"sarina",text:data.answer}].slice(-12));
    setStatus(`پاسخ آزمایشی از Groq · ${data.model||"مدل تأییدشده"}`);
   }catch(error){
    const code=error instanceof Error?error.message:"ADMIN_CHAT_REQUEST_FAILED";
@@ -47,6 +47,33 @@ export default function SarinaCompanion({isAdmin=false,onNavigate}:SarinaCompani
   }finally{setBusy(false);}
  }
 
+ async function sendText(text:string){
+  const normalized=text.trim();
+  if(!normalized||busy)return;
+  const next=[...messagesRef.current,{id:Date.now(),role:"farmer" as const,text:normalized}].slice(-12);
+  commitMessages(next);setDraft("");
+  if(!isAdmin){setShowNotice(true);return;}
+  await requestAdminReply(next);
+ }
+ async function send(e:FormEvent){e.preventDefault();await sendText(draft);}
+
+ function receiveVoiceMessage(payload:VoicePayload){
+  const id=Date.now();
+  const audioUrl=URL.createObjectURL(payload.audio);
+  const next=[...messagesRef.current,{id,role:"farmer" as const,text:"پیام صوتی · در حال تبدیل گفتار به متن…",audioUrl}].slice(-12);
+  commitMessages(next);
+  pendingVoiceIdRef.current=id;
+  setStatus("پیام صوتی ضبط شد؛ در حال تبدیل محلی گفتار به متن در سرویس SARINA...");
+ }
+ function receiveTranscription(text:string){
+  const id=pendingVoiceIdRef.current;
+  const next=messagesRef.current.map(message=>message.id===id?{...message,text:"🎙 "+text}:message);
+  pendingVoiceIdRef.current=null;
+  commitMessages(next);
+  if(isAdmin)void requestAdminReply(next);
+ }
+
+ const latestSarinaReply=[...messages].reverse().find(message=>message.role==="sarina")?.text;
  return <div className="sarina-companion" dir="rtl">
   {open&&<section className={"sarina-chat-panel"+(!isAdmin?" farmer-mode":"")} aria-label="مرکز ارتباط و راهنمایی سارینا">
    {!isAdmin&&drawerOpen&&<aside className="sarina-guide-drawer">
@@ -66,15 +93,16 @@ export default function SarinaCompanion({isAdmin=false,onNavigate}:SarinaCompani
     </header>
     <div className="sarina-chat-body">
      <div className="sarina-welcome-message"><span className="sarina-sparkle"><Sparkles size={15}/></span><strong>سلام! به SARINA خوش آمدید 🌱</strong><p>{isAdmin?"من نقش مدیر مرکزی شما را می‌شناسم. می‌توانم درباره کاربران، نقش‌ها، درخواست‌ها و وضعیت سامانه کمک کنم؛ لازم نیست اطلاعات مزرعه شخصی‌تان را وارد کنید.":"من همراه کشاورزی شما هستم. برای آشنایی بهتر با امکانات سارینا، می‌توانید از راهنمای سریع کنار گفتگو استفاده کنید. هیچ کشاورزی تنها نیست."}</p></div>
-     {messages.map(message=><div key={message.id} className={"sarina-message "+(message.role==="farmer"?"from-farmer":"from-sarina")}>{message.text}</div>)}
+     {messages.map(message=><div key={message.id} className={"sarina-message "+(message.role==="farmer"?"from-farmer":"from-sarina")}>{message.audioUrl&&<audio controls preload="metadata" src={message.audioUrl} aria-label="پخش پیام صوتی"/>}{message.text}</div>)}
      {showNotice&&<div className="sarina-prototype-note">پیامت در این پیش‌نمایش ثبت شد. اتصال پاسخ‌گوی هوشمند برای این نقش هنوز فعال نشده است.</div>}
      {status&&<div className="sarina-prototype-note" role="status">{status}</div>}
     </div>
+    {isAdmin&&<div className="sarina-chat-voice"><VoiceMessageControls onVoiceMessage={receiveVoiceMessage} onTranscription={receiveTranscription} textToSpeak={latestSarinaReply} disabled={busy}/></div>}
     <form className="sarina-chat-compose" onSubmit={send}>
      <input value={draft} onChange={e=>setDraft(e.target.value)} placeholder="اینجا برای سارینا بنویس..." aria-label="پیام شما به سارینا" maxLength={2000} disabled={busy}/>
      <button type="submit" disabled={!draft.trim()||busy} aria-label="ارسال پیام">{busy?<span className="sarina-chat-spinner"/>:<ArrowUp size={18}/>}</button>
     </form>
-    <div className="sarina-chat-foot">{isAdmin?"آزمایش محدود Groq · پیام‌ها به سرویس Groq ارسال می‌شوند":"راهنمای شروع بدون نیاز به هوش مصنوعی"} <Leaf size={12}/></div>
+    <div className="sarina-chat-foot">{isAdmin?"آزمایش محدود Groq · تبدیل گفتار روی سرویس SARINA انجام می‌شود":"راهنمای شروع بدون نیاز به هوش مصنوعی"} <Leaf size={12}/></div>
    </div>
   </section>}
   <div className="sarina-launcher-wrap">
