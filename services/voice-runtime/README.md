@@ -19,8 +19,8 @@ The Persian and Arabic voices are listed in the Piper voice catalog. Review each
 mkdir -p models
 curl -L "https://huggingface.co/rhasspy/piper-voices/resolve/b22aa2aa275d5e8d528994782814cd8bf9d0337f/fa/fa_IR/amir/medium/fa_IR-amir-medium.onnx?download=true" -o models/fa_IR-amir-medium.onnx
 curl -L "https://huggingface.co/rhasspy/piper-voices/resolve/b22aa2aa275d5e8d528994782814cd8bf9d0337f/fa/fa_IR/amir/medium/fa_IR-amir-medium.onnx.json?download=true" -o models/fa_IR-amir-medium.onnx.json
-curl -L "https://huggingface.co/rhasspy/piper-voices/resolve/main/ar/ar_JO/kareem/medium/ar_JO-kareem-medium.onnx?download=true" -o models/ar_JO-kareem-medium.onnx
-curl -L "https://huggingface.co/rhasspy/piper-voices/resolve/main/ar/ar_JO/kareem/medium/ar_JO-kareem-medium.onnx.json?download=true" -o models/ar_JO-kareem-medium.onnx.json
+curl -L "https://huggingface.co/rhasspy/piper-voices/resolve/3ec800dafed75d43bbca3a82f2e67acddbcaf9ac/ar/ar_JO/kareem/medium/ar_JO-kareem-medium.onnx?download=true" -o models/ar_JO-kareem-medium.onnx
+curl -L "https://huggingface.co/rhasspy/piper-voices/resolve/3ec800dafed75d43bbca3a82f2e67acddbcaf9ac/ar/ar_JO/kareem/medium/ar_JO-kareem-medium.onnx.json?download=true" -o models/ar_JO-kareem-medium.onnx.json
 ```
 3. Build and start the service:
 
