@@ -29,7 +29,7 @@ def test_health_reports_local_vendored_engines_and_voice_slots():
     assert result["whisper_languages"] == ["fa", "ar", "auto"]
     assert set(result["piper_models_configured"]) == {"fa", "ar"}
     assert result["whisper_model_source"] == "local-vendored-code-and-local-weights"
-    assert result["piper_engine_source"] == "SARINA-vendored-Piper"
+    assert result["piper_engine_source"] == "SARINA-vendored-Piper-subprocess"
 
 
 def test_vendored_upstream_source_and_licenses_are_present():
