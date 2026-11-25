@@ -1237,7 +1237,7 @@
 
 
 /* Farmer chat: compact, non-obstructive collapsible tools rail */
-.farmer-sarina-workspace{display:grid;grid-template-columns:46px minmax(0,1fr);gap:12px;align-items:stretch;direction:rtl;padding:0 18px 16px}
+.farmer-sarina-workspace{display:grid;grid-template-columns:84px minmax(0,1fr);gap:12px;align-items:stretch;direction:rtl;padding:0 18px 16px}
 .farmer-sarina-workspace.tools-open{grid-template-columns:246px minmax(0,1fr)}
 .farmer-sarina-workspace .farmer-chat-primary{min-width:0;grid-column:2;grid-row:1}
 .farmer-chat-tools{grid-column:1;grid-row:1;min-width:0;display:flex;flex-direction:column;gap:10px}
