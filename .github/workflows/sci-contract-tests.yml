@@ -15,6 +15,9 @@ on:
     branches: [main, feature/local-ai-runtime-evaluation, feature/sci-task-orchestrator-v1, feature/sci-task-lifecycle-v1]
     paths:
       - "supabase/functions/sarina-central-intelligence/**"
+      - "supabase/functions/sai-evidence-assembler/**"
+      - "src/lib/sai/**"
+      - "deno.json"
       - "supabase/functions/sarina-admin-chat/**"
       - "supabase/functions/specialist-case-preparation/**"
       - "supabase/migrations/*siacp*"
