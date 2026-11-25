@@ -3,7 +3,7 @@ import type {FormEvent} from "react";
 import {BadgeCheck,PackagePlus,RefreshCw,Store,Truck} from "lucide-react";
 import {supabase} from "../lib/supabase";
 
-type Seller={id:string;display_name:string;description:string|null;country_code:string|null;region:string|null;city:string|null;contact_email:string|null;contact_phone:string|null;verification_status:string;verification_notes:string|null};
+type Seller={id:string;display_name:string;description:string|null;country_code:string|null;region:string|null;city:string|null;contact_email:string|null;contact_phone:string|null;verification_status:string;verification_notes:string|null;organization_id:string|null};
 type Category={id:string;code:string;name_fa:string;market_section:string};
 type Product={id:string;name:string;description:string|null;category_id:string;status:string;pricing_model:string;price:number|string|null;currency:string;unit_label:string;minimum_order_qty:number|string;stock_qty:number|string|null;image_urls:unknown;created_at:string};
 type Order={id:string;order_number:string;status:string;payment_status:string;fulfillment_status:string;total_amount:number|string;currency:string;placed_at:string};
@@ -12,7 +12,7 @@ const db=supabase as any;
 const currencyLabels:Record<string,string>={IRR:"ریال",USD:"دلار",EUR:"یورو",AED:"درهم",TRY:"لیر",AZN:"منات"};
 const statusLabels:Record<string,string>={pending:"در انتظار بررسی",verified:"تأییدشده",rejected:"نیازمند اصلاح",suspended:"تعلیق‌شده",draft:"پیش‌نویس",published:"منتشرشده",archived:"بایگانی‌شده",awaiting_payment:"در انتظار پرداخت",paid:"پرداخت‌شده",cancelled:"لغوشده",processing:"در حال آماده‌سازی",shipped:"ارسال‌شده",delivered:"تحویل‌شده"};
 
-export default function SpecialistStoreWorkspace({userId,enabled}:{userId:string;enabled:boolean}){
+export default function SpecialistStoreWorkspace({userId,enabled,sellerType="specialist",organizationId}:{userId:string;enabled:boolean;sellerType?:"specialist"|"company";organizationId?:string}){
  const [seller,setSeller]=useState<Seller|null>(null);
  const [categories,setCategories]=useState<Category[]>([]);
  const [products,setProducts]=useState<Product[]>([]);
@@ -30,7 +30,9 @@ export default function SpecialistStoreWorkspace({userId,enabled}:{userId:string
   if(!supabase){setError("اتصال پایگاه داده در این محیط پیکربندی نشده است.");setLoading(false);return;}
   setLoading(true);setError("");
   try{
-   const own=await db.from("marketplace_sellers").select("id,display_name,description,country_code,region,city,contact_email,contact_phone,verification_status,verification_notes").eq("owner_user_id",userId).eq("seller_type","specialist").maybeSingle();
+   let ownQuery=db.from("marketplace_sellers").select("id,display_name,description,country_code,region,city,contact_email,contact_phone,verification_status,verification_notes,organization_id").eq("owner_user_id",userId).eq("seller_type",sellerType);
+   if(sellerType==="company"&&organizationId)ownQuery=ownQuery.eq("organization_id",organizationId);
+   const own=await ownQuery.maybeSingle();
    if(own.error)throw own.error;
    setSeller(own.data as Seller|null);
    const cats=await db.from("marketplace_categories").select("id,code,name_fa,market_section").eq("market_section","company_supplies").eq("is_active",true).neq("code","crop_protection").order("sort_order",{ascending:true});
@@ -47,7 +49,7 @@ export default function SpecialistStoreWorkspace({userId,enabled}:{userId:string
    }else{setProducts([]);setOrders([]);}
   }catch(e){setError(e instanceof Error?e.message:"دریافت اطلاعات فروشگاه انجام نشد.");}
   finally{setLoading(false);}
- },[userId]);
+ },[userId,sellerType,organizationId]);
 
  useEffect(()=>{if(enabled)void load();else setLoading(false);},[enabled,load]);
  const verified=seller?.verification_status==="verified";
@@ -57,7 +59,7 @@ export default function SpecialistStoreWorkspace({userId,enabled}:{userId:string
   e.preventDefault();if(!supabase||!enabled)return;
   setBusy(true);setError("");setNotice("");
   try{
-   const {error}=await db.from("marketplace_sellers").insert({seller_type:"specialist",owner_user_id:userId,display_name:sellerForm.display_name.trim(),description:sellerForm.description.trim()||null,country_code:sellerForm.country_code.trim().toUpperCase()||null,region:sellerForm.region.trim()||null,city:sellerForm.city.trim()||null,contact_email:sellerForm.contact_email.trim()||null,contact_phone:sellerForm.contact_phone.trim()||null,verification_status:"pending"}).select("id").single();
+   const {error}=await db.from("marketplace_sellers").insert({seller_type:sellerType,organization_id:sellerType==="company"?organizationId:null,owner_user_id:userId,display_name:sellerForm.display_name.trim(),description:sellerForm.description.trim()||null,country_code:sellerForm.country_code.trim().toUpperCase()||null,region:sellerForm.region.trim()||null,city:sellerForm.city.trim()||null,contact_email:sellerForm.contact_email.trim()||null,contact_phone:sellerForm.contact_phone.trim()||null}).select("id").single();
    if(error)throw error;
    setNotice("درخواست ایجاد فروشگاه ثبت شد. پس از بررسی و تأیید فروشنده، امکان انتشار محصولات فعال می‌شود.");
    await load();
@@ -73,7 +75,7 @@ export default function SpecialistStoreWorkspace({userId,enabled}:{userId:string
   setBusy(true);setError("");setNotice("");
   try{
    let imageUrls: string[]=[];
-   if(productForm.image_url.trim()){const url=new URL(productForm.image_url.trim());if(!["https:","http:"].includes(url.protocol))throw new Error("نشانی تصویر باید با HTTP یا HTTPS آغاز شود.");imageUrls=[url.toString()];}
+   if(productForm.image_url.trim()){const url=new URL(productForm.image_url.trim());if(url.protocol!=="https:")throw new Error("نشانی تصویر باید با HTTPS آغاز شود.");imageUrls=[url.toString()];}
    const payload={seller_id:seller.id,category_id:productForm.category_id,market_section:"company_supplies",name:productForm.name.trim(),description:productForm.description.trim()||null,specifications:{},pricing_model:productForm.pricing_model,price,currency:productForm.currency,unit_label:productForm.unit_label.trim()||"unit",minimum_order_qty:Number(productForm.minimum_order_qty)||1,stock_qty:productForm.stock_qty.trim()===""?null:Number(productForm.stock_qty),image_urls:imageUrls};
    const result=editingProductId
     ?await db.from("marketplace_products").update(payload).eq("id",editingProductId).eq("seller_id",seller.id)
@@ -97,9 +99,9 @@ export default function SpecialistStoreWorkspace({userId,enabled}:{userId:string
   finally{setBusy(false);}
  }
 
- if(!enabled)return <section className="specialist-store"><div className="specialist-store-empty"><Store size={34}/><h2>فروشگاه متخصص</h2><p>این بخش برای حساب‌هایی فعال است که هنگام ثبت‌نام داشتن فروشگاه را تأیید کرده‌اند.</p></div></section>;
+ if(!enabled)return <section className="specialist-store"><div className="specialist-store-empty"><Store size={34}/><h2>{sellerType==="company"?"فروشگاه سازمانی":"فروشگاه متخصص"}</h2><p>{sellerType==="company"?"برای راه‌اندازی فروشگاه، ابتدا باید سازمان تأییدشده و عضویت فعال در آن داشته باشید.":"این بخش برای حساب‌هایی فعال است که هنگام ثبت‌نام داشتن فروشگاه را تأیید کرده‌اند."}</p></div></section>;
  return <section className="specialist-store" dir="rtl">
-  <div className="specialist-store-heading"><div><span>کسب‌وکار تخصصی شما</span><h2><Store size={24}/> فروشگاه من</h2><p>محصولات تخصصی خود را مدیریت کنید و پس از تأیید فروشندگی، آن‌ها را در بازارگاه SARINA عرضه کنید.</p></div><button type="button" onClick={()=>void load()} disabled={loading}><RefreshCw size={15}/> به‌روزرسانی</button></div>
+  <div className="specialist-store-heading"><div><span>{sellerType==="company"?"کسب‌وکار سازمانی شما":"کسب‌وکار تخصصی شما"}</span><h2><Store size={24}/> {sellerType==="company"?"فروشگاه سازمانی":"فروشگاه من"}</h2><p>محصولات خود را مدیریت کنید و پس از تأیید فروشندگی، آن‌ها را در بازارگاه SARINA عرضه کنید.</p></div><button type="button" onClick={()=>void load()} disabled={loading}><RefreshCw size={15}/> به‌روزرسانی</button></div>
   <div className="specialist-store-trust"><BadgeCheck size={18}/><span>ایجاد فروشگاه به‌معنای تأیید فروشندگی نیست. انتشار کالا پس از تأیید فروشنده و بررسی الزامات محصول انجام می‌شود؛ پرداخت آنلاین هنوز فعال نیست.</span></div>
   {error&&<div className="specialist-store-alert" role="alert">{error}</div>}{notice&&<div className="specialist-store-notice">{notice}</div>}
   {loading?<div className="specialist-store-empty">در حال دریافت اطلاعات فروشگاه...</div>:!seller?<div className="specialist-store-panel"><h3>راه‌اندازی فروشگاه تخصصی</h3><p>اطلاعات اولیه فروشگاه را ثبت کنید. درخواست شما در وضعیت «در انتظار بررسی» قرار می‌گیرد.</p><form className="specialist-store-form" onSubmit={createSeller}>
