@@ -15,7 +15,7 @@ from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 from starlette.background import BackgroundTask
 
-APP_VERSION = "0.1.0"
+APP_VERSION = "0.2.0"
 MAX_AUDIO_BYTES = int(os.getenv("MAX_AUDIO_BYTES", str(20 * 1024 * 1024)))
 MAX_TEXT_CHARS = int(os.getenv("MAX_TEXT_CHARS", "6000"))
 MAX_AUDIO_SECONDS = int(os.getenv("MAX_AUDIO_SECONDS", "90"))
@@ -139,7 +139,7 @@ def _synthesize_file(text: str, output_path: str, model_path: Path) -> None:
     command = [
         PIPER_EXECUTABLE,
         "--model",
-        str(PIPER_MODEL_PATH),
+        str(model_path),
         "--output_file",
         output_path,
     ]
