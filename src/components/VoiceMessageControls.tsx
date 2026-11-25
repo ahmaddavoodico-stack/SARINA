@@ -6,7 +6,7 @@ import "./voice-message-controls.css";
 type VoicePayload={audio:Blob;mimeType:string};
 type Props={
   onTranscription:(text:string)=>void;
-  onVoiceMessage?:(payload:VoicePayload)=>void|Promise<void>;
+  onVoiceMessage:(payload:VoicePayload)=>void|Promise<void>;
   textToSpeak?:string;
   disabled?:boolean;
 };
@@ -49,7 +49,7 @@ export default function VoiceMessageControls({onTranscription,onVoiceMessage,tex
 
   async function startRecording(){
     setNotice("");
-    if(!apiBase){setNotice("سرویس صوتی SARINA هنوز به این محیط متصل نشده است.");return;}
+    if(!onVoiceMessage){setNotice("ذخیره پیام صوتی در این گفتگو هنوز فعال نشده است.");return;}\n    if(!apiBase){setNotice("سرویس صوتی SARINA هنوز به این محیط متصل نشده است.");return;}
     if(!navigator.mediaDevices?.getUserMedia||typeof MediaRecorder==="undefined"){setNotice("مرورگر این دستگاه امکان ضبط صدا را فراهم نمی‌کند.");return;}
     try{
       const stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}});
@@ -63,7 +63,7 @@ export default function VoiceMessageControls({onTranscription,onVoiceMessage,tex
         stream.getTracks().forEach(track=>track.stop());
         streamRef.current=null;
         if(blob.size===0){setNotice("صدایی ضبط نشد؛ دوباره تلاش کنید.");return;}
-        try{await onVoiceMessage?.({audio:blob,mimeType:blob.type});}catch{setNotice("ذخیره پیام صوتی انجام نشد.");return;}
+        try{await onVoiceMessage({audio:blob,mimeType:blob.type});}catch{setNotice("ذخیره پیام صوتی انجام نشد.");return;}
         setProcessing(true);
         try{await transcribe(blob);setNotice("پیام صوتی دریافت و به متن تبدیل شد.");}
         catch(error){setNotice(error instanceof Error?error.message:"پردازش صدا ناموفق بود.");}
