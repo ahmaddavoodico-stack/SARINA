@@ -145,11 +145,6 @@ function HomePage({session,sarinaUserId,requests,services,loading,go}:{session:S
  return <section className="farmer-home">
   <div className="welcome-row"><div><span className="eyebrow">امروز، فرصتی تازه برای رشد</span><h1>سلام {first}، خوش آمدید 🌱</h1><p>بیایید وضعیت مزرعه و مسیر پیشرفتتان را دنبال کنیم.</p></div><div className="weather-card"><CloudSun size={25}/><div><strong>آب‌وهوا</strong><span>پس از ثبت موقعیت مزرعه فعال می‌شود</span></div></div></div>
   <section className="farmer-sarina-hub" aria-label="گفت‌وگوی یکپارچه با سارینا و متخصص">
-   <header className="farmer-sarina-brandbar">
-    <div className="farmer-sarina-mark"><SarinaCharacter/></div>
-    <div className="farmer-sarina-brandcopy"><span>همراه هوشمند مزرعه شما</span><h2>اتاق همراهی سارینا</h2><p>یک گفت‌وگو برای پیگیری مزرعه، دریافت راهنمایی و همراهی متخصص</p></div>
-    <span className="farmer-sarina-secure"><ShieldCheck size={15}/> پرونده‌محور و امن</span>
-   </header>
    <div className="farmer-sarina-first-message"><SarinaCharacter/><div><b>سلام! من سارینا هستم 🌱</b><p>من اینجام تا در مسیر مزرعه همراهت باشم. هر پرونده و متخصصی که اضافه کنی، گفت‌وگو را همین‌جا ادامه می‌دهیم.</p></div></div>
    {sarinaUserId?<FarmerSpecialistChatInbox key={chatRefresh} userId={sarinaUserId} mode="farmer" compact afterComposer={<div className="farmer-sarina-actions"><div><strong>نیاز به همراهی تخصصی داری؟</strong><small>متخصص تأییدشده را به پرونده و همین گفت‌وگو اضافه کن.</small></div><button type="button" className="farmer-add-expert" onClick={()=>setShowExpertPicker(true)}><Users size={17}/> افزودن متخصص به گفتگو</button></div>}/> :<div className="empty-state"><MessageCircle size={28}/><strong>برای شروع گفت‌وگو، حساب کشاورز باید تکمیل شود.</strong></div>}
   </section>
