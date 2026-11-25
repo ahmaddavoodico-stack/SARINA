@@ -176,9 +176,15 @@ export function buildSaiCaseEnvelope(input: SaiAssemblerInput): SaiCaseEnvelope 
         "farm_productivity_context_observations", row, "text_value", row.text_value,
         "text", row.observed_at, sourceType(row.source_type), row.quality_label,
       )).filter((item): item is SaiEvidenceItem => item !== null),
-    ...input.observations.map((row) =>
-      recordEvidence("farm_observations", row, "farm_observation", row.observed_at, "farmer_reported")
-    ),
+    ...input.observations.map((row) => {
+      const description = measurementEvidence(
+        "farm_observations", row, String(row.observation_type ?? "farm_observation"),
+        row.description, "text", row.observed_at, "farmer_reported",
+      );
+      return description ?? recordEvidence(
+        "farm_observations", row, "farm_observation", row.observed_at, "farmer_reported",
+      );
+    }),
     ...input.irrigationEvents.map((row) =>
       recordEvidence("irrigation_events", row, "irrigation_event", row.started_at, "farmer_reported")
     ),
@@ -202,14 +208,8 @@ export function buildSaiCaseEnvelope(input: SaiAssemblerInput): SaiCaseEnvelope 
     };
   });
 
-  const followUps: SaiCaseEnvelope["followUps"] = input.observations
-    .filter((row) => date(row.observed_at) !== null)
-    .map((row) => ({
-      followUpId: String(row.id),
-      observedAt: date(row.observed_at)!,
-      evidenceRefs: [String(row.id)],
-      notes: str(row.description),
-    }));
+  // Farm observations are retained as evidence, not mislabeled as follow-up events.
+  const followUps: SaiCaseEnvelope["followUps"] = [];
 
   const latestOutcome = [...input.outcomeReviews].sort((a, b) =>
     String(b.reviewed_at ?? b.created_at ?? "").localeCompare(
@@ -245,7 +245,9 @@ export function buildSaiCaseEnvelope(input: SaiAssemblerInput): SaiCaseEnvelope 
       farmRef: farmId,
       fieldRef: str(latestCycle?.field_id),
       cropCycleRef: str(latestCycle?.id),
-      cropCode: str(latestCycle?.crop_id) ?? "unknown",
+      cropCode: str(latestCycle?.crop_id)
+        ? "crop_id:" + String(latestCycle?.crop_id)
+        : "unknown",
       varietyCode: str(latestCycle?.variety_id),
       productionSystem: null,
       countryCode: null,
@@ -257,7 +259,7 @@ export function buildSaiCaseEnvelope(input: SaiAssemblerInput): SaiCaseEnvelope 
       timezone: "UTC",
     },
     problem: {
-      reportedDescription: "Read-only farm evidence snapshot; no diagnosis or causal conclusion is generated.",
+      reportedDescription: "No farmer-reported case description was supplied to this read-only assembly request.",
       symptoms: [],
       diagnoses: [],
     },
