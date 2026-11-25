@@ -1,0 +1,29 @@
+name: SARINA voice runtime contract tests
+on:
+  push:
+    branches: [main, feature/farmer-portal-foundation]
+    paths:
+      - "services/voice-runtime/**"
+      - ".github/workflows/voice-runtime-tests.yml"
+  pull_request:
+    branches: [main, feature/farmer-portal-foundation]
+    paths:
+      - "services/voice-runtime/**"
+      - ".github/workflows/voice-runtime-tests.yml"
+permissions:
+  contents: read
+jobs:
+  contract-tests:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/voice-runtime
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: services/voice-runtime/requirements-test.txt
+      - run: pip install -r requirements-test.txt
+      - run: pytest -q
