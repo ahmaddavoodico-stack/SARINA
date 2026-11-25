@@ -43,6 +43,7 @@ export default function VoiceMessageControls({onTranscription,onVoiceMessage,tex
     const form=new FormData();
     const extension=blob.type.includes("ogg")?"ogg":blob.type.includes("mp4")?"m4a":blob.type.includes("wav")?"wav":"webm";
     form.append("file",blob,"sarina-voice."+extension);
+    form.append("language","fa");
     const response=await fetch(apiBase+"/v1/transcribe",{method:"POST",headers:{Authorization:"Bearer "+token},body:form});
     if(!response.ok){const payload=await response.json().catch(()=>({}));throw new Error(payload.detail||"تبدیل صدا به متن انجام نشد.");}
     const payload=await response.json();
