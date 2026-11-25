@@ -1483,3 +1483,17 @@
     radial-gradient(ellipse at 8% 90%,rgba(232,220,183,.22),transparent 34%),
     linear-gradient(145deg,#f7faf3 0%,#f3f7ef 52%,#faf8f0 100%);
 }
+
+/* Keep the admin voice recorder visible beside the message input on narrow screens. */
+.sarina-chat-compose-admin{gap:6px}
+.sarina-chat-compose-admin>.sarina-voice-controls{flex:0 0 auto;min-width:0;max-width:118px}
+.sarina-chat-compose-admin .sarina-voice-actions{gap:4px}
+.sarina-chat-compose-admin .sarina-voice-button{min-height:39px;padding:7px 8px;gap:5px;font-size:10px;white-space:nowrap}
+.sarina-chat-compose-admin .sarina-voice-button span{display:inline}
+.sarina-chat-compose-admin>input{padding:0 8px}
+@media(max-width:390px){
+ .sarina-chat-compose-admin{gap:5px;padding:8px}
+ .sarina-chat-compose-admin>.sarina-voice-controls{max-width:104px}
+ .sarina-chat-compose-admin .sarina-voice-button{padding:7px 6px;font-size:9px}
+ .sarina-chat-compose-admin>input{font-size:10px}
+}
