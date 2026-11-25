@@ -44,7 +44,7 @@ A read-only live query on 2026-11-25 confirmed 19 `marketplace_*` tables and RLS
 - `marketplace_trade_routes`
 - `marketplace_trade_checklist_items`
 
-Exact read-only row counts for the ten core marketplace tables at audit time:
+The 14 active categories are split into 5 farmer-produce categories and 9 supplier-goods categories. Exact read-only row counts for the ten core marketplace tables at audit time:
 
 | Table | Rows |
 |---|---:|
@@ -208,7 +208,7 @@ The branch now restores the available applied migration sources:
 ### Remaining release blockers
 
 1. No seller-verification admin RPC or Edge Function exists in the live project. Do not add a client-side verification action. Build a narrow authenticated admin review endpoint with explicit admin authorization and an audit record.
-2. No marketplace product-media Storage upload workflow has been implemented. Current farmer product form accepts an optional HTTPS image reference only.
+2. No marketplace-specific Storage bucket exists in the live project and no product-media upload workflow has been implemented. The current farmer product form accepts an optional HTTPS image reference only.
 3. No payment provider/webhook, real tax calculation, shipping quote or payout/settlement integration is configured. The current checkout creates an unpaid order and a draft invoice only.
 4. Seller profiles and product tables are empty in the live project; no catalog item or seller has been seeded.
 5. Complete browser end-to-end tests are still required for farmer application, product draft, admin approval, publication, cart, quote response, checkout, cancellation and participant-only order visibility.
