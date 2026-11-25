@@ -1382,3 +1382,59 @@
 .company-store-org-select{display:grid;gap:7px;color:#5d7463;font-size:10px;font-weight:700}
 .company-store-org-select select{width:100%}
 @media(max-width:600px){.company-store-heading{align-items:flex-start;flex-direction:column}}
+
+
+/* SARINA farmer home + marketplace visual refresh (reference: selected green farmer dashboard) */
+.farmer-home{direction:rtl;color:#29483a}
+.farmer-home>.welcome-row{position:relative;overflow:hidden;align-items:center;min-height:158px;padding:25px 28px;margin:0 0 18px;border:0;border-radius:22px;background:linear-gradient(118deg,#075f43 0%,#08724f 58%,#0c8058 100%);box-shadow:0 12px 28px rgba(15,86,58,.12)}
+.farmer-home>.welcome-row:after{content:"";position:absolute;left:-42px;bottom:-118px;width:270px;height:220px;border:1px solid rgba(255,255,255,.12);border-radius:50%;box-shadow:0 0 0 25px rgba(255,255,255,.035),0 0 0 52px rgba(255,255,255,.025)}
+.farmer-home>.welcome-row>div:first-child{position:relative;z-index:1}
+.farmer-home>.welcome-row .eyebrow{color:#b9d9c5}
+.farmer-home>.welcome-row h1{color:#fff;font-size:23px;margin:8px 0}
+.farmer-home>.welcome-row p{color:#d1e6d8;font-size:11px}
+.farmer-home>.welcome-row .weather-card{position:relative;z-index:1;min-width:245px;max-width:285px;padding:14px 16px;border:1px solid rgba(255,255,255,.55);border-radius:15px;background:#fff;box-shadow:0 8px 22px rgba(0,0,0,.08)}
+.farmer-home .farmer-sarina-hub{padding:16px;border:1px solid #e1ebe1;border-radius:19px;background:#fff;box-shadow:0 7px 24px rgba(30,73,49,.045)}
+.farmer-home .farmer-sarina-first-message{padding:2px 3px 13px}
+.farmer-home .farmer-sarina-first-message b{color:#23513b}
+.farmer-home .farmer-sarina-first-message p{color:#839188}
+.farmer-home .farmer-sarina-workspace{border-radius:14px;background:#f7faf6}
+.farmer-home .section-title{margin:23px 0 13px}
+.farmer-home .section-title h2{font-size:17px;color:#244a38}
+.farmer-home .stat-grid{gap:11px}
+.farmer-home .stat-card{min-height:130px;border:1px solid #e4ece3;border-radius:16px;box-shadow:0 4px 14px rgba(35,75,48,.035);transition:transform .18s ease,border-color .18s ease}
+.farmer-home .stat-card:hover{transform:translateY(-2px);border-color:#c8ddc9}
+.farmer-home .farmer-quick-links{gap:12px;margin-top:15px}
+.farmer-home .farmer-quick-link{min-height:82px;border-radius:15px;border:1px solid #e3ebe2;background:#fff}
+.farmer-home .lower-grid{margin-top:15px}
+.farmer-home .panel{border-radius:16px}
+.marketplace-workspace{padding:0 0 8px}
+.marketplace-heading{padding:19px 21px;border:1px solid #e1ebe1;border-radius:18px;background:linear-gradient(115deg,#f3f8f1,#fff 68%);margin-bottom:15px}
+.marketplace-heading h1{font-size:24px;letter-spacing:-.3px}
+.marketplace-trust-note{border-radius:12px}
+.marketplace-product-card{border-radius:17px;border-color:#e2ebe1;box-shadow:0 5px 18px rgba(29,73,45,.045);transition:transform .18s ease,box-shadow .18s ease}
+.marketplace-product-card:hover{transform:translateY(-3px);box-shadow:0 12px 25px rgba(29,73,45,.09)}
+.marketplace-product-media{height:178px;background:linear-gradient(145deg,#e9f2e6,#f6f8f2)}
+.marketplace-product-body{padding:15px}
+.marketplace-product-body h3{font-size:14px}
+.marketplace-product-body>p{font-size:10px;min-height:38px}
+.marketplace-product-footer strong{font-size:12px}
+.marketplace-mode-tabs{border-radius:13px;padding:5px;background:#edf4ec;border:1px solid #e1ebe0}
+.marketplace-mode-tabs button{border-radius:9px}
+.marketplace-mode-tabs button.active{background:#fff;box-shadow:0 2px 8px rgba(32,74,47,.08)}
+@media(max-width:760px){
+ .farmer-home>.welcome-row{align-items:stretch;gap:15px;padding:20px 18px;border-radius:18px}
+ .farmer-home>.welcome-row h1{font-size:20px}
+ .farmer-home>.welcome-row .weather-card{max-width:none;min-width:0;width:100%}
+ .farmer-home .farmer-sarina-hub{padding:11px}
+ .farmer-home .stat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .farmer-home .stat-card{min-height:120px}
+ .marketplace-heading{padding:15px;gap:10px}
+ .marketplace-product-media{height:130px}
+}
+@media(max-width:390px){
+ .farmer-home>.welcome-row{padding:17px 14px}
+ .farmer-home .stat-grid{gap:8px}
+ .farmer-home .stat-card{padding:10px}
+ .marketplace-product-media{height:112px}
+ .marketplace-product-body{padding:10px}
+}
