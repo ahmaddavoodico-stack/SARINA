@@ -202,7 +202,7 @@ The branch now restores the available applied migration sources:
 - The assertions confirmed all 19 marketplace tables have RLS enabled, the expected anonymous catalog-only read grants, no anonymous checkout/quote/cancel RPC execution, and no anon/authenticated `TRUNCATE`, `MAINTAIN`, `REFERENCES` or `TRIGGER` privileges on the marketplace tables.
 - Seller/product RLS policies, product-section helper, column grants and relevant constraints were inspected read-only.
 - The seller verification status column defaults to `pending` and is not client-insertable; the farmer seller UI therefore omits it.
-- GitHub Actions PWA build passed through commit `17d36f908c7ac19bd0cb6d4b671bb44798c69313`. A newer build for the seller quote-response update is pending at the time of this note.
+- GitHub Actions PWA build passed on head commit `d06d4c4522aabe30eb09fff6e4cdf428563aa2b3` (run #1179). Vercel preview status remains pending; no deployed preview or production release is claimed.
 - No authenticated browser workflow has been exercised with a real test buyer/seller account.
 
 ### Remaining release blockers
