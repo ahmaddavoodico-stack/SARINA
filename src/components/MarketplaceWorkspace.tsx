@@ -134,7 +134,7 @@ export default function MarketplaceWorkspace({userId}:{userId:string|null}){
       <h3>{product.name}</h3>
       <p>{product.description||"توضیحات تکمیلی این محصول هنوز ثبت نشده است."}</p>
       <div className="marketplace-seller"><Store size={14}/><span>{seller?.display_name||"فروشنده تأییدشده"}</span>{seller?.verification_status==="verified"&&<BadgeCheck size={14}/>}</div>
-      <div className="marketplace-origin">{[product.origin_region,product.origin_country].filter(Boolean).join("، ")||"مبدأ ثبت نشده"}{product.quality_grade?" · درجه "+product.quality_grade:""}</div>
+      <div className="marketplace-origin">{[product.origin_region,product.origin_country].filter(Boolean).length?"مبدأ اعلامی فروشنده: "+[product.origin_region,product.origin_country].filter(Boolean).join("، "):"مبدأ ثبت نشده"}{product.quality_grade?" · کیفیت اعلامی فروشنده: "+product.quality_grade:""}</div>
       <div className="marketplace-product-footer"><strong>{product.pricing_model==="request_quote"?"قیمت با استعلام":formatPrice(product.price,product.currency,product.unit_label)}</strong><small>حداقل سفارش: {Number(product.minimum_order_qty).toLocaleString("fa-IR")} {product.unit_label}</small></div>
       {product.pricing_model==="fixed"?<button className="marketplace-action" type="button" disabled={!userId||cartBusy} onClick={()=>void addToCart(product)}>{cartBusy?"در حال ثبت...":"افزودن به سبد خرید"}</button>:<>
        <button className="marketplace-action secondary" type="button" disabled={!userId||cartBusy} onClick={()=>{setQuoteProductId(quoteProductId===product.id?null:product.id);setQuoteQuantity(String(product.minimum_order_qty));setQuoteMessage("");setError("");}}>{quoteProductId===product.id?"بستن فرم":"درخواست قیمت"}</button>
