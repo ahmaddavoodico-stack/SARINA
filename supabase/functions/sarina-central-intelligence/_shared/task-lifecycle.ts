@@ -207,6 +207,9 @@ export class InMemoryTaskManager {
     if (next === "succeeded" && !task.result) {
       throw new TaskLifecycleError("RESULT_REQUIRED", "A validated task result is required before success.");
     }
+    if (next === "running") {
+      throw new TaskLifecycleError("TASK_CLAIM_REQUIRED", "Tasks must enter running through claimTask so a worker lease is acquired.");
+    }
     if (next === "running" && task.attemptCount >= task.envelope.retryPolicy.maxAttempts) {
       throw new TaskLifecycleError("RETRY_LIMIT_REACHED", "Maximum execution attempts reached.");
     }
