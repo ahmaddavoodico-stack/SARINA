@@ -1,12 +1,12 @@
 name: SARINA voice runtime contract tests
 on:
   push:
-    branches: [main, feature/farmer-portal-foundation]
+    branches: [main, feature/farmer-portal-foundation, "feat/**", "fix/**"]
     paths:
       - "services/voice-runtime/**"
       - ".github/workflows/voice-runtime-tests.yml"
   pull_request:
-    branches: [main, feature/farmer-portal-foundation]
+    branches: [main, feature/farmer-portal-foundation, "feat/**", "fix/**"]
     paths:
       - "services/voice-runtime/**"
       - ".github/workflows/voice-runtime-tests.yml"
