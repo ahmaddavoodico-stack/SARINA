@@ -91,6 +91,8 @@ export default function MarketplaceBuyerWorkspace({userId}:{userId:string}){
  }
  async function checkout(sellerId:string){
   if(!supabase)return;
+  const sellerCurrencies=new Set((groups[sellerId]||[]).map(item=>products[item.product_id]?.currency).filter(Boolean));
+  if(sellerCurrencies.size>1){setError("برای هر فروشنده، همه اقلام یک سفارش باید با یک ارز باشند. اقلام با ارز دیگر را از سبد خارج کنید.");return;}
   if(!shipping.recipient.trim()||shipping.phone.trim().length<5||shipping.address.trim().length<5||shipping.city.trim().length<2||shipping.country.trim().length<2){setError("اطلاعات تحویل‌گیرنده، تلفن، نشانی، شهر و کشور را کامل کنید.");return;}
   setBusy(true);setError("");setNotice("");
   try{
