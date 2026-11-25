@@ -180,6 +180,8 @@ The first code slice after this audit should be a controlled port of the verifie
 - Added the verified-seller catalog to the current farmer portal navigation.
 - Added two catalog sections: farmer-produced goods and supplier/company supplies.
 - Added a farmer seller application and product-management workspace. Seller status is not supplied by the browser; the database default creates applications as `pending`.
+- Added specialist supplier storefront management in the expert workspace, gated by the existing `users.has_shop` flag.
+- Added company supplier storefront management in the organization portal. Eligible organizations are retrieved through the authenticated `list_my_marketplace_organizations` RPC, and seller creation is checked against active organization membership.
 - Farmer product drafts capture category, description, origin country/region, variety, seller-reported quality grade, harvest date, unit, currency, pricing model, minimum order, stock and an optional HTTPS image reference.
 - Added buyer cart actions for fixed-price products, minimum-order and available-stock checks, seller-specific checkout through `create_marketplace_order`, unpaid-order cancellation through `cancel_marketplace_order`, and quote requests through `create_marketplace_quote_request`.
 - Added buyer views for cart, order history and quote-request status, with explicit unpaid and unconfigured shipping/tax notices.
@@ -202,7 +204,7 @@ The branch now restores the available applied migration sources:
 - The assertions confirmed all 19 marketplace tables have RLS enabled, the expected anonymous catalog-only read grants, no anonymous checkout/quote/cancel RPC execution, and no anon/authenticated `TRUNCATE`, `MAINTAIN`, `REFERENCES` or `TRIGGER` privileges on the marketplace tables.
 - Seller/product RLS policies, product-section helper, column grants and relevant constraints were inspected read-only.
 - The seller verification status column defaults to `pending` and is not client-insertable; the farmer seller UI therefore omits it.
-- GitHub Actions PWA build passed on head commit `d06d4c4522aabe30eb09fff6e4cdf428563aa2b3` (run #1179). Vercel preview status remains pending; no deployed preview or production release is claimed.
+- GitHub Actions PWA build passed on head commit `0bee37bb3b70d0f66d51c9589f4a6b66809209b6` (run #1186), including farmer, specialist and company seller workspaces. Vercel preview status remains pending; no deployed preview or production release is claimed.
 - No authenticated browser workflow has been exercised with a real test buyer/seller account.
 
 ### Remaining release blockers
