@@ -3,7 +3,7 @@ import type {
   SaiEvidenceItem,
   SaiEvidenceQuality,
   SaiSourceType,
-} from "../../../src/lib/sai/evidence-contract.ts";
+} from "../../../../src/lib/sai/evidence-contract.ts";
 
 type Row = Record<string, unknown>;
 
@@ -29,7 +29,7 @@ function str(value: unknown): string | null {
 
 function date(value: unknown): string | null {
   if (typeof value !== "string" && !(value instanceof Date)) return null;
-  const parsed = new Date(value);
+  const parsed = new Date(value instanceof Date ? value.getTime() : value);
   return Number.isFinite(parsed.getTime()) ? parsed.toISOString() : null;
 }
 
