@@ -45,6 +45,11 @@ Deno.test("assembler produces a valid private case without promoting shared know
   assert(envelope.evidence.some((item) =>
     item.kind === "metric_value" && item.value?.originalUnit === "kg/ha"
   ));
+  assert(envelope.evidence.some((item) =>
+    item.kind === "farm_observation" && item.value?.original === "Farmer-reported leaf yellowing"
+  ));
+  assertEquals(envelope.followUps.length, 0);
+  assertEquals(envelope.scope.cropCode, "crop_id:crop-1");
   assert(envelope.interventions.some((item) =>
     item.status === "performed" && item.performedAt === "2026-02-05T00:00:00.000Z"
   ));
