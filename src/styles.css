@@ -698,6 +698,8 @@
 .sarina-welcome-message p{font-size:10px;line-height:1.9;color:#718577;margin:0}
 .sarina-sparkle{position:absolute;left:12px;top:12px;color:#a58b4d}
 .sarina-message{max-width:88%;padding:10px 12px;border-radius:13px;font-size:11px;line-height:1.9;white-space:pre-wrap;overflow-wrap:anywhere}
+.sarina-message-sender{display:block;margin:0 0 5px;font-size:10px;font-weight:800;color:#34704a}
+.sarina-message audio{display:block;width:min(260px,100%);max-width:100%;height:38px;margin:0 0 6px;border-radius:10px}
 .sarina-message audio{display:block;width:min(260px,100%);max-width:100%;height:38px;margin:0 0 6px;border-radius:10px}
 .sarina-message audio:focus-visible{outline:2px solid #6c9e79;outline-offset:2px}
 .sarina-message.from-farmer{align-self:flex-start;background:#e3efe2;color:#315b40;border-bottom-right-radius:4px}
