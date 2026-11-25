@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any
 
 import httpx
+import av
 from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
@@ -22,6 +23,7 @@ MAX_AUDIO_BYTES = int(os.getenv("MAX_AUDIO_BYTES", str(20 * 1024 * 1024)))
 MAX_TEXT_CHARS = int(os.getenv("MAX_TEXT_CHARS", "6000"))
 MAX_AUDIO_SECONDS = int(os.getenv("MAX_AUDIO_SECONDS", "90"))
 WHISPER_MODEL_PATH = Path(os.getenv("WHISPER_MODEL_PATH", "/models/whisper/small"))
+WHISPER_MODEL_REPO = os.getenv("WHISPER_MODEL_REPO", "Systran/faster-whisper-small")
 WHISPER_DEVICE = os.getenv("WHISPER_DEVICE", "cpu")
 WHISPER_COMPUTE_TYPE = os.getenv("WHISPER_COMPUTE_TYPE", "int8")
 WHISPER_CPU_THREADS = int(os.getenv("WHISPER_CPU_THREADS", "4"))
@@ -89,16 +91,62 @@ async def require_authenticated_user(authorization: str | None = Header(default=
     return {"id": user["id"]}
 
 
+def _ensure_whisper_model() -> None:
+    global WHISPER_MODEL_PATH
+    if WHISPER_MODEL_PATH.is_dir():
+        return
+    if os.getenv("VERCEL") != "1":
+        raise RuntimeError(
+            f"Local Whisper model is missing: {WHISPER_MODEL_PATH}. "
+            "Provision model files before starting voice traffic."
+        )
+    from huggingface_hub import snapshot_download
+
+    WHISPER_MODEL_PATH = Path(
+        snapshot_download(
+            repo_id=WHISPER_MODEL_REPO,
+            allow_patterns=["config.json", "model.bin", "tokenizer.json", "vocabulary.json", "preprocessor_config.json"],
+            cache_dir="/tmp/sarina-hf-cache",
+        )
+    )
+
+
+def _ensure_piper_model(model_path: Path) -> Path:
+    if model_path.is_file():
+        return model_path
+    if os.getenv("VERCEL") != "1":
+        raise RuntimeError("Piper voice model is not installed: " + model_path.name)
+    from huggingface_hub import hf_hub_download
+
+    if model_path.name == "fa_IR-amir-medium.onnx":
+        voice_repo = "fa/fa_IR/amir/medium"
+        revision = "b22aa2aa275d5e8d528994782814cd8bf9d0337f"
+    elif model_path.name == "ar_JO-kareem-medium.onnx":
+        voice_repo = "ar/ar_JO/kareem/medium"
+        revision = "3ec800dafed75d43bbca3a82f2e67acddbcaf9ac"
+    else:
+        raise RuntimeError("Unsupported Piper voice model")
+    model = Path(hf_hub_download(
+        repo_id="rhasspy/piper-voices",
+        filename=f"{voice_repo}/{model_path.name}",
+        revision=revision,
+        cache_dir="/tmp/sarina-hf-cache",
+    ))
+    hf_hub_download(
+        repo_id="rhasspy/piper-voices",
+        filename=f"{voice_repo}/{model_path.name}.json",
+        revision=revision,
+        cache_dir="/tmp/sarina-hf-cache",
+    )
+    return model
+
+
 def _get_whisper_model() -> Any:
     global _whisper_model
     if _whisper_model is None:
         from faster_whisper import WhisperModel
 
-        if not WHISPER_MODEL_PATH.is_dir():
-            raise RuntimeError(
-                f"Local Whisper model is missing: {WHISPER_MODEL_PATH}. "
-                "Provision model files before starting voice traffic."
-            )
+        _ensure_whisper_model()
         _whisper_model = WhisperModel(
             str(WHISPER_MODEL_PATH),
             device=WHISPER_DEVICE,
@@ -109,23 +157,18 @@ def _get_whisper_model() -> Any:
 
 
 def _probe_audio_duration(path: str) -> float:
-    result = subprocess.run(
-        ["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "default=noprint_wrappers=1:nokey=1", path],
-        capture_output=True,
-        text=True,
-        timeout=10,
-        check=False,
-    )
-    if result.returncode != 0:
-        raise ValueError("Audio container could not be decoded")
     try:
-        duration = float(result.stdout.strip())
-    except (TypeError, ValueError) as exc:
-        raise ValueError("Audio duration could not be determined") from exc
-    if not math.isfinite(duration) or duration <= 0:
+        with av.open(path) as container:
+            duration = container.duration / av.time_base if container.duration is not None else None
+            if duration is None:
+                audio_streams = [stream for stream in container.streams if stream.type == "audio"]
+                if audio_streams and audio_streams[0].duration is not None:
+                    duration = float(audio_streams[0].duration * audio_streams[0].time_base)
+    except Exception as exc:
+        raise ValueError("Audio container could not be decoded") from exc
+    if duration is None or not math.isfinite(float(duration)) or duration <= 0:
         raise ValueError("Audio duration is invalid")
-    return duration
-
+    return float(duration)
 
 def _transcribe_file(path: str, language_hint: str | None = None) -> dict[str, Any]:
     model = _get_whisper_model()
@@ -155,8 +198,7 @@ def _transcribe_file(path: str, language_hint: str | None = None) -> dict[str, A
 
 
 def _synthesize_file(text: str, output_path: str, model_path: Path) -> None:
-    if not model_path.is_file():
-        raise RuntimeError("Piper voice model is not installed: " + model_path.name)
+    model_path = _ensure_piper_model(model_path)
     if not PIPER_CLI_PATH.is_file():
         raise RuntimeError("Vendored Piper runner is missing")
 
@@ -246,7 +288,7 @@ async def transcribe(
 
         try:
             duration = await asyncio.to_thread(_probe_audio_duration, temp_path)
-        except (ValueError, subprocess.SubprocessError) as exc:
+        except Exception as exc:
             raise HTTPException(status_code=400, detail="Audio file could not be decoded") from exc
         if duration > MAX_AUDIO_SECONDS:
             raise HTTPException(status_code=413, detail="Audio duration exceeds the allowed limit")
