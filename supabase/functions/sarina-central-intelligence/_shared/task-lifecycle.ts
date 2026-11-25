@@ -226,11 +226,30 @@ export class InMemoryTaskManager {
       throw new TaskLifecycleError("INVALID_LEASE", "Worker and lease duration are invalid.");
     }
     const previous = task.status;
+    if (previous === "queued") {
+      task.status = "assigned";
+      this.appendEvent(task, "queued", "assigned", workerId, "TASK_ASSIGNED", now);
+    }
     task.status = "running";
     task.attemptCount += 1;
     task.lease = { workerId, expiresAt: new Date(Math.min(now + leaseMs, Date.parse(task.envelope.deadlineAt))).toISOString() };
     task.updatedAt = new Date(now).toISOString();
-    this.appendEvent(task, previous, "running", workerId, "TASK_CLAIMED", now);
+    this.appendEvent(task, "assigned", "running", workerId, "TASK_CLAIMED", now);
+    return structuredClone(task);
+  }
+
+  recoverExpiredLease(taskId: string, actor = "lease_reaper", now = Date.now()): TaskRecord {
+    const task = this.requireTask(taskId);
+    this.expireIfPastDeadline(task, now);
+    if (task.status === "timed_out") return structuredClone(task);
+    if (task.status !== "running" || !task.lease || Date.parse(task.lease.expiresAt) > now) {
+      throw new TaskLifecycleError("LEASE_NOT_EXPIRED", "Task has no expired running lease.");
+    }
+    delete task.lease;
+    task.status = "failed";
+    task.updatedAt = new Date(now).toISOString();
+    this.appendEvent(task, "running", "failed", actor, "WORKER_LEASE_EXPIRED", now);
+    if (task.attemptCount < task.envelope.retryPolicy.maxAttempts) return this.retryTask(taskId, actor, now);
     return structuredClone(task);
   }
 
