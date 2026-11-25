@@ -216,3 +216,13 @@ The branch now restores the available applied migration sources:
 5. Complete browser end-to-end tests are still required for farmer application, product draft, admin approval, publication, cart, quote response, checkout, cancellation and participant-only order visibility.
 
 The current code is a first usable commerce workflow slice, not a production-ready marketplace. Keep PR #144 draft and isolated until the remaining security, browser and operational gates pass.
+
+
+### Admin review implementation slice — 2026-11-25
+
+- Added a source migration, `20261125030000_marketplace_admin_review_workflow.sql`, defining three authenticated, central-admin-gated RPCs: review queue listing, seller verification/rejection, and regulated-product review.
+- Seller and product status changes plus their audit rows are performed inside one database function call/transaction. Product rejection forces the listing back to draft; product approval does not publish it automatically.
+- Added `MarketplaceAdminReviewWorkspace.tsx` and exposed it in the central admin workspace. It is wired to the RPC names above and reports clearly when the migration is not yet installed.
+- Added read-only privilege regression assertions in `supabase/tests/marketplace_admin_review_privilege_regression.sql`.
+- Important: these are **source changes only**. The migration has not been applied to live Supabase; no admin review RPC is claimed operational yet. The migration-history/source reconciliation and isolated database validation remain prerequisites. Do not approve or publish real sellers/products until the migration is reviewed, applied to a test environment, and the regression and authenticated E2E tests pass.
+- The farmer portal already exposes a dedicated “بازارگاه کشاورزی” navigation entry, and its workspace includes catalog, cart/orders, and “محصولات من” tabs. The remaining release gates are secure admin backend activation, browser E2E, and preview validation.
