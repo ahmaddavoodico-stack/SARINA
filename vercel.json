@@ -5,7 +5,7 @@
   "outputDirectory": "dist",
   "functions": {
     "api/voice.py": {
-      "maxDuration": 300,
+      "maxDuration": 60,
       "includeFiles": "{vendor/**/*,services/voice-runtime/app/**/*}"
     }
   }
