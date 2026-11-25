@@ -72,6 +72,14 @@ Deno.test("state transitions are controlled and result is required for success",
   assertEquals(done.events.map((event) => event.to), ["received", "validated", "queued", "assigned", "running", "running", "succeeded"]);
 });
 
+Deno.test("running state cannot be entered without acquiring a worker lease", () => {
+  const manager = queuedManager();
+  assertThrows(
+    () => manager.transition(envelope().taskId, "running", "worker-1", "BYPASS_CLAIM", BASE + 3),
+    (error) => error instanceof TaskLifecycleError && error.code === "TASK_CLAIM_REQUIRED",
+  );
+});
+
 Deno.test("active lease prevents a second worker from claiming the same task", () => {
   const manager = queuedManager();
   manager.claimTask(envelope().taskId, "worker-1", 5_000, BASE + 3);
