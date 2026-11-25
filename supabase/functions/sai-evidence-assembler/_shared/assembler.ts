@@ -41,7 +41,7 @@ function sourceType(value: unknown): SaiSourceType {
   if (value === "farmer_reported" || value === "measured" || value === "laboratory" ||
       value === "official" || value === "remote_estimate" || value === "modelled" ||
       value === "inferred" || value === "ai_generated_unverified") return value;
-  return "farmer_reported";
+  return "inferred";
 }
 
 function measurementEvidence(
@@ -152,7 +152,10 @@ export function buildSaiCaseEnvelope(input: SaiAssemblerInput): SaiCaseEnvelope 
       ["phosphorus_mg_kg", "mg/kg"], ["potassium_mg_kg", "mg/kg"],
       ["sodium_mg_kg", "mg/kg"], ["chloride_mg_kg", "mg/kg"],
       ["cec_cmol_kg", "cmol/kg"],
-    ], "sampled_at", (row) => row.data_source === "laboratory" ? "laboratory" : "farmer_reported"),
+    ], "sampled_at", (row) => row.data_source === "laboratory" ? "laboratory" :
+      row.data_source === "measured" ? "measured" :
+      row.data_source === "official" ? "official" :
+      row.data_source === "farmer_reported" ? "farmer_reported" : "inferred"),
     ...numericRows(input.waterTests, "water_tests", [
       ["ph", "pH"], ["ec_ds_m", "dS/m"], ["tds_mg_l", "mg/L"],
       ["sodium_mg_l", "mg/L"], ["calcium_mg_l", "mg/L"],
