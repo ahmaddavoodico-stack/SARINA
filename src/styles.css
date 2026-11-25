@@ -1438,3 +1438,10 @@
  .marketplace-product-media{height:112px}
  .marketplace-product-body{padding:10px}
 }
+
+
+/* Admin companion stays in the content column and yields to the admin navigation. */
+.sarina-companion-admin{right:270px;z-index:11}
+@media(max-width:760px){
+ .sarina-companion.sarina-companion-admin{right:12px;bottom:12px;z-index:11}
+}
