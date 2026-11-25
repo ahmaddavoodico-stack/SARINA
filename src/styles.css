@@ -1237,10 +1237,10 @@
 
 
 /* Farmer chat: compact, non-obstructive collapsible tools rail */
-.farmer-sarina-workspace{display:grid;grid-template-columns: minmax(0,1fr) 46px;gap:12px;align-items:stretch;direction:rtl;padding:0 18px 16px}
-.farmer-sarina-workspace.tools-open{grid-template-columns:minmax(0,1fr) 246px}
-.farmer-sarina-workspace .farmer-chat-primary{min-width:0;grid-column:1;grid-row:1}
-.farmer-chat-tools{grid-column:2;grid-row:1;min-width:0;display:flex;flex-direction:column;gap:10px}
+.farmer-sarina-workspace{display:grid;grid-template-columns:46px minmax(0,1fr);gap:12px;align-items:stretch;direction:rtl;padding:0 18px 16px}
+.farmer-sarina-workspace.tools-open{grid-template-columns:246px minmax(0,1fr)}
+.farmer-sarina-workspace .farmer-chat-primary{min-width:0;grid-column:2;grid-row:1}
+.farmer-chat-tools{grid-column:1;grid-row:1;min-width:0;display:flex;flex-direction:column;gap:10px}
 .farmer-chat-tools-toggle{width:100%;min-height:48px;display:flex;align-items:center;justify-content:center;gap:7px;padding:9px 8px;border:1px solid #dce9da;border-radius:13px;background:#f1f8ee;color:#347348;font:inherit;font-size:11px;font-weight:800;cursor:pointer}
 .farmer-chat-tools-toggle span{white-space:nowrap}
 .farmer-chat-tools-content{display:grid;gap:8px;padding:12px;border:1px solid #e1eadf;border-radius:16px;background:#fbfdf9;box-shadow:0 8px 24px #254c3510;align-content:start}
