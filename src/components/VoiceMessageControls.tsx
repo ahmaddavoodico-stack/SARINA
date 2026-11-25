@@ -1,5 +1,5 @@
 import {useEffect,useRef,useState} from "react";
-import {LoaderCircle,Mic,Square,Volume2} from "lucide-react";
+import {LoaderCircle,Mic,Square} from "lucide-react";
 import {supabase} from "../lib/supabase";
 import "./voice-message-controls.css";
 
@@ -10,8 +10,9 @@ type Props={
   textToSpeak?:string;
   speechLanguage?:"fa"|"ar";
   disabled?:boolean;
-  autoSpeak?:boolean;
-  onAutoSpeakAttempt?:()=>void;
+  autoGenerateAudio?:boolean;
+  onVoiceReplyAudio:(payload:VoicePayload)=>void|Promise<void>;
+  onAudioGenerationComplete:()=>void;
 };
 
 const apiBase=(import.meta.env.VITE_SARINA_VOICE_API_URL||"/api/voice").replace(/\/$/,"");
@@ -23,19 +24,16 @@ async function accessToken():Promise<string>{
   return data.session.access_token;
 }
 
-export default function VoiceMessageControls({onTranscription,onVoiceMessage,textToSpeak,speechLanguage="fa",disabled=false,autoSpeak=false,onAutoSpeakAttempt}:Props){
+export default function VoiceMessageControls({onTranscription,onVoiceMessage,textToSpeak,speechLanguage="fa",disabled=false,autoGenerateAudio=false,onVoiceReplyAudio,onAudioGenerationComplete}:Props){
   const [recording,setRecording]=useState(false);
   const [processing,setProcessing]=useState(false);
-  const [speaking,setSpeaking]=useState(false);
   const [notice,setNotice]=useState("");
   const recorderRef=useRef<MediaRecorder|null>(null);
   const streamRef=useRef<MediaStream|null>(null);
   const chunksRef=useRef<BlobPart[]>([]);
-  const audioRef=useRef<HTMLAudioElement|null>(null);
-  const audioUrlRef=useRef<string|null>(null);
   const lastAutoSpokenRef=useRef<string>("");
 
-  useEffect(()=>()=>{streamRef.current?.getTracks().forEach(track=>track.stop());audioRef.current?.pause();if(audioUrlRef.current)URL.revokeObjectURL(audioUrlRef.current);},[]);
+  useEffect(()=>()=>{streamRef.current?.getTracks().forEach(track=>track.stop());},[]);
 
   async function transcribe(blob:Blob){
     if(!apiBase)throw new Error("نشانی سرویس صوتی SARINA هنوز تنظیم نشده است.");
@@ -85,35 +83,29 @@ export default function VoiceMessageControls({onTranscription,onVoiceMessage,tex
     if(recorderRef.current?.state==="recording"){recorderRef.current.stop();setRecording(false);}
   }
 
-  async function speakText(){
+  async function generateReplyAudio(){
     const text=textToSpeak?.trim();
-    if(!text||!apiBase||disabled||processing||speaking)return;
+    if(!text||!apiBase||disabled||processing)return;
     setNotice("");
-    setSpeaking(true);
+    setProcessing(true);
     try{
       const token=await accessToken();
       const response=await fetch(apiBase+"/v1/synthesize",{method:"POST",headers:{Authorization:"Bearer "+token,"Content-Type":"application/json"},body:JSON.stringify({text,language:speechLanguage})});
-      if(!response.ok){const payload=await response.json().catch(()=>({}));throw new Error(payload.detail||"تولید پاسخ صوتی انجام نشد.");}
+      if(!response.ok){const payload=await response.json().catch(()=>({}));throw new Error(payload.detail||"تولید فایل صوتی پاسخ انجام نشد.");}
       const blob=await response.blob();
-      if(audioUrlRef.current)URL.revokeObjectURL(audioUrlRef.current);
-      const url=URL.createObjectURL(blob);
-      audioUrlRef.current=url;
-      const audio=new Audio(url);
-      audioRef.current=audio;
-      audio.onended=()=>setSpeaking(false);
-      audio.onerror=()=>{setSpeaking(false);setNotice("پخش پاسخ صوتی با خطا روبه‌رو شد.");};
-      await audio.play();
-    }catch(error){setSpeaking(false);setNotice(error instanceof Error?error.message:"پاسخ صوتی در دسترس نیست.");}
+      await onVoiceReplyAudio({audio:blob,mimeType:blob.type||"audio/wav"});
+    }catch(error){setNotice(error instanceof Error?error.message:"تولید فایل صوتی پاسخ ناموفق بود.");}
+    finally{setProcessing(false);onAudioGenerationComplete();}
   }
 
+  const lastGeneratedRef=useRef<string>("");
   useEffect(()=>{
     const text=textToSpeak?.trim();
-    if(autoSpeak&&text&&text!==lastAutoSpokenRef.current){
-      lastAutoSpokenRef.current=text;
-      void speakText();
-      onAutoSpeakAttempt?.();
+    if(autoGenerateAudio&&text&&text!==lastGeneratedRef.current){
+      lastGeneratedRef.current=text;
+      void generateReplyAudio();
     }
-  },[autoSpeak,textToSpeak]);
+  },[autoGenerateAudio,textToSpeak]);
 
   return <div className="sarina-voice-controls" dir="rtl">
     <div className="sarina-voice-actions">
@@ -121,10 +113,6 @@ export default function VoiceMessageControls({onTranscription,onVoiceMessage,tex
         {recording?<Square size={17}/>:<Mic size={19}/>}
         <span>{recording?"پایان ضبط":"پیام صوتی"}</span>
       </button>
-      {textToSpeak?.trim()&&<button type="button" className="sarina-voice-button secondary" onClick={()=>void speakText()} disabled={disabled||processing||speaking} aria-label="پخش پاسخ صوتی" title="شنیدن پاسخ سارینا">
-        {speaking?<LoaderCircle size={17} className="is-spinning"/>:<Volume2 size={18}/>}
-        <span>{speaking?"در حال پخش":"شنیدن پاسخ"}</span>
-      </button>}
       {processing&&<span className="sarina-voice-status"><LoaderCircle size={15} className="is-spinning"/> در حال تبدیل صدا...</span>}
     </div>
     {notice&&<p className="sarina-voice-notice" role="status">{notice}</p>}
