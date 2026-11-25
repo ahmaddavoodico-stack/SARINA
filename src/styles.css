@@ -1167,3 +1167,70 @@
  .farmer-add-expert{width:auto;white-space:nowrap}
  .chat-history-dashboard>summary{padding:11px 12px}
 }
+
+
+/* SARINA unified navigation and communication refresh */
+.sarina-nav{display:grid;gap:9px;overflow:auto;min-height:0;padding:2px 0 10px}
+.nav-group{border:1px solid #edf1eb;border-radius:13px;background:#fff;overflow:hidden}
+.nav-group summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;padding:11px 12px;color:#526c5c;font-size:11px;font-weight:800}
+.nav-group summary::-webkit-details-marker{display:none}
+.nav-group summary svg{transition:transform .2s;color:#91a294}
+.nav-group[open] summary{background:#f7faf5;color:#315d43}
+.nav-group[open] summary svg{transform:rotate(-90deg)}
+.nav-group>div{display:grid;gap:3px;padding:4px 6px 7px}
+.nav-group .nav-item{width:100%;font-size:11px;padding:10px 11px;border-radius:9px}
+.sidebar{padding-top:20px}
+.sidebar .brand{padding-bottom:17px}
+.sidebar .brand-mark{overflow:hidden;background:#f1f6ec;border-radius:14px}
+.sidebar .brand-mark img{width:100%;height:100%;object-fit:contain;padding:3px}
+.sidebar-bottom{padding-top:8px}
+.sidebar-user{margin-top:10px}
+.pwa-install-embedded{position:static;z-index:auto;width:100%;align-items:stretch;gap:7px;margin:8px 0 2px}
+.pwa-install-actions{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.pwa-install-embedded .pwa-install-button,.pwa-install-embedded .pwa-share-button{width:100%;justify-content:center;border-radius:10px;padding:10px 8px;font-size:9px;box-shadow:none}
+.pwa-install-embedded .pwa-install-button{background:#1e5948}
+.pwa-share-button{border:1px solid #dfe9dc;background:#f5f8f1;color:#38694b;display:flex;align-items:center;gap:6px}
+.pwa-share-status{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 9px;border-radius:9px;background:#edf5eb;color:#426b4c;font-size:9px}
+.pwa-share-status button{border:0;background:transparent;color:inherit;display:grid;place-items:center}
+.pwa-install-embedded .pwa-help{width:100%;box-shadow:none;padding:14px}
+.sarina-companion{z-index:30}
+.sarina-chat-panel.farmer-mode{width:min(760px,calc(100vw - 32px));height:min(590px,calc(100svh - 110px));min-height:380px;flex-direction:row;align-items:stretch}
+.sarina-chat-main{display:flex;flex:1;min-width:0;min-height:0;flex-direction:column}
+.sarina-guide-drawer{width:258px;flex:0 0 258px;display:flex;flex-direction:column;gap:12px;padding:14px;background:#fff;border-left:1px solid #e8eee5;overflow:auto}
+.sarina-guide-drawer>header{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.sarina-guide-drawer>header div{display:grid;gap:3px}
+.sarina-guide-drawer>header strong{font-size:12px;color:#254b39}
+.sarina-guide-drawer>header span{font-size:9px;color:#89988d}
+.sarina-guide-drawer>header button,.sarina-guide-open{width:31px;height:31px;border:0;border-radius:9px;background:#f1f6ed;color:#4c7955;display:grid;place-items:center}
+.sarina-guide-highlight{padding:14px;border-radius:14px;background:linear-gradient(135deg,#eaf4e5,#f6f7ed);color:#315d43}
+.sarina-guide-leaf{width:35px;height:35px;border-radius:11px;background:#fff9;display:grid;place-items:center;margin-bottom:8px}
+.sarina-guide-highlight b{display:block;font-size:12px}
+.sarina-guide-highlight p{font-size:9px;line-height:1.9;color:#758b79;margin:5px 0 0}
+.sarina-guide-list{display:grid;gap:6px}
+.sarina-guide-list button,.sarina-guide-contact button{display:flex;align-items:center;gap:9px;text-align:right;border:1px solid #edf1eb;background:#fff;border-radius:11px;padding:10px;color:#4c7555}
+.sarina-guide-list button>span,.sarina-guide-contact button>span{display:grid;gap:3px;flex:1;min-width:0}
+.sarina-guide-list b,.sarina-guide-contact b{font-size:10px;color:#3d5d47}
+.sarina-guide-list small,.sarina-guide-contact small{font-size:8px;color:#8a998d}
+.sarina-guide-contact{display:grid;gap:6px;margin-top:auto}
+.sarina-guide-contact>span{font-size:10px;font-weight:800;color:#6d8271;padding:0 3px 3px}
+.sarina-guide-contact button{background:#f8faf6}
+.sarina-guide-contact button:first-of-type{background:#edf6e9;border-color:#e0ecd9}
+.sarina-guide-collapse{display:flex;align-items:center;justify-content:center;gap:6px;border:0;border-radius:10px;background:#f3f5f1;color:#748579;padding:9px;font-size:9px}
+.sarina-guide-open{flex:0 0 31px}
+.sarina-chat-panel.farmer-mode .sarina-chat-header{background:#f7faf5}
+.sarina-chat-panel.farmer-mode .sarina-chat-body{background:#fbfcfa}
+.sarina-chat-panel.farmer-mode .sarina-chat-compose{padding:11px}
+.sarina-chat-panel.farmer-mode .sarina-chat-compose input{border-radius:22px}
+.sarina-chat-panel.farmer-mode .sarina-chat-compose button{border-radius:50%;width:42px;height:42px}
+@media(max-width:760px){
+ .sidebar{width:min(310px,88vw);padding:16px 12px}
+ .sidebar .brand{padding-bottom:12px}
+ .nav-group summary{padding:10px}
+ .nav-group .nav-item{padding:9px}
+ .sarina-chat-panel.farmer-mode{width:calc(100vw - 20px);height:min(620px,calc(100svh - 90px));min-height:340px;position:relative}
+ .sarina-guide-drawer{position:absolute;z-index:3;right:0;top:0;bottom:0;width:min(280px,82%);box-shadow:-12px 0 28px #193b2518;border-left:1px solid #e5ece2}
+ .sarina-chat-main{width:100%}
+ .sarina-guide-highlight{padding:11px}
+ .sarina-guide-list button,.sarina-guide-contact button{padding:9px}
+}
+@media(max-width:390px){.pwa-install-actions{grid-template-columns:1fr}.pwa-install-embedded .pwa-install-button,.pwa-install-embedded .pwa-share-button{justify-content:flex-start;padding-right:12px}}

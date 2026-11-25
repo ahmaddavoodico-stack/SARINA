@@ -1,95 +1,85 @@
 import {useState} from "react";
 import type {FormEvent} from "react";
-import {ArrowUp,ChevronDown,Leaf,MessageCircle,Sparkles,X} from "lucide-react";
+import {ArrowUp,ChevronDown,ChevronLeft,CircleHelp,ClipboardList,Leaf,MessageCircle,PlayCircle,Sparkles,UserRound,X,PanelRightClose,PanelRightOpen} from "lucide-react";
 import {supabase} from "./lib/supabase";
 import SarinaCharacter from "./components/SarinaCharacter";
+import PwaInstall from "./PwaInstall";
 
 type ChatMessage={id:number;role:"farmer"|"sarina";text:string};
-type SarinaCompanionProps={isAdmin?:boolean};
+type NavTarget="learning"|"experts"|"expert-chat";
+type SarinaCompanionProps={isAdmin?:boolean;onNavigate?:(destination:NavTarget)=>void};
 
-export default function SarinaCompanion({isAdmin=false}:SarinaCompanionProps){
- const[open,setOpen]=useState(false);
+const guideItems=[
+ {title:"فیلم معرفی SARINA",description:"آشنایی کوتاه با امکانات سامانه",icon:PlayCircle,target:"learning" as NavTarget},
+ {title:"راهنمای ثبت مزرعه",description:"شروع کار و ثبت اطلاعات مزرعه",icon:ClipboardList,target:"learning" as NavTarget},
+ {title:"پرسش‌های متداول",description:"پاسخ به سؤال‌های رایج کاربران",icon:CircleHelp,target:"learning" as NavTarget}
+];
+
+export default function SarinaCompanion({isAdmin=false,onNavigate}:SarinaCompanionProps){
+ const[open,setOpen]=useState(()=>{try{return !isAdmin&&!localStorage.getItem("sarina-guide-dismissed");}catch{return false;}});
+ const[drawerOpen,setDrawerOpen]=useState(true);
  const[draft,setDraft]=useState("");
  const[messages,setMessages]=useState<ChatMessage[]>([]);
  const[showNotice,setShowNotice]=useState(false);
  const[busy,setBusy]=useState(false);
  const[status,setStatus]=useState("");
 
+ function closePanel(){setOpen(false);if(!isAdmin){try{localStorage.setItem("sarina-guide-dismissed","1");}catch{}}}
+ function go(target:NavTarget){closePanel();onNavigate?.(target);}
  async function send(e:FormEvent){
   e.preventDefault();
   const text=draft.trim();
   if(!text||busy)return;
   const farmerMessage:ChatMessage={id:Date.now(),role:"farmer",text};
   const nextMessages=[...messages,farmerMessage].slice(-10);
-  setMessages(nextMessages);
-  setDraft("");
-  if(!isAdmin){
-   setShowNotice(true);
-   return;
-  }
-  if(!supabase){
-   setStatus("اتصال به سرویس سارینا پیکربندی نشده است.");
-   return;
-  }
-  setBusy(true);
-  setStatus("در حال دریافت پاسخ آزمایشی از Groq...");
+  setMessages(nextMessages);setDraft("");
+  if(!isAdmin){setShowNotice(true);return;}
+  if(!supabase){setStatus("اتصال به سرویس سارینا پیکربندی نشده است.");return;}
+  setBusy(true);setStatus("در حال دریافت پاسخ آزمایشی از Groq...");
   try{
-   const{data,error}=await supabase.functions.invoke("sarina-admin-chat",{
-    body:{
-     mode:"admin_chat",
-     messages:nextMessages.map(message=>({
-      role:message.role==="farmer"?"user":"assistant",
-      content:message.text,
-     })),
-    },
-   });
-   if(error||!data?.ok||typeof data.answer!=="string"){
-    const code=typeof data?.code==="string"?data.code:"ADMIN_CHAT_REQUEST_FAILED";
-    throw new Error(code);
-   }
+   const{data,error}=await supabase.functions.invoke("sarina-admin-chat",{body:{mode:"admin_chat",messages:nextMessages.map(message=>({role:message.role==="farmer"?"user":"assistant",content:message.text}))}});
+   if(error||!data?.ok||typeof data.answer!=="string")throw new Error(typeof data?.code==="string"?data.code:"ADMIN_CHAT_REQUEST_FAILED");
    setMessages(current=>[...current,{id:Date.now()+1,role:"sarina",text:data.answer}]);
    setStatus(`پاسخ آزمایشی از Groq · ${data.model||"مدل تأییدشده"}`);
   }catch(error){
    const code=error instanceof Error?error.message:"ADMIN_CHAT_REQUEST_FAILED";
-   const message=code.includes("ADMIN_ACCESS_REQUIRED")?"این قابلیت فقط برای مدیر تأییدشده فعال است."
-    :code.includes("GROQ_CHAT_KEY_MISSING")?"کلید Groq در محیط تابع سرور در دسترس نیست."
-    :code.includes("GROQ_CHAT_HTTP_401")?"سرویس Groq کلید را نپذیرفت؛ اعتبار کلید باید بررسی شود."
-    :code.includes("GROQ_CHAT_HTTP_429")?"سهمیه یا محدودیت درخواست Groq مانع پاسخ شد."
-    :"ارتباط با پاسخ‌گوی آزمایشی برقرار نشد. وضعیت تابع سرور و گزارش خطا را بررسی کنید.";
-   setStatus(message);
-  }finally{
-   setBusy(false);
-  }
+   setStatus(code.includes("ADMIN_ACCESS_REQUIRED")?"این قابلیت فقط برای مدیر تأییدشده فعال است.":code.includes("GROQ_CHAT_KEY_MISSING")?"کلید Groq در محیط تابع سرور در دسترس نیست.":code.includes("GROQ_CHAT_HTTP_401")?"سرویس Groq کلید را نپذیرفت؛ اعتبار کلید باید بررسی شود.":code.includes("GROQ_CHAT_HTTP_429")?"سهمیه یا محدودیت درخواست Groq مانع پاسخ شد.":"ارتباط با پاسخ‌گوی آزمایشی برقرار نشد. وضعیت تابع سرور و گزارش خطا را بررسی کنید.");
+  }finally{setBusy(false);}
  }
 
  return <div className="sarina-companion" dir="rtl">
-  {open&&<section className="sarina-chat-panel" aria-label="گفت‌وگو با سارینا">
-   <header className="sarina-chat-header">
-    <SarinaCharacter className="sarina-avatar"/>
-    <div className="sarina-chat-identity"><strong>سارینا</strong><span><i/>{isAdmin?"دستیار آزمایشی مدیر":"همراه کشاورزی شما"}</span></div>
-    <button type="button" className="sarina-chat-close" onClick={()=>setOpen(false)} aria-label="بستن گفتگو"><X size={18}/></button>
-   </header>
-   <div className="sarina-chat-body">
-    <div className="sarina-welcome-message"><span className="sarina-sparkle"><Sparkles size={15}/></span><strong>سلام! من سارینا هستم 🌱</strong><p>{isAdmin?"من نقش مدیر مرکزی شما را می‌شناسم. می‌توانم درباره کاربران، نقش‌ها، درخواست‌ها و وضعیت سامانه کمک کنم؛ لازم نیست اطلاعات مزرعه شخصی‌تان را وارد کنید.":"از مزرعه‌ات برام بگو؛ چه چیزی ذهنت رو مشغول کرده؟"}</p></div>
-    {messages.map(message=><div key={message.id} className={"sarina-message "+(message.role==="farmer"?"from-farmer":"from-sarina")}>{message.text}</div>)}
-    {showNotice&&<div className="sarina-prototype-note">پیامت در این پیش‌نمایش ثبت شد. اتصال پاسخ‌گوی هوشمند برای این نقش هنوز فعال نشده است.</div>}
-    {status&&<div className="sarina-prototype-note" role="status">{status}</div>}
+  {open&&<section className={"sarina-chat-panel"+(!isAdmin?" farmer-mode":"")} aria-label="مرکز ارتباط و راهنمایی سارینا">
+   {!isAdmin&&drawerOpen&&<aside className="sarina-guide-drawer">
+    <header><div><strong>راهنمای سریع SARINA</strong><span>برای شروع، یکی را انتخاب کنید</span></div><button type="button" onClick={()=>setDrawerOpen(false)} aria-label="جمع‌کردن راهنما"><PanelRightClose size={18}/></button></header>
+    <div className="sarina-guide-highlight"><span className="sarina-guide-leaf"><Leaf size={22}/></span><b>به SARINA خوش آمدید</b><p>با چند راهنمای کوتاه، بدون نیاز به پرسش‌های پیچیده شروع کنید.</p></div>
+    <div className="sarina-guide-list">{guideItems.map(item=><button key={item.title} type="button" onClick={()=>go(item.target)}><item.icon size={19}/><span><b>{item.title}</b><small>{item.description}</small></span><ChevronLeft size={15}/></button>)}</div>
+    <div className="sarina-guide-contact"><span>راه‌های ارتباطی</span><button type="button" onClick={()=>setDrawerOpen(false)}><Leaf size={18}/><span><b>گفت‌وگو با سارینا</b><small>راهنمایی اولیه و پرسش‌های شما</small></span></button><button type="button" onClick={()=>go("experts")}><UserRound size={18}/><span><b>ارتباط با متخصص</b><small>مشاوره تخصصی و انسانی</small></span><ChevronLeft size={15}/></button></div>
+    <PwaInstall/>
+    <button className="sarina-guide-collapse" type="button" onClick={()=>setDrawerOpen(false)}><ChevronDown size={15}/> بستن پنل راهنما</button>
+   </aside>}
+   <div className="sarina-chat-main">
+    <header className="sarina-chat-header">
+     {!isAdmin&&!drawerOpen&&<button type="button" className="sarina-guide-open" onClick={()=>setDrawerOpen(true)} aria-label="بازکردن راهنمای سریع"><PanelRightOpen size={18}/></button>}
+     <SarinaCharacter className="sarina-avatar"/>
+     <div className="sarina-chat-identity"><strong>سارینا</strong><span><i/>{isAdmin?"دستیار آزمایشی مدیر":"همراه کشاورزی شما"}</span></div>
+     <button type="button" className="sarina-chat-close" onClick={closePanel} aria-label="بستن گفتگو"><X size={18}/></button>
+    </header>
+    <div className="sarina-chat-body">
+     <div className="sarina-welcome-message"><span className="sarina-sparkle"><Sparkles size={15}/></span><strong>سلام! به SARINA خوش آمدید 🌱</strong><p>{isAdmin?"من نقش مدیر مرکزی شما را می‌شناسم. می‌توانم درباره کاربران، نقش‌ها، درخواست‌ها و وضعیت سامانه کمک کنم؛ لازم نیست اطلاعات مزرعه شخصی‌تان را وارد کنید.":"من همراه کشاورزی شما هستم. برای آشنایی بهتر با امکانات سارینا، می‌توانید از راهنمای سریع کنار گفتگو استفاده کنید. هیچ کشاورزی تنها نیست."}</p></div>
+     {messages.map(message=><div key={message.id} className={"sarina-message "+(message.role==="farmer"?"from-farmer":"from-sarina")}>{message.text}</div>)}
+     {showNotice&&<div className="sarina-prototype-note">پیامت در این پیش‌نمایش ثبت شد. اتصال پاسخ‌گوی هوشمند برای این نقش هنوز فعال نشده است.</div>}
+     {status&&<div className="sarina-prototype-note" role="status">{status}</div>}
+    </div>
+    <form className="sarina-chat-compose" onSubmit={send}>
+     <input value={draft} onChange={e=>setDraft(e.target.value)} placeholder="اینجا برای سارینا بنویس..." aria-label="پیام شما به سارینا" maxLength={2000} disabled={busy}/>
+     <button type="submit" disabled={!draft.trim()||busy} aria-label="ارسال پیام">{busy?<span className="sarina-chat-spinner"/>:<ArrowUp size={18}/>}</button>
+    </form>
+    <div className="sarina-chat-foot">{isAdmin?"آزمایش محدود Groq · پیام‌ها به سرویس Groq ارسال می‌شوند":"راهنمای شروع بدون نیاز به هوش مصنوعی"} <Leaf size={12}/></div>
    </div>
-   <form className="sarina-chat-compose" onSubmit={send}>
-    <input value={draft} onChange={e=>setDraft(e.target.value)} placeholder="اینجا برای سارینا بنویس..." aria-label="پیام شما به سارینا" maxLength={2000} disabled={busy}/>
-    <button type="submit" disabled={!draft.trim()||busy} aria-label="ارسال پیام">{busy?<span className="sarina-chat-spinner"/>:<ArrowUp size={18}/>}</button>
-   </form>
-   <div className="sarina-chat-foot">{isAdmin?"آزمایش محدود Groq · پیام‌ها به سرویس Groq ارسال می‌شوند": "همراه شما در مسیر کشاورزی"} <Leaf size={12}/></div>
   </section>}
   <div className="sarina-launcher-wrap">
-   <button type="button" className="sarina-launcher-copy" onClick={()=>setOpen(value=>!value)} aria-expanded={open}>
-    <span className="sarina-launcher-title">من اینجام، چه خبر؟</span>
-    <span className="sarina-launcher-subtitle">با سارینا صحبت کن</span>
-   </button>
-   <button type="button" className={"sarina-launcher-avatar"+(open?" is-open":"")} onClick={()=>setOpen(value=>!value)} aria-label={open?"بستن گفت‌وگو با سارینا":"گفت‌وگو با سارینا"} aria-expanded={open}>
-    <SarinaCharacter className="sarina-avatar" large/>
-    <span className="sarina-online-dot"/>
-   </button>
+   <button type="button" className="sarina-launcher-copy" onClick={()=>setOpen(value=>!value)} aria-expanded={open}><span className="sarina-launcher-title">{open?"گفت‌وگو باز است":"من اینجام، چه خبر؟"}</span><span className="sarina-launcher-subtitle">{isAdmin?"دستیار مدیر":"راهنمایی و ارتباط با SARINA"}</span></button>
+   <button type="button" className={"sarina-launcher-avatar"+(open?" is-open":"")} onClick={()=>setOpen(value=>!value)} aria-label={open?"بستن مرکز ارتباط":"بازکردن مرکز ارتباط SARINA"} aria-expanded={open}><SarinaCharacter className="sarina-avatar" large/><span className="sarina-online-dot"/></button>
    <span className="sarina-launcher-chevron">{open?<ChevronDown size={15}/>:<MessageCircle size={15}/>}</span>
   </div>
  </div>;
