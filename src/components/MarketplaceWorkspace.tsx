@@ -104,5 +104,6 @@ export default function MarketplaceWorkspace({userId}:{userId:string|null}){
     </article>;
    })}</div>}
   <div className="marketplace-footnote"><ShieldCheck size={15}/><span>وضعیت تأیید فروشنده و بررسی مجوز محصول، جایگزین بررسی تخصصی و مقررات کشور مقصد صادرات نیست.</span>{refreshedAt&&<small>آخرین دریافت: {refreshedAt.toLocaleTimeString("fa-IR",{hour:"2-digit",minute:"2-digit"})}</small>}</div>
+  </>}
  </section>;
 }
