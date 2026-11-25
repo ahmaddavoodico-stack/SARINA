@@ -1438,3 +1438,48 @@
  .marketplace-product-media{height:112px}
  .marketplace-product-body{padding:10px}
 }
+
+
+/* Compact chat height with an independently scrollable message area.
+   Keep the existing widths unchanged. */
+.sarina-chat-panel{height:min(420px,calc(100svh - 125px));min-height:0}
+.sarina-chat-panel .sarina-chat-header,
+.sarina-chat-panel .sarina-chat-compose,
+.sarina-chat-panel .sarina-chat-foot{flex-shrink:0}
+.sarina-chat-panel .sarina-chat-body{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+.sarina-chat-panel.farmer-mode{height:min(470px,calc(100svh - 110px));min-height:0}
+.sarina-chat-panel.farmer-mode .sarina-chat-main{min-height:0}
+.sarina-chat-panel.farmer-mode .sarina-chat-body{min-height:0}
+@media(max-width:760px){
+ .sarina-chat-panel{height:min(400px,calc(100svh - 105px));min-height:0}
+ .sarina-chat-panel.farmer-mode{height:min(460px,calc(100svh - 90px));min-height:0}
+}
+
+
+/* Warm, nature-inspired conversation canvas */
+.sarina-chat-panel .sarina-chat-body{
+  background:
+    radial-gradient(ellipse at 92% 8%,rgba(190,218,174,.30),transparent 38%),
+    radial-gradient(ellipse at 8% 88%,rgba(232,220,183,.25),transparent 34%),
+    linear-gradient(145deg,#f7faf3 0%,#f4f7ef 48%,#faf8f0 100%);
+  scrollbar-width:thin;
+  scrollbar-color:#c4d6bf transparent;
+}
+.sarina-chat-panel .sarina-chat-body::-webkit-scrollbar{width:6px}
+.sarina-chat-panel .sarina-chat-body::-webkit-scrollbar-thumb{background:#c4d6bf;border-radius:99px}
+.sarina-chat-panel .sarina-chat-body::-webkit-scrollbar-track{background:transparent}
+.sarina-chat-panel .sarina-message{box-shadow:0 3px 12px rgba(42,76,48,.055)}
+.sarina-chat-panel .sarina-message.from-farmer{
+  background:linear-gradient(135deg,#e5f1df,#dcebd9);
+  border:1px solid rgba(190,214,184,.7);
+}
+.sarina-chat-panel .sarina-message.from-sarina{
+  background:linear-gradient(145deg,#fff 0%,#fbfcf8 100%);
+  border:1px solid #e5ece0;
+}
+.sarina-chat-panel.farmer-mode .sarina-chat-body{
+  background:
+    radial-gradient(ellipse at 90% 10%,rgba(190,218,174,.28),transparent 38%),
+    radial-gradient(ellipse at 8% 90%,rgba(232,220,183,.22),transparent 34%),
+    linear-gradient(145deg,#f7faf3 0%,#f3f7ef 52%,#faf8f0 100%);
+}
