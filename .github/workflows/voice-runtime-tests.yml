@@ -26,4 +26,13 @@ jobs:
           cache: pip
           cache-dependency-path: services/voice-runtime/requirements-test.txt
       - run: pip install -r requirements-test.txt
+      - run: python -m compileall -q ../../vendor/faster_whisper ../../vendor/piper ../../vendor/piper_cli.py
       - run: PYTHONPATH=. pytest -q
+
+  container-build:
+    runs-on: ubuntu-latest
+    needs: contract-tests
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build self-hosted voice runtime image
+        run: docker build -f services/voice-runtime/Dockerfile .

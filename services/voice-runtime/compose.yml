@@ -1,8 +1,8 @@
 services:
   sarina-voice-runtime:
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ../..
+      dockerfile: services/voice-runtime/Dockerfile
     container_name: sarina-voice-runtime
     restart: unless-stopped
     env_file:
@@ -10,14 +10,13 @@ services:
     environment:
       PIPER_FA_MODEL_PATH: /models/piper/fa_IR-amir-medium.onnx
       PIPER_AR_MODEL_PATH: /models/piper/ar_JO-kareem-medium.onnx
-      WHISPER_MODEL: small
+      WHISPER_MODEL_PATH: /models/whisper/small
       WHISPER_DEVICE: cpu
       WHISPER_COMPUTE_TYPE: int8
       WHISPER_CPU_THREADS: 2
-      HF_HOME: /models/huggingface
+
     volumes:
-      - ./models:/models/piper:ro
-      - whisper-cache:/models/huggingface
+      - ./models:/models:ro
     ports:
       - "127.0.0.1:8090:8090"
     security_opt:
@@ -29,6 +28,3 @@ services:
       - /tmp:size=256m,noexec,nosuid
     mem_limit: 5g
     cpus: 1.8
-
-volumes:
-  whisper-cache:

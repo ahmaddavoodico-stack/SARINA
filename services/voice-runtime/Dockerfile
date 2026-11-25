@@ -3,18 +3,19 @@ FROM python:3.11-slim
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
-    HF_HOME=/models/huggingface
+    PYTHONPATH=/app/vendor
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ffmpeg libsndfile1 curl ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
-COPY requirements.txt .
+COPY services/voice-runtime/requirements.txt ./requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY app ./app
-RUN mkdir -p /models/huggingface /models/piper
+COPY services/voice-runtime/app ./app
+COPY vendor ./vendor
+RUN mkdir -p /models/whisper /models/piper
 
 EXPOSE 8090
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8090", "--workers", "1"]

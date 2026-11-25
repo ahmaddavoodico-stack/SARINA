@@ -4,7 +4,9 @@ import asyncio
 import os
 import math
 import subprocess
+import sys
 import tempfile
+import wave
 from pathlib import Path
 from typing import Any
 
@@ -19,13 +21,24 @@ APP_VERSION = "0.2.0"
 MAX_AUDIO_BYTES = int(os.getenv("MAX_AUDIO_BYTES", str(20 * 1024 * 1024)))
 MAX_TEXT_CHARS = int(os.getenv("MAX_TEXT_CHARS", "6000"))
 MAX_AUDIO_SECONDS = int(os.getenv("MAX_AUDIO_SECONDS", "90"))
-WHISPER_MODEL_NAME = os.getenv("WHISPER_MODEL", "small")
+WHISPER_MODEL_PATH = Path(os.getenv("WHISPER_MODEL_PATH", "/models/whisper/small"))
 WHISPER_DEVICE = os.getenv("WHISPER_DEVICE", "cpu")
 WHISPER_COMPUTE_TYPE = os.getenv("WHISPER_COMPUTE_TYPE", "int8")
 WHISPER_CPU_THREADS = int(os.getenv("WHISPER_CPU_THREADS", "4"))
 PIPER_FA_MODEL_PATH = Path(os.getenv("PIPER_FA_MODEL_PATH", os.getenv("PIPER_MODEL_PATH", "/models/piper/fa_IR-amir-medium.onnx")))
 PIPER_AR_MODEL_PATH = Path(os.getenv("PIPER_AR_MODEL_PATH", "/models/piper/ar_JO-kareem-medium.onnx"))
-PIPER_EXECUTABLE = os.getenv("PIPER_EXECUTABLE", "piper")
+def _resolve_piper_cli_path() -> Path:
+    configured = os.getenv("PIPER_CLI_PATH")
+    if configured:
+        return Path(configured)
+    for parent in Path(__file__).resolve().parents:
+        candidate = parent / "vendor" / "piper_cli.py"
+        if candidate.is_file():
+            return candidate
+    return Path("/app/vendor/piper_cli.py")
+
+
+PIPER_CLI_PATH = _resolve_piper_cli_path()
 SUPABASE_URL = os.getenv("SUPABASE_URL", "").rstrip("/")
 SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY", "")
 CORS_ORIGINS = [item.strip() for item in os.getenv("CORS_ORIGINS", "").split(",") if item.strip()]
@@ -81,8 +94,13 @@ def _get_whisper_model() -> Any:
     if _whisper_model is None:
         from faster_whisper import WhisperModel
 
+        if not WHISPER_MODEL_PATH.is_dir():
+            raise RuntimeError(
+                f"Local Whisper model is missing: {WHISPER_MODEL_PATH}. "
+                "Provision model files before starting voice traffic."
+            )
         _whisper_model = WhisperModel(
-            WHISPER_MODEL_NAME,
+            str(WHISPER_MODEL_PATH),
             device=WHISPER_DEVICE,
             compute_type=WHISPER_COMPUTE_TYPE,
             cpu_threads=WHISPER_CPU_THREADS,
@@ -116,7 +134,9 @@ def _transcribe_file(path: str, language_hint: str | None = None) -> dict[str, A
         language=language_hint,
         multilingual=True,
         beam_size=3,
-        vad_filter=True,
+        # Avoid runtime downloads of optional VAD assets; audio length is
+        # bounded before inference and the vendored engine runs fully locally.
+        vad_filter=False,
         condition_on_previous_text=False,
     )
     collected = []
@@ -137,8 +157,14 @@ def _transcribe_file(path: str, language_hint: str | None = None) -> dict[str, A
 def _synthesize_file(text: str, output_path: str, model_path: Path) -> None:
     if not model_path.is_file():
         raise RuntimeError("Piper voice model is not installed: " + model_path.name)
+    if not PIPER_CLI_PATH.is_file():
+        raise RuntimeError("Vendored Piper runner is missing")
+
+    # Run the GPL-licensed Piper engine as a separate process. The FastAPI
+    # service does not import/link the Piper library into its own process.
     command = [
-        PIPER_EXECUTABLE,
+        sys.executable,
+        str(PIPER_CLI_PATH),
         "--model",
         str(model_path),
         "--output_file",
@@ -166,6 +192,9 @@ async def health() -> dict[str, Any]:
         "speech_to_text": "faster-whisper",
         "text_to_speech": "piper",
         "whisper_model_loaded": _whisper_model is not None,
+        "whisper_model_path_configured": WHISPER_MODEL_PATH.is_dir(),
+        "whisper_model_source": "local-vendored-code-and-local-weights",
+        "piper_engine_source": "SARINA-vendored-Piper-subprocess",
         "piper_models_configured": {"fa": PIPER_FA_MODEL_PATH.is_file(), "ar": PIPER_AR_MODEL_PATH.is_file()},
         "whisper_languages": ["fa", "ar", "auto"],
         "execution": "local",

@@ -2,5 +2,16 @@ fastapi>=0.115,<1
 uvicorn[standard]>=0.30,<1
 python-multipart>=0.0.9
 httpx>=0.27,<1
-faster-whisper>=1.1,<2
-piper-tts>=1.2,<2
+
+# faster-whisper source is vendored under /app/vendor/faster_whisper.
+ctranslate2>=4.0,<5
+huggingface_hub>=0.23,<1
+tokenizers>=0.13,<1
+onnxruntime>=1.14,<2
+av>=11
+tqdm
+numpy
+
+# Piper Python inference source is vendored under /app/vendor/piper.
+# This wheel supplies the native espeak bridge and packaged language data.
+piper-tts>=1.8,<2
