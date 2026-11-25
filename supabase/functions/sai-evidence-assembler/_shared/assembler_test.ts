@@ -1,5 +1,5 @@
 import { assert, assertEquals } from "jsr:@std/assert@1";
-import { validateSaiCaseEnvelope } from "../../../src/lib/sai/evidence-contract.ts";
+import { validateSaiCaseEnvelope } from "../../../../src/lib/sai/evidence-contract.ts";
 import { buildSaiCaseEnvelope } from "./assembler.ts";
 
 Deno.test("assembler produces a valid private case without promoting shared knowledge", () => {
