@@ -74,7 +74,7 @@ export default function SarinaCompanion({isAdmin=false,onNavigate}:SarinaCompani
  }
 
  const latestSarinaReply=[...messages].reverse().find(message=>message.role==="sarina")?.text;
- return <div className="sarina-companion" dir="rtl">
+ return <div className={"sarina-companion"+(isAdmin?" sarina-companion-admin":"")} dir="rtl">
   {open&&<section className={"sarina-chat-panel"+(!isAdmin?" farmer-mode":"")} aria-label="مرکز ارتباط و راهنمایی سارینا">
    {!isAdmin&&drawerOpen&&<aside className="sarina-guide-drawer">
     <header><div><strong>راهنمای سریع SARINA</strong><span>برای شروع، یکی را انتخاب کنید</span></div><button type="button" onClick={()=>setDrawerOpen(false)} aria-label="جمع‌کردن راهنما"><PanelRightClose size={18}/></button></header>
