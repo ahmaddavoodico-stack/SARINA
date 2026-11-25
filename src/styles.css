@@ -1438,3 +1438,19 @@
  .marketplace-product-media{height:112px}
  .marketplace-product-body{padding:10px}
 }
+
+
+/* Compact chat height with an independently scrollable message area.
+   Keep the existing widths unchanged. */
+.sarina-chat-panel{height:min(420px,calc(100svh - 125px));min-height:0}
+.sarina-chat-panel .sarina-chat-header,
+.sarina-chat-panel .sarina-chat-compose,
+.sarina-chat-panel .sarina-chat-foot{flex-shrink:0}
+.sarina-chat-panel .sarina-chat-body{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+.sarina-chat-panel.farmer-mode{height:min(470px,calc(100svh - 110px));min-height:0}
+.sarina-chat-panel.farmer-mode .sarina-chat-main{min-height:0}
+.sarina-chat-panel.farmer-mode .sarina-chat-body{min-height:0}
+@media(max-width:760px){
+ .sarina-chat-panel{height:min(400px,calc(100svh - 105px));min-height:0}
+ .sarina-chat-panel.farmer-mode{height:min(460px,calc(100svh - 90px));min-height:0}
+}
