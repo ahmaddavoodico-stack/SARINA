@@ -75,6 +75,7 @@ export default function MarketplaceBuyerWorkspace({userId}:{userId:string}){
   if(!supabase)return;
   const product=products[item.product_id];const next=Number(item.quantity)+delta;
   if(!product||next<=0)return;
+  if(next<Number(product.minimum_order_qty)){setError("مقدار سبد نمی‌تواند از حداقل سفارش محصول کمتر باشد؛ برای حذف کامل از دکمه حذف استفاده کنید.");return;}
   if(product.stock_qty!==null&&next>Number(product.stock_qty)-Number(product.reserved_qty||0)){setError("مقدار درخواستی از موجودی قابل عرضه بیشتر است.");return;}
   setBusy(true);setError("");setNotice("");
   try{const {error}=await db.from("marketplace_cart_items").update({quantity:next}).eq("id",item.id);if(error)throw error;await load();}
