@@ -1,0 +1,11 @@
+.sarina-voice-controls{display:flex;flex-direction:column;gap:7px;min-width:0}
+.sarina-voice-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.sarina-voice-button{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:40px;padding:8px 13px;border:1px solid #b8d7c1;border-radius:12px;background:#edf7ef;color:#17633b;font:inherit;font-size:13px;font-weight:700;cursor:pointer;transition:background .15s,border-color .15s}
+.sarina-voice-button:hover:not(:disabled){background:#e0f1e4;border-color:#72b78a}
+.sarina-voice-button:disabled{opacity:.55;cursor:not-allowed}
+.sarina-voice-button.is-recording{background:#fff0ed;border-color:#e7a49a;color:#a33425}
+.sarina-voice-button.secondary{background:#f4f7f5;border-color:#d7e2da;color:#355c45}
+.sarina-voice-status{display:inline-flex;align-items:center;gap:6px;color:#567363;font-size:12px}
+.sarina-voice-notice{margin:0;color:#63766b;font-size:12px;line-height:1.7}
+.is-spinning{animation:sarina-spin 1s linear infinite}
+@keyframes sarina-spin{to{transform:rotate(360deg)}}
