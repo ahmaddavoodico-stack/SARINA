@@ -3,9 +3,10 @@ import type {ChangeEvent} from "react";
 import JihadAuthorityWorkspace from "./components/JihadAuthorityWorkspace";
 import JihadAuthorityOnboarding from "./components/JihadAuthorityOnboarding";
 import type {Session} from "@supabase/supabase-js";
-import {ArrowLeft,Building2,CheckCircle2,Save,ShieldCheck,UploadCloud} from "lucide-react";
+import {ArrowLeft,Building2,CheckCircle2,Save,ShieldCheck,Store,UploadCloud} from "lucide-react";
 import {supabase} from "./lib/supabase";
 import JihadServiceLayerWorkspace from "./components/JihadServiceLayerWorkspace";
+import CompanyStoreWorkspace from "./components/CompanyStoreWorkspace";
 
 type Profile = {
   legal_name:string; display_name:string; organization_type:string; registration_number:string;
@@ -43,7 +44,7 @@ function toPayload(f:Profile){
  };
 }
 export default function OrganizationPortal({session,onLogout}:{session:Session;onLogout:()=>void}){
- const [form,setForm]=useState<Profile>(empty),[percent,setPercent]=useState(0),[status,setStatus]=useState("draft"),[application,setApplication]=useState<any>(null),[busy,setBusy]=useState(false),[uploading,setUploading]=useState(false),[loading,setLoading]=useState(true),[message,setMessage]=useState(""),[showRegionalWorkspace,setShowRegionalWorkspace]=useState(false);
+ const [form,setForm]=useState<Profile>(empty),[percent,setPercent]=useState(0),[status,setStatus]=useState("draft"),[application,setApplication]=useState<any>(null),[busy,setBusy]=useState(false),[uploading,setUploading]=useState(false),[loading,setLoading]=useState(true),[message,setMessage]=useState(""),[showRegionalWorkspace,setShowRegionalWorkspace]=useState(false),[showCompanyStore,setShowCompanyStore]=useState(false);
  const locked=["under_review","verified","suspended"].includes(status);
  const statusText:Record<string,string>={draft:"پیش‌نویس؛ قابل تکمیل",needs_correction:"نیازمند اصلاح",under_review:"در حال بررسی سارینا",verified:"تأییدشده",suspended:"تعلیق‌شده"};
  async function refresh(){
@@ -105,6 +106,8 @@ export default function OrganizationPortal({session,onLogout}:{session:Session;o
    <div className="org-welcome"><div><span className="eyebrow">فضای اختصاصی شرکت‌ها</span><h1>به سارینا خوش آمدید</h1><p>اطلاعات شرکت را هر زمان خواستید تکمیل کنید؛ برای آشنایی با محیط نیازی به تکمیل همه مدارک نیست.</p></div><div className="org-status"><ShieldCheck/><b>{statusText[status]||"پیش‌نویس"}</b></div></div>
    <button type="button" onClick={()=>setShowRegionalWorkspace(v=>!v)} style={{display:"flex",alignItems:"center",gap:9,border:"1px solid #dce9dc",background:"#f4f8f2",color:"#315b3c",borderRadius:12,padding:"11px 14px",font:"inherit",fontSize:13,fontWeight:700,cursor:"pointer",marginBottom:14}}><Building2 size={17}/>{showRegionalWorkspace?"بستن پیش‌نمایش همکاری منطقه‌ای":"مشاهده پیش‌نمایش خدمات منطقه‌ای جهاد کشاورزی"} <ArrowLeft size={15}/></button>
    {showRegionalWorkspace&&<div style={{marginBottom:18}}><JihadServiceLayerWorkspace mode="organization"/></div>}
+   <button type="button" onClick={()=>setShowCompanyStore(v=>!v)} style={{display:"flex",alignItems:"center",gap:9,border:"1px solid #dce9dc",background:"#f4f8f2",color:"#315b3c",borderRadius:12,padding:"11px 14px",font:"inherit",fontSize:13,fontWeight:700,cursor:"pointer",marginBottom:14}}><Store size={17}/>{showCompanyStore?"بستن فروشگاه سازمانی":"مدیریت فروشگاه و عرضه محصولات"} <ArrowLeft size={15}/></button>
+   {showCompanyStore&&<div style={{marginBottom:18}}><CompanyStoreWorkspace session={session}/></div>}
    <section className="org-progress"><div><strong>تکمیل پروفایل شرکت</strong><b>{percent.toLocaleString("fa-IR")}٪</b></div><div className="org-track"><span style={{width:percent+"%"}}/></div><small>پیشرفت ذخیره می‌شود و می‌توانید بعداً از همین‌جا ادامه دهید.</small></section>
    {message&&<div className="notice">{message}</div>}
    {application&&<div className="org-application"><CheckCircle2/><div><b>درخواست بررسی ثبت شده</b><small>وضعیت: {application.status==="pending"?"در صف بررسی":application.status}</small></div></div>}
