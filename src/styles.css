@@ -682,3 +682,13 @@
 .marketplace-cart-orphans>div{display:flex;justify-content:space-between;gap:8px;color:#876b43;font-size:10px}
 .marketplace-cart-orphans button{border:0;background:transparent;color:#a45e50;font:inherit}
 @media(max-width:600px){.marketplace-buyer-heading{align-items:flex-start}.marketplace-buyer-heading h2{font-size:17px}.marketplace-cart-row{flex-wrap:wrap}.marketplace-cart-row>div:first-child{flex-basis:100%}.marketplace-order-heading{flex-direction:column}.marketplace-checkout-form>div button{flex:1}}
+
+
+.specialist-store-quotes{display:grid;gap:10px}
+.specialist-store-quotes>article{display:grid;gap:8px;padding:13px;border:1px solid #e1eae1;border-radius:12px;background:#fff}
+.specialist-store-quotes>article>div{display:flex;justify-content:space-between;gap:10px}
+.specialist-store-quotes strong{font-size:11px;color:#315b40}
+.specialist-store-quotes small{font-size:9px;color:#849287}
+.specialist-store-quotes p{margin:0;color:#63786a;font-size:10px;line-height:1.8}
+.specialist-store-quotes textarea{width:100%;border:1px solid #dce6dc;border-radius:9px;padding:9px;background:#fff;color:#35513e;font:inherit;font-size:11px}
+.specialist-store-quote-response{padding:9px;border-radius:8px;background:#f4f8f3}
