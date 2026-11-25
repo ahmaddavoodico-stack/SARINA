@@ -14,6 +14,7 @@ on:
     branches: [main, feature/farmer-portal-foundation]
     paths:
       - "supabase/functions/sarina-central-intelligence/**"
+      - "supabase/functions/sai-evidence-assembler/**"
       - "src/lib/sai/**"
       - "supabase/functions/specialist-case-preparation/**"
       - "supabase/migrations/*siacp*"
