@@ -1,9 +1,9 @@
 # SARINA — Unified Farmer Communication Experience & Multimodal AI Architecture
 
-**Decision date:** 2026-11-23  
-**Status:** Product direction approved; this is now an active implementation workstream.  
+**Decision date:** 2026-11-23; voice and intelligent-routing decisions added 2026-11-25  
+**Status:** Product direction approved; implementation and live model invocation are not yet verified.  
 **Repository:** `ahmaddavoodico-stack/SARINA`  
-**Execution rule:** Work directly on `main`; do not create a feature branch.
+**Execution rule:** Keep implementation on an isolated feature branch. Do not merge to `main` or alter Production until the relevant tests, acceptance checks, and explicit owner approval are complete.
 
 ## 1. Why this is a major product milestone
 
@@ -21,11 +21,12 @@ Behind this single doorway, an orchestration layer identifies the request and in
 
 The single conversation should progressively support:
 - Text messages.
-- Voice input and spoken responses.
+- Voice notes: record and send an audio message; no live call or always-on microphone session is required.
+- Spoken responses returned as playable audio, alongside readable text.
 - Photo and image attachments.
 - Documents and other relevant farm records.
 
-The interface must make these inputs discoverable and easy to use on mobile devices. A farmer must be able to send a photo proactively or when SARINA asks for one, without leaving the conversation.
+The interface must make these inputs discoverable and easy to use on mobile devices. A farmer must be able to send a photo or voice note proactively or when SARINA asks for one, without leaving the conversation.
 
 ## 3. AI routing and model responsibilities
 
@@ -201,6 +202,215 @@ The following are previously inspected facts and must be re-verified before impl
 - No live model call, paid API usage, database migration, or production chat deployment is implied by this document.
 
 ## 10. Operating principle
+
+SARINA should feel to the farmer like one attentive, reliable companion—not a collection of disconnected tools. Internally, however, every action must be routed to the right service, use the right evidence and model, respect permissions, and report honestly what did and did not happen.
+
+**From 2026-11-23 onward, the farmer communication experience is an active top-level product workstream, pursued alongside Phase 0 and Phase 1 stabilization.**
+
+## 11. Approved decision — SARINA Voice Notes & Spoken Responses (2026-11-25)
+
+**Decision status:** Approved product requirement. The interaction is asynchronous voice messaging, not a live telephone call, continuous voice session, or always-on microphone.
+
+### 11.1 Farmer-facing experience
+
+- The farmer can press a record button, record a voice note, preview/cancel it, and send it as a normal conversation message.
+- SARINA returns the recognized transcript for transparency and correction where useful.
+- The final assistant response is delivered as both readable text and a playable audio message.
+- The farmer can replay the response; playback must not require a live connection to an AI provider.
+- Text input remains available as an equal alternative.
+- The same voice-message contract is available through the SARINA web app, Telegram and Baleh adapters. Channel adapters handle their own upload/download formats but do not contain separate AI brains.
+- The first version is push-to-record / send / process / reply. No live streaming speech, call UI, wake-word listener, or real-time duplex audio is required.
+
+### 11.2 Speech-to-text (STT) — local-first and API-free by default
+
+- Run speech recognition on infrastructure controlled by SARINA using a self-hosted open-source engine and downloadable model weights.
+- Initial candidate: multilingual Whisper through `faster-whisper` with CPU INT8 as a benchmark baseline; `whisper.cpp` with quantized models is an alternative for constrained CPU environments.
+- Explicitly support Persian (`fa`) and Arabic (`ar`) in the first evaluation. Language auto-detection may assist, but the user profile or a simple language selector should be available to avoid silent misrecognition.
+- Preserve the language spoken; do not translate speech to English as the default transcription behavior.
+- Add Persian normalization after transcription (Arabic/Persian ی and ک variants, half-space/ZWNJ, punctuation and number handling) without changing the farmer's intended wording. Keep the raw transcript available for audit/debug under the retention policy.
+- Test noisy outdoor recordings, regional accents, farm/equipment noise, low-end Android microphones, short clips, mixed Persian/Arabic phrases, crop/product names, and numbers/units.
+- Voice recognition failure must produce a friendly retry or text-entry path; never fabricate a transcript.
+
+### 11.3 Text-to-speech (TTS) — local-first and API-free by default
+
+- Generate the spoken response on SARINA-controlled infrastructure with an open-source/local TTS engine.
+- Initial candidate: Piper with Persian voice models, subject to listening tests and a per-model license review. Candidate voices must be compared for intelligibility, naturalness, pronunciation of agricultural terms, number/unit reading, dialect suitability and file size. Do not assume every Piper voice has the same license; retain each model card and attribution.
+- Keep the TTS engine and voice model replaceable behind a stable internal adapter.
+- Produce a mobile-friendly audio format supported by the target channels; normalize loudness and avoid excessively long single audio files by splitting at sentence boundaries when needed.
+- Return text even if speech synthesis fails. A failed TTS step must not discard the written answer.
+- Voice identity should be warm and clear, not imitate a real person or imply that SARINA is human.
+
+### 11.4 Voice processing lifecycle and privacy
+
+1. Authenticate the sender and validate file type, size, duration and ownership.
+2. Store the original audio temporarily in private storage or a protected processing area.
+3. Normalize/decode the channel format (for example OGG/Opus from messaging channels or WebM/Opus from browsers) using a maintained audio decoder such as FFmpeg/PyAV.
+4. Run STT as an asynchronous background job with bounded duration, queue depth, retries and concurrency.
+5. Attach the transcript to the correct conversation turn and pass it to the same intent router used for text.
+6. Run the authorized task and persist the text response.
+7. Run local TTS and attach the generated audio to the assistant response.
+8. Apply the configured retention/deletion policy to source audio and generated audio; do not retain raw recordings indefinitely by default.
+
+- Storage must be private and ownership-scoped. Do not put audio in a public bucket or expose service-role credentials.
+- The client must not be trusted for user, farm, role, provider or model identity.
+- Record status and minimal audit metadata; avoid copying full audio or sensitive transcript content into application logs.
+- The farmer must be told whether transcription, analysis and voice generation each succeeded. Never claim a step completed when it did not.
+
+## 12. Approved architecture — SARINA Front Desk & Intelligence Orchestrator
+
+### 12.1 Single front door
+
+SARINA Front Desk is the one user-facing assistant identity. It receives text, voice transcripts, images and documents, maintains the conversational thread, and presents the final response. It is not itself a large language model and does not directly own business data or permissions.
+
+### 12.2 Orchestrator responsibilities
+
+The SARINA Intelligence Orchestrator is an internal, channel-independent service. It must:
+
+1. Classify the request using deterministic rules first, then a small local classifier only when needed.
+2. Distinguish social conversation, general information, agricultural advice, image/document analysis, marketplace, account/support, management and specialist-referral intents.
+3. Determine risk, required capabilities, data sensitivity, user consent and authorization scope.
+4. Select the responsible internal agent/service and then an approved model/tool only if the task requires one.
+5. Dispatch a bounded, versioned task envelope and track status, timeout, retry and cancellation.
+6. Validate the result against the expected schema and applicable safety policy.
+7. Compose a single SARINA-branded answer, then optionally synthesize that answer to speech.
+8. Persist task outcome and minimal audit/usage metadata; report failure or human-review requirement honestly.
+
+### 12.3 Cost-aware routing policy
+
+- Greetings, thanks, acknowledgements and simple social exchanges should be handled by deterministic response templates/state-aware conversation rules wherever possible. They must not invoke a paid model by default.
+- For simple but non-deterministic friendly exchanges, a validated small self-hosted local model may be used. This remains subject to Persian quality and hardware tests.
+- STT and TTS are separate local services. A voice greeting may require local STT and TTS, but must not invoke a general-purpose paid LLM solely because the input arrived as audio.
+- Routine official-document questions should use verified retrieval before any general-purpose model call.
+- Use a stronger local or approved hosted model only when the request is complex, ambiguous, multimodal, or exceeds the quality threshold of the lightweight route.
+- High-impact agricultural, financial, account-security and physical-operation requests must follow domain rules and human approval requirements. The model cannot grant itself permissions or directly execute privileged actions.
+- If confidence is low, ask one concise clarification question or refer to a qualified specialist; do not silently escalate to an unapproved provider.
+- The routing policy, provider allowlist, risk thresholds and budgets are controlled server-side, never by client-supplied model names or prompts.
+
+### 12.4 Task envelope and agent contract
+
+Each delegated task should use a versioned contract containing at least:
+- `task_id`, `conversation_id`, opaque actor reference, optional confirmed `farm_id`;
+- `task_type`, `intent`, `assigned_agent`, `priority`, `risk_level`;
+- `required_capabilities` and allowed tools;
+- minimum authorized input/context and consent/scope reference;
+- expected output schema, language, deadline and resource budget;
+- `idempotency_key`, correlation ID, created/updated timestamps;
+- status: `received`, `classified`, `queued`, `running`, `awaiting_human`, `completed`, `failed`, or `cancelled`.
+
+Agents return structured results with status, evidence/source references, uncertainty, missing information, and any human-review requirement. The Orchestrator—not an agent—owns the user-visible task lifecycle and final handoff.
+
+### 12.5 Security and operational boundaries
+
+- SCI/SARINA domain policy remains authoritative for consent, authorization, task eligibility and final decisions; the model gateway only dispatches approved work.
+- No model receives direct database credentials or unrestricted SQL access. Agents use narrowly scoped server-side tools/APIs.
+- Never allow model output to alter permissions, provider allowlists, safety policy, spending limits or its own system instructions.
+- Require explicit confirmation for orders, payments, outbound messages, account changes, data deletion, and other consequential actions.
+- Use least privilege, per-task timeouts, bounded retries, concurrency limits, rate limits, idempotency and auditable execution.
+- Support cancellation and clear handoff to a human specialist or support operator.
+- Keep channel adapters thin: Telegram, Baleh and web app authenticate/normalize messages and deliver responses; orchestration remains central.
+
+## 13. Required components and deployment dependencies
+
+The following are requirements to evaluate and implement; listing them does not claim they are already installed or deployed.
+
+### 13.1 Application and orchestration service
+- A persistent server-side service for orchestration and model/audio workers, preferably a small Python service (for example FastAPI) with versioned internal HTTP contracts.
+- Existing Supabase Edge Functions can remain the authenticated application gateway, but must not load large models or run long audio jobs.
+- The current Vercel static Vite deployment is the frontend host, not a persistent model-inference host.
+- Use an internal/private network between the gateway and inference workers; do not expose Ollama, Whisper, Piper or worker control ports publicly.
+- Keep model artifacts and Python dependencies outside Git and outside Vercel build bundles.
+
+### 13.2 Audio processing stack
+- STT engine and pinned model artifact (benchmark faster-whisper/Whisper multilingual against whisper.cpp quantized).
+- TTS engine and individually licensed Persian voice model (benchmark Piper candidates first).
+- Audio decoder/normalizer for browser and messaging-channel formats.
+- Optional voice activity detection (VAD), for example Silero VAD, to trim silence and segment longer recordings; VAD is not a prerequisite for the first prototype.
+- A background job queue/worker so uploads do not hold an Edge Function request open.
+- Private temporary audio storage, signed/authorized retrieval, expiry/deletion and storage quotas.
+- Configurable duration/file-size limits, supported MIME types and safe decoding limits.
+
+### 13.3 Task routing and service integration
+- Deterministic intent/risk rules and a lightweight classifier/embedding option for uncertain cases.
+- A registry of approved agents, tools and model capabilities; no hard-coded provider assumptions in channel code.
+- A common task queue/state machine, retry/idempotency handling and result validator.
+- Adapters for the specialist, store/Manus, support, management and farmer-domain services, each with explicit capabilities and permissions.
+- A response composer that produces a readable SARINA answer and invokes TTS only after the final text is ready.
+- Reuse and audit existing conversation/message tables and RLS before any schema change. Add a task/job table or storage policy only after the schema/security audit and separate approval.
+
+### 13.4 Observability and administration
+- Health checks for STT, TTS, local LLM runtime, queue and agent adapters.
+- Metrics for queue wait, transcription latency, transcription quality sample, TTS latency, model selection, task success/failure, resource use and provider spend.
+- Safe logs that exclude secrets and unnecessary raw audio/transcript contents.
+- Model/voice version registry, license and attribution inventory, rollback procedure and resource limits.
+- A control-panel view of pending, running, failed and human-review tasks.
+
+### 13.5 Hardware and capacity
+
+- The existing Vercel + hosted Supabase architecture cannot itself host persistent local model inference; a separate persistent compute host or a future consolidated SARINA server is required.
+- The local-AI pilot document's Qwen3.5 4B target (32 GB system RAM preferred, 8–12 GB VRAM preferred, and at least 100 GB free NVMe) is a planning target for a combined LLM host, not a minimum requirement for the separate STT/TTS services.
+- STT/TTS can be benchmarked independently on CPU with smaller/quantized models, but acceptable latency, Persian accuracy, concurrent workload and peak RAM must be measured on the actual host. Do not assume the previously recorded 4-vCPU/8-GB server can run every model or all services concurrently.
+- Apply resource isolation and concurrency caps so audio transcription cannot starve the web application, database gateway or other critical services.
+- The software and model weights may be free/open-source, but server hosting, electricity, storage, bandwidth, maintenance and monitoring are not necessarily free.
+
+## 14. Recommended evaluation shortlist (not yet a production selection)
+
+| Capability | First candidate | Alternative | Decision gate |
+|---|---|---|---|
+| Persian/Arabic STT | faster-whisper + multilingual Whisper, CPU INT8 benchmark | whisper.cpp quantized | Persian/Arabic field-audio benchmark and actual host RAM/latency |
+| Persian TTS | Piper with Persian voice candidates | another local ONNX/VITS TTS engine | naturalness, intelligibility, agricultural vocabulary, commercial-use license |
+| Voice activity detection | Silero VAD (optional) | simple silence trimming | Only add if it improves latency/quality enough to justify complexity |
+| Lightweight intent routing | deterministic rules first; small local classifier/embedding second | small local LLM fallback | Accuracy, false-routing rate, latency and resource use |
+| General local LLM | Existing local adapter / Qwen3.5 4B pilot candidate | another tested open-weight model/runtime | Separate model benchmark; do not couple STT/TTS to the LLM choice |
+| Job execution | Existing infrastructure after audit; otherwise a small queue/worker | database-backed job queue | Reliability, retry, cancellation and operational simplicity |
+
+Whisper multilingual supports Persian as a language code, and its code/model weights are MIT-licensed. faster-whisper is a CTranslate2 reimplementation that reports lower memory use and faster inference than the reference implementation, including CPU INT8 options; these claims must still be benchmarked on SARINA's hardware. Piper has Persian voice candidates, but voice-model licenses differ and must be checked individually before commercial deployment. See the references below.
+
+## 15. Delivery sequence and acceptance criteria for voice and orchestration
+
+### Phase V0 — inventory and offline benchmark
+- Verify actual host CPU/RAM/disk/GPU, current workloads and free capacity.
+- Confirm available private storage, conversation schema/RLS, Edge Function gateway and branch/deployment state.
+- Prepare a small consented or synthetic Persian/Arabic audio evaluation set, including noisy farm recordings and common agricultural vocabulary.
+- Benchmark STT model size/quantization and Piper voice candidates on the actual target host.
+- Record word error rate or character error rate, latency, peak RAM, disk footprint and CPU utilization. Do not choose a model based on marketing claims alone.
+
+### Phase V1 — asynchronous voice-note pipeline
+- Implement record/preview/send in the farmer UI.
+- Add authenticated upload and temporary private storage.
+- Add queued transcription worker and transcript display.
+- Verify retry, duplicate submission protection, cancel/expiry and deletion.
+- No paid speech API; no live call functionality.
+
+### Phase V2 — spoken response
+- Generate TTS from the final persisted assistant text.
+- Return text and audio in the same assistant message.
+- Verify Persian pronunciation, numbers, units, names, long-answer chunking and playback on low-end Android devices and Telegram/Baleh.
+- If TTS fails, the text answer remains available.
+
+### Phase V3 — Front Desk and task orchestration
+- Implement deterministic social-intent fast path and local classifier fallback.
+- Route at least greetings, general questions, farm/agronomy, specialist referral, store, support and management intents to their approved destinations.
+- Verify permissions, agent capability registry, task states, timeout/retry/cancel and structured result validation.
+- Verify greetings and thanks do not invoke a paid LLM; audio greetings may use local STT/TTS only.
+- Verify no agent can exceed its task scope or execute consequential actions without explicit confirmation.
+
+### Phase V4 — controlled pilot
+- Run end-to-end tests through web app, Telegram and Baleh against the same central service.
+- Test Persian and Arabic, noisy audio, regional accents, low bandwidth, interrupted uploads, provider/worker outage and concurrent messages.
+- Measure latency, CPU/RAM/disk, transcription quality, TTS quality, queue backlog and task-routing precision.
+- Keep paid provider dispatch disabled unless a separately approved, budget-capped escalation test is required.
+- Production release requires security/privacy review, specialist validation for consequential agricultural advice, and explicit owner acceptance.
+
+## 16. References
+
+- OpenAI Whisper repository and MIT license: https://github.com/openai/whisper
+- Whisper language list (includes Persian `fa`): https://github.com/openai/whisper/blob/main/whisper/tokenizer.py
+- faster-whisper and CPU INT8/memory benchmarks: https://github.com/SYSTRAN/faster-whisper
+- Piper voice catalog and per-voice model-card licensing: https://tderflinger.github.io/piper-docs/about/voices/
+- Current Persian Piper voice catalog for evaluation: https://piperhub.org/voices/language/fa/
+- Existing SARINA local-AI runtime pilot: `docs/architecture/local-ai-runtime-pilot.md`
+
+## 17. Operating principle
 
 SARINA should feel to the farmer like one attentive, reliable companion—not a collection of disconnected tools. Internally, however, every action must be routed to the right service, use the right evidence and model, respect permissions, and report honestly what did and did not happen.
 
