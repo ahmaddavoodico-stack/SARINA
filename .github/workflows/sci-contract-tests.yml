@@ -13,6 +13,7 @@ on:
     branches: [main, feature/farmer-portal-foundation]
     paths:
       - "supabase/functions/sarina-central-intelligence/**"
+      - "src/lib/sai/**"
       - "supabase/functions/specialist-case-preparation/**"
       - "supabase/migrations/*siacp*"
       - ".github/workflows/sci-contract-tests.yml"

@@ -124,7 +124,7 @@ Deno.test("shared knowledge requires consent, anonymization and approval", () =>
 
 Deno.test("causal claims are not allowed by the initial evidence contract", () => {
   const candidate = cloneCase();
-  candidate.outcome.causalClaimPermitted = true as false;
+  (candidate.outcome as unknown as { causalClaimPermitted: boolean }).causalClaimPermitted = true;
   if (!validateSaiCaseEnvelope(candidate).some((issue) => issue.code === "INVALID_OR_UNSAFE_OUTCOME_ASSESSMENT")) {
     throw new Error("unsupported causal claim was accepted");
   }
