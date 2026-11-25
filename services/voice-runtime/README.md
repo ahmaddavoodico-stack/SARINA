@@ -64,3 +64,14 @@ The voice runtime serves three roles: farmers, administrators, and assigned veri
 The React controls are reusable across these composers. The parent conversation must upload audio to SARINA's private, participant-scoped storage, persist a message descriptor in the existing conversation store, and render authenticated playback. Do not expose public audio URLs or let the voice runtime write directly to consultation tables. The runtime only performs STT/TTS.
 
 The repository's current chat UI does not yet render voice payloads end-to-end. Existing voice-note SQL and storage policies must be verified against the active migration history and current database before relying on them. No database migration, storage policy change, Edge Function deployment, or production server change is included here.
+
+## Existing Vercel host (initial Persian workflow)
+
+SARINA can run the voice API on the existing Vercel project without a separate server. The root `api/voice.py` entrypoint imports the vendored runtime source and exposes it at `/api/voice`. The root `requirements.txt` contains only the Python packages required by that function.
+
+For the first single-user workflow check, Vercel uses the multilingual Whisper Tiny model and the Persian Piper voice. Model weights are downloaded from their public Hugging Face repositories on first use and cached under the function's writable `/tmp` directory. Warm invocations reuse the cache; Vercel may recycle an instance, so a later cold start can download the weights again. This is a practical low-resource starting configuration, not a promise of fixed latency.
+
+The voice UI defaults to the same-origin `/api/voice` route, so no separate `VITE_SARINA_VOICE_API_URL` value or new secret is required. The function validates the user's existing Supabase session using the project's public URL and publishable key; it does not use a service-role key.
+
+This initial path is deliberately limited to Persian and a single inference at a time. It is intended to prove one complete interaction on the current host before later moving the same vendored engines to a stronger server. Voice recordings and chat messages in the floating admin companion are still temporary in-memory UI state at this stage; durable voice history is a separate follow-up.
+
