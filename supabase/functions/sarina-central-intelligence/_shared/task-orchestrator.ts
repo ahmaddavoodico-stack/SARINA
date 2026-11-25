@@ -229,6 +229,24 @@ export function routeTask(input: {
   }
 
   const matches = RULES.filter((rule) => hasMatch(text, rule.patterns));
+
+  // Safety escalation has precedence over all other classifications.
+  const specialistMatch = matches.find((rule) => rule.domain === "specialist");
+  if (specialistMatch) {
+    const agent = REGISTRY_BY_ID.get(specialistMatch.agentId)!;
+    return makeRoute("assigned", agent, specialistMatch.reasonCode, "high");
+  }
+
+  // Symptom diagnosis takes precedence over a crop-name-only agronomy match.
+  const diagnosticMatch = matches.find((rule) => rule.domain === "crop_diagnostics");
+  const nonAgronomyConflicts = matches.filter((rule) =>
+    rule.domain !== "crop_diagnostics" && rule.domain !== "agronomy"
+  );
+  if (diagnosticMatch && nonAgronomyConflicts.length === 0) {
+    const agent = REGISTRY_BY_ID.get(diagnosticMatch.agentId)!;
+    return makeRoute("assigned", agent, diagnosticMatch.reasonCode, "high");
+  }
+
   if (matches.length > 1) {
     return makeRoute(
       "clarification_required",
