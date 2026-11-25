@@ -110,8 +110,9 @@ function numericRows(
   const output: SaiEvidenceItem[] = [];
   for (const row of rows) {
     for (const [field, unit] of fields) {
+      const resolvedUnit = unit === "unit_code" ? str(row.unit_code) : unit;
       const item = measurementEvidence(
-        table, row, field, row[field], unit, row[observedAtField],
+        table, row, field, row[field], resolvedUnit, row[observedAtField],
         sourceForRow(row), row.quality_label,
       );
       if (item) output.push(item);
@@ -158,12 +159,20 @@ export function buildSaiCaseEnvelope(input: SaiAssemblerInput): SaiCaseEnvelope 
       ["magnesium_mg_l", "mg/L"], ["chloride_mg_l", "mg/L"],
       ["bicarbonate_mg_l", "mg/L"], ["sar", "ratio"], ["boron_mg_l", "mg/L"],
     ], "sampled_at", (row) => row.data_source === "laboratory" ? "laboratory" : "farmer_reported"),
+    ...numericRows(input.irrigationEvents, "irrigation_events", [
+      ["water_volume_m3", "m3"], ["duration_minutes", "minutes"],
+    ], "started_at", () => "farmer_reported"),
     ...numericRows(input.productivityMeasurements, "farm_productivity_measurements", [
       ["metric_value", "unit_code"],
     ], "observed_at", (row) => sourceType(row.source_type)),
     ...numericRows(input.contextObservations, "farm_productivity_context_observations", [
       ["numeric_value", "unit_code"],
     ], "observed_at", (row) => sourceType(row.source_type)),
+    ...input.contextObservations.filter((row) => row.text_value !== null && row.text_value !== undefined)
+      .map((row) => measurementEvidence(
+        "farm_productivity_context_observations", row, "text_value", row.text_value,
+        "text", row.observed_at, sourceType(row.source_type), row.quality_label,
+      )).filter((item): item is SaiEvidenceItem => item !== null),
     ...input.observations.map((row) =>
       recordEvidence("farm_observations", row, "farm_observation", row.observed_at, "farmer_reported")
     ),
