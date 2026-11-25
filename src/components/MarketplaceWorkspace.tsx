@@ -93,7 +93,7 @@ export default function MarketplaceWorkspace({userId}:{userId:string|null}){
  async function submitQuote(product:Product){
   if(!supabase||!userId)return;
   const quantity=Number(quoteQuantity);
-  if(!Number.isFinite(quantity)||quantity<=0){setError("مقدار درخواستی معتبر وارد کنید.");return;}
+  if(!Number.isFinite(quantity)||quantity<Number(product.minimum_order_qty)){setError("مقدار درخواست قیمت نباید از حداقل سفارش محصول کمتر باشد.");return;}
   if(quoteMessage.trim().length<3){setError("برای درخواست قیمت، توضیح کوتاهی بنویسید.");return;}
   setCartBusy(true);setError("");setNotice("");
   try{const {error}=await (supabase as any).rpc("create_marketplace_quote_request",{p_seller_id:product.seller_id,p_product_id:product.id,p_quantity:quantity,p_unit_label:product.unit_label,p_message:quoteMessage.trim()});if(error)throw error;setQuoteProductId(null);setQuoteMessage("");setQuoteQuantity("1");setNotice("درخواست استعلام قیمت ثبت شد؛ پاسخ فروشنده در بخش سبد و سفارش‌ها نمایش داده می‌شود.");}
@@ -138,7 +138,7 @@ export default function MarketplaceWorkspace({userId}:{userId:string|null}){
       <div className="marketplace-product-footer"><strong>{product.pricing_model==="request_quote"?"قیمت با استعلام":formatPrice(product.price,product.currency,product.unit_label)}</strong><small>حداقل سفارش: {Number(product.minimum_order_qty).toLocaleString("fa-IR")} {product.unit_label}</small></div>
       {product.pricing_model==="fixed"?<button className="marketplace-action" type="button" disabled={!userId||cartBusy} onClick={()=>void addToCart(product)}>{cartBusy?"در حال ثبت...":"افزودن به سبد خرید"}</button>:<>
        <button className="marketplace-action secondary" type="button" disabled={!userId||cartBusy} onClick={()=>{setQuoteProductId(quoteProductId===product.id?null:product.id);setQuoteQuantity(String(product.minimum_order_qty));setQuoteMessage("");setError("");}}>{quoteProductId===product.id?"بستن فرم":"درخواست قیمت"}</button>
-       {quoteProductId===product.id&&<div className="marketplace-quote-form"><label>مقدار موردنیاز<input type="number" min="0.01" step="0.01" value={quoteQuantity} onChange={e=>setQuoteQuantity(e.target.value)}/></label><label>توضیح درخواست<textarea rows={2} value={quoteMessage} onChange={e=>setQuoteMessage(e.target.value)} placeholder="مقدار، زمان و شرایط موردنیاز را بنویسید."/></label><button type="button" disabled={cartBusy} onClick={()=>void submitQuote(product)}>ارسال درخواست قیمت</button></div>}
+       {quoteProductId===product.id&&<div className="marketplace-quote-form"><label>مقدار موردنیاز<input type="number" min={Number(product.minimum_order_qty)} step="0.01" value={quoteQuantity} onChange={e=>setQuoteQuantity(e.target.value)}/></label><label>توضیح درخواست<textarea rows={2} value={quoteMessage} onChange={e=>setQuoteMessage(e.target.value)} placeholder="مقدار، زمان و شرایط موردنیاز را بنویسید."/></label><button type="button" disabled={cartBusy} onClick={()=>void submitQuote(product)}>ارسال درخواست قیمت</button></div>}
       </>}
      </div>
     </article>;
