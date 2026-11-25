@@ -122,6 +122,21 @@ Deno.test("shared knowledge requires consent, anonymization and approval", () =>
   if (!canUseAsSharedKnowledge(candidate)) throw new Error("valid governed case was rejected");
 });
 
+Deno.test("unverified AI evidence blocks shared-knowledge promotion even with other approvals", () => {
+  const candidate = cloneCase();
+  candidate.governance.farmerConsent = "granted";
+  candidate.governance.anonymization = "completed";
+  candidate.governance.reviewState = "approved";
+  candidate.governance.eligibleForSharedKnowledge = true;
+  candidate.evidence[0].source.sourceType = "ai_generated_unverified";
+  candidate.evidence[0].review.state = "unreviewed";
+  candidate.evidence[0].review.reviewerRef = null;
+  candidate.evidence[0].review.reviewedAt = null;
+  if (!validateSaiCaseEnvelope(candidate).some((issue) => issue.code === "UNVERIFIED_AI_EVIDENCE_BLOCKS_SHARED_KNOWLEDGE")) {
+    throw new Error("unverified AI evidence entered shared knowledge");
+  }
+});
+
 Deno.test("causal claims are not allowed by the initial evidence contract", () => {
   const candidate = cloneCase();
   (candidate.outcome as unknown as { causalClaimPermitted: boolean }).causalClaimPermitted = true;

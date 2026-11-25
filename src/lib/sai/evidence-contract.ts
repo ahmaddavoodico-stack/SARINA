@@ -263,6 +263,10 @@ function validateEvidence(item: unknown, index: number, issues: SaiValidationIss
       (item.review.reviewedAt !== null && !validDate(item.review.reviewedAt))) {
     issues.push({ code: "INVALID_EVIDENCE_REVIEW", field: field + ".review" });
   }
+  if (isSaiRecord(item.review) && item.review.state === "approved" &&
+      (!nonEmpty(item.review.reviewerRef) || !validDate(item.review.reviewedAt))) {
+    issues.push({ code: "APPROVED_EVIDENCE_REQUIRES_REVIEWER_AND_DATE", field: field + ".review" });
+  }
   if (isSaiRecord(item.source) && item.source.sourceType === "ai_generated_unverified" &&
       isSaiRecord(item.review) && item.review.state === "approved") {
     issues.push({ code: "UNVERIFIED_AI_OUTPUT_CANNOT_BE_APPROVED_AS_EVIDENCE", field });
@@ -381,6 +385,11 @@ export function validateSaiCaseEnvelope(value: unknown): SaiValidationIssue[] {
        governance.anonymization !== "completed" ||
        governance.reviewState !== "approved")) {
     issues.push({ code: "SHARED_KNOWLEDGE_GOVERNANCE_GATE_FAILED", field: "governance" });
+  }
+  if (governance.eligibleForSharedKnowledge === true && Array.isArray(value.evidence) &&
+      value.evidence.some((item) => isSaiRecord(item) && isSaiRecord(item.source) &&
+        item.source.sourceType === "ai_generated_unverified")) {
+    issues.push({ code: "UNVERIFIED_AI_EVIDENCE_BLOCKS_SHARED_KNOWLEDGE", field: "evidence" });
   }
 
   const quality = value.quality;
