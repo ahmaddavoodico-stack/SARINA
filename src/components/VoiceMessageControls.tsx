@@ -113,7 +113,7 @@ export default function VoiceMessageControls({onTranscription,onVoiceMessage,tex
         {recording?<Square size={17}/>:<Mic size={19}/>}
         <span>{recording?"پایان ضبط":"پیام صوتی"}</span>
       </button>
-      {processing&&<span className="sarina-voice-status"><LoaderCircle size={15} className="is-spinning"/> در حال تبدیل صدا...</span>}
+      {processing&&<span className="sarina-voice-status"><LoaderCircle size={15} className="is-spinning"/> در حال پردازش پیام صوتی...</span>}
     </div>
     {notice&&<p className="sarina-voice-notice" role="status">{notice}</p>}
   </div>;
