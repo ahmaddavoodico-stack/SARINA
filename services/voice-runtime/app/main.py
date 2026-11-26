@@ -117,12 +117,26 @@ def _configure_huggingface_cache() -> Path:
 def _ensure_whisper_model() -> None:
     global WHISPER_MODEL_PATH
     required_files = ("config.json", "model.bin", "tokenizer.json", "vocabulary.txt")
-    if WHISPER_MODEL_PATH.is_dir() and all((WHISPER_MODEL_PATH / name).is_file() for name in required_files):
+    minimum_sizes = {
+        "config.json": 512,
+        "model.bin": 50 * 1024 * 1024,
+        "tokenizer.json": 100 * 1024,
+        "vocabulary.txt": 100 * 1024,
+    }
+    if WHISPER_MODEL_PATH.is_dir() and all(
+        (WHISPER_MODEL_PATH / name).is_file()
+        and (WHISPER_MODEL_PATH / name).stat().st_size >= minimum_sizes[name]
+        for name in required_files
+    ):
         return
     if os.getenv("VERCEL") != "1":
-        missing = [name for name in required_files if not (WHISPER_MODEL_PATH / name).is_file()]
+        invalid = [
+            name for name in required_files
+            if not (WHISPER_MODEL_PATH / name).is_file()
+            or (WHISPER_MODEL_PATH / name).stat().st_size < minimum_sizes[name]
+        ]
         raise RuntimeError(
-            f"Local Whisper model is incomplete at {WHISPER_MODEL_PATH}; missing: {', '.join(missing)}"
+            f"Local Whisper model is incomplete at {WHISPER_MODEL_PATH}; invalid files: {', '.join(invalid)}"
         )
 
     _configure_huggingface_cache()
@@ -133,12 +147,6 @@ def _ensure_whisper_model() -> None:
         # avoids maintaining a second blob/snapshot copy in the Hub cache.
         model_dir = WHISPER_MODEL_PATH
         model_dir.mkdir(parents=True, exist_ok=True)
-        minimum_sizes = {
-            "config.json": 512,
-            "model.bin": 50 * 1024 * 1024,
-            "tokenizer.json": 100 * 1024,
-            "vocabulary.txt": 100 * 1024,
-        }
         for name, minimum_size in minimum_sizes.items():
             candidate = model_dir / name
             if candidate.exists() and candidate.stat().st_size < minimum_size:
