@@ -7,6 +7,27 @@ Deno.test("registry has unique stable agent identifiers", () => {
   assertEquals(getRegisteredAgent("agronomy_advisor")?.domain, "agronomy");
 });
 
+Deno.test("specialist inventory is registered centrally but remains disabled by default", () => {
+  const specialistIds = [
+    "soil_water_specialist", "irrigation_specialist", "plant_nutrition_specialist",
+    "plant_health_specialist", "climate_specialist", "agricultural_knowledge_specialist",
+    "market_intelligence_specialist", "trade_export_specialist",
+    "finance_economics_specialist", "logistics_supply_chain_specialist",
+  ] as const;
+  for (const id of specialistIds) {
+    const agent = getRegisteredAgent(id);
+    assertEquals(agent?.lifecycleState, "registered");
+    assertEquals(agent?.enabled, false);
+    assertEquals(agent?.humanReviewByDefault, true);
+  }
+});
+
+Deno.test("existing general routing remains enabled after specialist registration", () => {
+  assertEquals(getRegisteredAgent("agronomy_advisor")?.enabled, true);
+  assertEquals(getRegisteredAgent("crop_diagnostics")?.enabled, true);
+  assertEquals(routeTask({ text: "برای اصلاح شوری خاک چه کار کنم؟" }).agentId, "agronomy_advisor");
+});
+
 Deno.test("greeting is handled by coordinator without model dispatch", () => {
   const route = routeTask({ text: "سلام، خوبی؟" });
   assertEquals(route.status, "assigned");
