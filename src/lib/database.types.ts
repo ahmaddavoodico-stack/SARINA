@@ -1131,6 +1131,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           crop_id: string
+          crop_label?: string | null
           cycle_name?: string | null
           expected_harvest_date?: string | null
           farm_id: string
@@ -1168,6 +1169,11 @@ export type Database = {
           status?: string
           updated_at?: string
           variety_id?: string | null
+          variety_label?: string | null
+          tree_age_years?: number | null
+          yield_quantity?: number | null
+          yield_unit?: string | null
+          yield_period?: string | null
         }
         Relationships: [
           {
