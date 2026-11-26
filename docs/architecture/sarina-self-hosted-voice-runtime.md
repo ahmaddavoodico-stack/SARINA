@@ -1,6 +1,6 @@
 # SARINA Self-hosted Voice Runtime
 
-Status: implementation foundation committed to the development branch; not deployed or connected to a live chat.
+Status: Persian female Parisa TTS is integrated into the existing restricted spoken-reply path; production release and end-to-end audio verification are pending.
 
 ## Product scope
 
@@ -9,10 +9,11 @@ Voice support covers three roles and two distinct conversation types:\n- Farmer 
 ## Runtime
 
 - STT: faster-whisper, multilingual `small` model, CPU INT8 by default.
-- TTS: Piper, Persian Iran `fa_IR-amir-medium` voice.
+- TTS (Persian): tiny-ava ONNX, Parisa female voice, with the compact Persian G2P ONNX frontend; local CPU inference. Model license CC BY 4.0; attribution is required.
+- TTS (Arabic): Piper `ar_JO-kareem-medium` voice.
 - Runtime: a dedicated FastAPI service in `services/voice-runtime`, packaged with Docker.
 - Authentication: validate the current SARINA Supabase access token using SARINA's own Auth endpoint.
-- Inference: local CPU process only. No OpenAI, Google, Azure, ElevenLabs, or other external AI inference API.
+- Inference: local CPU process only. No OpenAI, Google, Azure, ElevenLabs, or other external AI inference API. Model assets are downloaded and cached; inference itself remains local.
 - Temporary audio: the runtime deletes temporary input/output files after processing. Durable conversation media storage remains the responsibility of the authorized chat service.
 
 ## API contract
@@ -31,7 +32,7 @@ The first version limits input size, duration, text length, synthesis language, 
 - requests a transcript from the self-hosted STT service and returns it to the parent;
 - requests local TTS playback for an assistant message.
 
-Set `VITE_SARINA_VOICE_API_URL` to the HTTPS URL of SARINA's own voice runtime when that service is installed. No provider key or model API key is present in the frontend.
+Set `VITE_SARINA_VOICE_API_URL` to the HTTPS URL of SARINA's own voice runtime when that service is installed. No provider key or model API key is present in the frontend. Required Persian voice attribution: “Powered by tiny-ava (Mehdi Allahyari / OncillaAI)” with a link to https://huggingface.co/mehdi-hf/tiny-ava.
 
 The parent chat must persist the audio in private storage and link it to the authenticated conversation. The component itself does not create a message row or bypass RLS.
 
