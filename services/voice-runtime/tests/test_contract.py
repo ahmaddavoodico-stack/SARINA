@@ -27,9 +27,10 @@ def test_health_reports_local_vendored_engines_and_voice_slots():
 
     result = asyncio.run(voice_runtime.health())
     assert result["whisper_languages"] == ["fa", "ar", "auto"]
-    assert set(result["piper_models_configured"]) == {"fa", "ar"}
+    assert result["arabic_piper_model_configured"] is False
+    assert result["persian_female_voice"].startswith("Parisa")
     assert result["whisper_model_source"] == "local-vendored-code-and-local-weights"
-    assert result["piper_engine_source"] == "SARINA-vendored-Piper-subprocess"
+    assert result["text_to_speech"] == "tiny-ava (Persian female Parisa) + Piper (Arabic)"
 
 
 def test_vendored_upstream_source_and_licenses_are_present():
@@ -103,3 +104,19 @@ def test_spoken_replies_fail_closed_and_allow_only_configured_user(monkeypatch):
     assert not voice_runtime._is_tts_allowed({"id": "another-user"})
     monkeypatch.setattr(voice_runtime, "TTS_ALLOWED_USER_IDS", frozenset())
     assert not voice_runtime._is_tts_allowed({"id": "admin-user"})
+
+
+def test_tiny_ava_phoneme_encoding_adds_boundaries_and_ezafe():
+    from app.main import _tiny_ava_phonemes
+
+    symbols = [
+        "<pad>", "<bos>", "<eos>", "<sp>", "<unk>", "،", ".", "؟", "!", "؛", ":", "«", "»", "(", ")", "—", "…",
+        "p", "b", "t", "d", "k", "ɡ", "q", "ʔ", "f", "v", "s", "z", "ʃ", "ʒ", "x", "h", "tʃ", "dʒ", "m", "n", "l", "r", "j",
+        "a", "e", "o", "i", "u", "ɑ",
+    ]
+    token_ids, stress = _tiny_ava_phonemes("sAlAm-e", {"symbols": symbols})
+
+    assert token_ids[0] == symbols.index("<bos>")
+    assert token_ids[-1] == symbols.index("<eos>")
+    assert len(token_ids) == len(stress)
+    assert 2 in stress  # Explicit Persian ezafe marker.
