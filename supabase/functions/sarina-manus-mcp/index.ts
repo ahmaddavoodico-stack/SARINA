@@ -42,6 +42,57 @@ function getAdminClient() {
   });
 }
 
+const MANUS_INSTANCE_ID = "manus_market_intelligence";
+const MANUS_CAPABILITIES = [
+  "sarina_connection_check",
+  "sarina_integration_capabilities",
+  "save_market_research_draft",
+  "list_market_research_drafts",
+  "get_market_research_draft",
+  "sarina_agent_heartbeat",
+] as const;
+
+async function recordManusHeartbeat(input: {
+  capabilities: string[];
+  activeTaskCount: number;
+  capacity: number | null;
+  eventType?: "heartbeat" | "capability_check";
+}) {
+  const client = getAdminClient();
+  const now = new Date().toISOString();
+  const capabilityCheckOk = MANUS_CAPABILITIES.every((name) => input.capabilities.includes(name));
+  const runtimeState = !capabilityCheckOk ? "responding" : input.activeTaskCount > 0 ? "busy" : "ready";
+  const health = capabilityCheckOk ? "healthy" : "unknown";
+  const reasonCode = capabilityCheckOk ? "AUTHENTICATED_MCP_HEARTBEAT_AND_CAPABILITIES_CONFIRMED" : "MCP_CAPABILITY_SET_INCOMPLETE";
+  const { error } = await client.from("sci_agent_runtime").upsert({
+    agent_instance_id: MANUS_INSTANCE_ID,
+    adapter_id: "manus",
+    specialist_role: "market_intelligence_specialist",
+    lifecycle_state: "enabled",
+    dispatch_enabled: false,
+    last_heartbeat_at: now,
+    last_capability_check_at: now,
+    capability_check_ok: capabilityCheckOk,
+    capabilities: input.capabilities,
+    active_task_count: input.activeTaskCount,
+    capacity: input.capacity,
+    runtime_metadata: { gateway_version: SERVER_VERSION, signal_source: "authenticated_manus_mcp_call" },
+    updated_at: now,
+  }, { onConflict: "agent_instance_id" });
+  if (error) throw error;
+  const { error: eventError } = await client.from("sci_agent_health_events").insert({
+    agent_instance_id: MANUS_INSTANCE_ID,
+    event_type: input.eventType ?? "heartbeat",
+    health,
+    runtime_state: runtimeState,
+    reason_code: reasonCode,
+    evidence: { capability_check_ok: capabilityCheckOk, active_task_count: input.activeTaskCount, capacity: input.capacity, capability_count: input.capabilities.length },
+    occurred_at: now,
+  });
+  if (eventError) throw eventError;
+  return { heartbeat_at: now, runtime_state: runtimeState, health, capability_check_ok: capabilityCheckOk, reason_code: reasonCode };
+}
+
 const mcp = new McpServer({
   name: SERVER_NAME,
   version: SERVER_VERSION,
@@ -59,6 +110,7 @@ mcp.tool(
     );
     let databaseConnected = false;
     let draftStoreReady = false;
+    let runtimeSignal: Record<string, unknown> | null = null;
     if (databaseConfigured) {
       try {
         const { error } = await getAdminClient()
@@ -67,9 +119,18 @@ mcp.tool(
           .limit(1);
         databaseConnected = !error;
         draftStoreReady = !error;
+        if (!error) {
+          runtimeSignal = await recordManusHeartbeat({
+            capabilities: [...MANUS_CAPABILITIES],
+            activeTaskCount: 0,
+            capacity: null,
+            eventType: "capability_check",
+          });
+        }
       } catch {
         databaseConnected = false;
         draftStoreReady = false;
+        runtimeSignal = null;
       }
     }
     return {
@@ -82,6 +143,7 @@ mcp.tool(
           database_configured: databaseConfigured,
           database_connected: databaseConnected,
           draft_store_ready: draftStoreReady,
+          runtime_signal: runtimeSignal,
           access_scope: [
             "read integration capabilities",
             "save agricultural market research drafts",
@@ -128,6 +190,38 @@ mcp.tool(
       }),
     }],
   })
+  }
+);
+
+mcp.tool(
+  "sarina_agent_heartbeat",
+  {
+    description: "Send an authenticated Manus runtime heartbeat to SCI. This reports only adapter health, task load and declared MCP capabilities; it does not authorize mission dispatch.",
+    inputSchema: z.object({
+      active_task_count: z.number().int().min(0).max(100),
+      capacity: z.number().int().min(1).max(100).nullable(),
+      capabilities: z.array(z.enum([
+        "sarina_connection_check",
+        "sarina_integration_capabilities",
+        "save_market_research_draft",
+        "list_market_research_drafts",
+        "get_market_research_draft",
+        "sarina_agent_heartbeat",
+      ])).max(6),
+    }),
+    handler: async ({ active_task_count, capacity, capabilities }) => {
+      try {
+        const signal = await recordManusHeartbeat({
+          activeTaskCount: active_task_count,
+          capacity,
+          capabilities,
+          eventType: "heartbeat",
+        });
+        return { content: [{ type: "text", text: JSON.stringify({ ok: true, agent_instance_id: MANUS_INSTANCE_ID, ...signal, dispatch_enabled: false }) }] };
+      } catch {
+        return { isError: true, content: [{ type: "text", text: "Could not persist the Manus runtime heartbeat to SCI." }] };
+      }
+    },
   }
 );
 
