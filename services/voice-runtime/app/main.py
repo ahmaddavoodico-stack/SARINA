@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import os
 import math
+import logging
 import subprocess
 import sys
 import tempfile
@@ -17,7 +18,8 @@ from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 from starlette.background import BackgroundTask
 
-APP_VERSION = "0.2.0"
+APP_VERSION = "0.2.1"
+logger = logging.getLogger("sarina.voice")
 MAX_AUDIO_BYTES = int(os.getenv("MAX_AUDIO_BYTES", str(20 * 1024 * 1024)))
 MAX_TEXT_CHARS = int(os.getenv("MAX_TEXT_CHARS", "6000"))
 MAX_AUDIO_SECONDS = int(os.getenv("MAX_AUDIO_SECONDS", "90"))
@@ -155,21 +157,62 @@ def _get_whisper_model() -> Any:
     return _whisper_model
 
 
-def _probe_audio_duration(path: str) -> float:
+def _decode_audio_to_wav(source_path: str, wav_path: str) -> float:
+    """Decode browser-recorded audio and normalize it to Whisper-friendly PCM WAV.
+
+    MediaRecorder output varies across Android/browser versions (WebM/Opus,
+    Ogg/Opus, MP4/AAC). Whisper should receive a consistent mono 16 kHz stream.
+    """
     import av
 
+    target_rate = 16_000
+    sample_count = 0
     try:
-        with av.open(path) as container:
-            duration = container.duration / av.time_base if container.duration is not None else None
-            if duration is None:
-                audio_streams = [stream for stream in container.streams if stream.type == "audio"]
-                if audio_streams and audio_streams[0].duration is not None:
-                    duration = float(audio_streams[0].duration * audio_streams[0].time_base)
+        with av.open(source_path, mode="r") as container:
+            audio_streams = [stream for stream in container.streams if stream.type == "audio"]
+            if not audio_streams:
+                raise ValueError("No audio stream found")
+            stream = audio_streams[0]
+
+            estimated_duration = None
+            if container.duration is not None:
+                estimated_duration = float(container.duration / av.time_base)
+            elif stream.duration is not None and stream.time_base is not None:
+                estimated_duration = float(stream.duration * stream.time_base)
+            if estimated_duration is not None and estimated_duration > MAX_AUDIO_SECONDS:
+                raise ValueError("Audio duration exceeds the allowed limit")
+
+            resampler = av.AudioResampler(format="s16", layout="mono", rate=target_rate)
+            with wave.open(wav_path, "wb") as output:
+                output.setnchannels(1)
+                output.setsampwidth(2)
+                output.setframerate(target_rate)
+
+                def write_frames(frames: list[Any]) -> None:
+                    nonlocal sample_count
+                    for frame in frames:
+                        samples = int(frame.samples)
+                        sample_count += samples
+                        if sample_count > MAX_AUDIO_SECONDS * target_rate:
+                            raise ValueError("Audio duration exceeds the allowed limit")
+                        output.writeframesraw(frame.planes[0].to_bytes())
+
+                for decoded_frame in container.decode(stream):
+                    write_frames(resampler.resample(decoded_frame))
+                write_frames(resampler.resample(None))
     except Exception as exc:
+        if isinstance(exc, ValueError) and str(exc) == "Audio duration exceeds the allowed limit":
+            raise
+        logger.warning(
+            "voice_audio_decode_failed error_type=%s",
+            type(exc).__name__,
+        )
         raise ValueError("Audio container could not be decoded") from exc
-    if duration is None or not math.isfinite(float(duration)) or duration <= 0:
+
+    duration = sample_count / target_rate
+    if duration <= 0 or not math.isfinite(duration):
         raise ValueError("Audio duration is invalid")
-    return float(duration)
+    return duration
 
 def _transcribe_file(path: str, language_hint: str | None = None) -> dict[str, Any]:
     model = _get_whisper_model()
@@ -287,24 +330,37 @@ async def transcribe(
         if total == 0:
             raise HTTPException(status_code=400, detail="Audio file is empty")
 
+        normalized_path: str | None = None
         try:
-            duration = await asyncio.to_thread(_probe_audio_duration, temp_path)
+            with tempfile.NamedTemporaryFile(prefix="sarina-normalized-", suffix=".wav", delete=False) as normalized:
+                normalized_path = normalized.name
+            duration = await asyncio.to_thread(_decode_audio_to_wav, temp_path, normalized_path)
+        except ValueError as exc:
+            if normalized_path:
+                Path(normalized_path).unlink(missing_ok=True)
+            if "duration exceeds" in str(exc):
+                raise HTTPException(status_code=413, detail="Audio duration exceeds the allowed limit") from exc
+            raise HTTPException(status_code=400, detail="Audio file could not be decoded; please try recording again") from exc
         except Exception as exc:
-            raise HTTPException(status_code=400, detail="Audio file could not be decoded") from exc
-        if duration > MAX_AUDIO_SECONDS:
-            raise HTTPException(status_code=413, detail="Audio duration exceeds the allowed limit")
+            if normalized_path:
+                Path(normalized_path).unlink(missing_ok=True)
+            logger.exception("voice_audio_normalization_failed")
+            raise HTTPException(status_code=503, detail="Audio conversion is temporarily unavailable") from exc
 
         try:
             await asyncio.wait_for(_inference_lock.acquire(), timeout=3)
         except TimeoutError as exc:
+            Path(normalized_path).unlink(missing_ok=True)
             raise HTTPException(status_code=429, detail="Voice service is busy; retry shortly") from exc
         try:
             try:
-                result = await asyncio.to_thread(_transcribe_file, temp_path, language_hint)
+                result = await asyncio.to_thread(_transcribe_file, normalized_path, language_hint)
             except Exception as exc:
+                logger.exception("voice_transcription_failed")
                 raise HTTPException(status_code=503, detail="Speech recognition is temporarily unavailable") from exc
         finally:
             _inference_lock.release()
+            Path(normalized_path).unlink(missing_ok=True)
 
         return {"ok": True, **result, "processing": "local"}
     finally:
