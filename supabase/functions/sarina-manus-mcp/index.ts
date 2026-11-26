@@ -42,6 +42,65 @@ function getAdminClient() {
   });
 }
 
+const MANUS_INSTANCE_ID = "manus_market_intelligence";
+const MANUS_CAPABILITIES = [
+  "sarina_connection_check",
+  "sarina_integration_capabilities",
+  "save_market_research_draft",
+  "list_market_research_drafts",
+  "get_market_research_draft",
+  "sarina_agent_heartbeat",
+] as const;
+
+async function recordManusHeartbeat(input: {
+  capabilities: string[];
+  activeTaskCount: number;
+  capacity: number | null;
+  eventType?: "heartbeat" | "capability_check";
+}) {
+  const client = getAdminClient();
+  const now = new Date().toISOString();
+  const capabilityCheckOk = MANUS_CAPABILITIES.every((name) => input.capabilities.includes(name));
+  const runtimeState = !capabilityCheckOk || input.capacity === null
+    ? "responding"
+    : input.activeTaskCount > 0 || input.activeTaskCount >= input.capacity
+    ? "busy"
+    : "ready";
+  const health = capabilityCheckOk && input.capacity !== null ? "healthy" : "unknown";
+  const reasonCode = !capabilityCheckOk
+    ? "MCP_CAPABILITY_SET_INCOMPLETE"
+    : input.capacity === null
+    ? "CAPACITY_NOT_CONFIRMED"
+    : "AUTHENTICATED_MCP_HEARTBEAT_CAPABILITIES_AND_CAPACITY_CONFIRMED";
+  const { error } = await client.from("sci_agent_runtime").upsert({
+    agent_instance_id: MANUS_INSTANCE_ID,
+    adapter_id: "manus",
+    specialist_role: "market_intelligence_specialist",
+    lifecycle_state: "enabled",
+    dispatch_enabled: false,
+    last_heartbeat_at: now,
+    last_capability_check_at: now,
+    capability_check_ok: capabilityCheckOk,
+    capabilities: input.capabilities,
+    active_task_count: input.activeTaskCount,
+    capacity: input.capacity,
+    runtime_metadata: { gateway_version: SERVER_VERSION, signal_source: "authenticated_manus_mcp_call" },
+    updated_at: now,
+  }, { onConflict: "agent_instance_id" });
+  if (error) throw error;
+  const { error: eventError } = await client.from("sci_agent_health_events").insert({
+    agent_instance_id: MANUS_INSTANCE_ID,
+    event_type: input.eventType ?? "heartbeat",
+    health,
+    runtime_state: runtimeState,
+    reason_code: reasonCode,
+    evidence: { capability_check_ok: capabilityCheckOk, active_task_count: input.activeTaskCount, capacity: input.capacity, capability_count: input.capabilities.length },
+    occurred_at: now,
+  });
+  if (eventError) throw eventError;
+  return { heartbeat_at: now, runtime_state: runtimeState, health, capability_check_ok: capabilityCheckOk, reason_code: reasonCode };
+}
+
 const mcp = new McpServer({
   name: SERVER_NAME,
   version: SERVER_VERSION,
@@ -59,6 +118,7 @@ mcp.tool(
     );
     let databaseConnected = false;
     let draftStoreReady = false;
+    let runtimeSignal: Record<string, unknown> | null = null;
     if (databaseConfigured) {
       try {
         const { error } = await getAdminClient()
@@ -67,9 +127,18 @@ mcp.tool(
           .limit(1);
         databaseConnected = !error;
         draftStoreReady = !error;
+        if (!error) {
+          runtimeSignal = await recordManusHeartbeat({
+            capabilities: [...MANUS_CAPABILITIES],
+            activeTaskCount: 0,
+            capacity: null,
+            eventType: "capability_check",
+          });
+        }
       } catch {
         databaseConnected = false;
         draftStoreReady = false;
+        runtimeSignal = null;
       }
     }
     return {
@@ -82,6 +151,7 @@ mcp.tool(
           database_configured: databaseConfigured,
           database_connected: databaseConnected,
           draft_store_ready: draftStoreReady,
+          runtime_signal: runtimeSignal,
           access_scope: [
             "read integration capabilities",
             "save agricultural market research drafts",
@@ -131,6 +201,38 @@ mcp.tool(
   }
 );
 
+mcp.tool(
+  "sarina_agent_heartbeat",
+  {
+    description: "Send an authenticated Manus runtime heartbeat to SCI. This reports only adapter health, task load and declared MCP capabilities; it does not authorize mission dispatch.",
+    inputSchema: z.object({
+      active_task_count: z.number().int().min(0).max(100),
+      capacity: z.number().int().min(1).max(100).nullable(),
+      capabilities: z.array(z.enum([
+        "sarina_connection_check",
+        "sarina_integration_capabilities",
+        "save_market_research_draft",
+        "list_market_research_drafts",
+        "get_market_research_draft",
+        "sarina_agent_heartbeat",
+      ])).max(6),
+    }),
+    handler: async ({ active_task_count, capacity, capabilities }) => {
+      try {
+        const signal = await recordManusHeartbeat({
+          activeTaskCount: active_task_count,
+          capacity,
+          capabilities,
+          eventType: "heartbeat",
+        });
+        return { content: [{ type: "text", text: JSON.stringify({ ok: true, agent_instance_id: MANUS_INSTANCE_ID, ...signal, dispatch_enabled: false }) }] };
+      } catch {
+        return { isError: true, content: [{ type: "text", text: "Could not persist the Manus runtime heartbeat to SCI." }] };
+      }
+    },
+  }
+);
+
 const sourceSchema = z.object({
   title: z.string().min(1).max(250),
   url: z.string().url().refine((value) => value.startsWith("https://"), {
@@ -151,10 +253,22 @@ mcp.tool(
       findings: z.array(z.string().min(1).max(1500)).max(30),
       sources: z.array(sourceSchema).max(30),
       recommendations: z.array(z.string().min(1).max(1500)).max(20),
+      external_task_id: z.string().min(3).max(160).optional(),
     }),
     handler: async (args) => {
     try {
       const supabase = getAdminClient();
+      let externalMissionId: string | null = null;
+      if (args.external_task_id) {
+        const { data: mission, error: missionError } = await supabase
+          .from("sci_external_missions")
+          .select("id")
+          .eq("external_task_id", args.external_task_id)
+          .maybeSingle();
+        if (missionError) throw missionError;
+        if (!mission) throw new Error("EXTERNAL_MISSION_NOT_REGISTERED");
+        externalMissionId = mission.id;
+      }
       const { data, error } = await supabase
         .from("sarina_manus_market_research_drafts")
         .insert({
@@ -166,11 +280,34 @@ mcp.tool(
           recommendations: args.recommendations,
           status: "pending_review",
           submitted_by: "manus",
+          external_mission_id: externalMissionId,
         })
-        .select("id,title,status,created_at")
+        .select("id,title,status,created_at,external_mission_id")
         .single();
 
       if (error) throw error;
+      if (externalMissionId) {
+        await supabase.from("sci_external_missions").update({
+          draft_id: data.id,
+          status: "owner_review",
+          report_received_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        }).eq("id", externalMissionId);
+      }
+      const now = new Date().toISOString();
+      await supabase.from("sci_agent_runtime").update({
+        last_success_at: now,
+        updated_at: now,
+      }).eq("agent_instance_id", MANUS_INSTANCE_ID);
+      await supabase.from("sci_agent_health_events").insert({
+        agent_instance_id: MANUS_INSTANCE_ID,
+        event_type: "task_succeeded",
+        health: "healthy",
+        runtime_state: "responding",
+        reason_code: "MARKET_RESEARCH_DRAFT_SAVED",
+        evidence: { draft_id: data.id, mission_linked: Boolean(externalMissionId) },
+        occurred_at: now,
+      });
       return {
         content: [{
           type: "text",

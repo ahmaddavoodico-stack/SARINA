@@ -7,6 +7,8 @@ on:
     paths:
       - "supabase/functions/sarina-central-intelligence/**"
       - "supabase/functions/sarina-task-control/**"
+      - "supabase/functions/sarina-agent-operations/**"
+      - "supabase/functions/sarina-manus-mcp/**"
       - "supabase/functions/_shared/**"
       - "supabase/migrations/**"
       - "supabase/tests/**"
@@ -43,4 +45,7 @@ jobs:
         run: |
           deno check \
             supabase/functions/sarina-central-intelligence/index.ts \
-            supabase/functions/sarina-task-control/index.ts
+            supabase/functions/sarina-task-control/index.ts \
+            supabase/functions/sarina-agent-operations/index.ts
+          deno check --config supabase/functions/sarina-manus-mcp/deno.json \
+            supabase/functions/sarina-manus-mcp/index.ts
