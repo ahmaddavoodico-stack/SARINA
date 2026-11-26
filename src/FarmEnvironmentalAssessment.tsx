@@ -132,7 +132,6 @@ export default function FarmEnvironmentalAssessment({ farmId, farmName }: Props)
         ...(waterCount === 0 ? ["آزمایش کیفیت آب"] : []),
         ...(soilGridStatus !== "available" ? ["برآورد منطقه‌ای خاک"] : []),
         ...(climatePayload.status !== "available" ? ["اقلیم بلندمدت و میانگین‌های چندساله"] : []),
-        "ارتفاع، شیب و تحلیل توپوگرافی",
         ...(spatialPayload.terrain?.status !== "available" ? ["ارتفاع و شیب منطقه"] : []),\n        ...(spatialPayload.satellite?.status !== "available" ? ["پردازش NDVI و شاخص‌های پوشش گیاهی"] : []),
       ];
       const sourceManifest = [
@@ -161,6 +160,23 @@ export default function FarmEnvironmentalAssessment({ farmId, farmName }: Props)
           limitation: climatePayload.limitation ?? "اقلیم بلندمدت در دسترس نیست؛ مقادیر خالی باقی می‌مانند.",
         },
         {
+          source: spatialPayload.terrain?.provider ?? "Copernicus DEM GLO-90",
+          source_type: spatialPayload.terrain?.data_kind ?? "digital_surface_model_estimate",
+          status: spatialPayload.terrain?.status ?? "not_available",
+          spatial_resolution_m: spatialPayload.terrain?.native_resolution_m ?? null,
+          retrieved_at: spatialPayload.terrain?.retrieved_at ?? new Date().toISOString(),
+          limitation: spatialPayload.terrain?.limitation ?? "داده ارتفاع و شیب در دسترس نیست.",
+        },
+        {
+          source: spatialPayload.satellite?.provider ?? "Copernicus Sentinel-2 L2A",
+          source_type: spatialPayload.satellite?.data_kind ?? "satellite_derived_vegetation_index",
+          status: spatialPayload.satellite?.status ?? "not_available",
+          spatial_resolution_m: spatialPayload.satellite?.spatial_resolution_m ?? null,
+          temporal_coverage: spatialPayload.satellite?.temporal_window ?? null,
+          retrieved_at: new Date().toISOString(),
+          limitation: spatialPayload.satellite?.limitation ?? "پردازش پوشش گیاهی ماهواره‌ای در دسترس نیست.",
+        },
+        {
           source: "SARINA farm laboratory records",
           source_type: "farm_specific_measurements",
           status: soilCount + waterCount > 0 ? "available" : "no_records",
@@ -180,7 +196,7 @@ export default function FarmEnvironmentalAssessment({ farmId, farmName }: Props)
           soilgrids_status: soilGridStatus,
           weather_source: weatherPayload.source ?? "provider_not_reported",
           historical_climate_status: climatePayload.status ?? "not_available",\n          terrain_status: spatialPayload.terrain?.status ?? "not_available",\n          satellite_vegetation_status: spatialPayload.satellite?.status ?? "not_available",
-          evidence_classes: ["farm_measurement", "regional_model_estimate", "weather_model"],
+          evidence_classes: ["farm_measurement", "regional_model_estimate", "weather_model", "digital_surface_model_estimate", "satellite_derived_vegetation_index"],
           missing_values_policy: "unknown_values_remain_null",
         } as unknown as Json,
         missing_domains: missingDomains as unknown as Json,
