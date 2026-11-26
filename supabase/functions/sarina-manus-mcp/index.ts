@@ -61,9 +61,17 @@ async function recordManusHeartbeat(input: {
   const client = getAdminClient();
   const now = new Date().toISOString();
   const capabilityCheckOk = MANUS_CAPABILITIES.every((name) => input.capabilities.includes(name));
-  const runtimeState = !capabilityCheckOk ? "responding" : input.activeTaskCount > 0 ? "busy" : "ready";
-  const health = capabilityCheckOk ? "healthy" : "unknown";
-  const reasonCode = capabilityCheckOk ? "AUTHENTICATED_MCP_HEARTBEAT_AND_CAPABILITIES_CONFIRMED" : "MCP_CAPABILITY_SET_INCOMPLETE";
+  const runtimeState = !capabilityCheckOk || input.capacity === null
+    ? "responding"
+    : input.activeTaskCount > 0 || input.activeTaskCount >= input.capacity
+    ? "busy"
+    : "ready";
+  const health = capabilityCheckOk && input.capacity !== null ? "healthy" : "unknown";
+  const reasonCode = !capabilityCheckOk
+    ? "MCP_CAPABILITY_SET_INCOMPLETE"
+    : input.capacity === null
+    ? "CAPACITY_NOT_CONFIRMED"
+    : "AUTHENTICATED_MCP_HEARTBEAT_CAPABILITIES_AND_CAPACITY_CONFIRMED";
   const { error } = await client.from("sci_agent_runtime").upsert({
     agent_instance_id: MANUS_INSTANCE_ID,
     adapter_id: "manus",
