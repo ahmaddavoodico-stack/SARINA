@@ -199,7 +199,7 @@ const RULES: readonly Rule[] = [
     domain: "soil_water",
     agentId: "soil_water_specialist",
     reasonCode: "SOIL_OR_WATER_QUALITY_REQUEST",
-    patterns: [/آهک|آهکی|شوری خاک|ec خاک|هدایت الکتریکی خاک|ph خاک|آزمایش خاک|بافت خاک|رسی بودن خاک|زهکش|زهکشی|کیفیت آب آبیاری|شوری آب|آب شور|soil salinity|soil test|soil texture|drainage|water quality/],
+    patterns: [/آهک|آهکی|ec خاک|هدایت الکتریکی خاک|ph خاک|آزمایش خاک|بافت خاک|رسی بودن خاک|زهکش|زهکشی|کیفیت آب آبیاری|شوری آب|آب شور|soil salinity|soil test|soil texture|drainage|water quality/],
   },
   {
     domain: "irrigation",

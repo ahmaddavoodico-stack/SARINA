@@ -43,7 +43,7 @@ function readyPlan(): CollaborationPlan {
         availability: "eligible",
         blockedReasons: [],
         humanReviewRequired: true,
-        dispatchAuthorized: false,
+        dispatchAuthorized: true,
       },
     ],
   };
