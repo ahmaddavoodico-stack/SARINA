@@ -94,3 +94,12 @@ def test_piper_uses_vendored_runner_and_selected_local_voice(monkeypatch, tmp_pa
     assert str(voice_runtime.PIPER_CLI_PATH) in calls["command"]
     with wave.open(str(output_path), "rb") as wav_file:
         assert wav_file.getnframes() == 64
+
+
+
+def test_spoken_replies_fail_closed_and_allow_only_configured_user(monkeypatch):
+    monkeypatch.setattr(voice_runtime, "TTS_ALLOWED_USER_IDS", frozenset({"admin-user"}))
+    assert voice_runtime._is_tts_allowed({"id": "admin-user"})
+    assert not voice_runtime._is_tts_allowed({"id": "another-user"})
+    monkeypatch.setattr(voice_runtime, "TTS_ALLOWED_USER_IDS", frozenset())
+    assert not voice_runtime._is_tts_allowed({"id": "admin-user"})
