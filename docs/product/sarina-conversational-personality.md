@@ -162,3 +162,62 @@ The operator will coordinate the planned electricity outage schedules for the tw
 - Do not treat non-overlapping schedules as a guarantee against simultaneous outages. Unexpected faults, grid-wide interruptions, internet failures, and UPS exhaustion remain possible.
 - Continue to use live health checks, independent power/network paths where feasible, alerting, and tested failover/failback. The schedule supplements—not replaces—the technical failover mechanism.
 - If both sites become unavailable despite scheduling, use the documented graceful-degradation behavior and never claim that local inference completed when it did not.
+
+
+## Digital inclusion and contextual guidance — approved foundational principle (2026-11-27)
+
+**Product commitment:** No farmer should be excluded from SARINA's knowledge, services, or opportunities because of limited literacy, limited digital skills, difficulty typing, or unfamiliarity with complex software. SARINA must adapt to the farmer—not require the farmer to adapt to technology.
+
+This is an accessibility and product architecture requirement across the farmer experience, not a cosmetic onboarding feature.
+
+### Farmer-first interaction model
+
+- Keep the familiar conversational doorway as the primary way to discover and use SARINA. Farmers should be able to ask for help in ordinary spoken language, much like using a messaging app.
+- Make important workflows operable through a combination of short voice prompts, spoken answers, large touch targets, clear icons/illustrations, and simple selectable choices. Voice must never be the only route; provide text and visual alternatives.
+- Do not make typing, reading long instructions, or completing a long form a prerequisite for essential services.
+- Ask one small, relevant question at a time. Use short, independently playable speech turns; stop after each question and wait. Never deliver long uninterrupted spoken instructions.
+- Full transcripts are optional. Offer “show text” or a concise recap when useful, and always provide a clear review of structured information before important submission.
+- Allow the farmer to pause, resume, repeat, skip optional questions, correct answers, or ask for help without losing confirmed progress.
+
+### Context-aware “What should I do now?” guide
+
+- Make help available from every farmer-facing screen through a persistent, accessible SARINA help entry point and a natural-language request such as «سارینا، الان باید چیکار کنم؟».
+- The guide must receive the actual current page, workflow step, and safe UI context so its instructions refer to the screen the farmer is viewing—not generic navigation advice.
+- Explain the next action in plain language, one step at a time. Where possible, highlight or point to the relevant control and offer to guide the farmer through the action.
+- Never pretend to click, save, upload, or change anything unless the application actually performed the action and confirmed success. Ask for confirmation before consequential changes, submissions, deletion, purchases, or external communications.
+- If the guide cannot identify the current screen or action, say so plainly and ask one concise clarifying question rather than guessing.
+
+### Adaptive assistance and dignity
+
+- Calibrate the amount of explanation to the farmer's demonstrated comfort and request; do not label, rank, or embarrass users based on literacy or digital skill.
+- Explain unfamiliar agricultural and technical terms with everyday words and practical examples.
+- Use crop- and task-specific follow-up questions. Avoid repeating information already confirmed in the farmer's authorized profile.
+- Treat approximate, unknown, and “later” answers respectfully. Do not fabricate values or block a basic farm profile because optional details are missing.
+- Support Persian and Arabic right-to-left layouts and spoken interaction as each language path is validated. Do not claim a language or voice is production-ready before end-to-end testing.
+- Design for low-bandwidth and interrupted mobile sessions: preserve safe drafts, show clear save status, and resume from the last confirmed step.
+
+### Safety, privacy, and implementation boundaries
+
+- Contextual guidance may use only the signed-in farmer's authorized records and the minimum current-screen context required for the task.
+- Do not expose another farmer's data, hidden administrative information, secrets, or internal authorization state to the guide or client.
+- Keep workflow state, validation, permission checks, and database writes deterministic and server-enforced. An AI model may explain or phrase steps but must not become the authority for access control or persistence.
+- Never infer a farmer's literacy, education, or personal characteristics from their interaction. Adapt only to explicit preferences and observable task needs, with user control.
+- Provide an accessible non-voice fallback whenever microphone permission, TTS, STT, connectivity, or local inference is unavailable.
+- Test with farmers who have varied literacy, age, device familiarity, accents, hearing/speech abilities, and connectivity conditions. Include observed task completion—not just visual review—as a release gate.
+
+### Acceptance criteria
+
+1. A farmer can complete essential onboarding and create a basic farm record without typing long text or navigating a complex menu.
+2. Every essential step has voice, text, or visual-choice alternatives; no single modality is mandatory.
+3. SARINA asks one concise question at a time and waits for the farmer's response.
+4. A farmer can ask for help from any farmer-facing screen and receive instructions grounded in the actual current page and workflow step.
+5. Instructions identify the next action plainly and do not claim an action succeeded until the application confirms it.
+6. The farmer can pause and resume safely, with confirmed information preserved and no repeated questions unnecessarily.
+7. Optional unknown information does not block basic registration; uncertain values remain explicitly uncertain.
+8. Consequential actions require appropriate farmer confirmation and server-side authorization.
+9. Voice, text, visual, low-bandwidth, RTL, and error-recovery paths are tested on real mobile devices before production release.
+10. Usability testing demonstrates that farmers with limited digital familiarity can complete representative tasks without needing a helper to operate the software.
+
+### Delivery approach
+
+Implement this as a shared farmer-experience capability integrated with the existing SARINA conversation and navigation architecture—not as a parallel assistant or duplicate control center. Start with guided farm registration and contextual help on the current screen, then extend the same interaction contract to irrigation logs, crop observations, support requests, marketplace tasks, and other farmer workflows. Preserve existing canonical records, authorization, and RLS; audit them before changing persistence. This approval records product direction and acceptance criteria; it does not by itself mean the feature is implemented or live.
