@@ -139,7 +139,7 @@ def _ensure_whisper_model() -> None:
             f"Local Whisper model is incomplete at {WHISPER_MODEL_PATH}; invalid files: {', '.join(invalid)}"
         )
 
-    _configure_huggingface_cache()
+    cache_root = _configure_huggingface_cache()
     from huggingface_hub import snapshot_download
 
     try:
