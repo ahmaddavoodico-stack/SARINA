@@ -11,6 +11,7 @@ type LandContext = {
   safety?: { do_not_use_as_lab_test?: boolean; missing_values_must_remain_missing?: boolean };
 };
 type WeatherContext = {
+  farm_id?: string;
   source?: string;
   data_kind?: string;
   retrieved_at?: string;
