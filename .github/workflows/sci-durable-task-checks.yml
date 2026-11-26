@@ -9,7 +9,9 @@ on:
       - "supabase/functions/sarina-task-control/**"
       - "supabase/functions/sarina-agent-operations/**"
       - "supabase/functions/sarina-manus-mcp/**"
+      - "supabase/functions/farm-historical-climate-context/**"
       - "supabase/functions/_shared/**"
+      - "supabase/functions/farm-historical-climate-context/**"
       - "supabase/migrations/**"
       - "supabase/tests/**"
       - ".github/workflows/sci-durable-task-checks.yml"
@@ -46,6 +48,7 @@ jobs:
           deno check \
             supabase/functions/sarina-central-intelligence/index.ts \
             supabase/functions/sarina-task-control/index.ts \
-            supabase/functions/sarina-agent-operations/index.ts
+            supabase/functions/sarina-agent-operations/index.ts \
+          supabase/functions/farm-historical-climate-context/index.ts
           deno check --config supabase/functions/sarina-manus-mcp/deno.json \
             supabase/functions/sarina-manus-mcp/index.ts
