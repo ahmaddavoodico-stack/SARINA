@@ -118,7 +118,7 @@ export function validateTaskEnvelope(value: unknown, now = Date.now()): string[]
   if (!Array.isArray(e.permissions) || e.permissions.some((x) => typeof x !== "string")) issues.push("INVALID_PERMISSIONS");
   const agent = typeof e.assignedAgent === "string" ? getRegisteredAgent(e.assignedAgent as AgentId) : undefined;
   if (!agent) issues.push("INVALID_ASSIGNED_AGENT");
-  if (!["conversation", "agronomy", "crop_diagnostics", "knowledge", "marketplace", "specialist", "account"].includes(e.domain ?? "")) issues.push("INVALID_DOMAIN");
+  if (!["conversation", "agronomy", "crop_diagnostics", "knowledge", "marketplace", "specialist", "account", "soil_water", "irrigation", "plant_nutrition", "plant_health", "climate", "agricultural_knowledge", "market_intelligence", "trade_export", "finance_economics", "logistics_supply_chain"].includes(e.domain ?? "")) issues.push("INVALID_DOMAIN");
   else if (agent && agent.domain !== e.domain) issues.push("AGENT_DOMAIN_MISMATCH");
   if (!Array.isArray(e.modalities) || e.modalities.some((item) => !["text", "image", "document", "audio", "other"].includes(item))) {
     if (!issues.includes("INVALID_MODALITIES")) issues.push("INVALID_MODALITIES");
