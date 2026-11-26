@@ -78,6 +78,7 @@ Deno.test("planner selects only requested domains, deduplicates and scopes conte
   assertEquals(plan.selectedSpecialistCount, 2);
   assertEquals(plan.workItems.map((item) => item.domain), ["soil_water", "irrigation"]);
   assertEquals(plan.workItems[0].contextRefs, ["farm:one", "soil-test:latest"]);
+  assertEquals(plan.workItems[1].contextRefs, ["farm:irrigation"]);
 });
 
 Deno.test("planner refuses broad fan-out and unknown domains", () => {
@@ -121,7 +122,7 @@ Deno.test("blocked plans cannot be aggregated", () => {
   const plan = planSpecialistCollaboration({
     parentTaskId: PARENT,
     requestedDomains: ["soil_water"],
-    contextRefs: ["farm:one"],
+    contextRefsByDomain: { soil_water: ["farm:soil-only"] },
     modalities: ["text"],
   });
   assertEquals(aggregateSpecialistResults(plan, []).status, "not_aggregatable");
