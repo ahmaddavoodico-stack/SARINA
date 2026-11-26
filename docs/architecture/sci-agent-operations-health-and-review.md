@@ -1,6 +1,6 @@
 # SCI Agent Operations, Health and Review Policy
 
-**Status:** Approved operating model; runtime telemetry, Manus heartbeat ingestion, and the SCI command-center view are implemented in the current feature branch and await CI, merge, migration application, and Edge Function deployment.
+**Status:** Runtime telemetry schema and Edge Functions are deployed; the SCI fleet view is in the production frontend. Live Manus heartbeat and report ingestion are still awaiting the next authenticated Manus MCP calls.
 **Date:** 2026-11-26
 **Authority:** SARINA Central Intelligence (SCI)
 
