@@ -38,10 +38,13 @@ function operationalStatus(row: Record<string, unknown>, now = Date.now()) {
   }
   const active = Number(row.active_task_count ?? 0);
   const capacity = typeof row.capacity === "number" ? row.capacity : null;
-  if (active > 0 || (capacity !== null && active >= capacity)) {
+  if (capacity === null) {
+    return { runtime_state: "responding", health: "unknown", reason_code: "CAPACITY_NOT_CONFIRMED", heartbeat_age_ms: heartbeatAgeMs };
+  }
+  if (active > 0 || active >= capacity) {
     return { runtime_state: "busy", health: "healthy", reason_code: "ACTIVE_TASKS", heartbeat_age_ms: heartbeatAgeMs };
   }
-  return { runtime_state: "ready", health: "healthy", reason_code: "HEARTBEAT_AND_CAPABILITIES_FRESH", heartbeat_age_ms: heartbeatAgeMs };
+  return { runtime_state: "ready", health: "healthy", reason_code: "HEARTBEAT_CAPABILITIES_AND_CAPACITY_FRESH", heartbeat_age_ms: heartbeatAgeMs };
 }
 
 Deno.serve(async (req: Request) => {
