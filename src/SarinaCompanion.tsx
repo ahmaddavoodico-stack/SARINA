@@ -14,9 +14,8 @@ type SarinaCompanionProps={isAdmin?:boolean;role?:SarinaRole;onNavigate?:(destin
 type VoicePayload={audio:Blob;mimeType:string};
 
 function requestsSpokenReply(text:string):boolean{
- return /(?:پیام\\s*صوتی|پیام\\s*صدا(?:یی)?|به\\s*صورت\\s*صوتی|با\\s+(?:یک\\s+)?(?:پیام\\s+)?صدا|با\\s+صدای|صوتی.{0,24}(?:بگو|پاسخ|معرفی)|(?:بگو|معرفی\\s*کن).{0,32}(?:صدا|صوت)|(?:صدا|صوت).{0,32}(?:بگو|معرفی|پاسخ)|بخون)/i.test(text);
+ return /(?:پیام\s*صوتی|پیام\s*صدا(?:یی)?|به\s*صورت\s*صوتی|با\s+(?:یک\s+)?(?:پیام\s+)?صدا|با\s+صدای|صوتی.{0,24}(?:بگو|پاسخ|معرفی)|(?:بگو|معرفی\s*کن).{0,32}(?:صدا|صوت)|(?:صدا|صوت).{0,32}(?:بگو|معرفی|پاسخ)|بخون)/i.test(text);
 }
-
 const guideItems=[
  {title:"فیلم معرفی SARINA",description:"آشنایی کوتاه با امکانات سامانه",icon:PlayCircle,target:"learning" as NavTarget},
  {title:"راهنمای ثبت مزرعه",description:"شروع کار و ثبت اطلاعات مزرعه",icon:ClipboardList,target:"learning" as NavTarget},
