@@ -28,7 +28,9 @@ WHISPER_MODEL_REPO = os.getenv("WHISPER_MODEL_REPO", "Systran/faster-whisper-sma
 WHISPER_DEVICE = os.getenv("WHISPER_DEVICE", "cpu")
 WHISPER_COMPUTE_TYPE = os.getenv("WHISPER_COMPUTE_TYPE", "int8")
 WHISPER_CPU_THREADS = int(os.getenv("WHISPER_CPU_THREADS", "4"))
-PIPER_FA_MODEL_PATH = Path(os.getenv("PIPER_FA_MODEL_PATH", os.getenv("PIPER_MODEL_PATH", "/models/piper/fa_IR-amir-medium.onnx")))
+TINY_AVA_CACHE = Path(os.getenv("SARINA_TINY_AVA_CACHE", "/tmp/sarina-models/tiny-ava"))
+TINY_AVA_REPO = "mehdi-hf/tiny-ava"
+TINY_AVA_G2P_REVISION = "eb4dd87438aef3235c6efaed1faba714f0d75ae5"
 PIPER_AR_MODEL_PATH = Path(os.getenv("PIPER_AR_MODEL_PATH", "/models/piper/ar_JO-kareem-medium.onnx"))
 def _resolve_piper_cli_path() -> Path:
     configured = os.getenv("PIPER_CLI_PATH")
@@ -61,6 +63,7 @@ app.add_middleware(
 _model_lock = asyncio.Lock()
 _inference_lock = asyncio.Semaphore(1)
 _whisper_model: Any | None = None
+_tiny_ava_sessions: tuple[Any, Any, dict[str, Any]] | None = None
 
 
 class SynthesisRequest(BaseModel):
@@ -287,32 +290,187 @@ def _transcribe_file(path: str, language_hint: str | None = None) -> dict[str, A
     }
 
 
-def _synthesize_file(text: str, output_path: str, model_path: Path) -> None:
-    model_path = _ensure_piper_model(model_path)
-    if not PIPER_CLI_PATH.is_file():
-        raise RuntimeError("Vendored Piper runner is missing")
+def _download_tiny_ava_file(url: str, destination: Path) -> Path:
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    if destination.is_file() and destination.stat().st_size > 1024:
+        return destination
+    temporary = destination.with_suffix(destination.suffix + ".part")
+    try:
+        with httpx.stream("GET", url, timeout=45.0, follow_redirects=True) as response:
+            response.raise_for_status()
+            with temporary.open("wb") as output:
+                for chunk in response.iter_bytes(1024 * 1024):
+                    if chunk:
+                        output.write(chunk)
+        if not temporary.is_file() or temporary.stat().st_size <= 1024:
+            raise RuntimeError("Downloaded Persian female voice asset is incomplete")
+        temporary.replace(destination)
+        return destination
+    except Exception:
+        temporary.unlink(missing_ok=True)
+        raise
 
-    # Run the GPL-licensed Piper engine as a separate process. The FastAPI
-    # service does not import/link the Piper library into its own process.
-    command = [
-        sys.executable,
-        str(PIPER_CLI_PATH),
-        "--model",
-        str(model_path),
-        "--output_file",
-        output_path,
-    ]
-    result = subprocess.run(
-        command,
-        input=text,
-        text=True,
-        capture_output=True,
-        timeout=90,
-        check=False,
-    )
-    if result.returncode != 0 or not Path(output_path).is_file():
-        detail = (result.stderr or result.stdout or "Piper synthesis failed")[-1200:]
-        raise RuntimeError(detail)
+
+def _ensure_tiny_ava_assets() -> tuple[Path, Path, Path, Path]:
+    """Fetch the offline Parisa female voice and its small Persian G2P frontend."""
+    _configure_huggingface_cache()
+    from huggingface_hub import hf_hub_download
+
+    model_dir = TINY_AVA_CACHE / "parisa"
+    model_dir.mkdir(parents=True, exist_ok=True)
+    model_path = Path(hf_hub_download(
+        repo_id=TINY_AVA_REPO,
+        filename="models/parisa/tiny-ava-parisa.onnx",
+        revision="main",
+        cache_dir="/tmp/sarina-hf/hub",
+    ))
+    meta_path = Path(hf_hub_download(
+        repo_id=TINY_AVA_REPO,
+        filename="models/parisa/tiny-ava-parisa.json",
+        revision="main",
+        cache_dir="/tmp/sarina-hf/hub",
+    ))
+    g2p_root = "https://raw.githubusercontent.com/mallahyari/tiny-ava/" + TINY_AVA_G2P_REVISION + "/demo/assets/g2p/"
+    encoder_path = _download_tiny_ava_file(g2p_root + "g2p_encoder.onnx", model_dir / "g2p_encoder.onnx")
+    decoder_path = _download_tiny_ava_file(g2p_root + "g2p_decoder.onnx", model_dir / "g2p_decoder.onnx")
+    return model_path, meta_path, encoder_path, decoder_path
+
+
+def _tiny_ava_phonemes(repr1: str, meta: dict[str, Any]) -> tuple[list[int], list[int]]:
+    sym2id = {symbol: index for index, symbol in enumerate(meta["symbols"])}
+    phone_set = set(meta["symbols"][17:])
+    vowels = {"a", "e", "o", "i", "u", "ɑ"}
+    r1_to_ipa = {
+        "a": "a", "A": "ɑ", "e": "e", "o": "o", "i": "i", "u": "u",
+        "p": "p", "b": "b", "t": "t", "d": "d", "k": "k", "g": "ɡ", "q": "q", "?": "ʔ",
+        "f": "f", "v": "v", "s": "s", "z": "z", "S": "ʃ", "Z": "ʒ", "x": "x", "h": "h",
+        "C": "tʃ", "j": "dʒ", "m": "m", "n": "n", "l": "l", "r": "r", "y": "j",
+    }
+    symbols, stress = ["<bos>"], [0]
+    for word in repr1.split():
+        if symbols[-1] in phone_set:
+            symbols.append("<sp>")
+            stress.append(0)
+        if word.endswith("-ye"):
+            stem, ezafe = word[:-3], "ye"
+        elif word.endswith("-e"):
+            stem, ezafe = word[:-2], "e"
+        else:
+            stem, ezafe = word, ""
+        stem = stem.replace("-", "")
+        if len(stem) >= 2 and stem[0] == "?" and stem[1] in "aAeoiu":
+            stem = stem[1:]
+        phones = [[r1_to_ipa[ch], 0] for ch in stem if ch in r1_to_ipa]
+        for index in range(len(phones) - 1, -1, -1):
+            if phones[index][0] in vowels:
+                phones[index][1] = 1
+                break
+        for char in ezafe:
+            if char in r1_to_ipa:
+                phones.append([r1_to_ipa[char], 2 if r1_to_ipa[char] in vowels else 0])
+        for phone, level in phones:
+            symbols.append(phone)
+            stress.append(level)
+    symbols.extend([".", "<eos>"])
+    stress.extend([0, 0])
+    try:
+        return [sym2id[symbol] for symbol in symbols], stress
+    except KeyError as exc:
+        raise RuntimeError("Persian female voice received an unsupported phoneme") from exc
+
+
+def _get_tiny_ava_sessions() -> tuple[Any, Any, dict[str, Any]]:
+    global _tiny_ava_sessions
+    if _tiny_ava_sessions is None:
+        import json
+        import onnxruntime as ort
+
+        model_path, meta_path, encoder_path, decoder_path = _ensure_tiny_ava_assets()
+        with meta_path.open("r", encoding="utf-8") as source:
+            meta = json.load(source)
+        options = ort.SessionOptions()
+        options.intra_op_num_threads = max(1, min(4, WHISPER_CPU_THREADS))
+        options.inter_op_num_threads = 1
+        _tiny_ava_sessions = (
+            ort.InferenceSession(str(encoder_path), sess_options=options, providers=["CPUExecutionProvider"]),
+            ort.InferenceSession(str(decoder_path), sess_options=options, providers=["CPUExecutionProvider"]),
+            ort.InferenceSession(str(model_path), sess_options=options, providers=["CPUExecutionProvider"]),
+            meta,
+        )
+    return _tiny_ava_sessions
+
+
+def _synthesize_persian_female(text: str, output_path: str) -> None:
+    import numpy as np
+    import wave
+
+    encoder, decoder, tts, meta = _get_tiny_ava_sessions()
+    input_ids = np.array([[byte + 3 for byte in text.encode("utf-8")] + [1]], dtype=np.int64)
+    attention = np.ones_like(input_ids, dtype=np.int64)
+    (encoded,) = encoder.run(None, {"input_ids": input_ids, "attention_mask": attention})
+    output_ids = [0]
+    for _ in range(256):
+        (logits,) = decoder.run(None, {
+            "decoder_input_ids": np.array([output_ids], dtype=np.int64),
+            "encoder_hidden_states": encoded,
+            "encoder_attention_mask": attention,
+        })
+        next_id = int(logits[0, -1].argmax())
+        if next_id == 1:
+            break
+        output_ids.append(next_id)
+    repr1 = bytes(index - 3 for index in output_ids[1:] if 3 <= index <= 258).decode("utf-8", errors="ignore").strip()
+    if not repr1:
+        raise RuntimeError("Persian female voice could not phonemize the response")
+    tokens, stress = _tiny_ava_phonemes(repr1, meta)
+    audio, _ = tts.run(None, {
+        "tokens": np.array([tokens], dtype=np.int64),
+        "stress": np.array([stress], dtype=np.int64),
+        "voice": np.array([0], dtype=np.int64),
+        "speed": np.array([1.0], dtype=np.float32),
+        "pitch_shift": np.array([0.0], dtype=np.float32),
+        "pitch_range": np.array([1.05], dtype=np.float32),
+    })
+    samples = np.asarray(audio[0], dtype=np.float32).reshape(-1)
+    peak = float(np.max(np.abs(samples))) if samples.size else 0.0
+    if not np.isfinite(peak) or peak < 1e-7:
+        raise RuntimeError("Persian female voice generated empty audio")
+    if peak > 0.99:
+        samples *= 0.99 / peak
+    pcm = np.clip(samples * 32767.0, -32768, 32767).astype("<i2")
+    with wave.open(output_path, "wb") as wav_file:
+        wav_file.setnchannels(1)
+        wav_file.setsampwidth(2)
+        wav_file.setframerate(24000)
+        wav_file.writeframes(pcm.tobytes())
+
+
+def _synthesize_file(text: str, output_path: str, model_path: Path) -> None:
+    if model_path == PIPER_AR_MODEL_PATH:
+        model_path = _ensure_piper_model(model_path)
+        if not PIPER_CLI_PATH.is_file():
+            raise RuntimeError("Vendored Piper runner is missing")
+        command = [
+            sys.executable,
+            str(PIPER_CLI_PATH),
+            "--model",
+            str(model_path),
+            "--output_file",
+            output_path,
+        ]
+        result = subprocess.run(
+            command,
+            input=text,
+            text=True,
+            capture_output=True,
+            timeout=90,
+            check=False,
+        )
+        if result.returncode != 0 or not Path(output_path).is_file():
+            detail = (result.stderr or result.stdout or "Piper synthesis failed")[-1200:]
+            raise RuntimeError(detail)
+        return
+    _synthesize_persian_female(text, output_path)
 
 
 @app.get("/healthz")
@@ -322,12 +480,13 @@ async def health() -> dict[str, Any]:
         "service": "sarina-voice-runtime",
         "version": APP_VERSION,
         "speech_to_text": "faster-whisper",
-        "text_to_speech": "piper",
+        "text_to_speech": "tiny-ava (Persian female Parisa) + Piper (Arabic)",
         "whisper_model_loaded": _whisper_model is not None,
         "whisper_model_path_configured": WHISPER_MODEL_PATH.is_dir(),
         "whisper_model_source": "local-vendored-code-and-local-weights",
         "piper_engine_source": "SARINA-vendored-Piper-subprocess",
-        "piper_models_configured": {"fa": PIPER_FA_MODEL_PATH.is_file(), "ar": PIPER_AR_MODEL_PATH.is_file()},
+        "persian_female_voice": "Parisa" if _tiny_ava_sessions is not None else "Parisa (lazy-loaded)",
+        "arabic_piper_model_configured": PIPER_AR_MODEL_PATH.is_file(),
         "whisper_languages": ["fa", "ar", "auto"],
         "execution": "local",
     }
@@ -424,7 +583,7 @@ async def synthesize(
         raise HTTPException(status_code=403, detail="Spoken replies are not enabled for this account")
     language = payload.language.strip().lower().replace("_", "-")
     if language in {"fa", "fa-ir"}:
-        voice_model = PIPER_FA_MODEL_PATH
+        voice_model = Path("tiny-ava-parisa")
     elif language in {"ar", "ar-jo"}:
         voice_model = PIPER_AR_MODEL_PATH
     else:
