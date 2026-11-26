@@ -353,6 +353,13 @@ begin
   if v_task.agent_lifecycle_state <> 'enabled' then
     raise exception 'Agent is not enabled' using errcode = '42501';
   end if;
+  if v_task.parent_task_id is not null and exists (
+    select 1 from sci_internal.sci_tasks parent
+    where parent.task_id = v_task.parent_task_id
+      and parent.status in ('succeeded', 'failed', 'cancelled', 'timed_out')
+  ) then
+    raise exception 'Parent task is already terminal' using errcode = '42501';
+  end if;
   if v_task.human_review_required and p_human_approval_ref is null then
     raise exception 'Human approval reference required' using errcode = '42501';
   end if;
@@ -419,6 +426,26 @@ begin
     end;
 
     if not found then
+      perform pgmq.archive('sarina_sci_tasks', v_message.msg_id);
+      continue;
+    end if;
+
+    if v_task.parent_task_id is not null and exists (
+      select 1 from sci_internal.sci_tasks parent
+      where parent.task_id = v_task.parent_task_id
+        and parent.status in ('succeeded', 'failed', 'cancelled', 'timed_out')
+    ) then
+      update sci_internal.sci_tasks
+      set status = 'cancelled', dispatch_authorized = false,
+          lease_owner = null, lease_token = null, lease_expires_at = null,
+          queue_message_id = null, completed_at = now(), updated_at = now()
+      where task_id = v_task.task_id;
+      insert into sci_internal.sci_task_events(
+        task_id, event_type, from_status, to_status, actor_kind, actor_id, reason_code
+      ) values (
+        v_task.task_id, 'child_task_cancelled', v_task.status, 'cancelled',
+        'system', 'sci_scheduler', 'PARENT_TASK_TERMINAL'
+      );
       perform pgmq.archive('sarina_sci_tasks', v_message.msg_id);
       continue;
     end if;
