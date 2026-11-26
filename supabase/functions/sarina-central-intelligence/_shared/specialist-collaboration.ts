@@ -127,9 +127,9 @@ export function planSpecialistCollaboration(input: {
     farmerResponseAuthorized: false as const,
   };
 
-  if (!input.parentTaskId.trim() ||
+  if (typeof input.parentTaskId !== "string" || !input.parentTaskId.trim() ||
       !Array.isArray(input.requestedDomains) ||
-      !input.contextRefsByDomain || typeof input.contextRefsByDomain !== "object" ||
+      !input.contextRefsByDomain || typeof input.contextRefsByDomain !== "object" || Array.isArray(input.contextRefsByDomain) ||
       Object.values(input.contextRefsByDomain).some((refs) => !Array.isArray(refs) || refs.some((ref) => typeof ref !== "string" || !ref.trim())) ||
       !Array.isArray(input.modalities) || input.modalities.length === 0) {
     return { ...base, status: "clarification_required", reasonCodes: ["INVALID_COLLABORATION_INPUT"] };
