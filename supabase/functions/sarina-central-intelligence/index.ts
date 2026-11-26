@@ -128,7 +128,7 @@ Deno.serve(async (req: Request) => {
   const now = Date.now();
   const deadlineAt = new Date(now + 15 * 60_000).toISOString();
   const initialStatus = route.status === "assigned" && !route.humanReviewRequired
-    ? "queued" as const
+    ? "validated" as const
     : "waiting_for_human" as const;
 
   let parentTask;
