@@ -46,5 +46,6 @@ jobs:
           deno check \
             supabase/functions/sarina-central-intelligence/index.ts \
             supabase/functions/sarina-task-control/index.ts \
-            supabase/functions/sarina-agent-operations/index.ts \
+            supabase/functions/sarina-agent-operations/index.ts
+          deno check --config supabase/functions/sarina-manus-mcp/deno.json \
             supabase/functions/sarina-manus-mcp/index.ts
