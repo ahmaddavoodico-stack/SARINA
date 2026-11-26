@@ -7,7 +7,7 @@ import PwaInstall from "./PwaInstall";
 import VoiceMessageControls from "./components/VoiceMessageControls";
 import "./components/sarina-communication-center.css";
 
-type ChatMessage={id:number;role:"farmer"|"sarina";text:string;audioUrl?:string};
+type ChatMessage={id:number;role:"farmer"|"sarina";text:string;internalText?:string;audioUrl?:string};
 type NavTarget="learning"|"experts"|"expert-chat";
 type SarinaRole="admin"|"expert"|"farmer"|"organization"|"livestock_keeper";
 type SarinaCompanionProps={isAdmin?:boolean;role?:SarinaRole;onNavigate?:(destination:NavTarget)=>void};
@@ -40,7 +40,7 @@ export default function SarinaCompanion({isAdmin=false,role="farmer",onNavigate}
   if(!isAdmin||!supabase)return;
   setBusy(true);setStatus("در حال دریافت پاسخ آزمایشی از Groq...");
   try{
-   const{data,error}=await supabase.functions.invoke("sarina-admin-chat",{body:{mode:"admin_chat",messages:nextMessages.map(message=>({role:message.role==="farmer"?"user":"assistant",content:message.text})).filter(message=>message.content.trim())}});
+   const{data,error}=await supabase.functions.invoke("sarina-admin-chat",{body:{mode:"admin_chat",messages:nextMessages.map(message=>({role:message.role==="farmer"?"user":"assistant",content:message.internalText||message.text})).filter(message=>message.content.trim())}});
    if(error||!data?.ok||typeof data.answer!=="string")throw new Error(typeof data?.code==="string"?data.code:"ADMIN_CHAT_REQUEST_FAILED");
    commitMessages([...messagesRef.current,{id:Date.now()+1,role:"sarina" as const,text:data.answer}].slice(-12));
    setStatus(`پاسخ آزمایشی از Groq · ${data.model||"مدل تأییدشده"}`);
@@ -78,10 +78,11 @@ export default function SarinaCompanion({isAdmin=false,role="farmer",onNavigate}
  }
  function receiveTranscription(text:string){
   const id=pendingVoiceIdRef.current;
-  const next=messagesRef.current.map(message=>message.id===id?{...message,text:"🎙 "+text}:message);
+  // Keep the recognized transcript internal: the farmer sees their audio message, not a text dump.
+  const next=messagesRef.current.map(message=>message.id===id?{...message,text:"پیام صوتی",internalText:text}:message);
   pendingVoiceIdRef.current=null;
   commitMessages(next);
-  if(isAdmin){setVoiceReplyPending(true);void requestAdminReply(next);}else{setShowNotice(true);setStatus("پیام صوتی ضبط و به متن تبدیل شد؛ پاسخ‌گویی هوشمند در گفت‌وگوی عمومی هنوز فعال نشده است.");}
+  if(isAdmin){setVoiceReplyPending(true);setStatus("سارینا در حال آماده‌کردن پاسخ شماست…");void requestAdminReply(next);}else{setShowNotice(true);setStatus("پیام صوتی دریافت شد؛ پاسخ‌گویی هوشمند برای این نقش هنوز فعال نشده است.");}
  }
 
  const latestSarinaReply=[...messages].reverse().find(message=>message.role==="sarina")?.text;
