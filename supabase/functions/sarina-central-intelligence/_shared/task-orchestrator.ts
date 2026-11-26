@@ -13,7 +13,17 @@ export type AgentId =
   | "knowledge_research"
   | "marketplace_assistant"
   | "specialist_handoff"
-  | "account_support";
+  | "account_support"
+  | "soil_water_specialist"
+  | "irrigation_specialist"
+  | "plant_nutrition_specialist"
+  | "plant_health_specialist"
+  | "climate_specialist"
+  | "agricultural_knowledge_specialist"
+  | "market_intelligence_specialist"
+  | "trade_export_specialist"
+  | "finance_economics_specialist"
+  | "logistics_supply_chain_specialist";
 
 export type TaskDomain =
   | "conversation"
@@ -22,13 +32,27 @@ export type TaskDomain =
   | "knowledge"
   | "marketplace"
   | "specialist"
-  | "account";
+  | "account"
+  | "soil_water"
+  | "irrigation"
+  | "plant_nutrition"
+  | "plant_health"
+  | "climate"
+  | "agricultural_knowledge"
+  | "market_intelligence"
+  | "trade_export"
+  | "finance_economics"
+  | "logistics_supply_chain";
+
+export type AgentLifecycleState = "registered" | "simulated" | "enabled" | "paused" | "deprecated";
 
 export type AgentDefinition = {
   id: AgentId;
   domain: TaskDomain;
   capabilities: readonly string[];
   acceptedModalities: readonly TaskModality[];
+  /** Registration and execution availability are deliberately separate. */
+  lifecycleState: AgentLifecycleState;
   enabled: boolean;
   humanReviewByDefault: boolean;
 };
@@ -39,6 +63,7 @@ export const AGENT_REGISTRY: readonly AgentDefinition[] = [
     domain: "conversation",
     capabilities: ["greeting", "general_triage", "clarification"],
     acceptedModalities: ["text", "audio", "image", "document", "other"],
+    lifecycleState: "enabled",
     enabled: true,
     humanReviewByDefault: false,
   },
@@ -89,6 +114,56 @@ export const AGENT_REGISTRY: readonly AgentDefinition[] = [
     acceptedModalities: ["text", "image", "document"],
     enabled: true,
     humanReviewByDefault: false,
+  },
+  {
+    id: "soil_water_specialist", domain: "soil_water",
+    capabilities: ["soil_properties", "salinity", "alkalinity", "drainage", "water_quality"],
+    acceptedModalities: ["text", "image", "document"], lifecycleState: "registered", enabled: false, humanReviewByDefault: true,
+  },
+  {
+    id: "irrigation_specialist", domain: "irrigation",
+    capabilities: ["crop_water_demand", "irrigation_scheduling", "irrigation_method_assessment"],
+    acceptedModalities: ["text", "image", "document"], lifecycleState: "registered", enabled: false, humanReviewByDefault: true,
+  },
+  {
+    id: "plant_nutrition_specialist", domain: "plant_nutrition",
+    capabilities: ["nutrient_diagnosis", "fertilizer_planning", "nutrient_interactions"],
+    acceptedModalities: ["text", "image", "document"], lifecycleState: "registered", enabled: false, humanReviewByDefault: true,
+  },
+  {
+    id: "plant_health_specialist", domain: "plant_health",
+    capabilities: ["pest_triage", "disease_triage", "symptom_differential", "plant_image_review"],
+    acceptedModalities: ["text", "image", "document"], lifecycleState: "registered", enabled: false, humanReviewByDefault: true,
+  },
+  {
+    id: "climate_specialist", domain: "climate",
+    capabilities: ["weather_context", "heat_stress", "climate_adaptation"],
+    acceptedModalities: ["text", "image", "document"], lifecycleState: "registered", enabled: false, humanReviewByDefault: true,
+  },
+  {
+    id: "agricultural_knowledge_specialist", domain: "agricultural_knowledge",
+    capabilities: ["approved_knowledge_retrieval", "source_evaluation", "research_synthesis"],
+    acceptedModalities: ["text", "image", "document"], lifecycleState: "registered", enabled: false, humanReviewByDefault: true,
+  },
+  {
+    id: "market_intelligence_specialist", domain: "market_intelligence",
+    capabilities: ["market_demand", "price_trends", "target_market_research", "buyer_discovery"],
+    acceptedModalities: ["text", "document"], lifecycleState: "registered", enabled: false, humanReviewByDefault: true,
+  },
+  {
+    id: "trade_export_specialist", domain: "trade_export",
+    capabilities: ["export_readiness", "trade_regulations", "standards_and_certificates", "labeling_requirements"],
+    acceptedModalities: ["text", "document"], lifecycleState: "registered", enabled: false, humanReviewByDefault: true,
+  },
+  {
+    id: "finance_economics_specialist", domain: "finance_economics",
+    capabilities: ["cost_analysis", "margin_analysis", "investment_scenarios", "sensitivity_analysis"],
+    acceptedModalities: ["text", "document"], lifecycleState: "registered", enabled: false, humanReviewByDefault: true,
+  },
+  {
+    id: "logistics_supply_chain_specialist", domain: "logistics_supply_chain",
+    capabilities: ["packaging", "storage", "transport", "cold_chain", "supply_chain_risk"],
+    acceptedModalities: ["text", "document"], lifecycleState: "registered", enabled: false, humanReviewByDefault: true,
   },
 ] as const;
 
