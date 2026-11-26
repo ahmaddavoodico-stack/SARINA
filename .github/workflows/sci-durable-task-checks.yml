@@ -20,6 +20,9 @@ on:
       - "supabase/tests/**"
       - ".github/workflows/sci-durable-task-checks.yml"
 
+permissions:
+  contents: read
+
 jobs:
   deno:
     name: Deno tests and Edge Function type checks
