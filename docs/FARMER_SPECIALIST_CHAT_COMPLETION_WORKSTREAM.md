@@ -110,3 +110,15 @@ This is a working foundation, not evidence that the full chat experience, attach
 - The normal specialist UI currently supplies the real `requester_user_id`, but client behavior is not a security boundary. This is a server-side authorization vulnerability, not merely a UI issue.
 - Required remediation on a development branch: replace the tautological predicate with `er.requester_user_id = expert_case_handovers.requester_user_id`; independently harden the RPC by joining the handover to its request and requiring `expert_requests.requester_user_id = current_sarina_user_id()`; review function EXECUTE grants and preserve only the intended farmer invocation. Add negative tests proving the assigned specialist cannot create or approve a handover as the farmer, while the actual farmer can approve/decline.
 - Treat handover and chat release as blocked until this migration is applied and tested in an isolated development database. No production changes have been made.
+
+
+## Sender deletion before first human view (2026-11-26)
+
+- Human messages (text, audio, image, PDF) are deletable by their sender only until the first authorized human recipient opens the message in a conversation view.
+- The first human recipient view is stored on the canonical message row. Sender self-view, AI/background processing, and notification creation do not count.
+- Database row locking serializes first-view marking and sender deletion; whichever valid operation wins first determines the result.
+- Deletion redacts message text and attachment descriptors, marks a minimal tombstone, and redacts linked notification previews. Private Storage cleanup is attempted immediately after the DB accepts deletion; a durable server-side cleanup retry remains a hardening item.
+- Voice recording can be cancelled before send; cancellation discards in-memory chunks and creates no message or Storage object.
+- Chat history remains persisted when the panel closes or refreshes. No automatic 24-hour expiry is applied.
+- Migration: `20261126113000_expert_message_pre_read_deletion.sql`. A transactional syntax/application test was run against the connected database and rolled back; no schema change was retained.
+- Source changes are isolated on `feature/main-human-view-message-delete`, based directly on `main`. Build/CI and authenticated two-user race/role acceptance tests remain required before production rollout.
