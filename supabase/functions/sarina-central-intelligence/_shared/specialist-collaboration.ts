@@ -113,7 +113,8 @@ const SPECIALIST_DOMAINS = Object.keys(DOMAIN_CONTRACTS) as SpecialistDomain[];
 export function planSpecialistCollaboration(input: {
   parentTaskId: string;
   requestedDomains: readonly TaskDomain[];
-  contextRefs: readonly string[];
+  /** Explicit least-privilege references for each selected specialist. */
+  contextRefsByDomain: Partial<Record<SpecialistDomain, readonly string[]>>;
   modalities: readonly TaskModality[];
 }): CollaborationPlan {
   const base = {
@@ -128,8 +129,8 @@ export function planSpecialistCollaboration(input: {
 
   if (!input.parentTaskId.trim() ||
       !Array.isArray(input.requestedDomains) ||
-      !Array.isArray(input.contextRefs) ||
-      input.contextRefs.some((ref) => typeof ref !== "string" || !ref.trim()) ||
+      !input.contextRefsByDomain || typeof input.contextRefsByDomain !== "object" ||
+      Object.values(input.contextRefsByDomain).some((refs) => !Array.isArray(refs) || refs.some((ref) => typeof ref !== "string" || !ref.trim())) ||
       !Array.isArray(input.modalities) || input.modalities.length === 0) {
     return { ...base, status: "clarification_required", reasonCodes: ["INVALID_COLLABORATION_INPUT"] };
   }
@@ -150,6 +151,8 @@ export function planSpecialistCollaboration(input: {
     const contract = DOMAIN_CONTRACTS[domain];
     const agent = getRegisteredAgent(contract.agentId);
     const blockedReasons: string[] = [];
+    const scopedRefs = input.contextRefsByDomain[domain] ?? [];
+    if (scopedRefs.length === 0) blockedReasons.push("DOMAIN_CONTEXT_NOT_PROVIDED");
     if (!agent || !agent.enabled || agent.lifecycleState !== "enabled") {
       blockedReasons.push("AGENT_NOT_ENABLED");
     }
@@ -163,7 +166,7 @@ export function planSpecialistCollaboration(input: {
       agentId: contract.agentId,
       purpose: contract.purpose,
       expectedOutput: contract.expectedOutput,
-      contextRefs: [...new Set(input.contextRefs)],
+      contextRefs: [...new Set(scopedRefs)],
       availability: blockedReasons.length ? "blocked" : "eligible",
       blockedReasons,
       humanReviewRequired: true,
