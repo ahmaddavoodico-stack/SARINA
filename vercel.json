@@ -3,6 +3,20 @@
   "installCommand": "npm install --include=dev",
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
+  "rewrites": [
+    {
+      "source": "/api/voice/healthz",
+      "destination": "/api/voice?__voice_route=/healthz"
+    },
+    {
+      "source": "/api/voice/v1/transcribe",
+      "destination": "/api/voice?__voice_route=/v1/transcribe"
+    },
+    {
+      "source": "/api/voice/v1/synthesize",
+      "destination": "/api/voice?__voice_route=/v1/synthesize"
+    }
+  ],
   "functions": {
     "api/voice.py": {
       "maxDuration": 60,
