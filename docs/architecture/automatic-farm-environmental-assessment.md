@@ -69,10 +69,11 @@ Do not create parallel orchestration, regional sync, evidence or benchmark syste
 - Do not claim that this stage is a complete climate, terrain or water-quality assessment.
 
 ### Stage 2 — persistent, versioned environmental baseline
-- Define a versioned assessment snapshot and source-evidence manifest.
-- Persist immutable snapshots and link each evidence item to its source record or provider response.
+- [Implemented in this feature branch] Add `farm_environmental_assessments` as an append-only snapshot ledger with per-farm versions, assessment status, source manifest, evidence payload, quality summary and missing domains.
+- [Implemented in this feature branch] Add farmer-owned read/insert RLS and read access through the existing active farm-expert contract; no client update/delete policy is provided.
+- [Implemented in this feature branch] Persist each successful refresh as a new immutable version and reload the latest snapshot plus recent version history.
 - Track assessment status, domains completed/missing, confidence and refresh timestamps.
-- Reuse existing farm and regional structures where they fit; add schema only after design review and migration tests.
+- Reuse existing farm and regional structures where they fit; migration remains feature-branch-only until explicitly approved.
 - Refresh on meaningful changes, source updates or explicit user request; do not repeatedly re-run expensive collection on every page view.
 
 ### Stage 3 — expanded spatial and historical sources
@@ -97,4 +98,4 @@ Do not create parallel orchestration, regional sync, evidence or benchmark syste
 
 The first farmer-facing panel invokes the existing `farm-land-context` and `farm-weather-context` Edge Functions through the authenticated Supabase client. It verifies the returned farm ID, displays existing soil/water test counts, the SoilGrids provider state, current model weather and seven-day forecast, and explains the difference between model data and farm measurements.
 
-This first UI step does not yet persist a versioned environmental assessment, provide historical climate normals, query elevation/terrain or satellite products, or enable regional aggregation. Those remain explicit later stages and must not be represented as completed.
+This branch now persists append-only, versioned snapshots of the current land and weather context, source manifest, quality summary and known gaps. It still does not provide historical climate normals, elevation/terrain, satellite products or regional peer aggregation. Those remain later stages and must not be represented as completed. The migration has not been applied to Production.
