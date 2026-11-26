@@ -1,7 +1,7 @@
 # SCI Durable Task Runtime Foundation
 
-**Status:** Durable task persistence and queue-control primitives implemented in the feature branch; not applied to the primary database and not deployed.  
-**Date:** 2026-11-26  
+**Status:** Database migration and Edge Function foundations are deployed; durable task intake remains guarded; no specialist worker is running.
+**Date:** 2026-11-26
 **Authority:** SARINA Central Intelligence (SCI)
 
 ## 1. Architecture
@@ -14,7 +14,21 @@ SCI remains the only command center. The durable layer consists of:
 
 The queue is logged/durable; no unlogged queue is used. The PGMQ schema is not exposed through the Data API. The application does not depend on a paid AI provider or a separate queue vendor.
 
-## 2. Persistence and data scope
+## 2. Deployment and verification facts
+
+The following facts were checked against the primary Supabase project on 2026-11-26:
+
+- Migrations `20261126020120_enable_pgmq_extension_for_sci` and `20261126020336_sci_durable_task_queue` are present in migration history.
+- `sarina-central-intelligence` is ACTIVE, deployed version 5, with platform JWT verification enabled.
+- `sarina-task-control` is ACTIVE, deployed version 1, with platform JWT verification enabled.
+- The cron recovery job was previously verified active.
+- Transactional SQL tests exercised parent/child creation, task-tree reads, authorization gates, cancellation, idempotency, and registered-only blocking; test rows were rolled back.
+- After rollback, task/event/queue/archive counts were zero.
+- No authenticated live HTTP end-to-end test with a real user and registered farm has yet been completed.
+
+No runtime secret values or activation flags are documented here. The code defaults to simulation-only unless the trusted server-side durable-task flag is explicitly set to the exact enabling value.
+
+## 3. Persistence and data scope
 
 - Every root task is linked to the authenticated Supabase user and a farm that was first verified under the caller JWT and existing RLS.
 - Child specialist proposals must belong to the same owner and farm as their parent.
@@ -24,7 +38,7 @@ The queue is logged/durable; no unlogged queue is used. The PGMQ schema is not e
 - Task tables live in an unexposed schema, have RLS enabled, and grant no direct access to `anon` or `authenticated`. Only server-side `service_role` RPC access is granted.
 - The event table grants insert/select but not update/delete to `service_role`, preserving append-only application behavior.
 
-## 3. State and dispatch gates
+## 4. State and dispatch gates
 
 New requests are persisted as `validated` or `waiting_for_human`; creation never puts a task directly onto the executable queue.
 
@@ -35,7 +49,7 @@ Dispatch requires all of:
 
 Only the authorization RPC moves a task to `queued` and inserts a PGMQ message in the same database transaction. A specialist proposal is initially recorded as `waiting_for_human`, `registered`, and dispatch-disabled. Registered-only specialists cannot be claimed.
 
-## 4. Worker lifecycle
+## 5. Worker lifecycle contract
 
 - `sci_claim_tasks` reads durable messages with a visibility timeout and assigns a random lease token.
 - `sci_heartbeat_task` extends a live lease, never beyond the task deadline.
@@ -43,42 +57,39 @@ Only the authorization RPC moves a task to `queued` and inserts a PGMQ message i
 - Retry is bounded by max attempts, deadline, and exponential delay.
 - Expired leases can be reclaimed by a subsequent queue read or the recovery routine.
 - If an agent is paused before claim/retry, the task returns to human review instead of being executed.
-- `sci_recover_expired_tasks` is scheduled once per minute through the existing pg_cron extension. It only retries expired work or marks overdue work terminal; it never executes an agent.
+- `sci_recover_expired_tasks` is scheduled once per minute through pg_cron. It only retries expired work or marks overdue work terminal; it never executes an agent.
 - `sci_cancel_task` cancels the parent and all nonterminal descendants and archives pending queue messages.
 - `sci_get_task_tree` returns the owner's parent/child task history and audit events.
 
-## 5. Edge Function boundaries
+**Important:** These are database and lifecycle primitives. A production worker consumer is not deployed. The queue does not currently execute a specialist or model.
+
+## 6. Edge Function boundaries
 
 ### `sarina-central-intelligence`
+
 After authenticating the caller, verifying farm access through the caller-JWT client, and validating current farm context, the endpoint uses a server-only service-role client to persist the parent task and any specialist proposal children. An optional `Idempotency-Key` header supports retry-safe submissions; without it, a fresh key is generated.
 
-The service-role key is never returned to the client. The response explicitly reports `durable_pending_authorization`, `dispatch_authorized: false`, and `execution_status: not_started`.
+The service-role key is never returned to the client. When durable mode is active, the response reports `durable_pending_authorization`, `dispatch_authorized: false`, and `execution_status: not_started`.
 
 ### `sarina-task-control`
+
 Provides owner-scoped `get_tree` and `cancel` operations. The caller is authenticated first; the database RPC additionally checks the task owner.
 
-## 6. Current limitations and rollout gates
+## 7. Current limitations and rollout gates
 
-- No specialist or model/provider is invoked by this milestone.
-- The queue worker consumer is not yet deployed. The claim/heartbeat/complete/fail RPCs are the worker contract, not evidence of a running worker.
-- The migration has not been applied to the primary Supabase project. It must be tested in an isolated Supabase development branch before any production rollout.
-- The new Edge Functions are committed to the feature branch only; no deployment has been made.
+- No specialist or model/provider is invoked by this runtime.
+- The queue worker consumer is not deployed.
+- No agent-runtime heartbeat or capacity registry exists yet.
 - A user-facing task-history/cancel interface is not yet wired into the farmer portal.
-- Deno tests and database migration tests still require execution in a supported environment.
+- Authenticated live HTTP end-to-end testing with a real user and registered farm remains outstanding.
+- The ten new specialist roles remain registered-only and disabled.
+- The collaboration planner and aggregator still require human review; exception-based automatic quality review is a target policy, not active runtime behavior.
 
-## 7. Acceptance gates before production
+## 8. Activation, privacy, and release gates
 
-1. Run Deno tests and type checks for SCI and task-control functions.
-2. Apply the migration to an isolated Supabase development branch and run `supabase/tests/sci_durable_task_queue.test.sql`.
-3. Verify RLS/grants, PGMQ visibility-timeout redelivery, idempotency races, parent-child ownership, cancellation, deadline expiry, retry cap, lease reclamation, and cron recovery.
-4. Deploy the migration and Edge Functions only through a reviewed rollout; keep worker dispatch disabled.
-5. Introduce one low-risk read-only worker only after separate approval, worker authentication, least-privilege context resolution, audit, and end-to-end tests.
-
-
-## Activation, privacy, and rollout gates
-
-- Durable task intake and task-control endpoints remain disabled unless `SCI_DURABLE_TASKS_ENABLED=true` is explicitly configured in the trusted Edge Function environment.
-- The existing simulation-only SCI response remains the default, so deploying this code before the database migration does not break the current endpoint.
-- Apply the migration and run `supabase/tests/sci_durable_task_queue.test.sql` in an isolated test database before enabling the flag. The migration has not been applied to the primary Supabase database as part of this code transfer.
-- The task record stores the farmer's submitted question in `request_payload` and scoped farm references. A retention, export, and erasure policy must be approved before durable intake is enabled.
-- No worker is included in this phase. Queue creation, authorization gates, task history, cancellation, and lease-recovery primitives do not mean a specialist/model is executing. All ten new specialist agents remain registered-only and disabled.
+- Durable task intake and task-control endpoints remain guarded by the trusted Edge Function environment flag; do not assume or disclose its current value.
+- If the flag is unset or not exactly enabled, SCI remains in simulation-only mode and does not persist tasks or invoke providers.
+- The task record stores the farmer's submitted question in `request_payload` and scoped farm references. A retention, export, and erasure policy must be approved before broad durable intake.
+- No worker is included in this phase. Queue creation, authorization gates, task history, cancellation, and lease-recovery primitives do not mean a specialist/model is executing.
+- Before enabling any worker, complete authenticated end-to-end tests, least-privilege context resolution, heartbeat/health reporting, idempotency, retry, timeout, cancellation, audit, and exception-review tests.
+- Introduce one low-risk read-only adapter at a time. Never mark an agent ready solely because its registry entry exists or its Edge Function is deployed.
