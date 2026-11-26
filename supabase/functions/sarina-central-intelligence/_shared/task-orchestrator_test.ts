@@ -1,10 +1,68 @@
 import { assertEquals } from "jsr:@std/assert";
-import { AGENT_REGISTRY, getRegisteredAgent, routeTask } from "./task-orchestrator.ts";
+import { AGENT_REGISTRY, getRegisteredAgent, listRegisteredAgents, routeTask } from "./task-orchestrator.ts";
 
 Deno.test("registry has unique stable agent identifiers", () => {
   const ids = AGENT_REGISTRY.map((agent) => agent.id);
   assertEquals(new Set(ids).size, ids.length);
   assertEquals(getRegisteredAgent("agronomy_advisor")?.domain, "agronomy");
+  assertEquals(AGENT_REGISTRY.every((agent) =>
+    agent.capabilities.length > 0 &&
+    ((agent.lifecycleState === "enabled") === agent.enabled)
+  ), true);
+  assertEquals(listRegisteredAgents("market_intelligence").length, 1);
+});
+
+Deno.test("specialist inventory is registered centrally but remains disabled by default", () => {
+  const specialistIds = [
+    "soil_water_specialist", "irrigation_specialist", "plant_nutrition_specialist",
+    "plant_health_specialist", "climate_specialist", "agricultural_knowledge_specialist",
+    "market_intelligence_specialist", "trade_export_specialist",
+    "finance_economics_specialist", "logistics_supply_chain_specialist",
+  ] as const;
+  assertEquals(listRegisteredAgents().length, 17);
+  assertEquals(listRegisteredAgents("market_intelligence").length, 1);
+  for (const id of specialistIds) {
+    const agent = getRegisteredAgent(id);
+    assertEquals(agent?.lifecycleState, "registered");
+    assertEquals(agent?.enabled, false);
+    assertEquals(agent?.humanReviewByDefault, true);
+  }
+});
+
+Deno.test("existing general routing remains enabled after specialist registration", () => {
+  assertEquals(getRegisteredAgent("agronomy_advisor")?.enabled, true);
+  assertEquals(getRegisteredAgent("crop_diagnostics")?.enabled, true);
+  assertEquals(routeTask({ text: "برای اصلاح شوری خاک چه کار کنم؟" }).agentId, "agronomy_advisor");
+});
+
+Deno.test("specialist-domain requests are recognized but not dispatched while registered-only", () => {
+  const cases = [
+    ["آزمایش خاک و شوری خاک را بررسی کن", "soil_water_specialist"],
+    ["برای مزرعه برنامه آبیاری تنظیم کن", "irrigation_specialist"],
+    ["برنامه کوددهی و کمبود آهن را بررسی کن", "plant_nutrition_specialist"],
+    ["موج گرما چه اثری روی نخل دارد؟", "climate_specialist"],
+    ["دانش تأییدشده درباره کشت خرما را پیدا کن", "agricultural_knowledge_specialist"],
+    ["تقاضای بازار خرما در کشورهای منطقه را تحلیل کن", "market_intelligence_specialist"],
+    ["شرایط گمرکی و کد تعرفه صادرات را بررسی کن", "trade_export_specialist"],
+    ["هزینه تولید و حاشیه سود مزرعه را حساب کن", "finance_economics_specialist"],
+    ["برای خرما زنجیره سرد و حمل را بررسی کن", "logistics_supply_chain_specialist"],
+  ] as const;
+  for (const [text, expectedAgent] of cases) {
+    const route = routeTask({ text });
+    assertEquals(route.status, "agent_unavailable");
+    assertEquals(route.agentId, "conversation_coordinator");
+    assertEquals(route.reasonCode, "SPECIALIST_REGISTERED_NOT_ENABLED");
+    assertEquals(route.candidates, [expectedAgent]);
+    assertEquals(route.modelPolicy, "none");
+    assertEquals(route.executionStatus, "not_started");
+  }
+});
+
+Deno.test("cross-specialist requests require clarification instead of fan-out", () => {
+  const route = routeTask({ text: "بازار هدف صادرات و هزینه حمل و سود خالص را بررسی کن" });
+  assertEquals(route.status, "clarification_required");
+  assertEquals(route.agentId, "conversation_coordinator");
+  assertEquals(route.reasonCode, "MULTIPLE_TASK_DOMAINS_MATCHED");
 });
 
 Deno.test("greeting is handled by coordinator without model dispatch", () => {

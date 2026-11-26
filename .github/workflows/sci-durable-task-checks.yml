@@ -1,0 +1,46 @@
+name: SCI Durable Task Checks
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "supabase/functions/sarina-central-intelligence/**"
+      - "supabase/functions/sarina-task-control/**"
+      - "supabase/functions/_shared/**"
+      - "supabase/migrations/**"
+      - "supabase/tests/**"
+      - ".github/workflows/sci-durable-task-checks.yml"
+  pull_request:
+    paths:
+      - "supabase/functions/sarina-central-intelligence/**"
+      - "supabase/functions/sarina-task-control/**"
+      - "supabase/functions/_shared/**"
+      - "supabase/migrations/**"
+      - "supabase/tests/**"
+      - ".github/workflows/sci-durable-task-checks.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  deno:
+    name: Deno tests and Edge Function type checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Run SCI unit tests
+        run: |
+          deno test \
+            supabase/functions/sarina-central-intelligence/_shared/*_test.ts \
+            supabase/functions/_shared/*_test.ts
+      - name: Type-check SCI Edge Functions
+        run: |
+          deno check \
+            supabase/functions/sarina-central-intelligence/index.ts \
+            supabase/functions/sarina-task-control/index.ts

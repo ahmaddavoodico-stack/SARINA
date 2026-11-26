@@ -31,7 +31,6 @@ export default function VoiceMessageControls({onTranscription,onVoiceMessage,tex
   const recorderRef=useRef<MediaRecorder|null>(null);
   const streamRef=useRef<MediaStream|null>(null);
   const chunksRef=useRef<BlobPart[]>([]);
-  const lastAutoSpokenRef=useRef<string>("");
 
   useEffect(()=>()=>{streamRef.current?.getTracks().forEach(track=>track.stop());},[]);
 

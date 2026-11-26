@@ -13,7 +13,17 @@ export type AgentId =
   | "knowledge_research"
   | "marketplace_assistant"
   | "specialist_handoff"
-  | "account_support";
+  | "account_support"
+  | "soil_water_specialist"
+  | "irrigation_specialist"
+  | "plant_nutrition_specialist"
+  | "plant_health_specialist"
+  | "climate_specialist"
+  | "agricultural_knowledge_specialist"
+  | "market_intelligence_specialist"
+  | "trade_export_specialist"
+  | "finance_economics_specialist"
+  | "logistics_supply_chain_specialist";
 
 export type TaskDomain =
   | "conversation"
@@ -22,13 +32,27 @@ export type TaskDomain =
   | "knowledge"
   | "marketplace"
   | "specialist"
-  | "account";
+  | "account"
+  | "soil_water"
+  | "irrigation"
+  | "plant_nutrition"
+  | "plant_health"
+  | "climate"
+  | "agricultural_knowledge"
+  | "market_intelligence"
+  | "trade_export"
+  | "finance_economics"
+  | "logistics_supply_chain";
+
+export type AgentLifecycleState = "registered" | "simulated" | "enabled" | "paused" | "deprecated";
 
 export type AgentDefinition = {
   id: AgentId;
   domain: TaskDomain;
   capabilities: readonly string[];
   acceptedModalities: readonly TaskModality[];
+  /** Registration and execution availability are deliberately separate. */
+  lifecycleState: AgentLifecycleState;
   enabled: boolean;
   humanReviewByDefault: boolean;
 };
@@ -39,6 +63,7 @@ export const AGENT_REGISTRY: readonly AgentDefinition[] = [
     domain: "conversation",
     capabilities: ["greeting", "general_triage", "clarification"],
     acceptedModalities: ["text", "audio", "image", "document", "other"],
+    lifecycleState: "enabled",
     enabled: true,
     humanReviewByDefault: false,
   },
@@ -47,6 +72,7 @@ export const AGENT_REGISTRY: readonly AgentDefinition[] = [
     domain: "agronomy",
     capabilities: ["crop_management", "soil", "water", "nutrition", "cultivation"],
     acceptedModalities: ["text", "image", "document"],
+    lifecycleState: "enabled",
     enabled: true,
     humanReviewByDefault: true,
   },
@@ -55,6 +81,7 @@ export const AGENT_REGISTRY: readonly AgentDefinition[] = [
     domain: "crop_diagnostics",
     capabilities: ["symptom_assessment", "pest_and_disease_triage", "plant_image_review"],
     acceptedModalities: ["text", "image", "document"],
+    lifecycleState: "enabled",
     enabled: true,
     humanReviewByDefault: true,
   },
@@ -63,6 +90,7 @@ export const AGENT_REGISTRY: readonly AgentDefinition[] = [
     domain: "knowledge",
     capabilities: ["source_lookup", "document_review", "agricultural_research"],
     acceptedModalities: ["text", "document", "image"],
+    lifecycleState: "enabled",
     enabled: true,
     humanReviewByDefault: false,
   },
@@ -71,6 +99,7 @@ export const AGENT_REGISTRY: readonly AgentDefinition[] = [
     domain: "marketplace",
     capabilities: ["catalog", "product_discovery", "order_status", "seller_questions"],
     acceptedModalities: ["text", "image", "document"],
+    lifecycleState: "enabled",
     enabled: true,
     humanReviewByDefault: false,
   },
@@ -79,6 +108,7 @@ export const AGENT_REGISTRY: readonly AgentDefinition[] = [
     domain: "specialist",
     capabilities: ["expert_escalation", "case_handoff", "professional_review"],
     acceptedModalities: ["text", "image", "document", "audio"],
+    lifecycleState: "enabled",
     enabled: true,
     humanReviewByDefault: true,
   },
@@ -87,8 +117,59 @@ export const AGENT_REGISTRY: readonly AgentDefinition[] = [
     domain: "account",
     capabilities: ["sign_in_help", "profile_help", "technical_support"],
     acceptedModalities: ["text", "image", "document"],
+    lifecycleState: "enabled",
     enabled: true,
     humanReviewByDefault: false,
+  },
+  {
+    id: "soil_water_specialist", domain: "soil_water",
+    capabilities: ["soil_properties", "salinity", "alkalinity", "drainage", "water_quality"],
+    acceptedModalities: ["text", "image", "document"], lifecycleState: "registered", enabled: false, humanReviewByDefault: true,
+  },
+  {
+    id: "irrigation_specialist", domain: "irrigation",
+    capabilities: ["crop_water_demand", "irrigation_scheduling", "irrigation_method_assessment"],
+    acceptedModalities: ["text", "image", "document"], lifecycleState: "registered", enabled: false, humanReviewByDefault: true,
+  },
+  {
+    id: "plant_nutrition_specialist", domain: "plant_nutrition",
+    capabilities: ["nutrient_diagnosis", "fertilizer_planning", "nutrient_interactions"],
+    acceptedModalities: ["text", "image", "document"], lifecycleState: "registered", enabled: false, humanReviewByDefault: true,
+  },
+  {
+    id: "plant_health_specialist", domain: "plant_health",
+    capabilities: ["pest_triage", "disease_triage", "symptom_differential", "plant_image_review"],
+    acceptedModalities: ["text", "image", "document"], lifecycleState: "registered", enabled: false, humanReviewByDefault: true,
+  },
+  {
+    id: "climate_specialist", domain: "climate",
+    capabilities: ["weather_context", "heat_stress", "climate_adaptation"],
+    acceptedModalities: ["text", "image", "document"], lifecycleState: "registered", enabled: false, humanReviewByDefault: true,
+  },
+  {
+    id: "agricultural_knowledge_specialist", domain: "agricultural_knowledge",
+    capabilities: ["approved_knowledge_retrieval", "source_evaluation", "research_synthesis"],
+    acceptedModalities: ["text", "image", "document"], lifecycleState: "registered", enabled: false, humanReviewByDefault: true,
+  },
+  {
+    id: "market_intelligence_specialist", domain: "market_intelligence",
+    capabilities: ["market_demand", "price_trends", "target_market_research", "buyer_discovery"],
+    acceptedModalities: ["text", "document"], lifecycleState: "registered", enabled: false, humanReviewByDefault: true,
+  },
+  {
+    id: "trade_export_specialist", domain: "trade_export",
+    capabilities: ["export_readiness", "trade_regulations", "standards_and_certificates", "labeling_requirements"],
+    acceptedModalities: ["text", "document"], lifecycleState: "registered", enabled: false, humanReviewByDefault: true,
+  },
+  {
+    id: "finance_economics_specialist", domain: "finance_economics",
+    capabilities: ["cost_analysis", "margin_analysis", "investment_scenarios", "sensitivity_analysis"],
+    acceptedModalities: ["text", "document"], lifecycleState: "registered", enabled: false, humanReviewByDefault: true,
+  },
+  {
+    id: "logistics_supply_chain_specialist", domain: "logistics_supply_chain",
+    capabilities: ["packaging", "storage", "transport", "cold_chain", "supply_chain_risk"],
+    acceptedModalities: ["text", "document"], lifecycleState: "registered", enabled: false, humanReviewByDefault: true,
   },
 ] as const;
 
@@ -114,6 +195,66 @@ type Rule = {
 };
 
 const RULES: readonly Rule[] = [
+  {
+    domain: "soil_water",
+    agentId: "soil_water_specialist",
+    reasonCode: "SOIL_OR_WATER_QUALITY_REQUEST",
+    patterns: [/آهک|آهکی|ec خاک|هدایت الکتریکی خاک|ph خاک|آزمایش خاک|بافت خاک|رسی بودن خاک|زهکش|زهکشی|کیفیت آب آبیاری|شوری آب|آب شور|soil salinity|soil test|soil texture|drainage|water quality/],
+  },
+  {
+    domain: "irrigation",
+    agentId: "irrigation_specialist",
+    reasonCode: "IRRIGATION_SCHEDULING_REQUEST",
+    patterns: [/برنامه آبیاری|زمان آبیاری|نوبت آبیاری|مقدار آب آبیاری|نیاز آبی|آبیاری قطره.?ای|آبیاری غرقابی|آبیاری بارانی|دبی آب|تبخیر و تعرق|irrigation schedule|crop water demand|drip irrigation|flood irrigation/],
+  },
+  {
+    domain: "plant_nutrition",
+    agentId: "plant_nutrition_specialist",
+    reasonCode: "PLANT_NUTRITION_REQUEST",
+    patterns: [/کمبود عناصر|کمبود آهن|کمبود روی|کمبود پتاسیم|کوددهی|برنامه کود|برنامه تغذیه|عناصر غذایی|آزمایش برگ|تجزیه برگ|fertilizer plan|nutrient deficiency|leaf analysis|plant nutrition/],
+  },
+  {
+    domain: "plant_health",
+    agentId: "plant_health_specialist",
+    reasonCode: "PLANT_HEALTH_SPECIALIST_REQUEST",
+    patterns: [/تشخیص آفت|تشخیص قارچ|تشخیص بیماری|عامل بیماری|درمان بیماری گیاه|کنترل آفت|پوسیدگی ریشه|plant disease diagnosis|pest identification|root rot/],
+  },
+  {
+    domain: "climate",
+    agentId: "climate_specialist",
+    reasonCode: "CLIMATE_OR_WEATHER_RISK_REQUEST",
+    patterns: [/تنش گرمایی|تنش سرما|موج گرما|پیش.?بینی هوا|اقلیم منطقه|تغییر اقلیم|دمای مزرعه|سازگاری اقلیمی|heat stress|cold stress|weather forecast|climate adaptation/],
+  },
+  {
+    domain: "agricultural_knowledge",
+    agentId: "agricultural_knowledge_specialist",
+    reasonCode: "AGRICULTURAL_KNOWLEDGE_REQUEST",
+    patterns: [/دانش کشاورزی|بانک دانش|دانش تأییدشده|دانش تاییدشده|تجربه کشاورزان|پژوهش کشاورزی|agricultural knowledge|approved knowledge base/],
+  },
+  {
+    domain: "market_intelligence",
+    agentId: "market_intelligence_specialist",
+    reasonCode: "MARKET_INTELLIGENCE_REQUEST",
+    patterns: [/تحلیل بازار|بازار هدف|تقاضای بازار|قیمت جهانی|روند قیمت|بازار صادراتی|خریداران خارجی|شناسایی خریدار|market demand|target market|market intelligence|buyer discovery|global prices/],
+  },
+  {
+    domain: "trade_export",
+    agentId: "trade_export_specialist",
+    reasonCode: "TRADE_OR_EXPORT_COMPLIANCE_REQUEST",
+    patterns: [/صادرات|واردات|گمرک|کد تعرفه|کد hs|گواهی بهداشت|گواهی phytosanitary|استاندارد مقصد|مقررات واردات|برچسب صادراتی|export readiness|customs|hs code|import requirements|phytosanitary/],
+  },
+  {
+    domain: "finance_economics",
+    agentId: "finance_economics_specialist",
+    reasonCode: "AGRICULTURAL_FINANCE_REQUEST",
+    patterns: [/هزینه تولید|سود خالص|حاشیه سود|بازگشت سرمایه|توجیه اقتصادی|تحلیل مالی|سرمایه گذاری|سرمایه‌گذاری|نقطه سر به سر|production cost|profit margin|return on investment|farm economics|financial analysis/],
+  },
+  {
+    domain: "logistics_supply_chain",
+    agentId: "logistics_supply_chain_specialist",
+    reasonCode: "LOGISTICS_OR_SUPPLY_CHAIN_REQUEST",
+    patterns: [/زنجیره تأمین|زنجیره تامین|حمل و نقل|حمل.?ونقل|سردخانه|زنجیره سرد|بسته بندی صادرات|بسته‌بندی صادرات|انبارداری|مسیر حمل|cold chain|supply chain|freight|storage logistics|export packaging/],
+  },
   {
     domain: "specialist",
     agentId: "specialist_handoff",
@@ -207,6 +348,13 @@ export function getRegisteredAgent(agentId: AgentId): AgentDefinition | undefine
   return REGISTRY_BY_ID.get(agentId);
 }
 
+/** Returns registry entries for SCI inspection; registered-only agents are included by default. */
+export function listRegisteredAgents(domain?: TaskDomain): readonly AgentDefinition[] {
+  return domain
+    ? AGENT_REGISTRY.filter((agent) => agent.domain === domain)
+    : AGENT_REGISTRY;
+}
+
 export function routeTask(input: {
   text?: string;
   modalities?: readonly TaskModality[];
@@ -235,6 +383,29 @@ export function routeTask(input: {
   if (specialistMatch) {
     const agent = REGISTRY_BY_ID.get(specialistMatch.agentId)!;
     return makeRoute("assigned", agent, specialistMatch.reasonCode, "high");
+  }
+
+  // A single specialist-domain match may supersede the broad agronomy catch-all.
+  // Specialist entries remain registered-only until separately reviewed and enabled.
+  const specialistDomainMatches = matches.filter((rule) =>
+    ["soil_water", "irrigation", "plant_nutrition", "plant_health", "climate",
+      "agricultural_knowledge", "market_intelligence", "trade_export",
+      "finance_economics", "logistics_supply_chain"].includes(rule.domain)
+  );
+  const otherSpecificMatches = matches.filter((rule) =>
+    rule.domain !== "agronomy" && !specialistDomainMatches.includes(rule)
+  );
+  if (specialistDomainMatches.length === 1 && otherSpecificMatches.length === 0) {
+    const rule = specialistDomainMatches[0];
+    const agent = REGISTRY_BY_ID.get(rule.agentId)!;
+    if (!agent.enabled) {
+      return makeRoute("agent_unavailable", coordinator, "SPECIALIST_REGISTERED_NOT_ENABLED", "low", [agent.id]);
+    }
+    const unsupported = modalities.filter((modality) => !agent.acceptedModalities.includes(modality));
+    if (unsupported.length) {
+      return makeRoute("clarification_required", coordinator, "MODALITY_NOT_SUPPORTED_BY_AGENT", "low", [agent.id]);
+    }
+    return makeRoute("assigned", agent, rule.reasonCode, "medium");
   }
 
   // Symptom diagnosis takes precedence over a crop-name-only agronomy match.

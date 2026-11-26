@@ -118,7 +118,7 @@ export function validateTaskEnvelope(value: unknown, now = Date.now()): string[]
   if (!Array.isArray(e.permissions) || e.permissions.some((x) => typeof x !== "string")) issues.push("INVALID_PERMISSIONS");
   const agent = typeof e.assignedAgent === "string" ? getRegisteredAgent(e.assignedAgent as AgentId) : undefined;
   if (!agent) issues.push("INVALID_ASSIGNED_AGENT");
-  if (!["conversation", "agronomy", "crop_diagnostics", "knowledge", "marketplace", "specialist", "account"].includes(e.domain ?? "")) issues.push("INVALID_DOMAIN");
+  if (!["conversation", "agronomy", "crop_diagnostics", "knowledge", "marketplace", "specialist", "account", "soil_water", "irrigation", "plant_nutrition", "plant_health", "climate", "agricultural_knowledge", "market_intelligence", "trade_export", "finance_economics", "logistics_supply_chain"].includes(e.domain ?? "")) issues.push("INVALID_DOMAIN");
   else if (agent && agent.domain !== e.domain) issues.push("AGENT_DOMAIN_MISMATCH");
   if (!Array.isArray(e.modalities) || e.modalities.some((item) => !["text", "image", "document", "audio", "other"].includes(item))) {
     if (!issues.includes("INVALID_MODALITIES")) issues.push("INVALID_MODALITIES");
@@ -201,14 +201,14 @@ export class InMemoryTaskManager {
     const task = this.requireTask(taskId);
     this.expireIfPastDeadline(task, now);
     if (task.status === "timed_out") return structuredClone(task);
+    if (next === "running") {
+      throw new TaskLifecycleError("TASK_CLAIM_REQUIRED", "Tasks must enter running through claimTask so a worker lease is acquired.");
+    }
     if (!TRANSITIONS[task.status].includes(next)) {
       throw new TaskLifecycleError("INVALID_STATE_TRANSITION", `Cannot move ${task.status} to ${next}.`);
     }
     if (next === "succeeded" && !task.result) {
       throw new TaskLifecycleError("RESULT_REQUIRED", "A validated task result is required before success.");
-    }
-    if (next === "running") {
-      throw new TaskLifecycleError("TASK_CLAIM_REQUIRED", "Tasks must enter running through claimTask so a worker lease is acquired.");
     }
     const previous = task.status;
     task.status = next;
