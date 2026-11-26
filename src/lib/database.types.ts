@@ -1124,6 +1124,7 @@ export type Database = {
           yield_quantity: number | null
           yield_unit: string | null
           yield_period: string | null
+          crop_role: string
         }
         Insert: {
           actual_harvest_date?: string | null
@@ -1149,6 +1150,7 @@ export type Database = {
           yield_quantity?: number | null
           yield_unit?: string | null
           yield_period?: string | null
+          crop_role?: string
         }
         Update: {
           actual_harvest_date?: string | null
@@ -1174,6 +1176,7 @@ export type Database = {
           yield_quantity?: number | null
           yield_unit?: string | null
           yield_period?: string | null
+          crop_role?: string
         }
         Relationships: [
           {
@@ -2769,6 +2772,8 @@ export type Database = {
           status: string
           total_area: number | null
           updated_at: string
+          water_structures: Json
+          irrigation_systems: Json
         }
         Insert: {
           area_unit?: string
@@ -2781,6 +2786,8 @@ export type Database = {
           status?: string
           total_area?: number | null
           updated_at?: string
+          water_structures?: Json
+          irrigation_systems?: Json
         }
         Update: {
           area_unit?: string
@@ -2793,6 +2800,8 @@ export type Database = {
           status?: string
           total_area?: number | null
           updated_at?: string
+          water_structures?: Json
+          irrigation_systems?: Json
         }
         Relationships: [
           {
