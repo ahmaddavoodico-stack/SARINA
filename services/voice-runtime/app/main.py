@@ -195,7 +195,7 @@ def _decode_audio_to_wav(source_path: str, wav_path: str) -> float:
                         sample_count += samples
                         if sample_count > MAX_AUDIO_SECONDS * target_rate:
                             raise ValueError("Audio duration exceeds the allowed limit")
-                        output.writeframesraw(frame.planes[0].to_bytes())
+                        output.writeframesraw(bytes(frame.planes[0]))
 
                 for decoded_frame in container.decode(stream):
                     write_frames(resampler.resample(decoded_frame))
@@ -204,8 +204,9 @@ def _decode_audio_to_wav(source_path: str, wav_path: str) -> float:
         if isinstance(exc, ValueError) and str(exc) == "Audio duration exceeds the allowed limit":
             raise
         logger.warning(
-            "voice_audio_decode_failed error_type=%s",
+            "voice_audio_decode_failed error_type=%s error=%s",
             type(exc).__name__,
+            str(exc),
         )
         raise ValueError("Audio container could not be decoded") from exc
 
