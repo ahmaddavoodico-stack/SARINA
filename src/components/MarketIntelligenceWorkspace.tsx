@@ -1,4 +1,4 @@
-import {Award,Box,ClipboardCheck,Globe2,PackageCheck,Search,ShieldCheck,TrendingUp,Truck} from "lucide-react";
+import {Award,Box,ClipboardCheck,Globe2,Search,ShieldCheck,TrendingUp,Truck} from "lucide-react";
 
 const modules=[
   {icon:Search,title:"تحقیقات و فرصت‌های بازار",en:"Market Research",description:"شناخت تقاضا، روند قیمت، کشورهای واردکننده، رقبا و فرصت‌های فروش هر محصول."},
