@@ -10,12 +10,12 @@ const PARENT = "11111111-1111-4111-8111-111111111111";
 
 function readyPlan(): CollaborationPlan {
   return {
-    status: "ready_for_sci_approval",
+    status: "executing",
     parentTaskId: PARENT,
     selectedSpecialistCount: 2,
     maxSpecialists: 4,
     modelPolicy: "none",
-    executionStarted: false,
+    executionStarted: true,
     farmerResponseAuthorized: false,
     reasonCodes: ["MINIMUM_SPECIALIST_SET_PREPARED"],
     workItems: [
@@ -30,7 +30,7 @@ function readyPlan(): CollaborationPlan {
         availability: "eligible",
         blockedReasons: [],
         humanReviewRequired: true,
-        dispatchAuthorized: false,
+        dispatchAuthorized: true,
       },
       {
         proposalKey: `${PARENT}:irrigation`,
