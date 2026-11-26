@@ -31,6 +31,7 @@ function summarizeDaily(daily: Daily) {
   const monthly = new Map<number, { max: number[]; min: number[]; rain: number[]; et0: number[] }>();
   const annualRain = new Map<number, number>();
   const annualDays = new Map<number, number>();
+  const annualEt0 = new Map<number, number>();
   let maxObserved: { value: number; date: string } | null = null;
   let heatDays40 = 0;
   let heatDays45 = 0;
@@ -58,7 +59,10 @@ function summarizeDaily(daily: Daily) {
       bucket.rain.push(rain);
       annualRain.set(year, (annualRain.get(year) ?? 0) + rain);
     }
-    if (typeof et0 === "number" && Number.isFinite(et0)) bucket.et0.push(et0);
+    if (typeof et0 === "number" && Number.isFinite(et0)) {
+      bucket.et0.push(et0);
+      annualEt0.set(year, (annualEt0.get(year) ?? 0) + et0);
+    }
     annualDays.set(year, (annualDays.get(year) ?? 0) + 1);
   }
 
@@ -78,9 +82,7 @@ function summarizeDaily(daily: Daily) {
   return {
     monthly_normals: monthlyNormals,
     annual_mean_precipitation_mm: mean(Array.from(annualRain.values())),
-    annual_mean_reference_et0_mm: mean(monthlyNormals.flatMap((month) =>
-      month.mean_daily_reference_et0_mm == null ? [] : [month.mean_daily_reference_et0_mm * month.sample_days]
-    )) ?? null,
+    annual_mean_reference_et0_mm: mean(Array.from(annualEt0.values())),
     annual_heat_days_ge_40c_mean: yearCount ? heatDays40 / yearCount : null,
     annual_heat_days_ge_45c_mean: yearCount ? heatDays45 / yearCount : null,
     historical_max_daily_temperature_c: maxObserved?.value ?? null,
