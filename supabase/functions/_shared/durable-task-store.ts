@@ -6,7 +6,7 @@
  */
 export type RpcError = { message?: string; code?: string };
 export type RpcClient = {
-  rpc(name: string, args: Record<string, unknown>): Promise<{
+  rpc(name: string, args: Record<string, unknown>): PromiseLike<{
     data: unknown;
     error: RpcError | null;
   }>;
