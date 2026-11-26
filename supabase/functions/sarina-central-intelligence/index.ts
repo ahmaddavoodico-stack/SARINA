@@ -6,7 +6,7 @@ import {
   planSpecialistCollaboration,
   type SpecialistDomain,
 } from "./_shared/specialist-collaboration.ts";
-import { createDurableTaskStore } from "./_shared/durable-task-store.ts";
+import { createDurableTaskStore } from "../_shared/durable-task-store.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
