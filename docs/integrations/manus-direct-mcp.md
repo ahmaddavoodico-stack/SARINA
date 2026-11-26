@@ -99,3 +99,12 @@ SCI derives readiness from a fresh heartbeat and capability signal; stale heartb
 `save_market_research_draft` accepts an optional `external_task_id`. When it matches a mission already registered in SCI, the private draft is linked to that mission and the mission enters owner review. The existing Khuzestan dates → UAE task is recorded as an external mission link; no farmer, farm, or owner identity is fabricated. The owner console can also link a saved Manus draft explicitly.
 
 The admin-only `sarina-agent-operations` Edge Function supplies the existing SCI admin console with fleet status, mission links, and private Manus drafts. It verifies the caller with `is_sarina_admin` before reading operational records. No provider secret or farmer data is returned.
+
+
+## Deployment verification (2026-11-26)
+
+- Supabase Edge Function `sarina-manus-mcp`: ACTIVE version 2; custom bearer authentication remains enabled.
+- Supabase Edge Function `sarina-agent-operations`: ACTIVE version 1; JWT verification enabled and admin authorization checked in the handler.
+- Database migration version `20261126102437` is applied. Runtime and health-event tables are service-role-only; no direct anon/authenticated table privileges are granted.
+- The production frontend deployment for the SCI console is READY on commit `2b2fd1c5cdfdfe039441cb8f052d4415c0a6797f`.
+- At verification time the runtime registry contained no heartbeat rows and the Manus draft store contained no reports. No agent is therefore labelled ready, and the first mission remains linked but awaiting a saved report.
