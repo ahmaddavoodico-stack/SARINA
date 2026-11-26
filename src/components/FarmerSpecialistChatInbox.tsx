@@ -138,18 +138,21 @@ export default function FarmerSpecialistChatInbox({userId,mode,profileId,verifie
  },[active,userId,markIncomingViewed,markConversationRead,refresh]);
 
  useEffect(()=>{
-  if(!supabase)return;
+  const client=supabase;
+  if(!client)return;
   let cancelled=false;
   async function resolveUrls(){
    const entries=await Promise.all(messages.map(async message=>{
     const part=message.content_parts?.[0];
     if(message.deleted_at||!part?.storage_bucket||!part?.storage_path)return null;
-    const result=await supabase.storage.from(part.storage_bucket).createSignedUrl(part.storage_path,300);
+    const result=await client.storage.from(part.storage_bucket).createSignedUrl(part.storage_path,300);
     if(result.error||!result.data?.signedUrl)return null;
     return [message.id,result.data.signedUrl] as const;
    }));
    if(cancelled)return;
-   setAttachmentUrls(old=>({...old,...Object.fromEntries(entries.filter(Boolean) as [string,string][])}));
+   const resolved:Record<string,string>={};
+   for(const entry of entries)if(entry)resolved[entry[0]]=entry[1];
+   setAttachmentUrls(old=>({...old,...resolved}));
   }
   void resolveUrls();
   return()=>{cancelled=true;};
