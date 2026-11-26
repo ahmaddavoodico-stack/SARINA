@@ -123,8 +123,8 @@ Deno.serve(async (req: Request) => {
     .eq("farm_id", farmId).eq("is_primary", true).limit(1).maybeSingle();
   if (locationError || !location) return reply(409, { ok: false, code: "PRIMARY_LOCATION_REQUIRED" });
 
-  const latitude = Number(location.latitude);
-  const longitude = Number(location.longitude);
+  const latitude = location.latitude == null ? NaN : Number(location.latitude);
+  const longitude = location.longitude == null ? NaN : Number(location.longitude);
   if (!Number.isFinite(latitude) || !Number.isFinite(longitude) ||
       latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
     return reply(422, { ok: false, code: "INVALID_FARM_COORDINATES" });
