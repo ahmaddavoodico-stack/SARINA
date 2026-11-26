@@ -8,8 +8,8 @@ services:
     env_file:
       - .env
     environment:
-      PIPER_FA_MODEL_PATH: /models/piper/fa_IR-amir-medium.onnx
       PIPER_AR_MODEL_PATH: /models/piper/ar_JO-kareem-medium.onnx
+      SARINA_TINY_AVA_CACHE: /tmp/sarina-models/tiny-ava
       WHISPER_MODEL_PATH: /models/whisper/small
       WHISPER_DEVICE: cpu
       WHISPER_COMPUTE_TYPE: int8
