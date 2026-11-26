@@ -292,6 +292,7 @@ Deno.serve(async (req: Request) => {
       },
       satellite: await scenesPromise.then((catalogue) => ({
         ...catalogue,
+        status: "scene_discovery_only",
         analysis_status: "scene_discovery_only",
         limitation: "در این وضعیت فقط فراداده صحنه‌ها جست‌وجو می‌شود؛ NDVI و شاخص‌های پوشش گیاهی هنوز پردازش نشده‌اند.",
       })),
