@@ -87,8 +87,9 @@ create table if not exists sci_internal.sci_tasks (
   constraint sci_tasks_child_dispatch_guard check (
     task_kind <> 'specialist_proposal'
     or (status = 'waiting_for_human' and dispatch_authorized = false)
-    or (status in ('queued', 'assigned', 'running') and dispatch_authorized = true
+    or (status in ('queued', 'assigned', 'running', 'succeeded') and dispatch_authorized = true
         and agent_lifecycle_state = 'enabled' and policy_decision_ref is not null)
+    or status in ('failed', 'cancelled', 'timed_out')
   ),
   unique (owner_auth_user_id, idempotency_key)
 );
@@ -451,8 +452,8 @@ begin
     end if;
 
     if v_task.status = 'running' and v_task.lease_expires_at <= now()
-       and v_task.dispatch_authorized and v_task.deadline_at > now()
-       and v_task.attempt_count < v_task.max_attempts then
+       and v_task.dispatch_authorized and v_task.agent_lifecycle_state = 'enabled'
+       and v_task.deadline_at > now() and v_task.attempt_count < v_task.max_attempts then
       v_token := gen_random_uuid();
       update sci_internal.sci_tasks
       set lease_owner = p_worker_id, lease_token = v_token,
