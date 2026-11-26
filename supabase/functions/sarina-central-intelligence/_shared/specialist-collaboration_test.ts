@@ -181,6 +181,21 @@ Deno.test("aggregator reports missing specialist results as partial", () => {
   assertEquals(aggregate.missingAgentIds, ["irrigation_specialist"]);
 });
 
+Deno.test("aggregator rejects malformed untrusted result payloads", () => {
+  const plan = readyPlan();
+  const aggregate = aggregateSpecialistResults(plan, [
+    null as unknown as SpecialistResult,
+    {
+      agentId: "soil_water_specialist",
+      domain: "soil_water",
+      status: "succeeded",
+      findings: [null],
+    } as unknown as SpecialistResult,
+  ]);
+  assertEquals(aggregate.status, "needs_human_review");
+  assertEquals(aggregate.issues, ["INVALID_SPECIALIST_RESULT", "INVALID_SPECIALIST_RESULT"]);
+});
+
 Deno.test("aggregator flags duplicate and unexpected results", () => {
   const plan = readyPlan();
   const result: SpecialistResult = {
