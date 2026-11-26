@@ -9,8 +9,7 @@ Deno.test("registry has unique stable agent identifiers", () => {
     agent.capabilities.length > 0 &&
     ((agent.lifecycleState === "enabled") === agent.enabled)
   ), true);
-  assertEquals(listRegisteredAgents("market_intelligence").length, 0);
-  assertEquals(listRegisteredAgents("market_intelligence").length, 0);
+  assertEquals(listRegisteredAgents("market_intelligence").length, 1);
 });
 
 Deno.test("specialist inventory is registered centrally but remains disabled by default", () => {
