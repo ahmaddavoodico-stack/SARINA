@@ -105,12 +105,14 @@ export function deriveAgentOperationalStatus(input: {
     return { runtimeState: "responding", health: "unknown", reasonCode: "CAPABILITY_READINESS_NOT_CONFIRMED", heartbeatAgeMs };
   }
 
-  if (input.activeTaskCount > 0 ||
-      (input.capacity !== null && input.activeTaskCount >= input.capacity)) {
+  if (input.capacity === null) {
+    return { runtimeState: "responding", health: "unknown", reasonCode: "CAPACITY_NOT_CONFIRMED", heartbeatAgeMs };
+  }
+  if (input.activeTaskCount > 0 || input.activeTaskCount >= input.capacity) {
     return { runtimeState: "busy", health: "healthy", reasonCode: "ACTIVE_TASKS", heartbeatAgeMs };
   }
 
-  return { runtimeState: "ready", health: "healthy", reasonCode: "HEARTBEAT_AND_CAPABILITIES_FRESH", heartbeatAgeMs };
+  return { runtimeState: "ready", health: "healthy", reasonCode: "HEARTBEAT_CAPABILITIES_AND_CAPACITY_FRESH", heartbeatAgeMs };
 }
 
 export type ReviewRisk = "low" | "medium" | "high" | "critical";
