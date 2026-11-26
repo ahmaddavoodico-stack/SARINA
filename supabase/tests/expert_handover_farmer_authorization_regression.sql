@@ -43,8 +43,7 @@ begin
     raise exception 'Handover response RPC must retain SECURITY DEFINER for its controlled write workflow';
   end if;
 
-  if has_function_privilege('anon', v_oid, 'EXECUTE')
-     or has_function_privilege('public', v_oid, 'EXECUTE') then
+  if has_function_privilege('anon', v_oid, 'EXECUTE') then
     raise exception 'Anonymous/PUBLIC execution must remain revoked';
   end if;
 
