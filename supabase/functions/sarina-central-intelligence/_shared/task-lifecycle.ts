@@ -201,14 +201,14 @@ export class InMemoryTaskManager {
     const task = this.requireTask(taskId);
     this.expireIfPastDeadline(task, now);
     if (task.status === "timed_out") return structuredClone(task);
+    if (next === "running") {
+      throw new TaskLifecycleError("TASK_CLAIM_REQUIRED", "Tasks must enter running through claimTask so a worker lease is acquired.");
+    }
     if (!TRANSITIONS[task.status].includes(next)) {
       throw new TaskLifecycleError("INVALID_STATE_TRANSITION", `Cannot move ${task.status} to ${next}.`);
     }
     if (next === "succeeded" && !task.result) {
       throw new TaskLifecycleError("RESULT_REQUIRED", "A validated task result is required before success.");
-    }
-    if (next === "running") {
-      throw new TaskLifecycleError("TASK_CLAIM_REQUIRED", "Tasks must enter running through claimTask so a worker lease is acquired.");
     }
     const previous = task.status;
     task.status = next;
