@@ -26,7 +26,8 @@ export type SpecialistDomain =
 export type CollaborationPlanStatus =
   | "ready_for_sci_approval"
   | "blocked"
-  | "clarification_required";
+  | "clarification_required"
+  | "executing";
 
 export type CollaborationWorkItem = {
   /** Stable proposal key; this is not a persisted task ID. */
@@ -40,7 +41,7 @@ export type CollaborationWorkItem = {
   availability: "eligible" | "blocked";
   blockedReasons: string[];
   humanReviewRequired: true;
-  dispatchAuthorized: false;
+  dispatchAuthorized: boolean;
 };
 
 export type CollaborationPlan = {
@@ -51,7 +52,7 @@ export type CollaborationPlan = {
   selectedSpecialistCount: number;
   maxSpecialists: 4;
   modelPolicy: "none";
-  executionStarted: false;
+  executionStarted: boolean;
   farmerResponseAuthorized: false;
 };
 
@@ -123,7 +124,7 @@ export function planSpecialistCollaboration(input: {
     selectedSpecialistCount: 0,
     maxSpecialists: 4 as const,
     modelPolicy: "none" as const,
-    executionStarted: false as const,
+    executionStarted: false,
     farmerResponseAuthorized: false as const,
   };
 
@@ -228,7 +229,8 @@ export function aggregateSpecialistResults(
     automaticConsensus: false as const,
     farmerResponseAuthorized: false as const,
   };
-  if (plan.status !== "ready_for_sci_approval" || plan.executionStarted || !plan.workItems.length) {
+  if (plan.status !== "executing" || !plan.executionStarted || !plan.workItems.length ||
+      plan.workItems.some((item) => item.availability !== "eligible" || !item.dispatchAuthorized)) {
     return { ...empty, status: "not_aggregatable", issues: ["PLAN_NOT_EXECUTABLE_OR_EMPTY"] };
   }
 
