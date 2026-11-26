@@ -1,0 +1,32 @@
+name: Farm Environmental Assessment Checks
+
+on:
+  pull_request:
+    paths:
+      - "supabase/functions/farm-historical-climate-context/**"
+      - "src/FarmEnvironmentalAssessment.tsx"
+      - "docs/architecture/automatic-farm-environmental-assessment.md"
+      - ".github/workflows/farm-environmental-assessment-checks.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "supabase/functions/farm-historical-climate-context/**"
+      - ".github/workflows/farm-environmental-assessment-checks.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  edge-function:
+    name: Historical climate Edge Function type check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Type-check historical climate adapter
+        run: deno check supabase/functions/farm-historical-climate-context/index.ts
