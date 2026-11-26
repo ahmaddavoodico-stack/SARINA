@@ -17,6 +17,10 @@ create schema if not exists sci_internal;
 revoke all on schema sci_internal from public, anon, authenticated;
 grant usage on schema sci_internal to service_role;
 grant usage on schema pgmq to service_role;
+grant execute on function pgmq.send(text, jsonb, integer) to service_role;
+grant execute on function pgmq.read(text, integer, integer) to service_role;
+grant execute on function pgmq.archive(text, bigint) to service_role;
+grant execute on function pgmq.set_vt(text, bigint, integer) to service_role;
 
 create table if not exists sci_internal.sci_tasks (
   task_id uuid primary key default gen_random_uuid(),
@@ -295,6 +299,7 @@ set search_path = ''
 as $function$
 declare
   v_task sci_internal.sci_tasks%rowtype;
+  v_msg_id bigint;
 begin
   if coalesce(auth.jwt() ->> 'role', '') <> 'service_role' then
     raise exception 'Service role required' using errcode = '42501';
@@ -331,7 +336,8 @@ begin
     jsonb_build_object('policy_decision_ref', p_policy_decision_ref, 'human_approval_ref', p_human_approval_ref)
   );
 
-  perform pgmq.send('sarina_sci_tasks', jsonb_build_object('task_id', p_task_id));
+  select * into v_msg_id from pgmq.send('sarina_sci_tasks', jsonb_build_object('task_id', p_task_id));
+  update sci_internal.sci_tasks set queue_message_id = v_msg_id where task_id = p_task_id;
   return jsonb_build_object('task_id', p_task_id, 'status', 'queued', 'dispatch_authorized', true);
 end;
 $function$;
@@ -373,9 +379,42 @@ begin
       continue;
     end;
 
-    if not found or v_task.status <> 'queued' or not v_task.dispatch_authorized
+    if not found then
+      perform pgmq.archive('sarina_sci_tasks', v_message.msg_id);
+      continue;
+    end if;
+
+    if v_task.status = 'running' and v_task.lease_expires_at <= now()
+       and v_task.dispatch_authorized and v_task.deadline_at > now()
+       and v_task.attempt_count < v_task.max_attempts then
+      v_token := gen_random_uuid();
+      update sci_internal.sci_tasks
+      set lease_owner = p_worker_id, lease_token = v_token,
+          lease_expires_at = least(now() + make_interval(secs => p_lease_seconds), deadline_at),
+          queue_message_id = v_message.msg_id, attempt_count = attempt_count + 1,
+          updated_at = now()
+      where task_id = v_task.task_id
+      returning * into v_task;
+      insert into sci_internal.sci_task_events(
+        task_id, event_type, from_status, to_status, actor_kind, actor_id, reason_code, metadata
+      ) values (
+        v_task.task_id, 'task_lease_reclaimed', 'running', 'running', 'worker', p_worker_id,
+        'EXPIRED_LEASE_RECLAIMED', jsonb_build_object('attempt', v_task.attempt_count)
+      );
+      return next jsonb_build_object(
+        'task_id', v_task.task_id, 'parent_task_id', v_task.parent_task_id,
+        'root_task_id', v_task.root_task_id, 'domain', v_task.domain,
+        'agent_id', v_task.agent_id, 'request_payload', v_task.request_payload,
+        'context_refs', v_task.context_refs, 'payload_refs', v_task.payload_refs,
+        'lease_token', v_token, 'lease_expires_at', v_task.lease_expires_at,
+        'attempt_count', v_task.attempt_count
+      );
+      continue;
+    end if;
+
+    if v_task.status <> 'queued' or not v_task.dispatch_authorized
        or v_task.deadline_at <= now() then
-      if found and v_task.status = 'queued' and v_task.deadline_at <= now() then
+      if v_task.status = 'queued' and v_task.deadline_at <= now() then
         update sci_internal.sci_tasks
         set status = 'timed_out', updated_at = now(), completed_at = now(),
             queue_message_id = null
@@ -383,6 +422,12 @@ begin
         insert into sci_internal.sci_task_events(
           task_id, event_type, from_status, to_status, actor_kind, actor_id, reason_code
         ) values (v_task.task_id, 'task_timed_out', 'queued', 'timed_out', 'system', null, 'DEADLINE_EXCEEDED');
+      elsif v_task.status = 'running' and v_task.lease_expires_at > now() then
+        perform pgmq.set_vt(
+          'sarina_sci_tasks', v_message.msg_id,
+          greatest(1, least(300, ceil(extract(epoch from (v_task.lease_expires_at - now())))::integer))
+        );
+        continue;
       end if;
       perform pgmq.archive('sarina_sci_tasks', v_message.msg_id);
       continue;
