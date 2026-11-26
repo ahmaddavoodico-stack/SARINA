@@ -194,25 +194,27 @@ begin
      or jsonb_typeof(coalesce(p_task -> 'request_payload', '{}'::jsonb)) <> 'object'
      or jsonb_typeof(coalesce(p_task -> 'context_refs', '[]'::jsonb)) <> 'array'
      or jsonb_typeof(coalesce(p_task -> 'payload_refs', '[]'::jsonb)) <> 'array'
-     or jsonb_typeof(coalesce(p_task -> 'modalities', '[]'::jsonb)) <> 'array'
-     or case when jsonb_typeof(coalesce(p_task -> 'modalities', '[]'::jsonb)) = 'array'
-       then jsonb_array_length(coalesce(p_task -> 'modalities', '[]'::jsonb)) = 0 else true end
-     or case when jsonb_typeof(coalesce(p_task -> 'modalities', '[]'::jsonb)) = 'array'
-       then exists (
-         select 1 from jsonb_array_elements_text(coalesce(p_task -> 'modalities', '[]'::jsonb)) modality
-         where modality not in ('text', 'image', 'document', 'audio', 'other')
-       ) else true end
-     or case when jsonb_typeof(coalesce(p_task -> 'context_refs', '[]'::jsonb)) = 'array'
-       then exists (
-         select 1 from jsonb_array_elements(coalesce(p_task -> 'context_refs', '[]'::jsonb)) ref
-         where jsonb_typeof(ref) <> 'string'
-       ) else true end
-     or case when jsonb_typeof(coalesce(p_task -> 'payload_refs', '[]'::jsonb)) = 'array'
-       then exists (
-         select 1 from jsonb_array_elements(coalesce(p_task -> 'payload_refs', '[]'::jsonb)) ref
-         where jsonb_typeof(ref) <> 'string'
-       ) else true end then
+     or jsonb_typeof(coalesce(p_task -> 'modalities', '[]'::jsonb)) <> 'array' then
     raise exception 'Invalid task envelope' using errcode = '22023';
+  end if;
+
+  if jsonb_array_length(coalesce(p_task -> 'modalities', '[]'::jsonb)) = 0
+     or exists (
+       select 1
+       from jsonb_array_elements_text(coalesce(p_task -> 'modalities', '[]'::jsonb)) as modality(value)
+       where value not in ('text', 'image', 'document', 'audio', 'other')
+     )
+     or exists (
+       select 1
+       from jsonb_array_elements(coalesce(p_task -> 'context_refs', '[]'::jsonb)) as context_ref(value)
+       where jsonb_typeof(value) <> 'string'
+     )
+     or exists (
+       select 1
+       from jsonb_array_elements(coalesce(p_task -> 'payload_refs', '[]'::jsonb)) as payload_ref(value)
+       where jsonb_typeof(value) <> 'string'
+     ) then
+    raise exception 'Invalid task envelope arrays' using errcode = '22023';
   end if;
 
   if v_kind = 'specialist_proposal' and
