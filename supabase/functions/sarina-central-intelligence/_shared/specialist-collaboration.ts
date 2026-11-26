@@ -232,10 +232,23 @@ export function aggregateSpecialistResults(
     return { ...empty, status: "not_aggregatable", issues: ["PLAN_NOT_EXECUTABLE_OR_EMPTY"] };
   }
 
+  if (!Array.isArray(results)) {
+    return { ...empty, status: "needs_human_review", issues: ["INVALID_RESULT_COLLECTION"] };
+  }
   const expected = new Map(plan.workItems.map((item) => [item.agentId, item]));
   const seen = new Set<AgentId>();
   const accepted: SpecialistResult[] = [];
-  for (const result of results) {
+  for (const candidate of results as readonly unknown[]) {
+    if (!candidate || typeof candidate !== "object" || Array.isArray(candidate)) {
+      empty.issues.push("INVALID_SPECIALIST_RESULT");
+      continue;
+    }
+    const result = candidate as SpecialistResult;
+    if (typeof result.agentId !== "string" || typeof result.domain !== "string" ||
+        !["succeeded", "failed", "timed_out", "cancelled"].includes(result.status)) {
+      empty.issues.push("INVALID_SPECIALIST_RESULT");
+      continue;
+    }
     const item = expected.get(result.agentId);
     if (!item || item.domain !== result.domain) {
       empty.issues.push("UNEXPECTED_AGENT_OR_DOMAIN_RESULT");
@@ -250,12 +263,18 @@ export function aggregateSpecialistResults(
       empty.failedAgentIds.push(result.agentId);
       continue;
     }
-    if (!Array.isArray(result.findings) || result.findings.some((finding) =>
-      !finding.topicKey?.trim() || !finding.position?.trim() || !finding.summary?.trim() ||
-      !Array.isArray(finding.evidenceRefs) || !Array.isArray(finding.missingInputs) ||
-      !Array.isArray(finding.limitations) ||
-      !["low", "medium", "high"].includes(finding.confidence)
-    )) {
+    const validFindings = Array.isArray(result.findings) && result.findings.every((rawFinding) => {
+      if (!rawFinding || typeof rawFinding !== "object" || Array.isArray(rawFinding)) return false;
+      const finding = rawFinding as Partial<SpecialistFinding>;
+      return typeof finding.topicKey === "string" && !!finding.topicKey.trim() &&
+        typeof finding.position === "string" && !!finding.position.trim() &&
+        typeof finding.summary === "string" && !!finding.summary.trim() &&
+        Array.isArray(finding.evidenceRefs) && finding.evidenceRefs.every((ref) => typeof ref === "string") &&
+        Array.isArray(finding.missingInputs) && finding.missingInputs.every((item) => typeof item === "string") &&
+        Array.isArray(finding.limitations) && finding.limitations.every((item) => typeof item === "string") &&
+        ["low", "medium", "high"].includes(finding.confidence ?? "");
+    });
+    if (!validFindings) {
       empty.issues.push("INVALID_SPECIALIST_RESULT");
       empty.failedAgentIds.push(result.agentId);
       continue;
