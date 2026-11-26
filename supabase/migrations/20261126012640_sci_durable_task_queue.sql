@@ -414,6 +414,22 @@ begin
       continue;
     end if;
 
+    if v_task.status = 'queued' and v_task.dispatch_authorized
+       and v_task.agent_lifecycle_state <> 'enabled' then
+      update sci_internal.sci_tasks
+      set status = 'waiting_for_human', dispatch_authorized = false,
+          queue_message_id = null, updated_at = now()
+      where task_id = v_task.task_id;
+      insert into sci_internal.sci_task_events(
+        task_id, event_type, from_status, to_status, actor_kind, actor_id, reason_code
+      ) values (
+        v_task.task_id, 'dispatch_blocked', 'queued', 'waiting_for_human',
+        'system', 'sci_scheduler', 'AGENT_NOT_ENABLED_AT_CLAIM'
+      );
+      perform pgmq.archive('sarina_sci_tasks', v_message.msg_id);
+      continue;
+    end if;
+
     if v_task.status <> 'queued' or not v_task.dispatch_authorized
        or v_task.deadline_at <= now() then
       if v_task.status = 'queued' and v_task.deadline_at <= now() then
@@ -461,6 +477,46 @@ begin
       'attempt_count', v_task.attempt_count
     );
   end loop;
+end;
+$function$;
+
+create or replace function public.sci_heartbeat_task(
+  p_task_id uuid,
+  p_lease_token uuid,
+  p_lease_seconds integer default 60
+)
+returns jsonb
+language plpgsql
+security invoker
+set search_path = ''
+as $function$
+declare
+  v_task sci_internal.sci_tasks%rowtype;
+begin
+  if coalesce(auth.jwt() ->> 'role', '') <> 'service_role' then
+    raise exception 'Service role required' using errcode = '42501';
+  end if;
+  if p_lease_seconds < 5 or p_lease_seconds > 300 then
+    raise exception 'Lease extension must be between 5 and 300 seconds' using errcode = '22023';
+  end if;
+  select * into v_task from sci_internal.sci_tasks
+  where task_id = p_task_id for update;
+  if not found or v_task.status <> 'running' or v_task.lease_token <> p_lease_token
+     or v_task.lease_expires_at <= now() then
+    raise exception 'Task lease is invalid or expired' using errcode = '42501';
+  end if;
+  update sci_internal.sci_tasks
+  set lease_expires_at = least(now() + make_interval(secs => p_lease_seconds), deadline_at),
+      updated_at = now()
+  where task_id = p_task_id
+  returning * into v_task;
+  insert into sci_internal.sci_task_events(
+    task_id, event_type, from_status, to_status, actor_kind, actor_id, reason_code
+  ) values (
+    p_task_id, 'task_lease_extended', 'running', 'running', 'worker',
+    v_task.lease_owner, 'WORKER_HEARTBEAT'
+  );
+  return jsonb_build_object('task_id', p_task_id, 'lease_expires_at', v_task.lease_expires_at);
 end;
 $function$;
 
@@ -758,6 +814,7 @@ $function$;
 revoke all on function public.sci_create_task(jsonb) from public, anon, authenticated;
 revoke all on function public.sci_authorize_task_dispatch(uuid, uuid, uuid) from public, anon, authenticated;
 revoke all on function public.sci_claim_tasks(text, integer, integer) from public, anon, authenticated;
+revoke all on function public.sci_heartbeat_task(uuid, uuid, integer) from public, anon, authenticated;
 revoke all on function public.sci_complete_task(uuid, uuid, jsonb) from public, anon, authenticated;
 revoke all on function public.sci_fail_task(uuid, uuid, text, boolean) from public, anon, authenticated;
 revoke all on function public.sci_recover_expired_tasks(integer) from public, anon, authenticated;
@@ -767,6 +824,7 @@ revoke all on function public.sci_get_task_tree(uuid, uuid) from public, anon, a
 grant execute on function public.sci_create_task(jsonb) to service_role;
 grant execute on function public.sci_authorize_task_dispatch(uuid, uuid, uuid) to service_role;
 grant execute on function public.sci_claim_tasks(text, integer, integer) to service_role;
+grant execute on function public.sci_heartbeat_task(uuid, uuid, integer) to service_role;
 grant execute on function public.sci_complete_task(uuid, uuid, jsonb) to service_role;
 grant execute on function public.sci_fail_task(uuid, uuid, text, boolean) to service_role;
 grant execute on function public.sci_recover_expired_tasks(integer) to service_role;
