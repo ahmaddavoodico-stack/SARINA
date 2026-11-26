@@ -98,12 +98,14 @@ def test_piper_uses_vendored_runner_and_selected_local_voice(monkeypatch, tmp_pa
 
 
 
-def test_spoken_replies_fail_closed_and_allow_only_configured_user(monkeypatch):
-    monkeypatch.setattr(voice_runtime, "TTS_ALLOWED_USER_IDS", frozenset({"admin-user"}))
-    assert voice_runtime._is_tts_allowed({"id": "admin-user"})
-    assert not voice_runtime._is_tts_allowed({"id": "another-user"})
-    monkeypatch.setattr(voice_runtime, "TTS_ALLOWED_USER_IDS", frozenset())
-    assert not voice_runtime._is_tts_allowed({"id": "admin-user"})
+def test_spoken_replies_require_an_authenticated_user():
+    # Voice synthesis is available to signed-in SARINA users, not anonymous callers.
+    # Keep this aligned with the authenticated-user policy introduced in PR #185.
+    from inspect import signature
+
+    for endpoint in (voice_runtime.synthesize, voice_runtime.transcribe):
+        user_parameter = signature(endpoint).parameters["user"]
+        assert user_parameter.default.dependency is voice_runtime.require_authenticated_user
 
 
 def test_tiny_ava_phoneme_encoding_adds_boundaries_and_ezafe():
