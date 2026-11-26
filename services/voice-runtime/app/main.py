@@ -92,6 +92,24 @@ async def require_authenticated_user(authorization: str | None = Header(default=
     return {"id": user["id"]}
 
 
+def _configure_huggingface_cache() -> Path:
+    """Keep all Hugging Face/Xet cache and log writes on Vercel's writable /tmp."""
+    cache_root = Path("/tmp/sarina-hf")
+    cache_root.mkdir(parents=True, exist_ok=True)
+    (cache_root / "hub").mkdir(exist_ok=True)
+    (cache_root / "xet").mkdir(exist_ok=True)
+    (cache_root / "home").mkdir(exist_ok=True)
+
+    os.environ.setdefault("XDG_CACHE_HOME", str(cache_root / "home"))
+    os.environ.setdefault("HF_HOME", str(cache_root / "home" / "huggingface"))
+    os.environ.setdefault("HF_HUB_CACHE", str(cache_root / "hub"))
+    os.environ.setdefault("HF_XET_CACHE", str(cache_root / "xet"))
+    # Xet's default log location can resolve to the read-only deployment home.
+    # The standard Hub HTTP downloader is reliable and avoids that write path.
+    os.environ.setdefault("HF_HUB_DISABLE_XET", "1")
+    return cache_root
+
+
 def _ensure_whisper_model() -> None:
     global WHISPER_MODEL_PATH
     if WHISPER_MODEL_PATH.is_dir():
@@ -101,15 +119,26 @@ def _ensure_whisper_model() -> None:
             f"Local Whisper model is missing: {WHISPER_MODEL_PATH}. "
             "Provision model files before starting voice traffic."
         )
+
+    cache_root = _configure_huggingface_cache()
     from huggingface_hub import snapshot_download
 
-    WHISPER_MODEL_PATH = Path(
-        snapshot_download(
-            repo_id=WHISPER_MODEL_REPO,
-            allow_patterns=["config.json", "model.bin", "tokenizer.json", "vocabulary.json", "preprocessor_config.json"],
-            cache_dir="/tmp/sarina-hf-cache",
+    try:
+        WHISPER_MODEL_PATH = Path(
+            snapshot_download(
+                repo_id=WHISPER_MODEL_REPO,
+                allow_patterns=["config.json", "model.bin", "tokenizer.json", "vocabulary.json", "preprocessor_config.json"],
+                cache_dir=str(cache_root / "hub"),
+                max_workers=4,
+            )
         )
-    )
+    except Exception:
+        logger.exception(
+            "voice_whisper_model_download_failed repo_id=%s cache_dir=%s",
+            WHISPER_MODEL_REPO,
+            cache_root / "hub",
+        )
+        raise
 
 
 def _ensure_piper_model(model_path: Path) -> Path:
@@ -117,6 +146,7 @@ def _ensure_piper_model(model_path: Path) -> Path:
         return model_path
     if os.getenv("VERCEL") != "1":
         raise RuntimeError("Piper voice model is not installed: " + model_path.name)
+    cache_root = _configure_huggingface_cache()
     from huggingface_hub import hf_hub_download
 
     if model_path.name == "fa_IR-amir-medium.onnx":
@@ -131,13 +161,13 @@ def _ensure_piper_model(model_path: Path) -> Path:
         repo_id="rhasspy/piper-voices",
         filename=f"{voice_repo}/{model_path.name}",
         revision=revision,
-        cache_dir="/tmp/sarina-hf-cache",
+        cache_dir=str(cache_root / "hub"),
     ))
     hf_hub_download(
         repo_id="rhasspy/piper-voices",
         filename=f"{voice_repo}/{model_path.name}.json",
         revision=revision,
-        cache_dir="/tmp/sarina-hf-cache",
+        cache_dir=str(cache_root / "hub"),
     )
     return model
 
