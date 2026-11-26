@@ -298,51 +298,58 @@ mcp.tool(
         missionLinked = !missionLinkError;
       }
       // A successful report submission is itself a verified MCP interaction.
-      // It creates/refreshes a responding runtime record but never claims capacity.
-      const { data: existingRuntime, error: runtimeReadError } = await supabase
-        .from("sci_agent_runtime")
-        .select("agent_instance_id")
-        .eq("agent_instance_id", MANUS_INSTANCE_ID)
-        .maybeSingle();
-      if (runtimeReadError) throw runtimeReadError;
-      if (existingRuntime) {
-        const { error: runtimeUpdateError } = await supabase.from("sci_agent_runtime").update({
-          last_heartbeat_at: now,
-          last_success_at: now,
-          updated_at: now,
-        }).eq("agent_instance_id", MANUS_INSTANCE_ID);
-        if (runtimeUpdateError) throw runtimeUpdateError;
-      } else {
-        const { error: runtimeInsertError } = await supabase.from("sci_agent_runtime").insert({
+      // Telemetry is best-effort: it must never turn a successfully saved draft into
+      // an error that could cause the caller to retry and create duplicate reports.
+      let runtimeSignalRecorded = false;
+      try {
+        const { data: existingRuntime, error: runtimeReadError } = await supabase
+          .from("sci_agent_runtime")
+          .select("agent_instance_id")
+          .eq("agent_instance_id", MANUS_INSTANCE_ID)
+          .maybeSingle();
+        if (runtimeReadError) throw runtimeReadError;
+        if (existingRuntime) {
+          const { error: runtimeUpdateError } = await supabase.from("sci_agent_runtime").update({
+            last_heartbeat_at: now,
+            last_success_at: now,
+            updated_at: now,
+          }).eq("agent_instance_id", MANUS_INSTANCE_ID);
+          if (runtimeUpdateError) throw runtimeUpdateError;
+        } else {
+          const { error: runtimeInsertError } = await supabase.from("sci_agent_runtime").insert({
+            agent_instance_id: MANUS_INSTANCE_ID,
+            adapter_id: "manus",
+            specialist_role: "market_intelligence_specialist",
+            lifecycle_state: "enabled",
+            dispatch_enabled: false,
+            last_heartbeat_at: now,
+            last_success_at: now,
+            capabilities: ["save_market_research_draft"],
+            active_task_count: 0,
+            capacity: null,
+            runtime_metadata: { gateway_version: SERVER_VERSION, signal_source: "authenticated_report_submission" },
+            updated_at: now,
+          });
+          if (runtimeInsertError) throw runtimeInsertError;
+        }
+        const { error: eventError } = await supabase.from("sci_agent_health_events").insert({
           agent_instance_id: MANUS_INSTANCE_ID,
-          adapter_id: "manus",
-          specialist_role: "market_intelligence_specialist",
-          lifecycle_state: "enabled",
-          dispatch_enabled: false,
-          last_heartbeat_at: now,
-          last_success_at: now,
-          capabilities: ["save_market_research_draft"],
-          active_task_count: 0,
-          capacity: null,
-          runtime_metadata: { gateway_version: SERVER_VERSION, signal_source: "authenticated_report_submission" },
-          updated_at: now,
+          event_type: "task_succeeded",
+          health: "unknown",
+          runtime_state: "responding",
+          reason_code: "REPORT_SAVED_CAPACITY_NOT_CONFIRMED",
+          evidence: { draft_id: data.id, mission_linked: missionLinked },
+          occurred_at: now,
         });
-        if (runtimeInsertError) throw runtimeInsertError;
+        if (eventError) throw eventError;
+        runtimeSignalRecorded = true;
+      } catch (telemetryError) {
+        console.error("runtime signal after draft save failed", telemetryError instanceof Error ? telemetryError.message : "unknown");
       }
-      const { error: eventError } = await supabase.from("sci_agent_health_events").insert({
-        agent_instance_id: MANUS_INSTANCE_ID,
-        event_type: "task_succeeded",
-        health: "unknown",
-        runtime_state: "responding",
-        reason_code: "REPORT_SAVED_CAPACITY_NOT_CONFIRMED",
-        evidence: { draft_id: data.id, mission_linked: missionLinked },
-        occurred_at: now,
-      });
-      if (eventError) throw eventError;
       return {
         content: [{
           type: "text",
-          text: JSON.stringify({ ok: true, saved_as: "private_draft", draft: data }),
+          text: JSON.stringify({ ok: true, saved_as: "private_draft", draft: data, mission_linked: missionLinked, runtime_signal_recorded: runtimeSignalRecorded }),
         }],
       };
     } catch (error) {
