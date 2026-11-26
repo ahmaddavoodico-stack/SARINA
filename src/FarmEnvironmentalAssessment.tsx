@@ -20,6 +20,18 @@ type WeatherContext = {
   current?: { temperature_c?: number | null; apparent_temperature_c?: number | null; relative_humidity_pct?: number | null; wind_speed_m_s?: number | null; precipitation_mm?: number | null };
   forecast?: Array<{ date: string; max_c?: number | null; min_c?: number | null; precipitation_mm?: number | null; reference_evapotranspiration_mm?: number | null }>;
 };
+type ClimateContext = {
+  status?: string; source?: string; source_dataset?: string; data_kind?: string;
+  spatial_resolution_degrees?: number; approximate_spatial_resolution_km?: number;
+  temporal_coverage_requested?: string; temporal_coverage_returned?: string | null;
+  years_covered?: number[]; retrieved_at?: string; limitation?: string;
+  summary?: {
+    monthly_normals?: Array<{ month: number; mean_daily_max_c?: number | null; mean_daily_min_c?: number | null; mean_daily_precipitation_mm?: number | null; mean_daily_reference_et0_mm?: number | null; sample_days?: number }>;
+    annual_mean_precipitation_mm?: number | null; annual_mean_reference_et0_mm?: number | null;
+    annual_heat_days_ge_40c_mean?: number | null; annual_heat_days_ge_45c_mean?: number | null;
+    historical_max_daily_temperature_c?: number | null; historical_max_daily_temperature_date?: string | null;
+  };
+};
 type Snapshot = {
   id: string;
   version: number;
@@ -27,7 +39,7 @@ type Snapshot = {
   assessed_at: string;
   missing_domains: string[];
   source_manifest: Array<{ source?: string; source_type?: string; status?: string; limitation?: string }>;
-  evidence_payload: { land?: LandContext; weather?: WeatherContext };
+  evidence_payload: { land?: LandContext; weather?: WeatherContext; climate?: ClimateContext };
 };
 type Props = { farmId: string; farmName: string };
 
@@ -39,6 +51,7 @@ export default function FarmEnvironmentalAssessment({ farmId, farmName }: Props)
   const [loadingHistory, setLoadingHistory] = useState(true);
   const [land, setLand] = useState<LandContext | null>(null);
   const [weather, setWeather] = useState<WeatherContext | null>(null);
+  const [climate, setClimate] = useState<ClimateContext | null>(null);
   const [snapshots, setSnapshots] = useState<Snapshot[]>([]);
   const [error, setError] = useState("");
 
@@ -62,6 +75,7 @@ export default function FarmEnvironmentalAssessment({ farmId, farmName }: Props)
     if (latest?.evidence_payload?.land && latest.evidence_payload.weather) {
       setLand(latest.evidence_payload.land);
       setWeather(latest.evidence_payload.weather);
+      setClimate(latest.evidence_payload.climate ?? null);
     }
     setLoadingHistory(false);
   }
@@ -75,9 +89,10 @@ export default function FarmEnvironmentalAssessment({ farmId, farmName }: Props)
     setLoading(true);
     setError("");
     try {
-      const [landResult, weatherResult] = await Promise.all([
+      const [landResult, weatherResult, climateResult] = await Promise.all([
         supabase.functions.invoke("farm-land-context", { body: { farm_id: farmId } }),
         supabase.functions.invoke("farm-weather-context", { body: { farm_id: farmId } }),
+        supabase.functions.invoke("farm-historical-climate-context", { body: { farm_id: farmId } }),
       ]);
       if (landResult.error) throw new Error("دریافت پرونده خاک و آب انجام نشد: " + landResult.error.message);
       if (weatherResult.error) throw new Error("دریافت اطلاعات جوی انجام نشد: " + weatherResult.error.message);
@@ -90,6 +105,9 @@ export default function FarmEnvironmentalAssessment({ farmId, farmName }: Props)
         throw new Error("پاسخ هواشناسی معتبر نیست یا برای این مزرعه دریافت نشده است.");
       }
 
+      const climatePayload = !climateResult.error && climateResult.data?.ok === true && climateResult.data?.farm_id === farmId
+        ? climateResult.data.climate as ClimateContext
+        : { status: "request_failed", source: "Open-Meteo Historical Weather API (ERA5-Land)", data_kind: "reanalysis_model_estimate", limitation: "دریافت اقلیم تاریخی انجام نشد؛ داده‌ای جایگزین یا حدس زده نشده است." } as ClimateContext;
       const soilCount = landPayload.context.data_quality?.soil_test_count ?? landPayload.context.soil_tests?.length ?? 0;
       const waterCount = landPayload.context.data_quality?.water_test_count ?? landPayload.context.water_tests?.length ?? 0;
       const soilGridStatus = landPayload.context.regional_context?.soilgrids?.status ?? "not_available";
@@ -97,7 +115,7 @@ export default function FarmEnvironmentalAssessment({ farmId, farmName }: Props)
         ...(soilCount === 0 ? ["آزمایش اختصاصی خاک"] : []),
         ...(waterCount === 0 ? ["آزمایش کیفیت آب"] : []),
         ...(soilGridStatus !== "available" ? ["برآورد منطقه‌ای خاک"] : []),
-        "اقلیم بلندمدت و میانگین‌های چندساله",
+        ...(climatePayload.status !== "available" ? ["اقلیم بلندمدت و میانگین‌های چندساله"] : []),
         "ارتفاع، شیب و تحلیل توپوگرافی",
         "تحلیل تصاویر ماهواره‌ای و پوشش زمین",
       ];
@@ -118,6 +136,15 @@ export default function FarmEnvironmentalAssessment({ farmId, farmName }: Props)
           limitation: "شرایط مدل/پیش‌بینی است و اندازه‌گیری حسگر داخل مزرعه محسوب نمی‌شود.",
         },
         {
+          source: climatePayload.source ?? "Open-Meteo Historical Weather API",
+          source_type: climatePayload.data_kind ?? "historical_reanalysis_model_estimate",
+          status: climatePayload.status ?? "not_available",
+          temporal_coverage: climatePayload.temporal_coverage_returned ?? climatePayload.temporal_coverage_requested ?? null,
+          spatial_resolution_km: climatePayload.approximate_spatial_resolution_km ?? null,
+          retrieved_at: climatePayload.retrieved_at ?? new Date().toISOString(),
+          limitation: climatePayload.limitation ?? "اقلیم بلندمدت در دسترس نیست؛ مقادیر خالی باقی می‌مانند.",
+        },
+        {
           source: "SARINA farm laboratory records",
           source_type: "farm_specific_measurements",
           status: soilCount + waterCount > 0 ? "available" : "no_records",
@@ -130,12 +157,13 @@ export default function FarmEnvironmentalAssessment({ farmId, farmName }: Props)
         farm_id: farmId,
         assessment_status: missingDomains.length ? "needs_review" : "partial",
         source_manifest: sourceManifest as unknown as Json,
-        evidence_payload: { land: landPayload.context, weather: weatherPayload } as unknown as Json,
+        evidence_payload: { land: landPayload.context, weather: weatherPayload, climate: climatePayload } as unknown as Json,
         quality_summary: {
           soil_test_count: soilCount,
           water_test_count: waterCount,
           soilgrids_status: soilGridStatus,
           weather_source: weatherPayload.source ?? "provider_not_reported",
+          historical_climate_status: climatePayload.status ?? "not_available",
           evidence_classes: ["farm_measurement", "regional_model_estimate", "weather_model"],
           missing_values_policy: "unknown_values_remain_null",
         } as unknown as Json,
@@ -145,6 +173,7 @@ export default function FarmEnvironmentalAssessment({ farmId, farmName }: Props)
 
       setLand(landPayload.context);
       setWeather(weatherPayload);
+      setClimate(climatePayload);
       await loadHistory();
     } catch (e) {
       setError(e instanceof Error ? e.message : "ارزیابی محیطی مزرعه انجام نشد.");
@@ -184,8 +213,24 @@ export default function FarmEnvironmentalAssessment({ farmId, farmName }: Props)
           {(weather.forecast ?? []).map(day => <tr key={day.date}><td>{day.date}</td><td>{fa(day.min_c)}°</td><td>{fa(day.max_c)}°</td><td>{fa(day.precipitation_mm)} mm</td><td>{fa(day.reference_evapotranspiration_mm)} mm</td></tr>)}
         </tbody></table></div>
       </div>
+      <div className="panel" style={{ marginTop: 16 }}>
+        <strong>اقلیم بلندمدت منطقه · بازه مرجع ۱۹۹۱ تا ۲۰۲۰</strong>
+        <p>{climate?.status === "available" ? "داده بازتحلیل اقلیمی دریافت شد" : climate?.status === "provider_license_not_configured" ? "اتصال منبع نیازمند مجوز استفاده تجاری است" : climate?.status === "waiting_for_confirmed_location" ? "برای تحلیل اقلیم، موقعیت مزرعه باید تأیید شود" : "داده اقلیم بلندمدت هنوز در دسترس نیست"}</p>
+        {climate?.summary && <>
+          <div className="farm-form-grid">
+            <div><small className="muted">میانگین بارش سالانه</small><p>{fa(climate.summary.annual_mean_precipitation_mm)} میلی‌متر</p></div>
+            <div><small className="muted">روزهای سالانه با بیشینه حداقل ۴۰ درجه</small><p>{fa(climate.summary.annual_heat_days_ge_40c_mean)} روز</p></div>
+            <div><small className="muted">روزهای سالانه با بیشینه حداقل ۴۵ درجه</small><p>{fa(climate.summary.annual_heat_days_ge_45c_mean)} روز</p></div>
+            <div><small className="muted">بیشینه دمای روزانه مدل در بازه</small><p>{fa(climate.summary.historical_max_daily_temperature_c)}°C · {climate.summary.historical_max_daily_temperature_date ?? "—"}</p></div>
+          </div>
+          <div className="admin-table-wrap"><table className="admin-table"><thead><tr><th>ماه</th><th>میانگین بیشینه روزانه</th><th>میانگین کمینه روزانه</th><th>میانگین بارش روزانه</th></tr></thead><tbody>
+            {(climate.summary.monthly_normals ?? []).map(month => <tr key={month.month}><td>{fa(month.month)}</td><td>{fa(month.mean_daily_max_c)}°C</td><td>{fa(month.mean_daily_min_c)}°C</td><td>{fa(month.mean_daily_precipitation_mm)} mm</td></tr>)}
+          </tbody></table></div>
+        </>}
+        <small className="muted">{climate?.source ?? "Open-Meteo / ERA5-Land"} · {climate?.approximate_spatial_resolution_km ? "تفکیک تقریبی " + fa(climate.approximate_spatial_resolution_km) + " کیلومتر" : "تفکیک مکانی منطقه‌ای"} · {climate?.limitation ?? "داده مدل بازتحلیل است، نه اندازه‌گیری ایستگاهی داخل مزرعه."}</small>
+      </div>
       <div className="notice" style={{ marginTop: 14 }}>
-        <strong>محدودیت و دقت داده‌ها:</strong> پیش‌بینی جوی، داده مدل ارائه‌دهنده است نه اندازه‌گیری حسگر داخل مزرعه. SoilGrids در صورت دسترسی، برآورد مدل منطقه‌ای با تفکیک تقریبی ۲۵۰ متر است، نه آزمایش خاک این قطعه. کیفیت شیمیایی آب بدون آزمایش معتبر قابل تعیین نیست.
+        <strong>محدودیت و دقت داده‌ها:</strong> پیش‌بینی جوی، داده مدل ارائه‌دهنده است نه اندازه‌گیری حسگر داخل مزرعه. SoilGrids در صورت دسترسی، برآورد مدل منطقه‌ای با تفکیک تقریبی ۲۵۰ متر است، نه آزمایش خاک این قطعه. ERA5-Land نیز بازتحلیل شبکه‌ای حدود ۹ کیلومتر است و شرایط خرداقلیم مزرعه را به‌تنهایی نشان نمی‌دهد. کیفیت شیمیایی آب بدون آزمایش معتبر قابل تعیین نیست. ارتفاع/شیب دقیق قطعه و تحلیل طیفی تصاویر ماهواره‌ای هنوز در این مرحله ارائه نمی‌شود.
       </div>
     </>}
     {snapshots.length > 0 && <div style={{ marginTop: 16 }}>
