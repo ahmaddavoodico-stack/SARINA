@@ -3,6 +3,7 @@
 BEGIN;
 
 ALTER TABLE public.crop_cycles
+  ADD COLUMN IF NOT EXISTS crop_label text,
   ADD COLUMN IF NOT EXISTS variety_label text,
   ADD COLUMN IF NOT EXISTS tree_age_years numeric(6,2),
   ADD COLUMN IF NOT EXISTS yield_quantity numeric(14,3),
