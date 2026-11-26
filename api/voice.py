@@ -19,8 +19,8 @@ SERVICE_ROOT = ROOT / "services" / "voice-runtime"
 # workflow test. The vendored inference engine remains the same.
 os.environ.setdefault("WHISPER_MODEL_PATH", "/tmp/sarina-models/whisper/tiny")
 os.environ.setdefault("WHISPER_MODEL_REPO", "Systran/faster-whisper-tiny")
-os.environ.setdefault("PIPER_FA_MODEL_PATH", "/tmp/sarina-models/piper/fa_IR-amir-medium.onnx")
 os.environ.setdefault("PIPER_AR_MODEL_PATH", "/tmp/sarina-models/piper/ar_JO-kareem-medium.onnx")
+os.environ.setdefault("SARINA_TINY_AVA_CACHE", "/tmp/sarina-models/tiny-ava")
 os.environ.setdefault("WHISPER_CPU_THREADS", "2")
 
 # Import the engine source directly from this SARINA repository.
