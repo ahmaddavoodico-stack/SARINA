@@ -88,3 +88,14 @@ The Manus token must be different from all Supabase API keys. Rotate it if expos
 ## Rollback
 
 Disable or delete the Edge Function and revoke/rotate `SARINA_MANUS_ACCESS_TOKEN`. The private draft table is isolated and can remain in place for audit/history.
+
+
+## SCI runtime heartbeat and mission linkage
+
+The gateway now exposes `sarina_agent_heartbeat`. It accepts Manus-reported active task count, declared capacity, and the MCP capability names it can access. The gateway persists an authenticated heartbeat and append-only health event for the `manus_market_intelligence` runtime. The existing `sarina_connection_check` also records a capability/connection signal after the database draft store check succeeds.
+
+SCI derives readiness from a fresh heartbeat and capability signal; stale heartbeats become offline and incomplete capability evidence remains responding/unknown. A heartbeat does not enable provider dispatch: `dispatch_enabled` remains false, and there is still no production queue worker or SCI-to-Manus dispatch path.
+
+`save_market_research_draft` accepts an optional `external_task_id`. When it matches a mission already registered in SCI, the private draft is linked to that mission and the mission enters owner review. The existing Khuzestan dates → UAE task is recorded as an external mission link; no farmer, farm, or owner identity is fabricated. The owner console can also link a saved Manus draft explicitly.
+
+The admin-only `sarina-agent-operations` Edge Function supplies the existing SCI admin console with fleet status, mission links, and private Manus drafts. It verifies the caller with `is_sarina_admin` before reading operational records. No provider secret or farmer data is returned.
