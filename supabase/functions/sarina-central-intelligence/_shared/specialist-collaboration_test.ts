@@ -26,7 +26,7 @@ function readyPlan(): CollaborationPlan {
         agentId: "soil_water_specialist",
         purpose: "Assess soil and water.",
         expectedOutput: "Evidence-backed assessment.",
-        contextRefs: ["farm:private-ref"],
+        contextRefs: ["farm:soil-only-ref"],
         availability: "eligible",
         blockedReasons: [],
         humanReviewRequired: true,
@@ -39,7 +39,7 @@ function readyPlan(): CollaborationPlan {
         agentId: "irrigation_specialist",
         purpose: "Assess irrigation.",
         expectedOutput: "Advisory options.",
-        contextRefs: ["farm:private-ref"],
+        contextRefs: ["farm:irrigation-only-ref"],
         availability: "eligible",
         blockedReasons: [],
         humanReviewRequired: true,
@@ -109,7 +109,7 @@ Deno.test("planner blocks unsupported modalities and empty requests", () => {
   const empty = planSpecialistCollaboration({
     parentTaskId: PARENT,
     requestedDomains: [],
-    contextRefs: ["farm:one"],
+    contextRefsByDomain: {},
     modalities: ["text"],
   });
   assertEquals(unsupported.status, "blocked");
