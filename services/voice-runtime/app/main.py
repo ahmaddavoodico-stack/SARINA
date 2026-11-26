@@ -45,6 +45,9 @@ PIPER_CLI_PATH = _resolve_piper_cli_path()
 SUPABASE_URL = os.getenv("SUPABASE_URL", os.getenv("VITE_SUPABASE_URL", "")).rstrip("/")
 SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY", os.getenv("VITE_SUPABASE_PUBLISHABLE_KEY", ""))
 CORS_ORIGINS = [item.strip() for item in os.getenv("CORS_ORIGINS", "").split(",") if item.strip()]
+TTS_ALLOWED_USER_IDS = frozenset(
+    item.strip() for item in os.getenv("SARINA_TTS_ALLOWED_USER_IDS", "").split(",") if item.strip()
+)
 
 app = FastAPI(title="SARINA Self-hosted Voice Runtime", version=APP_VERSION)
 app.add_middleware(
@@ -68,6 +71,11 @@ class SynthesisRequest(BaseModel):
 def _require_configuration() -> None:
     if not SUPABASE_URL or not SUPABASE_ANON_KEY:
         raise HTTPException(status_code=503, detail="Voice authentication is not configured")
+
+
+def _is_tts_allowed(user: dict[str, Any]) -> bool:
+    """Fail closed unless the authenticated user is explicitly allowlisted."""
+    return bool(TTS_ALLOWED_USER_IDS) and user.get("id") in TTS_ALLOWED_USER_IDS
 
 
 async def require_authenticated_user(authorization: str | None = Header(default=None)) -> dict[str, Any]:
@@ -112,26 +120,33 @@ def _configure_huggingface_cache() -> Path:
 
 def _ensure_whisper_model() -> None:
     global WHISPER_MODEL_PATH
-    if WHISPER_MODEL_PATH.is_dir():
+    required_files = ("config.json", "model.bin", "tokenizer.json", "vocabulary.txt")
+    if WHISPER_MODEL_PATH.is_dir() and all((WHISPER_MODEL_PATH / name).is_file() for name in required_files):
         return
     if os.getenv("VERCEL") != "1":
+        missing = [name for name in required_files if not (WHISPER_MODEL_PATH / name).is_file()]
         raise RuntimeError(
-            f"Local Whisper model is missing: {WHISPER_MODEL_PATH}. "
-            "Provision model files before starting voice traffic."
+            f"Local Whisper model is incomplete at {WHISPER_MODEL_PATH}; missing: {', '.join(missing)}"
         )
 
     cache_root = _configure_huggingface_cache()
     from huggingface_hub import snapshot_download
 
     try:
-        WHISPER_MODEL_PATH = Path(
+        downloaded_path = Path(
             snapshot_download(
                 repo_id=WHISPER_MODEL_REPO,
-                allow_patterns=["config.json", "model.bin", "tokenizer.json", "vocabulary.json", "preprocessor_config.json"],
+                allow_patterns=["config.json", "model.bin", "tokenizer.json", "vocabulary.txt"],
                 cache_dir=str(cache_root / "hub"),
                 max_workers=4,
             )
         )
+        missing = [name for name in required_files if not (downloaded_path / name).is_file()]
+        if missing:
+            raise RuntimeError(
+                f"Whisper model download is incomplete at {downloaded_path}; missing: {', '.join(missing)}"
+            )
+        WHISPER_MODEL_PATH = downloaded_path
     except Exception:
         logger.exception(
             "voice_whisper_model_download_failed repo_id=%s cache_dir=%s",
@@ -405,7 +420,8 @@ async def synthesize(
     payload: SynthesisRequest,
     user: dict[str, Any] = Depends(require_authenticated_user),
 ) -> FileResponse:
-    del user
+    if not _is_tts_allowed(user):
+        raise HTTPException(status_code=403, detail="Spoken replies are not enabled for this account")
     language = payload.language.strip().lower().replace("_", "-")
     if language in {"fa", "fa-ir"}:
         voice_model = PIPER_FA_MODEL_PATH
