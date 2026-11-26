@@ -16,6 +16,20 @@ type Props={
 };
 
 const apiBase=(import.meta.env.VITE_SARINA_VOICE_API_URL||"/api/voice").replace(/\/$/,"");
+const VOICE_REQUEST_TIMEOUT_MS=55_000;
+
+async function fetchVoice(input:RequestInfo|URL,init:RequestInit):Promise<Response>{
+  const controller=new AbortController();
+  const timeout=setTimeout(()=>controller.abort(),VOICE_REQUEST_TIMEOUT_MS);
+  try{
+    return await fetch(input,{...init,signal:controller.signal});
+  }catch(error){
+    if(controller.signal.aborted)throw new Error("پاسخ سرویس صوتی بیش از حد طول کشید؛ لطفاً دوباره تلاش کنید.");
+    throw error;
+  }finally{
+    clearTimeout(timeout);
+  }
+}
 
 async function accessToken():Promise<string>{
   if(!supabase)throw new Error("نشست کاربری در دسترس نیست.");
@@ -41,7 +55,7 @@ export default function VoiceMessageControls({onTranscription,onVoiceMessage,tex
     const extension=blob.type.includes("ogg")?"ogg":blob.type.includes("mp4")?"m4a":blob.type.includes("wav")?"wav":"webm";
     form.append("file",blob,"sarina-voice."+extension);
     form.append("language","fa");
-    const response=await fetch(apiBase+"/v1/transcribe",{method:"POST",headers:{Authorization:"Bearer "+token},body:form});
+    const response=await fetchVoice(apiBase+"/v1/transcribe",{method:"POST",headers:{Authorization:"Bearer "+token},body:form});
     if(!response.ok){const payload=await response.json().catch(()=>({}));throw new Error(payload.detail||"تبدیل صدا به متن انجام نشد.");}
     const payload=await response.json();
     if(!payload.ok||typeof payload.transcript!=="string"||!payload.transcript.trim())throw new Error("صدای دریافت‌شده قابل تشخیص نبود؛ می‌توانید دوباره ضبط کنید.");
@@ -89,7 +103,7 @@ export default function VoiceMessageControls({onTranscription,onVoiceMessage,tex
     setProcessing(true);
     try{
       const token=await accessToken();
-      const response=await fetch(apiBase+"/v1/synthesize",{method:"POST",headers:{Authorization:"Bearer "+token,"Content-Type":"application/json"},body:JSON.stringify({text,language:speechLanguage})});
+      const response=await fetchVoice(apiBase+"/v1/synthesize",{method:"POST",headers:{Authorization:"Bearer "+token,"Content-Type":"application/json"},body:JSON.stringify({text,language:speechLanguage})});
       if(!response.ok){const payload=await response.json().catch(()=>({}));throw new Error(payload.detail||"تولید فایل صوتی پاسخ انجام نشد.");}
       const blob=await response.blob();
       await onVoiceReplyAudio({audio:blob,mimeType:blob.type||"audio/wav"});
