@@ -23,7 +23,7 @@ grant usage on schema pgmq to service_role;
 revoke all on schema sci_internal from public, anon, authenticated;
 grant usage on schema sci_internal to service_role;
 grant execute on function pgmq.send(text, jsonb, integer) to service_role;
-grant execute on function pgmq.read(text, integer, integer) to service_role;
+grant execute on function pgmq.read(text, integer, integer, jsonb) to service_role;
 grant execute on function pgmq.archive(text, bigint) to service_role;
 grant execute on function pgmq.set_vt(text, bigint, integer) to service_role;
 

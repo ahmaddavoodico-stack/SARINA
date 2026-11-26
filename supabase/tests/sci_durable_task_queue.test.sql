@@ -1,4 +1,4 @@
--- Run only after applying 20261126012640_sci_durable_task_queue.sql
+-- Run only after applying 20261126020121_sci_durable_task_queue.sql
 -- This is a read-only structural/security smoke test; it creates no task data.
 do $$
 begin
@@ -23,11 +23,11 @@ begin
      or has_schema_privilege('authenticated', 'pgmq', 'USAGE') then
     raise exception 'Direct client access to PGMQ schema unexpectedly granted';
   end if;
-  if has_function_privilege('anon', 'pgmq.read(text,integer,integer)', 'EXECUTE')
-     or has_function_privilege('authenticated', 'pgmq.read(text,integer,integer)', 'EXECUTE') then
+  if has_function_privilege('anon', 'pgmq.read(text,integer,integer,jsonb)', 'EXECUTE')
+     or has_function_privilege('authenticated', 'pgmq.read(text,integer,integer,jsonb)', 'EXECUTE') then
     raise exception 'Direct client execution of PGMQ read unexpectedly granted';
   end if;
-  if not has_function_privilege('service_role', 'pgmq.read(text,integer,integer)', 'EXECUTE')
+  if not has_function_privilege('service_role', 'pgmq.read(text,integer,integer,jsonb)', 'EXECUTE')
      or not has_function_privilege('service_role', 'pgmq.send(text,jsonb,integer)', 'EXECUTE') then
     raise exception 'service_role lacks required PGMQ execution privileges';
   end if;
