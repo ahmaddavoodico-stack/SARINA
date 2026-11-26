@@ -53,7 +53,7 @@ Deno.test("collaboration plan keeps registered-only specialists blocked", () => 
   const plan = planSpecialistCollaboration({
     parentTaskId: PARENT,
     requestedDomains: ["soil_water", "irrigation"],
-    contextRefs: ["farm:private-ref"],
+    contextRefsByDomain: { soil_water: ["farm:soil-context"], irrigation: ["farm:irrigation-context"] },
     modalities: ["text"],
   });
   assertEquals(plan.status, "blocked");
@@ -72,7 +72,7 @@ Deno.test("planner selects only requested domains, deduplicates and scopes conte
   const plan = planSpecialistCollaboration({
     parentTaskId: PARENT,
     requestedDomains: ["soil_water", "soil_water", "irrigation"],
-    contextRefs: ["farm:one", "farm:one", "soil-test:latest"],
+    contextRefsByDomain: { soil_water: ["farm:one", "farm:one", "soil-test:latest"], irrigation: ["farm:irrigation"] },
     modalities: ["text"],
   });
   assertEquals(plan.selectedSpecialistCount, 2);
@@ -84,13 +84,13 @@ Deno.test("planner refuses broad fan-out and unknown domains", () => {
   const tooMany = planSpecialistCollaboration({
     parentTaskId: PARENT,
     requestedDomains: ["soil_water", "irrigation", "plant_nutrition", "climate", "trade_export"],
-    contextRefs: ["farm:one"],
+    contextRefsByDomain: {},
     modalities: ["text"],
   });
   const unknown = planSpecialistCollaboration({
     parentTaskId: PARENT,
     requestedDomains: ["conversation"],
-    contextRefs: ["farm:one"],
+    contextRefsByDomain: {},
     modalities: ["text"],
   });
   assertEquals(tooMany.reasonCodes, ["SPECIALIST_FANOUT_LIMIT_EXCEEDED"]);
@@ -103,7 +103,7 @@ Deno.test("planner blocks unsupported modalities and empty requests", () => {
   const unsupported = planSpecialistCollaboration({
     parentTaskId: PARENT,
     requestedDomains: ["trade_export"],
-    contextRefs: ["farm:one"],
+    contextRefsByDomain: { trade_export: ["farm:one"] },
     modalities: ["audio"],
   });
   const empty = planSpecialistCollaboration({
