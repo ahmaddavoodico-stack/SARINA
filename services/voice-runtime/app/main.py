@@ -446,7 +446,7 @@ def _synthesize_persian_female(text: str, output_path: str) -> None:
 
 
 def _synthesize_file(text: str, output_path: str, model_path: Path) -> None:
-    if model_path == PIPER_AR_MODEL_PATH:
+    if model_path.name == PIPER_AR_MODEL_PATH.name:
         model_path = _ensure_piper_model(model_path)
         if not PIPER_CLI_PATH.is_file():
             raise RuntimeError("Vendored Piper runner is missing")
