@@ -667,6 +667,16 @@ begin
         perform pgmq.archive('sarina_sci_tasks', v_task.queue_message_id);
       end if;
       v_timed_out := v_timed_out + 1;
+    elsif v_task.agent_lifecycle_state <> 'enabled' then
+      v_new_status := 'waiting_for_human';
+      update sci_internal.sci_tasks
+      set status = 'waiting_for_human', dispatch_authorized = false,
+          lease_owner = null, lease_token = null, lease_expires_at = null,
+          queue_message_id = null, updated_at = now()
+      where task_id = v_task.task_id;
+      if v_task.queue_message_id is not null then
+        perform pgmq.archive('sarina_sci_tasks', v_task.queue_message_id);
+      end if;
     elsif v_task.attempt_count < v_task.max_attempts then
       v_delay := least(300, 5 * (2 ^ greatest(v_task.attempt_count - 1, 0))::integer);
       v_new_status := 'queued';
