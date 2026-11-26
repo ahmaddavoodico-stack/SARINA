@@ -110,3 +110,34 @@ This is a working foundation, not evidence that the full chat experience, attach
 - The normal specialist UI currently supplies the real `requester_user_id`, but client behavior is not a security boundary. This is a server-side authorization vulnerability, not merely a UI issue.
 - Required remediation on a development branch: replace the tautological predicate with `er.requester_user_id = expert_case_handovers.requester_user_id`; independently harden the RPC by joining the handover to its request and requiring `expert_requests.requester_user_id = current_sarina_user_id()`; review function EXECUTE grants and preserve only the intended farmer invocation. Add negative tests proving the assigned specialist cannot create or approve a handover as the farmer, while the actual farmer can approve/decline.
 - Treat handover and chat release as blocked until this migration is applied and tested in an isolated development database. No production changes have been made.
+
+
+## Human-view-gated message deletion and media controls (2026-11-26)
+
+### Product behavior
+- Message history is persisted in the existing canonical `expert_consultation_messages` table. Closing the chat, navigating away, or refreshing must not erase it. No automatic 24-hour expiry is applied; messages remain until an authorized deletion or an approved retention policy.
+- A sender may delete their own message only while `first_human_viewed_at` is null. This applies to text, audio, image, and PDF messages.
+- The first authenticated human recipient who opens a conversation and receives the message in the conversation view locks sender deletion. In group/future multi-recipient routing, any authorized human recipient's first view locks deletion.
+- The sender viewing their own message, background processing, AI processing, notification generation, and administrative inspection do not count as recipient view.
+- The first-view timestamp and sender-delete operation are serialized by database row locking. Whichever valid operation commits first determines the outcome; clients cannot bypass the rule with direct table updates.
+- Deletion redacts the message body and attachment descriptor, leaves a minimal tombstone, and redacts the linked notification preview. The private Storage object is removed by the sender client after the database accepts deletion. If Storage cleanup fails, the object remains private and the UI reports the cleanup failure; a durable server-side cleanup worker/retry queue remains a release-hardening item.
+- During voice recording, the sender can either finish and send or cancel. Cancellation discards the in-memory recording and does not create a message.
+- The dedicated inbox renders existing private audio, image, and PDF attachments using short-lived signed URLs. Upload remains constrained by the existing private buckets, participant-scoped policies, MIME allowlists, and size limits.
+
+### Implementation slice
+- Added forward-only migration `20261126110000_expert_message_pre_read_deletion.sql` with first-human-view and deletion fields, message-linked notification redaction, and authenticated RPCs for atomic view/delete operations.
+- Updated the dedicated farmer/specialist inbox with text/audio/image/PDF rendering, recording cancellation, and sender deletion before first human view.
+- Updated legacy farmer and specialist case-chat entry points to record recipient views too, so opening a message through an older conversation surface cannot leave it falsely deletable in the new inbox.
+- Updated legacy case views to render deleted-message tombstones.
+
+### Required verification before release
+1. Apply the migration only in an isolated development database after migration source/history review; do not apply directly to production.
+2. Test farmer and assigned verified specialist as separate sessions. Verify sender deletion succeeds before recipient view and is rejected after recipient view.
+3. Run concurrent view/delete tests in both transaction orders and prove only one outcome wins.
+4. Verify self-view, AI/background processing, notification creation, and admin-only inspection do not set `first_human_viewed_at`.
+5. Verify cancellation creates no row and no Storage object; finish/send creates one message and one private object.
+6. Verify audio, image, and PDF upload, signed retrieval, and sender deletion; test Storage cleanup failure and retry/operations handling.
+7. Verify notification previews are redacted after deletion and old conversation surfaces also mark messages viewed.
+8. Run typecheck, lint, build, role-boundary tests, and two-user mobile RTL smoke tests.
+
+**Release status:** source changes are on a feature branch for review. The migration has not been applied to the connected database, and no production deployment or end-to-end acceptance is claimed.
