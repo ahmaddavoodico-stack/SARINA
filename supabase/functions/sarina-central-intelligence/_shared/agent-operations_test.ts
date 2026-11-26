@@ -53,6 +53,16 @@ Deno.test("stale heartbeat means offline", () => {
   assertEquals(result.health, "unavailable");
 });
 
+Deno.test("fresh heartbeat without declared capacity is not marked ready", () => {
+  const result = deriveAgentOperationalStatus({
+    ...baseHealth,
+    capacity: null,
+  });
+  assertEquals(result.runtimeState, "responding");
+  assertEquals(result.health, "unknown");
+  assertEquals(result.reasonCode, "CAPACITY_NOT_CONFIRMED");
+});
+
 Deno.test("active work means busy while health remains healthy", () => {
   const result = deriveAgentOperationalStatus({
     ...baseHealth,
