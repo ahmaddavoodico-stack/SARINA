@@ -1,10 +1,16 @@
 import { assertEquals } from "jsr:@std/assert";
-import { AGENT_REGISTRY, getRegisteredAgent, routeTask } from "./task-orchestrator.ts";
+import { AGENT_REGISTRY, getRegisteredAgent, listRegisteredAgents, routeTask } from "./task-orchestrator.ts";
 
 Deno.test("registry has unique stable agent identifiers", () => {
   const ids = AGENT_REGISTRY.map((agent) => agent.id);
   assertEquals(new Set(ids).size, ids.length);
   assertEquals(getRegisteredAgent("agronomy_advisor")?.domain, "agronomy");
+  assertEquals(AGENT_REGISTRY.every((agent) =>
+    agent.capabilities.length > 0 &&
+    ((agent.lifecycleState === "enabled") === agent.enabled)
+  ), true);
+  assertEquals(listRegisteredAgents("market_intelligence").length, 0);
+  assertEquals(listRegisteredAgents("market_intelligence").length, 0);
 });
 
 Deno.test("specialist inventory is registered centrally but remains disabled by default", () => {
@@ -14,6 +20,8 @@ Deno.test("specialist inventory is registered centrally but remains disabled by 
     "market_intelligence_specialist", "trade_export_specialist",
     "finance_economics_specialist", "logistics_supply_chain_specialist",
   ] as const;
+  assertEquals(listRegisteredAgents().length, 17);
+  assertEquals(listRegisteredAgents("market_intelligence").length, 1);
   for (const id of specialistIds) {
     const agent = getRegisteredAgent(id);
     assertEquals(agent?.lifecycleState, "registered");
