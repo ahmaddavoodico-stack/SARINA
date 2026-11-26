@@ -13,6 +13,9 @@ type SarinaRole="admin"|"expert"|"farmer"|"organization"|"livestock_keeper";
 type SarinaCompanionProps={isAdmin?:boolean;role?:SarinaRole;onNavigate?:(destination:NavTarget)=>void};
 type VoicePayload={audio:Blob;mimeType:string};
 
+function requestsSpokenReply(text:string):boolean{
+ return /(?:پیام\s*صوتی|پیام\s*صدا(?:یی)?|به\s*صورت\s*صوتی|با\s+(?:یک\s+)?(?:پیام\s+)?صدا|با\s+صدای|صوتی.{0,24}(?:بگو|پاسخ|معرفی)|(?:بگو|معرفی\s*کن).{0,32}(?:صدا|صوت)|(?:صدا|صوت).{0,32}(?:بگو|معرفی|پاسخ)|بخون)/i.test(text);
+}
 const guideItems=[
  {title:"فیلم معرفی SARINA",description:"آشنایی کوتاه با امکانات سامانه",icon:PlayCircle,target:"learning" as NavTarget},
  {title:"راهنمای ثبت مزرعه",description:"شروع کار و ثبت اطلاعات مزرعه",icon:ClipboardList,target:"learning" as NavTarget},
@@ -57,6 +60,7 @@ export default function SarinaCompanion({isAdmin=false,role="farmer",onNavigate}
   const next=[...messagesRef.current,{id:Date.now(),role:"farmer" as const,text:normalized}].slice(-12);
   commitMessages(next);setDraft("");
   if(!isAdmin){setShowNotice(true);return;}
+  setVoiceReplyPending(requestsSpokenReply(normalized));
   await requestAdminReply(next);
  }
  async function send(e:FormEvent){e.preventDefault();await sendText(draft);}
