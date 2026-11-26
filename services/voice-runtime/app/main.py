@@ -103,13 +103,14 @@ def _configure_huggingface_cache() -> Path:
     (cache_root / "xet").mkdir(exist_ok=True)
     (cache_root / "home").mkdir(exist_ok=True)
 
-    os.environ.setdefault("XDG_CACHE_HOME", str(cache_root / "home"))
-    os.environ.setdefault("HF_HOME", str(cache_root / "home" / "huggingface"))
-    os.environ.setdefault("HF_HUB_CACHE", str(cache_root / "hub"))
-    os.environ.setdefault("HF_XET_CACHE", str(cache_root / "xet"))
-    # Xet's default log location can resolve to the read-only deployment home.
-    # The standard Hub HTTP downloader is reliable and avoids that write path.
-    os.environ.setdefault("HF_HUB_DISABLE_XET", "1")
+    # Vercel may inject cache variables that point at the read-only deployment
+    # filesystem. Override them: every Hugging Face write must stay in /tmp.
+    os.environ["XDG_CACHE_HOME"] = str(cache_root / "home")
+    os.environ["HF_HOME"] = str(cache_root / "home" / "huggingface")
+    os.environ["HF_HUB_CACHE"] = str(cache_root / "hub")
+    os.environ["HF_XET_CACHE"] = str(cache_root / "xet")
+    # Avoid Xet's separate cache/log path and keep downloads on the HTTP backend.
+    os.environ["HF_HUB_DISABLE_XET"] = "1"
     return cache_root
 
 
@@ -124,22 +125,42 @@ def _ensure_whisper_model() -> None:
             f"Local Whisper model is incomplete at {WHISPER_MODEL_PATH}; missing: {', '.join(missing)}"
         )
 
-    cache_root = _configure_huggingface_cache()
+    _configure_huggingface_cache()
     from huggingface_hub import snapshot_download
 
     try:
+        # Download directly into the function's writable model directory. This
+        # avoids maintaining a second blob/snapshot copy in the Hub cache.
+        model_dir = WHISPER_MODEL_PATH
+        model_dir.mkdir(parents=True, exist_ok=True)
+        minimum_sizes = {
+            "config.json": 512,
+            "model.bin": 50 * 1024 * 1024,
+            "tokenizer.json": 100 * 1024,
+            "vocabulary.txt": 100 * 1024,
+        }
+        for name, minimum_size in minimum_sizes.items():
+            candidate = model_dir / name
+            if candidate.exists() and candidate.stat().st_size < minimum_size:
+                candidate.unlink()
+
         downloaded_path = Path(
             snapshot_download(
                 repo_id=WHISPER_MODEL_REPO,
                 allow_patterns=["config.json", "model.bin", "tokenizer.json", "vocabulary.txt"],
-                cache_dir=str(cache_root / "hub"),
-                max_workers=4,
+                local_dir=str(model_dir),
+                max_workers=1,
             )
         )
-        missing = [name for name in required_files if not (downloaded_path / name).is_file()]
+        missing = [
+            name for name in required_files
+            if not (downloaded_path / name).is_file()
+            or (downloaded_path / name).stat().st_size < minimum_sizes[name]
+        ]
         if missing:
             raise RuntimeError(
-                f"Whisper model download is incomplete at {downloaded_path}; missing: {', '.join(missing)}"
+                f"Whisper model download is incomplete or truncated at {downloaded_path}; "
+                f"invalid files: {', '.join(missing)}"
             )
         WHISPER_MODEL_PATH = downloaded_path
     except Exception:
