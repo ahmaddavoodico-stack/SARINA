@@ -1,0 +1,69 @@
+/* Approved SARINA communication-center concept: framed, centered, spacious */
+.sarina-companion{
+ position:fixed!important;left:50%!important;right:auto!important;bottom:16px!important;transform:translateX(-50%);
+ width:max-content;max-width:calc(100vw - 24px);align-items:center!important;gap:14px!important;z-index:60!important;
+}
+.sarina-launcher-wrap{
+ min-width:0!important;width:max-content;max-width:calc(100vw - 28px);gap:12px!important;
+ padding:7px 18px 7px 10px!important;border:1px solid #cfe4c9!important;
+ background:linear-gradient(135deg,#fff 0%,#f3faef 100%)!important;
+ box-shadow:0 10px 34px #174d302b,0 0 0 4px #ffffffb8!important;
+}
+.sarina-launcher-copy{min-width:110px!important;text-align:center!important;align-items:center!important}
+.sarina-launcher-title{font-size:14px!important;color:#08713c!important;letter-spacing:.1px}
+.sarina-launcher-subtitle{font-size:10px!important}
+.sarina-launcher-avatar{width:52px!important;height:52px!important;flex-basis:52px!important}
+.sarina-launcher-chevron{color:#178343!important}
+.sarina-chat-panel{
+ width:min(1120px,calc(100vw - 48px))!important;
+ height:min(740px,calc(100svh - 112px))!important;min-height:470px!important;
+ border:1.5px solid #9acb8d!important;border-radius:30px!important;
+ box-shadow:0 26px 90px #153d2e42,0 0 0 7px #ffffffa8!important;
+ background:#fff!important;animation:sarina-center-open .24s ease-out both;
+}
+.sarina-chat-panel.farmer-mode{position:static!important}
+.sarina-chat-header{
+ min-height:82px;padding:15px 22px!important;
+ background:linear-gradient(105deg,#f3faed 0%,#fff 48%,#f5f8e9 100%)!important;
+ border-bottom:1px solid #e3eddf!important;
+}
+.sarina-chat-header>.sarina-avatar{width:54px!important;height:54px!important;flex-basis:54px!important}
+.sarina-chat-identity strong{font-size:17px!important;color:#08713c!important}
+.sarina-chat-identity span{font-size:11px!important}
+.sarina-chat-close{width:38px!important;height:38px!important;border-radius:50%!important;background:#f0f7ec!important}
+.sarina-chat-body{padding:24px!important;gap:15px!important;background:#fbfcf8!important}
+.sarina-welcome-message{padding:20px!important;border-radius:20px 20px 6px 20px!important}
+.sarina-welcome-message strong{font-size:15px!important}
+.sarina-welcome-message p{font-size:12px!important}
+.sarina-message{font-size:13px!important;padding:13px 16px!important;border-radius:17px!important}
+.sarina-message-sender{font-size:11px!important}
+.sarina-chat-compose{padding:14px 18px!important;gap:12px!important}
+.sarina-chat-compose input{height:52px!important;font-size:13px!important;border-radius:28px!important;padding:0 18px!important}
+.sarina-chat-compose button{width:48px!important;height:48px!important;border-radius:50%!important}
+.sarina-chat-foot{font-size:9px!important;padding-bottom:12px!important}
+.sarina-guide-drawer{width:290px!important;flex-basis:290px!important;padding:18px!important;background:linear-gradient(180deg,#fff 0%,#fbfdf9 100%)!important}
+.sarina-guide-drawer>header strong{font-size:14px!important}
+.sarina-guide-drawer>header span{font-size:10px!important}
+.sarina-guide-highlight{padding:18px!important;border-radius:18px!important}
+.sarina-guide-highlight b{font-size:14px!important}
+.sarina-guide-highlight p{font-size:11px!important}
+.sarina-guide-list button,.sarina-guide-contact button{padding:13px!important;border-radius:13px!important}
+.sarina-guide-list b,.sarina-guide-contact b{font-size:12px!important}
+.sarina-guide-list small,.sarina-guide-contact small{font-size:9px!important}
+@keyframes sarina-center-open{from{opacity:0;transform:translateY(12px) scale(.985)}to{opacity:1;transform:translateY(0) scale(1)}}
+@media(max-width:760px){
+ .sarina-companion{bottom:10px!important;max-width:calc(100vw - 16px)}
+ .sarina-chat-panel,.sarina-chat-panel.farmer-mode{
+  width:calc(100vw - 16px)!important;height:calc(100svh - 94px)!important;
+  max-height:calc(100svh - 94px);min-height:0!important;border-radius:23px!important;
+ }
+ .sarina-chat-header{min-height:68px;padding:10px 14px!important}
+ .sarina-chat-body{padding:14px!important}
+ .sarina-guide-drawer{width:min(290px,84vw)!important;flex-basis:min(290px,84vw)!important}
+ .sarina-launcher-wrap{padding:5px 13px 5px 7px!important}
+ .sarina-launcher-avatar{width:46px!important;height:46px!important;flex-basis:46px!important}
+}
+@media(max-width:390px){
+ .sarina-chat-panel,.sarina-chat-panel.farmer-mode{width:calc(100vw - 10px)!important;height:calc(100svh - 82px)!important}
+}
+@media(prefers-reduced-motion:reduce){.sarina-chat-panel{animation:none}}
