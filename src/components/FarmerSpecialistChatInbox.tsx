@@ -110,6 +110,16 @@ export default function FarmerSpecialistChatInbox({userId,mode,profileId,verifie
   setThreads(old=>old.map(t=>t.id===consultationId?{...t,unread:0}:t));
  },[notifications,userId]);
 
+ const markIncomingViewed=useCallback(async(items:ChatMessage[]):Promise<ChatMessage[]>=>{
+  if(!supabase)return items;
+  const ids=items.filter(item=>item.sender_user_id!==userId&&!item.first_human_viewed_at&&!item.deleted_at).map(item=>item.id);
+  if(!ids.length)return items;
+  const {data,error}=await db.rpc("mark_expert_consultation_messages_viewed",{p_message_ids:ids});
+  if(error){setNotice("ثبت اولین مشاهده پیام انجام نشد: "+error.message);return items;}
+  if(Number(data)>0){const viewedAt=new Date().toISOString();return items.map(item=>ids.includes(item.id)?{...item,first_human_viewed_at:item.first_human_viewed_at||viewedAt}:item);}
+  return items;
+ },[userId]);
+
  const loadConversation=useCallback(async(consultationId:string)=>{
   if(!supabase)return;
   setActive(consultationId);setMessages([]);setSarinaMessages([]);setCaseFacts([]);setRecommendations([]);setLoadingMessages(true);setNotice("");
@@ -196,16 +206,6 @@ export default function FarmerSpecialistChatInbox({userId,mode,profileId,verifie
   setMessages(old=>[...batch,...old.filter(item=>!batch.some((next:ChatMessage)=>next.id===item.id))]);
   setHasOlder((data||[]).length===50);
  }
-
- const markIncomingViewed=useCallback(async(items:ChatMessage[]):Promise<ChatMessage[]>=>{
-  if(!supabase)return items;
-  const ids=items.filter(item=>item.sender_user_id!==userId&&!item.first_human_viewed_at&&!item.deleted_at).map(item=>item.id);
-  if(!ids.length)return items;
-  const {data,error}=await db.rpc("mark_expert_consultation_messages_viewed",{p_message_ids:ids});
-  if(error){setNotice("ثبت اولین مشاهده پیام انجام نشد: "+error.message);return items;}
-  if(Number(data)>0){const viewedAt=new Date().toISOString();return items.map(item=>ids.includes(item.id)?{...item,first_human_viewed_at:item.first_human_viewed_at||viewedAt}:item);}
-  return items;
- },[userId]);
 
  async function deleteMessage(message:ChatMessage){
   if(!supabase||message.sender_user_id!==userId||message.first_human_viewed_at||message.deleted_at)return;
