@@ -122,3 +122,11 @@ This is a working foundation, not evidence that the full chat experience, attach
 - Chat history remains persisted when the panel closes or refreshes. No automatic 24-hour expiry is applied.
 - Migration: `20261126113000_expert_message_pre_read_deletion.sql`. A transactional syntax/application test was run against the connected database and rolled back; no schema change was retained.
 - Source changes are isolated on `feature/main-human-view-message-delete`, based directly on `main`. Build/CI and authenticated two-user race/role acceptance tests remain required before production rollout.
+
+
+## Handover authorization remediation (2026-11-26)
+
+- A live-schema drift check found that the applied INSERT policy had regressed to a tautological requester comparison, despite the repository migration containing the correct comparison.
+- Forward-only repair is prepared in `20261126130000_expert_handover_farmer_authorization.sql`: the INSERT policy binds the handover requester to the canonical request owner; the SECURITY DEFINER response RPC independently joins and locks the handover and request, checks the canonical farmer identity, and confirms the original specialist remains assigned. Substitute verification is rechecked at farmer acceptance.
+- Regression assertions are in `supabase/tests/expert_handover_farmer_authorization_regression.sql`.
+- The repair is staged in a feature branch/PR only. No production migration was applied. The connected project has no isolated database branch; creating one incurs compute cost and was not authorized. Production release remains blocked until the migration is applied through the approved release process and role-based negative tests (assigned specialist cannot impersonate farmer; actual farmer can accept/decline) pass in an isolated database.
