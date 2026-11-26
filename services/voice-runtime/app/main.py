@@ -63,7 +63,7 @@ app.add_middleware(
 _model_lock = asyncio.Lock()
 _inference_lock = asyncio.Semaphore(1)
 _whisper_model: Any | None = None
-_tiny_ava_sessions: tuple[Any, Any, dict[str, Any]] | None = None
+_tiny_ava_sessions: tuple[Any, Any, Any, dict[str, Any]] | None = None
 
 
 class SynthesisRequest(BaseModel):
@@ -320,13 +320,13 @@ def _ensure_tiny_ava_assets() -> tuple[Path, Path, Path, Path]:
     model_dir.mkdir(parents=True, exist_ok=True)
     model_path = Path(hf_hub_download(
         repo_id=TINY_AVA_REPO,
-        filename="models/parisa/tiny-ava-parisa.onnx",
+        filename="onnx/tiny-ava-parisa.onnx",
         revision="main",
         cache_dir="/tmp/sarina-hf/hub",
     ))
     meta_path = Path(hf_hub_download(
         repo_id=TINY_AVA_REPO,
-        filename="models/parisa/tiny-ava-parisa.json",
+        filename="onnx/tiny-ava-parisa.json",
         revision="main",
         cache_dir="/tmp/sarina-hf/hub",
     ))
@@ -379,7 +379,7 @@ def _tiny_ava_phonemes(repr1: str, meta: dict[str, Any]) -> tuple[list[int], lis
         raise RuntimeError("Persian female voice received an unsupported phoneme") from exc
 
 
-def _get_tiny_ava_sessions() -> tuple[Any, Any, dict[str, Any]]:
+def _get_tiny_ava_sessions() -> tuple[Any, Any, Any, dict[str, Any]]:
     global _tiny_ava_sessions
     if _tiny_ava_sessions is None:
         import json
