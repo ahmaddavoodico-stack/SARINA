@@ -48,11 +48,11 @@ A specialist result contains:
 - never averages confidence or invents consensus;
 - requires human review and never authorizes a farmer-facing response.
 
-A complete aggregate means only that all expected result envelopes were received and reconciled without detected conflict. It is not a verified agronomic conclusion or approval to act.
+A complete aggregate means only that all expected result envelopes were received and reconciled without detected conflict. Aggregation accepts results only when an SCI-controlled execution record is explicitly in the `executing` state and every work item is marked dispatch-authorized. The planner itself never sets those flags. A complete aggregate is not a verified agronomic conclusion or approval to act.
 
 ## 4. Current operating state
 
-All ten newly registered specialist agents remain `registered` and disabled. Therefore, real plans generated from the current registry are blocked. The test-only ready plan exercises aggregation behavior without enabling or dispatching any production agent.
+All ten newly registered specialist agents remain `registered` and disabled. Therefore, real plans generated from the current registry are blocked. The test-only execution fixture exercises aggregation behavior without enabling or dispatching any production agent. It represents a hypothetical SCI-authorized execution state, not a state reached in the current project.
 
 The module is not yet wired into the authenticated Edge Function request path. The existing SCI endpoint remains simulation-only, in-memory, and does not call a real specialist, model, provider, durable queue, or domain operation.
 
