@@ -1106,6 +1106,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           crop_id: string
+          crop_label: string | null
           cycle_name: string | null
           expected_harvest_date: string | null
           farm_id: string
@@ -1154,6 +1155,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           crop_id?: string
+          crop_label?: string | null
           cycle_name?: string | null
           expected_harvest_date?: string | null
           farm_id?: string
