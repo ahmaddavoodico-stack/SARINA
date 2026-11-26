@@ -52,7 +52,8 @@ export default function VoiceMessageControls({onTranscription,onVoiceMessage,tex
     if(!apiBase)throw new Error("نشانی سرویس صوتی SARINA هنوز تنظیم نشده است.");
     const token=await accessToken();
     const form=new FormData();
-    const extension=blob.type.includes("ogg")?"ogg":blob.type.includes("mp4")?"m4a":blob.type.includes("wav")?"wav":"webm";
+    const normalizedMime=blob.type.toLowerCase();
+    const extension=normalizedMime.includes("ogg")?"ogg":normalizedMime.includes("mp4")?"m4a":normalizedMime.includes("aac")?"aac":normalizedMime.includes("wav")?"wav":normalizedMime.includes("mpeg")?"mp3":"webm";
     form.append("file",blob,"sarina-voice."+extension);
     form.append("language","fa");
     const response=await fetchVoice(apiBase+"/v1/transcribe",{method:"POST",headers:{Authorization:"Bearer "+token},body:form});
@@ -71,7 +72,7 @@ export default function VoiceMessageControls({onTranscription,onVoiceMessage,tex
     try{
       const stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}});
       streamRef.current=stream;
-      const mimeType=["audio/webm;codecs=opus","audio/ogg;codecs=opus","audio/webm"].find(type=>MediaRecorder.isTypeSupported(type));
+      const mimeType=["audio/webm;codecs=opus","audio/ogg;codecs=opus","audio/mp4","audio/aac","audio/webm"].find(type=>MediaRecorder.isTypeSupported(type));
       const recorder=new MediaRecorder(stream,mimeType?{mimeType}:undefined);
       chunksRef.current=[];
       recorder.ondataavailable=event=>{if(event.data.size>0)chunksRef.current.push(event.data);};
