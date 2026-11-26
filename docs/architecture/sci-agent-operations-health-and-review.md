@@ -1,6 +1,6 @@
 # SCI Agent Operations, Health and Review Policy
 
-**Status:** Approved operating model; runtime telemetry and command-center UI are not yet implemented.
+**Status:** Approved operating model; runtime telemetry, Manus heartbeat ingestion, and the SCI command-center view are implemented in the current feature branch and await CI, merge, migration application, and Edge Function deployment.
 **Date:** 2026-11-26
 **Authority:** SARINA Central Intelligence (SCI)
 
