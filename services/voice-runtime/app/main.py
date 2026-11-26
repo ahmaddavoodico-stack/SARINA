@@ -47,9 +47,6 @@ PIPER_CLI_PATH = _resolve_piper_cli_path()
 SUPABASE_URL = os.getenv("SUPABASE_URL", os.getenv("VITE_SUPABASE_URL", "")).rstrip("/")
 SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY", os.getenv("VITE_SUPABASE_PUBLISHABLE_KEY", ""))
 CORS_ORIGINS = [item.strip() for item in os.getenv("CORS_ORIGINS", "").split(",") if item.strip()]
-TTS_ALLOWED_USER_IDS = frozenset(
-    item.strip() for item in os.getenv("SARINA_TTS_ALLOWED_USER_IDS", "").split(",") if item.strip()
-)
 
 app = FastAPI(title="SARINA Self-hosted Voice Runtime", version=APP_VERSION)
 app.add_middleware(
@@ -74,11 +71,6 @@ class SynthesisRequest(BaseModel):
 def _require_configuration() -> None:
     if not SUPABASE_URL or not SUPABASE_ANON_KEY:
         raise HTTPException(status_code=503, detail="Voice authentication is not configured")
-
-
-def _is_tts_allowed(user: dict[str, Any]) -> bool:
-    """Fail closed unless the authenticated user is explicitly allowlisted."""
-    return bool(TTS_ALLOWED_USER_IDS) and user.get("id") in TTS_ALLOWED_USER_IDS
 
 
 async def require_authenticated_user(authorization: str | None = Header(default=None)) -> dict[str, Any]:
@@ -579,8 +571,6 @@ async def synthesize(
     payload: SynthesisRequest,
     user: dict[str, Any] = Depends(require_authenticated_user),
 ) -> FileResponse:
-    if not _is_tts_allowed(user):
-        raise HTTPException(status_code=403, detail="Spoken replies are not enabled for this account")
     language = payload.language.strip().lower().replace("_", "-")
     if language in {"fa", "fa-ir"}:
         voice_model = Path("tiny-ava-parisa")
