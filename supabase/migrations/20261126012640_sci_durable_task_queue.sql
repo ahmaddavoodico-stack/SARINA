@@ -180,7 +180,7 @@ begin
   if v_owner_id is null or v_farm_id is null or v_correlation_id is null
      or v_domain is null or v_agent_id is null
      or v_kind not in ('parent', 'specialist_proposal')
-     or v_status not in ('queued', 'waiting_for_human')
+     or v_status not in ('validated', 'waiting_for_human')
      or v_agent_state not in ('registered', 'simulated', 'enabled', 'paused', 'deprecated')
      or v_idempotency is null or char_length(v_idempotency) < 8 or char_length(v_idempotency) > 200
      or coalesce(p_task ->> 'deadline_at', '') = ''
@@ -309,7 +309,7 @@ begin
   end if;
   select * into v_task from sci_internal.sci_tasks where task_id = p_task_id for update;
   if not found then raise exception 'Task not found' using errcode = 'P0002'; end if;
-  if v_task.status <> 'waiting_for_human' or v_task.dispatch_authorized then
+  if v_task.status not in ('validated', 'waiting_for_human') or v_task.dispatch_authorized then
     raise exception 'Task is not awaiting dispatch authorization' using errcode = '42501';
   end if;
   if v_task.agent_lifecycle_state <> 'enabled' then
@@ -331,7 +331,7 @@ begin
   insert into sci_internal.sci_task_events(
     task_id, event_type, from_status, to_status, actor_kind, actor_id, reason_code, metadata
   ) values (
-    p_task_id, 'dispatch_authorized', 'waiting_for_human', 'queued', 'sci',
+    p_task_id, 'dispatch_authorized', v_task.status, 'queued', 'sci',
     null, 'SCI_POLICY_APPROVED',
     jsonb_build_object('policy_decision_ref', p_policy_decision_ref, 'human_approval_ref', p_human_approval_ref)
   );
@@ -583,7 +583,7 @@ declare
   v_recovered integer := 0;
   v_timed_out integer := 0;
 begin
-  if coalesce(auth.jwt() ->> 'role', '') <> 'service_role' then
+  if coalesce(auth.jwt() ->> 'role', '') <> 'service_role' and current_user <> 'postgres' then
     raise exception 'Service role required' using errcode = '42501';
   end if;
   if p_limit < 1 or p_limit > 200 then
@@ -593,12 +593,12 @@ begin
   for v_task in
     select * from sci_internal.sci_tasks
     where (status = 'running' and lease_expires_at <= now())
-       or (status = 'queued' and deadline_at <= now())
+       or (status in ('validated', 'waiting_for_human', 'queued') and deadline_at <= now())
     order by coalesce(lease_expires_at, deadline_at)
     for update skip locked
     limit p_limit
   loop
-    if v_task.status = 'queued' or v_task.deadline_at <= now() then
+    if v_task.status <> 'running' or v_task.deadline_at <= now() then
       v_new_status := 'timed_out';
       update sci_internal.sci_tasks
       set status = v_new_status, lease_owner = null, lease_token = null,
@@ -770,3 +770,20 @@ grant execute on function public.sci_fail_task(uuid, uuid, text, boolean) to ser
 grant execute on function public.sci_recover_expired_tasks(integer) to service_role;
 grant execute on function public.sci_cancel_task(uuid, uuid) to service_role;
 grant execute on function public.sci_get_task_tree(uuid, uuid) to service_role;
+
+
+-- Recovery runs independently of worker availability. It only requeues expired
+-- leases or marks overdue work terminal; it never executes a specialist.
+do $$
+begin
+  if not exists (
+    select 1 from cron.job where jobname = 'sarina-sci-task-recovery'
+  ) then
+    perform cron.schedule(
+      'sarina-sci-task-recovery',
+      '* * * * *',
+      'select public.sci_recover_expired_tasks(50);'
+    );
+  end if;
+end;
+$$;
