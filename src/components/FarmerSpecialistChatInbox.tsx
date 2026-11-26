@@ -218,7 +218,7 @@ export default function FarmerSpecialistChatInbox({userId,mode,profileId,verifie
     if(discardRecordingRef.current){discardRecordingRef.current=false;return;}
     if(blob.size===0){setNotice("صدایی ضبط نشد؛ دوباره تلاش کنید.");return;}
     const extension=blob.type.includes("ogg")?"ogg":blob.type.includes("mp4")?"m4a":"webm";
-    const file=new File([blob],"voice-note."+extension,{type:blob.type||"audio/webm"});
+    const safeMime=(blob.type.split(";")[0]||"audio/webm").toLowerCase();const normalizedBlob=new Blob([blob],{type:safeMime});const file=new File([normalizedBlob],"voice-note."+extension,{type:safeMime});
     await uploadAndSend(file,"audio");
    };
    recorderRef.current=recorder;recorder.start(250);setRecording(true);setNotice("در حال ضبط پیام صوتی…");
