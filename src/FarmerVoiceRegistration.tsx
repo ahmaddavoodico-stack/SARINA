@@ -1,7 +1,7 @@
 import {useEffect,useMemo,useRef,useState} from "react";
 import type {FormEvent} from "react";
 import type {Session} from "@supabase/supabase-js";
-import {Check,ChevronLeft,Mic,Save,SkipForward} from "lucide-react";
+import {Check,Mic,Save,SkipForward} from "lucide-react";
 import {supabase} from "./lib/supabase";
 import FarmMap,{type FarmLocationCapture,type FarmPoint} from "./FarmMap";
 import VoiceMessageControls from "./components/VoiceMessageControls";
@@ -16,7 +16,7 @@ const roles=[{value:"main_crop",label:"محصول اصلی"},{value:"intercrop",
 const irrigation=[{value:"flood",label:"غرقابی"},{value:"furrow",label:"جوی و پشته"},{value:"drip",label:"قطره‌ای"},{value:"sprinkler",label:"بارانی"},{value:"manual",label:"دستی"},{value:"mixed",label:"ترکیبی"}];
 const sources=[{value:"canal",label:"کانال یا نهر"},{value:"river",label:"رودخانه"},{value:"well",label:"چاه"},{value:"pond",label:"استخر ذخیره آب"},{value:"rainwater",label:"آب باران"},{value:"network",label:"شبکه آبرسانی"},{value:"other",label:"سایر"}];
 const initialDraft:RegistrationDraft={name:"",cropId:"",cropName:"",role:"main_crop",variety:"",age:"",yieldAmount:"",irrigation:"",waterSource:""};
-const questions:Record<Step,string>={
+const questions:Partial<Record<Step,string>>={
  name:"سلام، من سارینا هستم. با هم قدم‌به‌قدم پرونده مزرعه‌ات رو می‌سازیم. اول بگو اسم مزرعه‌ات چیه؟",
  map:"حالا محدوده زمین رو روی نقشه مشخص کن. می‌تونی موقعیت GPS رو بگیری یا گوشه‌های زمین رو لمس کنی. بعد از سه نقطه یا بیشتر، محدوده رو تأیید کن.",
  crop:"چه درخت یا محصولی در این مزرعه داری؟ اسمش رو بگو یا از فهرست انتخاب کن.",
@@ -38,7 +38,7 @@ export default function FarmerVoiceRegistration({session,onClose}:{session:Sessi
  const areaM2=useMemo(()=>points.length>=3?polygonAreaM2(points):0,[points]);
  const areaHa=areaM2/10000;
  function appendLine(line:ChatLine){setLines(current=>{const next=[...current,line].slice(-24);linesRef.current=next;return next;});}
- function ask(next:Step,message?:string){setStep(next);setError("");setAnswer("");appendLine({id:Date.now()+Math.random(),role:"sarina",text:message||questions[next]});}
+ function ask(next:Step,message?:string){setStep(next);setError("");setAnswer("");appendLine({id:Date.now()+Math.random(),role:"sarina",text:message||questions[next]||""});}
  useEffect(()=>{let active=true;(async()=>{if(!supabase){setError("اتصال پایگاه داده در دسترس نیست.");setLoading(false);return;}const{data,error}=await supabase.from("crop_catalog").select("id,common_name,local_names").eq("is_active",true).order("common_name");if(!active)return;if(error)setError("فهرست محصولات دریافت نشد؛ اتصال را بررسی کن.");else setCropOptions((data??[]) as CropOption[]);setLoading(false);})();return()=>{active=false;};},[]);
  useEffect(()=>()=>{for(const line of linesRef.current)if(line.audioUrl)URL.revokeObjectURL(line.audioUrl);},[]);
  function matchCrop(text:string){const value=text.trim().toLocaleLowerCase();return cropOptions.find(c=>{const names=[c.common_name,...Object.values((c.local_names||{}) as Record<string,string>)];return names.some(n=>n.toLocaleLowerCase()===value||value.includes(n.toLocaleLowerCase()));});}
@@ -82,6 +82,7 @@ export default function FarmerVoiceRegistration({session,onClose}:{session:Sessi
   <div style={{maxHeight:260,overflowY:"auto",display:"grid",gap:8,padding:"8px 0"}}>{lines.map(line=><div key={line.id} style={{justifySelf:line.role==="sarina"?"start":"end",maxWidth:"92%",padding:"10px 12px",borderRadius:14,background:line.role==="sarina"?"#eaf4e8":"#fff",border:"1px solid #dfe9dd",fontSize:14,lineHeight:1.8}}>{line.text}{line.audioUrl&&<audio controls preload="none" src={line.audioUrl} style={{display:"block",maxWidth:"100%",marginTop:8}}/>}</div>)}</div>
   {step==="map"&&<><FarmMap onBoundaryChange={(next,nextCapture)=>{setPoints(next);setCapture(nextCapture);setBoundaryConfirmed(false);}}/><p style={{fontSize:13}}>مساحت محاسبه‌شده: {points.length>=3?areaHa.toLocaleString("fa-IR",{maximumFractionDigits:4})+" هکتار":"پس از ثبت سه نقطه نمایش داده می‌شود"}</p><button type="button" disabled={points.length<3||selfIntersects(points)} onClick={()=>{setBoundaryConfirmed(true);ask("crop","محدوده ثبت شد. حالا چه درخت یا محصولی در مزرعه داری؟")}}><Check size={15}/> تأیید محدوده و ادامه</button></>}
   {step==="crop"&&<label style={{display:"block",margin:"8px 0"}}>نوع درخت یا محصول<select value={draft.cropId} disabled={loading} onChange={e=>{const c=cropOptions.find(x=>x.id===e.target.value);setDraft(d=>({...d,cropId:e.target.value,cropName:c?((c.local_names as any)?.fa||c.common_name):""}));}} style={{width:"100%",padding:10,borderRadius:10,marginTop:6}}><option value="">انتخاب محصول</option>{cropOptions.map(c=><option key={c.id} value={c.id}>{(c.local_names as any)?.fa||c.common_name}</option>)}</select>{loading&&<small>در حال دریافت فهرست محصولات…</small>}</label>}
+  {step==="crop"&&<button type="button" disabled={!draft.cropId||loading} onClick={()=>ask("role")}>ادامه با این محصول ←</button>}
   {currentOptions.length>0&&<div style={{display:"flex",flexWrap:"wrap",gap:7,margin:"8px 0"}}>{currentOptions.map(o=><button type="button" key={o.value} onClick={()=>submitAnswer(o.label)}>{o.label}</button>)}</div>}
   {["name","variety","age","yield"].includes(step)&&<form onSubmit={(e:FormEvent)=>{e.preventDefault();submitAnswer(answer);}} style={{display:"flex",gap:8,margin:"8px 0"}}><input value={answer} onChange={e=>setAnswer(e.target.value)} placeholder={step==="name"?"نام مزرعه":step==="age"?"سن تقریبی به سال":step==="yield"?"کیلوگرم برای هر درخت در سال":"رقم یا گونه"} style={{flex:1,minWidth:0,padding:10,borderRadius:10}}/><button type="submit" disabled={!answer.trim()}>ارسال</button></form>}
   {step==="review"&&<div style={{background:"#fff",borderRadius:12,padding:12,lineHeight:1.9,fontSize:13}}><strong>خلاصه پرونده</strong><div>نام مزرعه: {draft.name}</div><div>مساحت: {areaHa.toLocaleString("fa-IR",{maximumFractionDigits:4})} هکتار</div><div>محصول: {draft.cropName}</div><div>نقش کشت: {roles.find(x=>x.value===draft.role)?.label}</div><div>رقم: {draft.variety||"بعداً تکمیل می‌شود"}</div><div>سن: {draft.age?draft.age+" سال":"نامشخص"}</div><div>باردهی: {draft.yieldAmount?draft.yieldAmount+" کیلوگرم برای هر درخت در سال":"نامشخص"}</div><div>آبیاری: {irrigation.find(x=>x.value===draft.irrigation)?.label||"ثبت نشده"}</div><div>منبع آب: {sources.find(x=>x.value===draft.waterSource)?.label||"ثبت نشده"}</div><button type="button" disabled={saving} onClick={()=>void saveFarm()} style={{marginTop:10}}><Save size={15}/>{saving?"در حال ذخیره…":"تأیید و ذخیره پرونده"}</button></div>}
