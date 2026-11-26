@@ -5,6 +5,7 @@ import {supabase} from "./lib/supabase";
 import SarinaCharacter from "./components/SarinaCharacter";
 import PwaInstall from "./PwaInstall";
 import VoiceMessageControls from "./components/VoiceMessageControls";
+import "./components/sarina-communication-center.css";
 
 type ChatMessage={id:number;role:"farmer"|"sarina";text:string;audioUrl?:string};
 type NavTarget="learning"|"experts"|"expert-chat";
@@ -18,7 +19,7 @@ const guideItems=[
 ];
 
 export default function SarinaCompanion({isAdmin=false,onNavigate}:SarinaCompanionProps){
- const[open,setOpen]=useState(()=>{try{return !isAdmin&&!localStorage.getItem("sarina-guide-dismissed");}catch{return false;}});
+ const[open,setOpen]=useState(false);
  const[drawerOpen,setDrawerOpen]=useState(true);
  const[draft,setDraft]=useState("");
  const[messages,setMessages]=useState<ChatMessage[]>([]);
@@ -31,7 +32,7 @@ export default function SarinaCompanion({isAdmin=false,onNavigate}:SarinaCompani
 
  function commitMessages(next:ChatMessage[]){messagesRef.current=next;setMessages(next);}
  useEffect(()=>()=>{for(const message of messagesRef.current){if(message.audioUrl)URL.revokeObjectURL(message.audioUrl);}},[]);
- function closePanel(){setOpen(false);if(!isAdmin){try{localStorage.setItem("sarina-guide-dismissed","1");}catch{}}}
+ function closePanel(){setOpen(false);}
  function go(target:NavTarget){closePanel();onNavigate?.(target);}
 
  async function requestAdminReply(nextMessages:ChatMessage[]){
@@ -115,7 +116,7 @@ export default function SarinaCompanion({isAdmin=false,onNavigate}:SarinaCompani
    </div>
   </section>}
   <div className="sarina-launcher-wrap">
-   <button type="button" className="sarina-launcher-copy" onClick={()=>setOpen(value=>!value)} aria-expanded={open}><span className="sarina-launcher-title">{open?"گفت‌وگو باز است":"من اینجام، چه خبر؟"}</span><span className="sarina-launcher-subtitle">{isAdmin?"دستیار مدیر":"راهنمایی و ارتباط با SARINA"}</span></button>
+   <button type="button" className="sarina-launcher-copy" onClick={()=>setOpen(value=>!value)} aria-expanded={open}><span className="sarina-launcher-title">{open?"SARINA Chat":"SARINA Chat"}</span><span className="sarina-launcher-subtitle">{isAdmin?"دستیار مدیر":"ارتباط و راهنمایی"}</span></button>
    <button type="button" className={"sarina-launcher-avatar"+(open?" is-open":"")} onClick={()=>setOpen(value=>!value)} aria-label={open?"بستن مرکز ارتباط":"بازکردن مرکز ارتباط SARINA"} aria-expanded={open}><SarinaCharacter className="sarina-avatar" large/><span className="sarina-online-dot"/></button>
    <span className="sarina-launcher-chevron">{open?<ChevronDown size={15}/>:<MessageCircle size={15}/>}</span>
   </div>
