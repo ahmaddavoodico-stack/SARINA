@@ -321,7 +321,7 @@ def _ensure_tiny_ava_assets() -> tuple[Path, Path, Path, Path]:
     model_path = Path(hf_hub_download(
         repo_id=TINY_AVA_REPO,
         filename="onnx/tiny-ava-parisa.onnx",
-        revision="main",
+        revision="d25914e",
         cache_dir="/tmp/sarina-hf/hub",
     ))
     meta_path = Path(hf_hub_download(
