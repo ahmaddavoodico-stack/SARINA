@@ -19,6 +19,7 @@ on:
       - "supabase/functions/sarina-task-control/**"
       - "supabase/functions/_shared/**"
       - "supabase/functions/farm-historical-climate-context/**"
+      - "supabase/functions/farm-spatial-context/**"
       - "supabase/migrations/**"
       - "supabase/tests/**"
       - ".github/workflows/sci-durable-task-checks.yml"
@@ -41,13 +42,15 @@ jobs:
         run: |
           deno test \
             supabase/functions/sarina-central-intelligence/_shared/*_test.ts \
-            supabase/functions/_shared/*_test.ts
+            supabase/functions/_shared/*_test.ts \
+            supabase/functions/farm-spatial-context/_shared/terrain_test.ts
       - name: Type-check SCI Edge Functions
         run: |
           deno check \
             supabase/functions/sarina-central-intelligence/index.ts \
             supabase/functions/sarina-task-control/index.ts \
             supabase/functions/sarina-agent-operations/index.ts \
-            supabase/functions/farm-historical-climate-context/index.ts
+            supabase/functions/farm-historical-climate-context/index.ts \
+            supabase/functions/farm-spatial-context/index.ts
           deno check --config supabase/functions/sarina-manus-mcp/deno.json \
             supabase/functions/sarina-manus-mcp/index.ts
