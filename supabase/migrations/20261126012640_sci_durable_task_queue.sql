@@ -300,6 +300,7 @@ as $function$
 declare
   v_task sci_internal.sci_tasks%rowtype;
   v_msg_id bigint;
+  v_previous_status text;
 begin
   if coalesce(auth.jwt() ->> 'role', '') <> 'service_role' then
     raise exception 'Service role required' using errcode = '42501';
@@ -318,6 +319,7 @@ begin
   if v_task.human_review_required and p_human_approval_ref is null then
     raise exception 'Human approval reference required' using errcode = '42501';
   end if;
+  v_previous_status := v_task.status;
 
   update sci_internal.sci_tasks
   set status = 'queued', dispatch_authorized = true,
@@ -331,7 +333,7 @@ begin
   insert into sci_internal.sci_task_events(
     task_id, event_type, from_status, to_status, actor_kind, actor_id, reason_code, metadata
   ) values (
-    p_task_id, 'dispatch_authorized', v_task.status, 'queued', 'sci',
+    p_task_id, 'dispatch_authorized', v_previous_status, 'queued', 'sci',
     null, 'SCI_POLICY_APPROVED',
     jsonb_build_object('policy_decision_ref', p_policy_decision_ref, 'human_approval_ref', p_human_approval_ref)
   );
