@@ -299,23 +299,36 @@ mcp.tool(
       }
       // A successful report submission is itself a verified MCP interaction.
       // It creates/refreshes a responding runtime record but never claims capacity.
-      const { error: runtimeError } = await supabase.from("sci_agent_runtime").upsert({
-        agent_instance_id: MANUS_INSTANCE_ID,
-        adapter_id: "manus",
-        specialist_role: "market_intelligence_specialist",
-        lifecycle_state: "enabled",
-        dispatch_enabled: false,
-        last_heartbeat_at: now,
-        last_capability_check_at: now,
-        capability_check_ok: true,
-        capabilities: [...MANUS_CAPABILITIES],
-        active_task_count: 0,
-        capacity: null,
-        last_success_at: now,
-        runtime_metadata: { gateway_version: SERVER_VERSION, signal_source: "authenticated_report_submission" },
-        updated_at: now,
-      }, { onConflict: "agent_instance_id" });
-      if (runtimeError) throw runtimeError;
+      const { data: existingRuntime, error: runtimeReadError } = await supabase
+        .from("sci_agent_runtime")
+        .select("agent_instance_id")
+        .eq("agent_instance_id", MANUS_INSTANCE_ID)
+        .maybeSingle();
+      if (runtimeReadError) throw runtimeReadError;
+      if (existingRuntime) {
+        const { error: runtimeUpdateError } = await supabase.from("sci_agent_runtime").update({
+          last_heartbeat_at: now,
+          last_success_at: now,
+          updated_at: now,
+        }).eq("agent_instance_id", MANUS_INSTANCE_ID);
+        if (runtimeUpdateError) throw runtimeUpdateError;
+      } else {
+        const { error: runtimeInsertError } = await supabase.from("sci_agent_runtime").insert({
+          agent_instance_id: MANUS_INSTANCE_ID,
+          adapter_id: "manus",
+          specialist_role: "market_intelligence_specialist",
+          lifecycle_state: "enabled",
+          dispatch_enabled: false,
+          last_heartbeat_at: now,
+          last_success_at: now,
+          capabilities: ["save_market_research_draft"],
+          active_task_count: 0,
+          capacity: null,
+          runtime_metadata: { gateway_version: SERVER_VERSION, signal_source: "authenticated_report_submission" },
+          updated_at: now,
+        });
+        if (runtimeInsertError) throw runtimeInsertError;
+      }
       const { error: eventError } = await supabase.from("sci_agent_health_events").insert({
         agent_instance_id: MANUS_INSTANCE_ID,
         event_type: "task_succeeded",
