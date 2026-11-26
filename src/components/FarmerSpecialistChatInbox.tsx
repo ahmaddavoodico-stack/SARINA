@@ -1,11 +1,11 @@
 import {useCallback,useEffect,useMemo,useRef,useState} from "react";
 import type {ReactNode} from "react";
-import {ArrowDown,ArrowRight,CheckCheck,FileText,LoaderCircle,MessageCircle,Mic,Paperclip,RefreshCw,Search,Send,Square} from "lucide-react";
+import {ArrowDown,ArrowRight,CheckCheck,FileText,LoaderCircle,MessageCircle,Mic,Paperclip,RefreshCw,Search,Send,Square,Trash2,X} from "lucide-react";
 import {supabase} from "../lib/supabase";
 
 type Props={userId:string;mode:"farmer"|"expert";profileId?:string;verified?:boolean;compact?:boolean;afterComposer?:ReactNode};
 type Thread={id:string;requestId:string;subject:string;status:string;createdAt:string;consultationStatus:string;otherParty:string;assignmentStatus:string;unread:number};
-type ChatMessage={id:string;sender_user_id:string;message_text:string|null;content_parts:any;created_at:string};
+type ChatMessage={id:string;sender_user_id:string;message_text:string|null;content_parts:any;created_at:string;first_human_viewed_at:string|null;deleted_at:string|null};
 type SarinaMessage={id:string;message_text:string;status:string;created_at:string};
 type CaseFact={id:string;fact_text:string;fact_kind:string;created_at:string};
 type ExpertRecommendation={id:string;title:string;instructions:string;priority:string;starts_on:string;due_on:string|null;status:string;approved_at:string;created_at:string;farmer_note:string|null};
@@ -44,6 +44,8 @@ export default function FarmerSpecialistChatInbox({userId,mode,profileId,verifie
  const fileInputRef=useRef<HTMLInputElement|null>(null);
  const mediaRecorderRef=useRef<MediaRecorder|null>(null);
  const mediaStreamRef=useRef<MediaStream|null>(null);
+ const recordingChunksRef=useRef<BlobPart[]>([]);
+ const discardRecordingRef=useRef(false);
 
  const refresh=useCallback(async()=>{
   if(!supabase||!userId)return;
@@ -82,6 +84,7 @@ export default function FarmerSpecialistChatInbox({userId,mode,profileId,verifie
  },[userId,mode,profileId,verified]);
 
  useEffect(()=>{void refresh();},[refresh]);
+ useEffect(()=>()=>{discardRecordingRef.current=true;mediaRecorderRef.current?.stop();mediaStreamRef.current?.getTracks().forEach(track=>track.stop());},[]);
  useEffect(()=>{
   const client=supabase;
   if(!client)return;
@@ -110,10 +113,11 @@ export default function FarmerSpecialistChatInbox({userId,mode,profileId,verifie
  const loadConversation=useCallback(async(consultationId:string)=>{
   if(!supabase)return;
   setActive(consultationId);setMessages([]);setSarinaMessages([]);setCaseFacts([]);setRecommendations([]);setLoadingMessages(true);setNotice("");
-  const {data,error}=await db.from("expert_consultation_messages").select("id,sender_user_id,message_text,content_parts,created_at").eq("consultation_id",consultationId).order("created_at",{ascending:false}).limit(50);
+  const {data,error}=await db.from("expert_consultation_messages").select("id,sender_user_id,message_text,content_parts,created_at,first_human_viewed_at,deleted_at").eq("consultation_id",consultationId).order("created_at",{ascending:false}).limit(50);
   setLoadingMessages(false);
   if(error){setNotice("دریافت پیام‌ها مجاز نبود یا با خطا روبه‌رو شد: "+error.message);return;}
-  const chronological=(data||[]).reverse();
+  let chronological:ChatMessage[]=(data||[]).reverse();
+  chronological=await markIncomingViewed(chronological);
   setMessages(chronological);setHasOlder((data||[]).length===50);
   const parts=chronological.flatMap((message:ChatMessage)=>Array.isArray(message.content_parts)?message.content_parts:[]);
   const signed=await Promise.all(parts.filter((part:any)=>part?.storage_bucket&&part?.storage_path).map(async(part:any)=>{
@@ -129,7 +133,7 @@ export default function FarmerSpecialistChatInbox({userId,mode,profileId,verifie
   const recommendationResult=await db.from("expert_recommendation_actions").select("id,title,instructions,priority,starts_on,due_on,status,approved_at,created_at,farmer_note").eq("request_id",requestId).order("approved_at",{ascending:false}).limit(50);
   if(!recommendationResult.error)setRecommendations(recommendationResult.data||[]);
   await markConversationRead(consultationId);
- },[markConversationRead,threads]);
+ },[markConversationRead,markIncomingViewed,threads]);
 
  useEffect(()=>{if(compact&&mode==="farmer"&&!active&&threads.length>0){void loadConversation(threads[0].id);}},[compact,mode,active,threads,loadConversation]);
 
@@ -141,16 +145,15 @@ export default function FarmerSpecialistChatInbox({userId,mode,profileId,verifie
     const incoming=payload.new as SarinaMessage;
     setSarinaMessages(old=>old.some(item=>item.id===incoming.id)?old:[...old,incoming]);
    })
-   .on("postgres_changes",{event:"INSERT",schema:"public",table:"expert_consultation_messages",filter:"consultation_id=eq."+active},payload=>{
-    const incoming=payload.new as ChatMessage;
-    setMessages(old=>old.some(item=>item.id===incoming.id)?old:[...old,incoming]);
-    if(incoming.sender_user_id!==userId){void markConversationRead(active);void refresh();}
+   .on("postgres_changes",{event:"*",schema:"public",table:"expert_consultation_messages",filter:"consultation_id=eq."+active},payload=>{
+    if(payload.eventType==="INSERT"){const incoming=payload.new as ChatMessage;void (async()=>{const [viewed]=await markIncomingViewed([incoming]);setMessages(old=>old.some(item=>item.id===viewed.id)?old.map(item=>item.id===viewed.id?{...item,...viewed}:item):[...old,viewed]);if(incoming.sender_user_id!==userId){void markConversationRead(active);void refresh();}})();}
+    else if(payload.eventType==="UPDATE"){const updated=payload.new as ChatMessage;setMessages(old=>old.map(item=>item.id===updated.id?{...item,...updated}:item));}
    })
    .on("postgres_changes",{event:"*",schema:"public",table:"expert_recommendation_actions",filter:"request_id=eq."+(activeThread?.requestId||"")},()=>{
     if(activeThread?.requestId)void db.from("expert_recommendation_actions").select("id,title,instructions,priority,starts_on,due_on,status,approved_at,created_at,farmer_note").eq("request_id",activeThread.requestId).order("approved_at",{ascending:false}).limit(50).then(({data,error}:any)=>{if(!error)setRecommendations(data||[]);});
    }).subscribe();
   return()=>{void client.removeChannel(channel);};
- },[active,activeThread?.requestId,userId,markConversationRead,refresh]);
+ },[active,activeThread?.requestId,userId,markConversationRead,markIncomingViewed,refresh]);
 
  async function saveCaseFact(message:ChatMessage){
   if(!active||!activeThread||mode!=="expert"||activeThread.assignmentStatus!=="accepted"||!verified||!message.message_text||savingFactId)return;
@@ -185,12 +188,36 @@ export default function FarmerSpecialistChatInbox({userId,mode,profileId,verifie
   if(!active||!messages.length||loadingOlder)return;
   setLoadingOlder(true);
   const oldest=messages[0].created_at;
-  const {data,error}=await db.from("expert_consultation_messages").select("id,sender_user_id,message_text,content_parts,created_at").eq("consultation_id",active).lt("created_at",oldest).order("created_at",{ascending:false}).limit(50);
+  const {data,error}=await db.from("expert_consultation_messages").select("id,sender_user_id,message_text,content_parts,created_at,first_human_viewed_at,deleted_at").eq("consultation_id",active).lt("created_at",oldest).order("created_at",{ascending:false}).limit(50);
   setLoadingOlder(false);
   if(error){setNotice("بارگذاری پیام‌های قدیمی‌تر انجام نشد: "+error.message);return;}
-  const batch:ChatMessage[]=(data||[]).reverse() as ChatMessage[];
+  let batch:ChatMessage[]=(data||[]).reverse() as ChatMessage[];
+  batch=await markIncomingViewed(batch);
   setMessages(old=>[...batch,...old.filter(item=>!batch.some((next:ChatMessage)=>next.id===item.id))]);
   setHasOlder((data||[]).length===50);
+ }
+
+ const markIncomingViewed=useCallback(async(items:ChatMessage[]):Promise<ChatMessage[]>=>{
+  if(!supabase)return items;
+  const ids=items.filter(item=>item.sender_user_id!==userId&&!item.first_human_viewed_at&&!item.deleted_at).map(item=>item.id);
+  if(!ids.length)return items;
+  const {data,error}=await db.rpc("mark_expert_consultation_messages_viewed",{p_message_ids:ids});
+  if(error){setNotice("ثبت اولین مشاهده پیام انجام نشد: "+error.message);return items;}
+  if(Number(data)>0){const viewedAt=new Date().toISOString();return items.map(item=>ids.includes(item.id)?{...item,first_human_viewed_at:item.first_human_viewed_at||viewedAt}:item);}
+  return items;
+ },[userId]);
+
+ async function deleteMessage(message:ChatMessage){
+  if(!supabase||message.sender_user_id!==userId||message.first_human_viewed_at||message.deleted_at)return;
+  const {data,error}=await db.rpc("delete_expert_consultation_message",{p_message_id:message.id});
+  if(error){setNotice("حذف پیام انجام نشد: "+error.message);return;}
+  if(!data?.deleted){if(data?.reason==="already_viewed")setMessages(old=>old.map(item=>item.id===message.id?{...item,first_human_viewed_at:item.first_human_viewed_at||new Date().toISOString()}:item));setNotice(data?.reason==="already_viewed"?"مخاطب پیش از درخواست حذف، پیام را مشاهده کرده است؛ امکان حذف وجود ندارد.":"این پیام دیگر قابل حذف نیست.");return;}
+  let cleanupFailed=false;
+  for(const part of (Array.isArray(data.content_parts)?data.content_parts:[])){if(part?.storage_bucket&&part?.storage_path){const removed=await db.storage.from(part.storage_bucket).remove([part.storage_path]);if(removed.error)cleanupFailed=true;}}
+  const deletedAt=new Date().toISOString();
+  setMessages(old=>old.map(item=>item.id===message.id?{...item,message_text:null,content_parts:[],deleted_at:deletedAt}:item));
+  setAttachmentUrls(old=>{const next={...old};for(const part of (Array.isArray(data.content_parts)?data.content_parts:[]))if(part?.storage_path)delete next[part.storage_path];return next;});
+  setNotice(cleanupFailed?"پیام از دسترس خارج شد، اما پاک‌سازی فایل پیوست کامل نشد و نیازمند پاک‌سازی مجدد است.":"پیام و محتوای آن حذف شد.");
  }
 
  async function runSarinaReply(){
@@ -244,18 +271,20 @@ export default function FarmerSpecialistChatInbox({userId,mode,profileId,verifie
    const candidates=["audio/webm","audio/ogg","audio/mp4"];
    const mimeType=candidates.find(type=>MediaRecorder.isTypeSupported(type));
    const recorder=new MediaRecorder(stream,mimeType?{mimeType}:undefined);
-   const chunks:BlobPart[]=[];
-   recorder.ondataavailable=event=>{if(event.data.size>0)chunks.push(event.data);};
+   recordingChunksRef.current=[];discardRecordingRef.current=false;
+   recorder.ondataavailable=event=>{if(event.data.size>0)recordingChunksRef.current.push(event.data);};
    recorder.onerror=()=>setNotice("ضبط صدا با خطا روبه‌رو شد.");
    recorder.onstop=()=>{
-    const blob=new Blob(chunks,{type:recorder.mimeType||"audio/webm"});
+    const blob=new Blob(recordingChunksRef.current,{type:recorder.mimeType||"audio/webm"});recordingChunksRef.current=[];
     stream.getTracks().forEach(track=>track.stop());mediaStreamRef.current=null;mediaRecorderRef.current=null;setRecording(false);
+    if(discardRecordingRef.current){discardRecordingRef.current=false;return;}
     if(blob.size>0)void uploadAndSend(blob,"audio");
    };
    mediaRecorderRef.current=recorder;recorder.start();setRecording(true);setNotice("در حال ضبط پیام صوتی؛ برای پایان، دکمه توقف را بزنید.");
   }catch(error){setNotice(error instanceof Error?error.message:"اجازه دسترسی به میکروفن داده نشد.");}
  }
  function stopVoiceRecording(){mediaRecorderRef.current?.stop();}
+ function cancelVoiceRecording(){discardRecordingRef.current=true;recordingChunksRef.current=[];if(mediaRecorderRef.current?.state==="recording")mediaRecorderRef.current.stop();else{mediaStreamRef.current?.getTracks().forEach(track=>track.stop());mediaStreamRef.current=null;setRecording(false);}setNotice("ضبط لغو شد و هیچ پیامی ارسال نشد.");}
 
  if(mode==="farmer"&&compact){
   const rendered=[...messages.map(message=>({...message,kind:"human" as const,sortAt:message.created_at})),...sarinaMessages.map(message=>({...message,kind:"sarina" as const,sortAt:message.created_at}))].sort((a,b)=>new Date(a.sortAt).getTime()-new Date(b.sortAt).getTime());
@@ -270,7 +299,8 @@ export default function FarmerSpecialistChatInbox({userId,mode,profileId,verifie
       {loadingMessages?<div className="chat-empty"><LoaderCircle className="spin"/>در حال دریافت پیام‌ها...</div>:rendered.length===0?<div className="chat-empty"><MessageCircle size={22}/><b>هنوز پیامی در این پرونده نیست</b><p>پیام خود را در کادر پایین بنویسید.</p></div>:rendered.map(message=>{
        if(message.kind==="sarina")return <article key={"sarina-"+message.id} className="chat-message chat-message-sarina"><b>سارینا <span>همراه هوشمند</span></b><p>{message.message_text}</p><small>{stamp(message.created_at)}{message.status==="unavailable"?" · پاسخ هوشمند در دسترس نیست":""}</small></article>;
        const parts=Array.isArray(message.content_parts)?message.content_parts:[];
-       return <article key={message.id} className={"chat-message"+(message.sender_user_id===userId?" mine":"")}><b>{message.sender_user_id===userId?"شما": "متخصص پرونده"}</b>{message.message_text&&<p>{message.message_text}</p>}{parts.map((part:any,index:number)=><div className="chat-attachment" key={message.id+"-"+index}>{part.type==="image"&&attachmentUrls[part.storage_path]?<a href={attachmentUrls[part.storage_path]} target="_blank" rel="noreferrer"><img src={attachmentUrls[part.storage_path]} alt={part.file_name||"تصویر پیوست"} /></a>:part.type==="audio"&&attachmentUrls[part.storage_path]?<audio controls preload="none" src={attachmentUrls[part.storage_path]}/>:<a href={attachmentUrls[part.storage_path]||"#"} target="_blank" rel="noreferrer"><FileText size={17}/>{part.file_name||"فایل پیوست"}</a>}</div>)}<small>{stamp(message.created_at)}</small></article>;
+       const deletable=message.sender_user_id===userId&&!message.first_human_viewed_at&&!message.deleted_at;
+       return <article key={message.id} className={"chat-message"+(message.sender_user_id===userId?" mine":"")}><b>{message.sender_user_id===userId?"شما": "متخصص پرونده"}</b>{message.deleted_at?<p className="chat-message-deleted">این پیام حذف شده است.</p>:<>{message.message_text&&<p>{message.message_text}</p>}{parts.map((part:any,index:number)=><div className="chat-attachment" key={message.id+"-"+index}>{part.type==="image"&&attachmentUrls[part.storage_path]?<a href={attachmentUrls[part.storage_path]} target="_blank" rel="noreferrer"><img src={attachmentUrls[part.storage_path]} alt={part.file_name||"تصویر پیوست"} /></a>:part.type==="audio"&&attachmentUrls[part.storage_path]?<audio controls preload="none" src={attachmentUrls[part.storage_path]}/>:<a href={attachmentUrls[part.storage_path]||"#"} target="_blank" rel="noreferrer"><FileText size={17}/>{part.file_name||"فایل پیوست"}</a>}</div>)}</>}<small>{stamp(message.created_at)}{message.first_human_viewed_at&&message.sender_user_id===userId?" · مشاهده‌شده":""}</small>{deletable&&<button type="button" className="chat-message-delete" onClick={()=>void deleteMessage(message)}><Trash2 size={13}/> حذف پیام</button>}</article>;
       })}
       {askingSarina&&<article className="chat-message chat-message-sarina"><b>سارینا</b><p>در حال بررسی پیام‌ها…</p></article>}
      </div>
@@ -281,7 +311,7 @@ export default function FarmerSpecialistChatInbox({userId,mode,profileId,verifie
       <div className="chat-compose-tools">
        <button type="button" title="افزودن تصویر یا PDF" aria-label="افزودن تصویر یا PDF" disabled={!currentThread||uploading} onClick={()=>fileInputRef.current?.click()}><Paperclip size={17}/></button>
        <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp,application/pdf" hidden onChange={e=>{const file=e.target.files?.[0];if(file)void uploadAndSend(file,file.type==="application/pdf"?"document":"image");e.currentTarget.value="";}}/>
-       {recording?<button type="button" className="recording" onClick={stopVoiceRecording} title="پایان ضبط"><Square size={15}/></button>:<button type="button" title="ضبط پیام صوتی" aria-label="ضبط پیام صوتی" disabled={!currentThread||uploading} onClick={()=>void startVoiceRecording()}><Mic size={17}/></button>}
+       {recording?<><button type="button" className="recording" onClick={stopVoiceRecording} title="پایان ضبط و ارسال"><Square size={15}/></button><button type="button" onClick={cancelVoiceRecording} title="لغو ضبط"><X size={15}/></button></>:<button type="button" title="ضبط پیام صوتی" aria-label="ضبط پیام صوتی" disabled={!currentThread||uploading} onClick={()=>void startVoiceRecording()}><Mic size={17}/></button>}
        <small>{recording?"در حال ضبط":uploading?"در حال بارگذاری…":"تصویر، PDF یا پیام صوتی"}</small>
       </div>
       <button type="submit" disabled={!currentThread||sending||uploading||!draft.trim()}><Send size={16}/>{sending?"در حال ارسال…":"ارسال"}</button>
@@ -316,10 +346,10 @@ export default function FarmerSpecialistChatInbox({userId,mode,profileId,verifie
      <div className="chat-message-history">
       {caseFacts.length>0&&<section className="chat-case-facts"><b>اطلاعات تأییدشدهٔ پرونده</b>{caseFacts.map(fact=><article key={fact.id}><span>{fact.fact_kind==="specialist_finding"?"یافته متخصص":fact.fact_kind==="decision"?"تصمیم تأییدشده":fact.fact_kind==="follow_up"?"پیگیری":"گزارش کشاورز"}</span><p>{fact.fact_text}</p><small>{stamp(fact.created_at)}</small></article>)}</section>}{mode==="farmer"&&recommendations.length>0&&<section className="chat-case-facts chat-approved-recommendations"><b>توصیه‌های تأییدشده متخصص</b>{recommendations.map(item=><article key={item.id}><span>اولویت {recommendationPriority(item.priority)} · {recommendationStatus(item.status)}</span><strong>{item.title}</strong><p>{item.instructions}</p><small>شروع اجرا: {dayStamp(item.starts_on)}{item.due_on?" · مهلت: "+dayStamp(item.due_on):""} · تأیید: {stamp(item.approved_at)}</small>{item.farmer_note&&<small>یادداشت کشاورز: {item.farmer_note}</small>}</article>)}</section>}
       {hasOlder&&<button className="chat-load-older" onClick={()=>void loadOlder()} disabled={loadingOlder}>{loadingOlder?<LoaderCircle size={14}/>:<ArrowDown size={14}/>} پیام‌های قدیمی‌تر</button>}
-      {loadingMessages?<div className="chat-empty"><LoaderCircle className="spin"/>در حال دریافت پیام‌ها...</div>:messages.length===0&&sarinaMessages.length===0?<div className="chat-empty"><MessageCircle size={24}/><b>هنوز پیامی ارسال نشده است</b><p>می‌توانید گفت‌وگو را با یک پیام کوتاه آغاز کنید.</p></div>:<>{[...messages.map(message=>({...message,kind:"human" as const,sortAt:message.created_at})),...sarinaMessages.map(message=>({...message,kind:"sarina" as const,sortAt:message.created_at}))].sort((a,b)=>new Date(a.sortAt).getTime()-new Date(b.sortAt).getTime()).map(message=>message.kind==="sarina"?<article key={"sarina-"+message.id} className="chat-message chat-message-sarina"><b>سارینا <span>همراه هوشمند</span></b><p>{message.message_text}</p><small>{stamp(message.created_at)}{message.status==="unavailable"?" · اتصال هوش مصنوعی فعال نیست":" · پاسخ هوشمند؛ نیازمند تأیید متخصص برای تصمیم تخصصی"}</small></article>:<article key={message.id} className={"chat-message"+(message.sender_user_id===userId?" mine":"")}><b>{message.sender_user_id===userId?(mode==="farmer"?"شما · کشاورز":"شما · متخصص"):mode==="farmer"?activeThread.otherParty+" · متخصص":"کشاورز"}</b>{message.message_text&&<p>{message.message_text}</p>}{(Array.isArray(message.content_parts)?message.content_parts:[]).map((part:any,index:number)=><div className="chat-attachment" key={message.id+"-part-"+index}>{part.type==="audio"&&attachmentUrls[part.storage_path]?<audio controls preload="metadata" src={attachmentUrls[part.storage_path]} aria-label={"پیام صوتی از "+(message.sender_user_id===userId?(mode==="farmer"?"شما":"شما، متخصص"):mode==="farmer"?activeThread.otherParty+"، متخصص":"کشاورز")}/>:part.type==="image"&&attachmentUrls[part.storage_path]?<a href={attachmentUrls[part.storage_path]} target="_blank" rel="noreferrer"><img src={attachmentUrls[part.storage_path]} alt={part.file_name||"تصویر پیوست"}/></a>:<a href={attachmentUrls[part.storage_path]||"#"} target="_blank" rel="noreferrer"><FileText size={17}/>{part.file_name||"فایل پیوست"}</a>}</div>)}<small>{stamp(message.created_at)}</small>{mode==="expert"&&activeThread.assignmentStatus==="accepted"&&message.message_text&&<button type="button" className="chat-fact-save" disabled={savingFactId===message.id} onClick={()=>void saveCaseFact(message)}>{savingFactId===message.id?"در حال ثبت...":"ثبت پیام به‌عنوان اطلاعات پرونده"}</button>}</article>)}{askingSarina&&<article className="chat-message chat-message-sarina"><b>سارینا</b><p>در حال بررسی پیام‌های گفت‌وگو…</p></article>}</>}
+      {loadingMessages?<div className="chat-empty"><LoaderCircle className="spin"/>در حال دریافت پیام‌ها...</div>:messages.length===0&&sarinaMessages.length===0?<div className="chat-empty"><MessageCircle size={24}/><b>هنوز پیامی ارسال نشده است</b><p>می‌توانید گفت‌وگو را با یک پیام کوتاه آغاز کنید.</p></div>:<>{[...messages.map(message=>({...message,kind:"human" as const,sortAt:message.created_at})),...sarinaMessages.map(message=>({...message,kind:"sarina" as const,sortAt:message.created_at}))].sort((a,b)=>new Date(a.sortAt).getTime()-new Date(b.sortAt).getTime()).map(message=>message.kind==="sarina"?<article key={"sarina-"+message.id} className="chat-message chat-message-sarina"><b>سارینا <span>همراه هوشمند</span></b><p>{message.message_text}</p><small>{stamp(message.created_at)}{message.status==="unavailable"?" · اتصال هوش مصنوعی فعال نیست":" · پاسخ هوشمند؛ نیازمند تأیید متخصص برای تصمیم تخصصی"}</small></article>:<article key={message.id} className={"chat-message"+(message.sender_user_id===userId?" mine":"")}><b>{message.sender_user_id===userId?(mode==="farmer"?"شما · کشاورز":"شما · متخصص"):mode==="farmer"?activeThread.otherParty+" · متخصص":"کشاورز"}</b>{message.deleted_at?<p className="chat-message-deleted">این پیام حذف شده است.</p>:<>{message.message_text&&<p>{message.message_text}</p>}{(Array.isArray(message.content_parts)?message.content_parts:[]).map((part:any,index:number)=><div className="chat-attachment" key={message.id+"-part-"+index}>{part.type==="audio"&&attachmentUrls[part.storage_path]?<audio controls preload="metadata" src={attachmentUrls[part.storage_path]} aria-label={"پیام صوتی از "+(message.sender_user_id===userId?(mode==="farmer"?"شما":"شما، متخصص"):mode==="farmer"?activeThread.otherParty+"، متخصص":"کشاورز")}/>:part.type==="image"&&attachmentUrls[part.storage_path]?<a href={attachmentUrls[part.storage_path]} target="_blank" rel="noreferrer"><img src={attachmentUrls[part.storage_path]} alt={part.file_name||"تصویر پیوست"}/></a>:<a href={attachmentUrls[part.storage_path]||"#"} target="_blank" rel="noreferrer"><FileText size={17}/>{part.file_name||"فایل پیوست"}</a>}</div>)}</>}<small>{stamp(message.created_at)}{message.first_human_viewed_at&&message.sender_user_id===userId?" · مشاهده‌شده":""}</small>{message.sender_user_id===userId&&!message.first_human_viewed_at&&!message.deleted_at&&<button type="button" className="chat-message-delete" onClick={()=>void deleteMessage(message)}><Trash2 size={13}/> حذف پیام</button>}{mode==="expert"&&activeThread.assignmentStatus==="accepted"&&message.message_text&&!message.deleted_at&&<button type="button" className="chat-fact-save" disabled={savingFactId===message.id} onClick={()=>void saveCaseFact(message)}>{savingFactId===message.id?"در حال ثبت...":"ثبت پیام به‌عنوان اطلاعات پرونده"}</button>}</article>)}{askingSarina&&<article className="chat-message chat-message-sarina"><b>سارینا</b><p>در حال بررسی پیام‌های گفت‌وگو…</p></article>}</>}
      </div>
      {mode==="expert"&&activeThread.assignmentStatus==="accepted"&&<form className="chat-plan-create" onSubmit={createImprovementPlan}><b>ثبت برنامه اجرایی تأییدشده</b><input value={planTitle} onChange={e=>setPlanTitle(e.target.value)} placeholder="عنوان برنامه مزرعه" maxLength={160}/><textarea value={planDescription} onChange={e=>setPlanDescription(e.target.value)} placeholder="اقدام‌ها و زمان‌بندی تأییدشده توسط متخصص را بنویسید..." rows={2} maxLength={5000}/><button type="submit" disabled={creatingPlan||!planTitle.trim()||!planDescription.trim()}>{creatingPlan?"در حال ثبت...":"افزودن به برنامه بهبود مزرعه"}</button><small>فقط برنامه‌ای که متخصص مسئول تأیید کرده باشد در این بخش ثبت می‌شود.</small></form>}
-     <form className="chat-compose" onSubmit={sendMessage}><textarea value={draft} onChange={e=>setDraft(e.target.value)} maxLength={6000} rows={2} placeholder="پیام خود را بنویسید..." disabled={sending}/><div><small>{draft.length.toLocaleString("fa-IR")}/۶۰۰۰ · ارسال متن</small><button type="submit" disabled={sending||!draft.trim()||draft.trim().length>6000}><Send size={16}/>{sending?"در حال ارسال...":"ارسال پیام"}</button></div></form>
+     <form className="chat-compose" onSubmit={sendMessage}><textarea value={draft} onChange={e=>setDraft(e.target.value)} maxLength={6000} rows={2} placeholder="پیام خود را بنویسید..." disabled={sending||recording||uploading}/><div><small>{draft.length.toLocaleString("fa-IR")}/۶۰۰۰ · ارسال متن</small><button type="submit" disabled={sending||recording||uploading||!draft.trim()||draft.trim().length>6000}><Send size={16}/>{sending?"در حال ارسال...":"ارسال پیام"}</button></div><div className="chat-compose-tools"><button type="button" disabled={uploading||recording} onClick={()=>fileInputRef.current?.click()}><Paperclip size={15}/> پیوست</button>{recording?<><button type="button" onClick={stopVoiceRecording}><Square size={14}/> پایان و ارسال</button><button type="button" onClick={cancelVoiceRecording}><X size={14}/> لغو ضبط</button></>:<button type="button" disabled={uploading} onClick={()=>void startVoiceRecording()}><Mic size={15}/> ضبط صوت</button>}</div></form>
     </>}
    </div>
   </div>
