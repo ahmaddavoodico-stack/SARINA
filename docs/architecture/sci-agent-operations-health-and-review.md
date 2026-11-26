@@ -60,7 +60,7 @@ Every runtime status must carry its evidence and timestamp:
 
 Heartbeat freshness is adapter-specific and configurable. A long-running research job must report progress/heartbeat independently of task completion. If an adapter cannot provide heartbeats, SCI may show `responding` or `unknown`, but must not claim `ready`.
 
-The Manus MCP gateway should record successful authenticated tool activity. A dedicated status/heartbeat tool is a future integration step; it must not be simulated by a dashboard constant or by merely observing that the Edge Function is ACTIVE.
+The Manus MCP gateway now exposes an authenticated heartbeat tool and records successful authenticated tool activity. A connection check proves the MCP gateway and database draft store respond; a Manus heartbeat can report active-task count and capacity. If capacity is absent, SCI shows responding/unknown, never ready. The report-save fallback also records a minimal responding signal without inventing capacity.
 
 ## 5. Human attention policy: exception-based, not universal review
 
