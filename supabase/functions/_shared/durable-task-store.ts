@@ -24,7 +24,7 @@ export type DurableTaskCreateInput = {
   domain: string;
   agent_id: string;
   agent_lifecycle_state: "registered" | "simulated" | "enabled" | "paused" | "deprecated";
-  initial_status: "queued" | "waiting_for_human";
+  initial_status: "validated" | "waiting_for_human";
   priority: "low" | "normal" | "high" | "urgent";
   risk: "low" | "medium" | "high" | "critical";
   modalities: string[];
