@@ -67,7 +67,8 @@ export default function FarmEnvironmentalAssessment({ farmId, farmName }: Props)
   const [loadingHistory, setLoadingHistory] = useState(true);
   const [land, setLand] = useState<LandContext | null>(null);
   const [weather, setWeather] = useState<WeatherContext | null>(null);
-  const [climate, setClimate] = useState<ClimateContext | null>(null);\n  const [spatial, setSpatial] = useState<SpatialContext | null>(null);
+  const [climate, setClimate] = useState<ClimateContext | null>(null);
+  const [spatial, setSpatial] = useState<SpatialContext | null>(null);
   const [snapshots, setSnapshots] = useState<Snapshot[]>([]);
   const [error, setError] = useState("");
 
@@ -91,7 +92,8 @@ export default function FarmEnvironmentalAssessment({ farmId, farmName }: Props)
     if (latest?.evidence_payload?.land && latest.evidence_payload.weather) {
       setLand(latest.evidence_payload.land);
       setWeather(latest.evidence_payload.weather);
-      setClimate(latest.evidence_payload.climate ?? null);\n      setSpatial(latest.evidence_payload.spatial ?? null);
+      setClimate(latest.evidence_payload.climate ?? null);
+      setSpatial(latest.evidence_payload.spatial ?? null);
     }
     setLoadingHistory(false);
   }
@@ -108,7 +110,8 @@ export default function FarmEnvironmentalAssessment({ farmId, farmName }: Props)
       const [landResult, weatherResult, climateResult, spatialResult] = await Promise.all([
         supabase.functions.invoke("farm-land-context", { body: { farm_id: farmId } }),
         supabase.functions.invoke("farm-weather-context", { body: { farm_id: farmId } }),
-        supabase.functions.invoke("farm-historical-climate-context", { body: { farm_id: farmId } }),\n        supabase.functions.invoke("farm-spatial-context", { body: { farm_id: farmId } }),
+        supabase.functions.invoke("farm-historical-climate-context", { body: { farm_id: farmId } }),
+        supabase.functions.invoke("farm-spatial-context", { body: { farm_id: farmId } }),
       ]);
       if (landResult.error) throw new Error("دریافت پرونده خاک و آب انجام نشد: " + landResult.error.message);
       if (weatherResult.error) throw new Error("دریافت اطلاعات جوی انجام نشد: " + weatherResult.error.message);
@@ -124,7 +127,10 @@ export default function FarmEnvironmentalAssessment({ farmId, farmName }: Props)
       const climatePayload = !climateResult.error && climateResult.data?.ok === true && climateResult.data?.farm_id === farmId
         ? climateResult.data.climate as ClimateContext
         : { status: "request_failed", source: "Open-Meteo Historical Weather API (ERA5-Land)", data_kind: "reanalysis_model_estimate", limitation: "دریافت اقلیم تاریخی انجام نشد؛ داده‌ای جایگزین یا حدس زده نشده است." } as ClimateContext;
-      const spatialPayload = !spatialResult.error && spatialResult.data?.ok === true && spatialResult.data?.farm_id === farmId\n        ? spatialResult.data as SpatialContext\n        : { terrain: { status: "request_failed" }, satellite: { status: "request_failed" }, missing_domains: ["ارتفاع و شیب منطقه", "پردازش NDVI و شاخص‌های پوشش گیاهی"] } as SpatialContext;\n      const soilCount = landPayload.context.data_quality?.soil_test_count ?? landPayload.context.soil_tests?.length ?? 0;
+      const spatialPayload = !spatialResult.error && spatialResult.data?.ok === true && spatialResult.data?.farm_id === farmId
+        ? spatialResult.data as SpatialContext
+        : { terrain: { status: "request_failed" }, satellite: { status: "request_failed" }, missing_domains: ["ارتفاع و شیب منطقه", "پردازش NDVI و شاخص‌های پوشش گیاهی"] } as SpatialContext;
+      const soilCount = landPayload.context.data_quality?.soil_test_count ?? landPayload.context.soil_tests?.length ?? 0;
       const waterCount = landPayload.context.data_quality?.water_test_count ?? landPayload.context.water_tests?.length ?? 0;
       const soilGridStatus = landPayload.context.regional_context?.soilgrids?.status ?? "not_available";
       const missingDomains = [
@@ -132,7 +138,8 @@ export default function FarmEnvironmentalAssessment({ farmId, farmName }: Props)
         ...(waterCount === 0 ? ["آزمایش کیفیت آب"] : []),
         ...(soilGridStatus !== "available" ? ["برآورد منطقه‌ای خاک"] : []),
         ...(climatePayload.status !== "available" ? ["اقلیم بلندمدت و میانگین‌های چندساله"] : []),
-        ...(spatialPayload.terrain?.status !== "available" ? ["ارتفاع و شیب منطقه"] : []),\n        ...(spatialPayload.satellite?.status !== "available" ? ["پردازش NDVI و شاخص‌های پوشش گیاهی"] : []),
+        ...(spatialPayload.terrain?.status !== "available" ? ["ارتفاع و شیب منطقه"] : []),
+        ...(spatialPayload.satellite?.status !== "available" ? ["پردازش NDVI و شاخص‌های پوشش گیاهی"] : []),
       ];
       const sourceManifest = [
         {
@@ -195,7 +202,9 @@ export default function FarmEnvironmentalAssessment({ farmId, farmName }: Props)
           water_test_count: waterCount,
           soilgrids_status: soilGridStatus,
           weather_source: weatherPayload.source ?? "provider_not_reported",
-          historical_climate_status: climatePayload.status ?? "not_available",\n          terrain_status: spatialPayload.terrain?.status ?? "not_available",\n          satellite_vegetation_status: spatialPayload.satellite?.status ?? "not_available",
+          historical_climate_status: climatePayload.status ?? "not_available",
+          terrain_status: spatialPayload.terrain?.status ?? "not_available",
+          satellite_vegetation_status: spatialPayload.satellite?.status ?? "not_available",
           evidence_classes: ["farm_measurement", "regional_model_estimate", "weather_model", "digital_surface_model_estimate", "satellite_derived_vegetation_index"],
           missing_values_policy: "unknown_values_remain_null",
         } as unknown as Json,
