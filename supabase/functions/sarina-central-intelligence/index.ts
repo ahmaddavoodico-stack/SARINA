@@ -5,6 +5,7 @@ import { routeTask, getRegisteredAgent } from "./_shared/task-orchestrator.ts";
 import {
   planSpecialistCollaboration,
   type SpecialistDomain,
+  type CollaborationPlan,
 } from "./_shared/specialist-collaboration.ts";
 import { createDurableTaskStore } from "../_shared/durable-task-store.ts";
 
@@ -131,14 +132,15 @@ Deno.serve(async (req: Request) => {
     ? "validated" as const
     : "waiting_for_human" as const;
 
-  let parentTask;
+  let parentTask: { task_id: string; status: string; duplicate: boolean };
+  const correlationId = crypto.randomUUID();
   try {
     parentTask = await taskStore.createTask({
       task_id: requestId,
       task_kind: "parent",
       owner_auth_user_id: authData.user.id,
       farm_id: farmId,
-      correlation_id: crypto.randomUUID(),
+      correlation_id: correlationId,
       channel: "chat",
       intent: route.reasonCode.toLowerCase(),
       domain: route.domain,
@@ -177,7 +179,7 @@ Deno.serve(async (req: Request) => {
   const requestedDomains = [...new Set(
     route.candidates.map((candidate) => agentDomainById[candidate]).filter(Boolean),
   )] as SpecialistDomain[];
-  let collaboration = null;
+  let collaboration: CollaborationPlan | null = null;
   let childProposalCount = 0;
 
   if (requestedDomains.length > 0) {
@@ -210,7 +212,7 @@ Deno.serve(async (req: Request) => {
           task_kind: "specialist_proposal",
           owner_auth_user_id: authData.user.id,
           farm_id: farmId,
-          correlation_id: requestId,
+          correlation_id: correlationId,
           channel: "internal",
           intent: "specialist_proposal:" + item.domain,
           domain: item.domain,
@@ -249,7 +251,7 @@ Deno.serve(async (req: Request) => {
 
   return reply(202, {
     ok: true,
-    request_id: requestId,
+    request_id: parentTask.task_id,
     task_id: parentTask.task_id,
     status: parentTask.status,
     execution_mode: "durable_pending_authorization",
