@@ -189,19 +189,23 @@ begin
      or jsonb_typeof(coalesce(p_task -> 'context_refs', '[]'::jsonb)) <> 'array'
      or jsonb_typeof(coalesce(p_task -> 'payload_refs', '[]'::jsonb)) <> 'array'
      or jsonb_typeof(coalesce(p_task -> 'modalities', '[]'::jsonb)) <> 'array'
-     or jsonb_array_length(coalesce(p_task -> 'modalities', '[]'::jsonb)) = 0
-     or exists (
-       select 1 from jsonb_array_elements_text(coalesce(p_task -> 'modalities', '[]'::jsonb)) modality
-       where modality not in ('text', 'image', 'document', 'audio', 'other')
-     )
-     or exists (
-       select 1 from jsonb_array_elements(coalesce(p_task -> 'context_refs', '[]'::jsonb)) ref
-       where jsonb_typeof(ref) <> 'string'
-     )
-     or exists (
-       select 1 from jsonb_array_elements(coalesce(p_task -> 'payload_refs', '[]'::jsonb)) ref
-       where jsonb_typeof(ref) <> 'string'
-     ) then
+     or case when jsonb_typeof(coalesce(p_task -> 'modalities', '[]'::jsonb)) = 'array'
+       then jsonb_array_length(coalesce(p_task -> 'modalities', '[]'::jsonb)) = 0 else true end
+     or case when jsonb_typeof(coalesce(p_task -> 'modalities', '[]'::jsonb)) = 'array'
+       then exists (
+         select 1 from jsonb_array_elements_text(coalesce(p_task -> 'modalities', '[]'::jsonb)) modality
+         where modality not in ('text', 'image', 'document', 'audio', 'other')
+       ) else true end
+     or case when jsonb_typeof(coalesce(p_task -> 'context_refs', '[]'::jsonb)) = 'array'
+       then exists (
+         select 1 from jsonb_array_elements(coalesce(p_task -> 'context_refs', '[]'::jsonb)) ref
+         where jsonb_typeof(ref) <> 'string'
+       ) else true end
+     or case when jsonb_typeof(coalesce(p_task -> 'payload_refs', '[]'::jsonb)) = 'array'
+       then exists (
+         select 1 from jsonb_array_elements(coalesce(p_task -> 'payload_refs', '[]'::jsonb)) ref
+         where jsonb_typeof(ref) <> 'string'
+       ) else true end then
     raise exception 'Invalid task envelope' using errcode = '22023';
   end if;
 
