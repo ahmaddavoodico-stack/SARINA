@@ -18,7 +18,7 @@ const guideItems=[
 ];
 
 export default function SarinaCompanion({isAdmin=false,onNavigate}:SarinaCompanionProps){
- const[open,setOpen]=useState(()=>{try{return !isAdmin&&!localStorage.getItem("sarina-guide-dismissed");}catch{return false;}});
+ const[open,setOpen]=useState(false);
  const[drawerOpen,setDrawerOpen]=useState(true);
  const[draft,setDraft]=useState("");
  const[messages,setMessages]=useState<ChatMessage[]>([]);
@@ -31,7 +31,7 @@ export default function SarinaCompanion({isAdmin=false,onNavigate}:SarinaCompani
 
  function commitMessages(next:ChatMessage[]){messagesRef.current=next;setMessages(next);}
  useEffect(()=>()=>{for(const message of messagesRef.current){if(message.audioUrl)URL.revokeObjectURL(message.audioUrl);}},[]);
- function closePanel(){setOpen(false);if(!isAdmin){try{localStorage.setItem("sarina-guide-dismissed","1");}catch{}}}
+ function closePanel(){setOpen(false);}
  function go(target:NavTarget){closePanel();onNavigate?.(target);}
 
  async function requestAdminReply(nextMessages:ChatMessage[]){
