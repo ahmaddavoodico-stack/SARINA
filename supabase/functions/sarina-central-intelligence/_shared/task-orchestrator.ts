@@ -288,6 +288,13 @@ export function getRegisteredAgent(agentId: AgentId): AgentDefinition | undefine
   return REGISTRY_BY_ID.get(agentId);
 }
 
+/** Returns registry entries for SCI inspection; registered-only agents are included by default. */
+export function listRegisteredAgents(domain?: TaskDomain): readonly AgentDefinition[] {
+  return domain
+    ? AGENT_REGISTRY.filter((agent) => agent.domain === domain)
+    : AGENT_REGISTRY;
+}
+
 export function routeTask(input: {
   text?: string;
   modalities?: readonly TaskModality[];
