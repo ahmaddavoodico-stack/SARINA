@@ -1582,3 +1582,14 @@
 .farm-optional-documents>summary:after{content:"＋";margin-inline-start:auto;color:var(--text-muted)}
 .farm-optional-documents[open]>summary:after{content:"−"}
 @media(max-width:640px){.farm-crop-registration{padding:14px}.farm-crop-row{padding:12px}.farm-crop-row .farm-form-grid{grid-template-columns:1fr}.farm-crop-row-heading{align-items:flex-start}}
+
+
+/* Farm infrastructure registration: ponds, irrigation methods and equipment. */
+.farm-infrastructure-registration{margin:24px 0;padding:20px;border:1px solid var(--border);border-radius:18px;background:linear-gradient(145deg,rgba(239,247,239,.82),rgba(255,255,255,.98))}
+.farm-infrastructure-registration>.section-title{margin:16px 0 12px}
+.farm-equipment-list{margin-top:14px;display:grid;gap:10px}
+.farm-equipment-options{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.farm-equipment-options label{display:flex;align-items:center;gap:8px;min-width:0;padding:9px 10px;border:1px solid var(--border);border-radius:10px;background:#fff;font-size:13px;cursor:pointer}
+.farm-equipment-options input{width:17px;height:17px;flex:0 0 auto;accent-color:var(--primary)}
+@media(max-width:760px){.farm-infrastructure-registration{padding:14px}.farm-equipment-options{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:420px){.farm-equipment-options{grid-template-columns:1fr}}
