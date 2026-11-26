@@ -1118,6 +1118,11 @@ export type Database = {
           status: string
           updated_at: string
           variety_id: string | null
+          variety_label: string | null
+          tree_age_years: number | null
+          yield_quantity: number | null
+          yield_unit: string | null
+          yield_period: string | null
         }
         Insert: {
           actual_harvest_date?: string | null
@@ -1137,6 +1142,11 @@ export type Database = {
           status?: string
           updated_at?: string
           variety_id?: string | null
+          variety_label?: string | null
+          tree_age_years?: number | null
+          yield_quantity?: number | null
+          yield_unit?: string | null
+          yield_period?: string | null
         }
         Update: {
           actual_harvest_date?: string | null
