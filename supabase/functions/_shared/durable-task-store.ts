@@ -91,6 +91,13 @@ export function createDurableTaskStore(client: RpcClient) {
         p_lease_seconds: input.leaseSeconds ?? 60,
       });
     },
+    heartbeatTask(input: { taskId: string; leaseToken: string; leaseSeconds?: number }) {
+      return call<Record<string, unknown>>("heartbeat_task", "sci_heartbeat_task", {
+        p_task_id: input.taskId,
+        p_lease_token: input.leaseToken,
+        p_lease_seconds: input.leaseSeconds ?? 60,
+      });
+    },
     completeTask(input: { taskId: string; leaseToken: string; result: Record<string, unknown> }) {
       return call<Record<string, unknown>>("complete_task", "sci_complete_task", {
         p_task_id: input.taskId,
