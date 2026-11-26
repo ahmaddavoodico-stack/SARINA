@@ -30,8 +30,15 @@ begin
   if not has_function_privilege('service_role', 'public.sci_create_task(jsonb)', 'EXECUTE') then
     raise exception 'service_role cannot execute task creation RPC';
   end if;
-  if not exists (select 1 from pgmq.list_queues() where queue_name = 'sarina_sci_tasks') then
-    raise exception 'Durable PGMQ queue missing';
+  if has_table_privilege('service_role', 'sci_internal.sci_task_events', 'UPDATE')
+     or has_table_privilege('service_role', 'sci_internal.sci_task_events', 'DELETE') then
+    raise exception 'Task event history is not append-only';
+  end if;
+  if not exists (
+    select 1 from pgmq.list_queues()
+    where queue_name = 'sarina_sci_tasks' and is_unlogged = false
+  ) then
+    raise exception 'Logged durable PGMQ queue missing';
   end if;
   if not exists (select 1 from cron.job where jobname = 'sarina-sci-task-recovery') then
     raise exception 'SCI recovery cron job missing';
