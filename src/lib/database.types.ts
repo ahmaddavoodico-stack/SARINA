@@ -14,6 +14,62 @@ export type Database = {
   }
   public: {
     Tables: {
+      farm_environmental_assessments: {
+        Row: {
+          assessment_schema_version: string
+          assessment_status: string
+          assessed_at: string
+          created_at: string
+          created_by_auth_user_id: string | null
+          evidence_payload: Json
+          farm_id: string
+          id: string
+          missing_domains: Json
+          quality_summary: Json
+          source_manifest: Json
+          valid_until: string | null
+          version: number
+        }
+        Insert: {
+          assessment_schema_version?: string
+          assessment_status?: string
+          assessed_at?: string
+          created_at?: string
+          created_by_auth_user_id?: string | null
+          evidence_payload?: Json
+          farm_id: string
+          id?: string
+          missing_domains?: Json
+          quality_summary?: Json
+          source_manifest?: Json
+          valid_until?: string | null
+          version?: number
+        }
+        Update: {
+          assessment_schema_version?: string
+          assessment_status?: string
+          assessed_at?: string
+          created_at?: string
+          created_by_auth_user_id?: string | null
+          evidence_payload?: Json
+          farm_id?: string
+          id?: string
+          missing_domains?: Json
+          quality_summary?: Json
+          source_manifest?: Json
+          valid_until?: string | null
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "farm_environmental_assessments_farm_id_fkey"
+            columns: ["farm_id"]
+            isOneToOne: false
+            referencedRelation: "farms"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       ai_analysis_runs: {
         Row: {
           analysis_type: string
