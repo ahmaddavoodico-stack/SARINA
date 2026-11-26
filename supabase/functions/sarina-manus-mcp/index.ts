@@ -245,10 +245,22 @@ mcp.tool(
       findings: z.array(z.string().min(1).max(1500)).max(30),
       sources: z.array(sourceSchema).max(30),
       recommendations: z.array(z.string().min(1).max(1500)).max(20),
+      external_task_id: z.string().min(3).max(160).optional(),
     }),
     handler: async (args) => {
     try {
       const supabase = getAdminClient();
+      let externalMissionId: string | null = null;
+      if (args.external_task_id) {
+        const { data: mission, error: missionError } = await supabase
+          .from("sci_external_missions")
+          .select("id")
+          .eq("external_task_id", args.external_task_id)
+          .maybeSingle();
+        if (missionError) throw missionError;
+        if (!mission) throw new Error("EXTERNAL_MISSION_NOT_REGISTERED");
+        externalMissionId = mission.id;
+      }
       const { data, error } = await supabase
         .from("sarina_manus_market_research_drafts")
         .insert({
@@ -260,11 +272,34 @@ mcp.tool(
           recommendations: args.recommendations,
           status: "pending_review",
           submitted_by: "manus",
+          external_mission_id: externalMissionId,
         })
-        .select("id,title,status,created_at")
+        .select("id,title,status,created_at,external_mission_id")
         .single();
 
       if (error) throw error;
+      if (externalMissionId) {
+        await supabase.from("sci_external_missions").update({
+          draft_id: data.id,
+          status: "owner_review",
+          report_received_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        }).eq("id", externalMissionId);
+      }
+      const now = new Date().toISOString();
+      await supabase.from("sci_agent_runtime").update({
+        last_success_at: now,
+        updated_at: now,
+      }).eq("agent_instance_id", MANUS_INSTANCE_ID);
+      await supabase.from("sci_agent_health_events").insert({
+        agent_instance_id: MANUS_INSTANCE_ID,
+        event_type: "task_succeeded",
+        health: "healthy",
+        runtime_state: "responding",
+        reason_code: "MARKET_RESEARCH_DRAFT_SAVED",
+        evidence: { draft_id: data.id, mission_linked: Boolean(externalMissionId) },
+        occurred_at: now,
+      });
       return {
         content: [{
           type: "text",
