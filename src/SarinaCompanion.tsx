@@ -2,6 +2,8 @@ import {useEffect,useRef,useState} from "react";
 import type {FormEvent} from "react";
 import {ArrowUp,ChevronDown,ChevronLeft,CircleHelp,ClipboardList,Leaf,MessageCircle,PlayCircle,Sparkles,UserRound,X,PanelRightClose,PanelRightOpen} from "lucide-react";
 import {supabase} from "./lib/supabase";
+import type {Session} from "@supabase/supabase-js";
+import FarmerVoiceRegistration from "./FarmerVoiceRegistration";
 import SarinaCharacter from "./components/SarinaCharacter";
 import PwaInstall from "./PwaInstall";
 import VoiceMessageControls from "./components/VoiceMessageControls";
@@ -10,7 +12,7 @@ import "./components/sarina-communication-center.css";
 type ChatMessage={id:number;role:"farmer"|"sarina";text:string;internalText?:string;audioUrl?:string};
 type NavTarget="learning"|"experts"|"expert-chat";
 type SarinaRole="admin"|"expert"|"farmer"|"organization"|"livestock_keeper";
-type SarinaCompanionProps={isAdmin?:boolean;role?:SarinaRole;onNavigate?:(destination:NavTarget)=>void};
+type SarinaCompanionProps={isAdmin?:boolean;role?:SarinaRole;session?:Session;onNavigate?:(destination:NavTarget)=>void};
 type VoicePayload={audio:Blob;mimeType:string};
 
 function requestsSpokenReply(text:string):boolean{
@@ -22,7 +24,7 @@ const guideItems=[
  {title:"پرسش‌های متداول",description:"پاسخ به سؤال‌های رایج کاربران",icon:CircleHelp,target:"learning" as NavTarget}
 ];
 
-export default function SarinaCompanion({isAdmin=false,role="farmer",onNavigate}:SarinaCompanionProps){
+export default function SarinaCompanion({isAdmin=false,role="farmer",session,onNavigate}:SarinaCompanionProps){
  const[open,setOpen]=useState(false);
  const[drawerOpen,setDrawerOpen]=useState(true);
  const[draft,setDraft]=useState("");
@@ -30,6 +32,7 @@ export default function SarinaCompanion({isAdmin=false,role="farmer",onNavigate}
  const[showNotice,setShowNotice]=useState(false);
  const[busy,setBusy]=useState(false);
  const[voiceReplyPending,setVoiceReplyPending]=useState(false);
+ const[registrationActive,setRegistrationActive]=useState(false);
  const[status,setStatus]=useState("");
  const messagesRef=useRef<ChatMessage[]>([]);
  const pendingVoiceIdRef=useRef<number|null>(null);
@@ -59,7 +62,7 @@ export default function SarinaCompanion({isAdmin=false,role="farmer",onNavigate}
   if(!normalized||busy)return;
   const next=[...messagesRef.current,{id:Date.now(),role:"farmer" as const,text:normalized}].slice(-12);
   commitMessages(next);setDraft("");
-  if(!isAdmin){setShowNotice(true);return;}
+  if(!isAdmin){if(role==="farmer"&&/ثبت\s*مزرعه|ایجاد\s*پرونده\s*مزرعه/i.test(normalized)){setRegistrationActive(true);setShowNotice(false);setStatus("");return;}setShowNotice(true);return;}
   setVoiceReplyPending(requestsSpokenReply(normalized));
   await requestAdminReply(next);
  }
@@ -110,14 +113,17 @@ export default function SarinaCompanion({isAdmin=false,role="farmer",onNavigate}
     <div className="sarina-chat-body">
      <div className="sarina-welcome-message"><span className="sarina-sparkle"><Sparkles size={15}/></span><strong>سلام! به SARINA خوش آمدید 🌱</strong><p>{isAdmin?"من نقش مدیر مرکزی شما را می‌شناسم. می‌توانم درباره کاربران، نقش‌ها، درخواست‌ها و وضعیت سامانه کمک کنم؛ لازم نیست اطلاعات مزرعه شخصی‌تان را وارد کنید.":role==="expert"?"این فضا برای دسترسی به ارتباطات تخصصی مجاز شما آماده می‌شود. پرونده‌ها و پیام‌ها فقط بر اساس ارجاع و سطح دسترسی شما نمایش داده خواهند شد.":role==="organization"?"این فضا برای مکاتبات سازمانی مجاز شماست. فقط گفتگوهای مرتبط با حساب و محدوده دسترسی سازمان نمایش داده می‌شوند.":role==="livestock_keeper"?"این فضا برای ارتباطات مرتبط با دامداری در نظر گرفته شده است؛ امکانات فقط پس از اتصال به مسیر معتبر و مجاز فعال می‌شوند.":"من همراه کشاورزی شما هستم. برای آشنایی بهتر با امکانات سارینا، می‌توانید از راهنمای سریع کنار گفتگو استفاده کنید. هیچ کشاورزی تنها نیست."}</p></div>
      {messages.map(message=><div key={message.id} className={"sarina-message "+(message.role==="farmer"?"from-farmer":"from-sarina")}><b className="sarina-message-sender">{message.role==="farmer"?"شما":"SARINA"}</b>{message.audioUrl&&<audio controls preload="metadata" src={message.audioUrl} aria-label={"پیام صوتی از "+(message.role==="farmer"?"شما":"SARINA")}/>}{message.text}</div>)}
+     {!isAdmin&&role==="farmer"&&session&&!registrationActive&&<button type="button" className="sarina-farm-registration-start" onClick={()=>setRegistrationActive(true)}>🎙️ شروع ثبت مزرعه با گفت‌وگوی صوتی</button>}
+     {registrationActive&&role==="farmer"&&session&&<FarmerVoiceRegistration session={session} onClose={()=>setRegistrationActive(false)}/>}
+
      {showNotice&&<div className="sarina-prototype-note">{role==="farmer"?"پیامت در این پیش‌نمایش ثبت شد. اتصال پاسخ‌گوی هوشمند برای این نقش هنوز فعال نشده است.":"گفت‌وگوی عمومی این نقش هنوز به منبع پیام‌رسانی تأییدشده متصل نشده است؛ از نمایش یا ثبت پیام غیرواقعی خودداری می‌شود."}</div>}
      {status&&<div className="sarina-prototype-note" role="status">{status}</div>}
     </div>
-    <form className={"sarina-chat-compose"+(isAdmin?" sarina-chat-compose-admin":"")} onSubmit={send}>
+    {!registrationActive&&<form className={"sarina-chat-compose"+(isAdmin?" sarina-chat-compose-admin":"")} onSubmit={send}>
      <VoiceMessageControls onVoiceMessage={receiveVoiceMessage} onTranscription={receiveTranscription} textToSpeak={latestSarinaReply} speechLanguage="fa" autoGenerateAudio={isAdmin&&voiceReplyPending&&!busy&&messages[messages.length-1]?.role==="sarina"} onVoiceReplyAudio={receiveVoiceReplyAudio} onAudioGenerationComplete={()=>setVoiceReplyPending(false)} disabled={busy}/>
      <input value={draft} onChange={e=>setDraft(e.target.value)} placeholder="اینجا برای سارینا بنویس..." aria-label="پیام شما به سارینا" maxLength={2000} disabled={busy}/>
      <button type="submit" disabled={!draft.trim()||busy} aria-label="ارسال پیام">{busy?<span className="sarina-chat-spinner"/>:<ArrowUp size={18}/>}</button>
-    </form>
+    </form>}
     <div className="sarina-chat-foot">{isAdmin?"آزمایش محدود Groq · تبدیل گفتار روی سرویس SARINA انجام می‌شود":"راهنمای شروع بدون نیاز به هوش مصنوعی"} <Leaf size={12}/></div>
    </div>
   </section>}
