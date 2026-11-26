@@ -11,6 +11,7 @@ on:
       - "supabase/functions/specialist-case-preparation/**"
       - "supabase/migrations/*siacp*"
       - ".github/workflows/sci-contract-tests.yml"
+      - "deno.json"
   push:
     branches: [main, feature/local-ai-runtime-evaluation, feature/sci-task-orchestrator-v1, feature/sci-task-lifecycle-v1]
     paths:
