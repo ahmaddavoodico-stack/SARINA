@@ -1,6 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
-import { createDurableTaskStore } from "../sarina-central-intelligence/_shared/durable-task-store.ts";
+import { createDurableTaskStore } from ".../_shared/durable-task-store.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
