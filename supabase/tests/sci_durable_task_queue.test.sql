@@ -1,4 +1,4 @@
--- Run only after applying 20261126020121_sci_durable_task_queue.sql
+-- Run only after applying 20261126020336_sci_durable_task_queue.sql
 -- This is a read-only structural/security smoke test; it creates no task data.
 do $$
 begin
