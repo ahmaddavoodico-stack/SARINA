@@ -10,7 +10,7 @@ import "./components/sarina-communication-center.css";
 type ChatMessage={id:number;role:"farmer"|"sarina";text:string;audioUrl?:string};
 type NavTarget="learning"|"experts"|"expert-chat";
 type SarinaRole="admin"|"expert"|"farmer"|"organization"|"livestock_keeper";
-type SarinaCompanionProps={isAdmin?:boolean;role?:SarinaRole;userId?:string;onNavigate?:(destination:NavTarget)=>void};
+type SarinaCompanionProps={isAdmin?:boolean;role?:SarinaRole;onNavigate?:(destination:NavTarget)=>void};
 type VoicePayload={audio:Blob;mimeType:string};
 
 const guideItems=[
@@ -19,7 +19,7 @@ const guideItems=[
  {title:"پرسش‌های متداول",description:"پاسخ به سؤال‌های رایج کاربران",icon:CircleHelp,target:"learning" as NavTarget}
 ];
 
-export default function SarinaCompanion({isAdmin=false,role="farmer",userId,onNavigate}:SarinaCompanionProps){
+export default function SarinaCompanion({isAdmin=false,role="farmer",onNavigate}:SarinaCompanionProps){
  const[open,setOpen]=useState(false);
  const[drawerOpen,setDrawerOpen]=useState(true);
  const[draft,setDraft]=useState("");
@@ -117,7 +117,7 @@ export default function SarinaCompanion({isAdmin=false,role="farmer",userId,onNa
    </div>
   </section>}
   <div className="sarina-launcher-wrap">
-   <button type="button" className="sarina-launcher-copy" onClick={()=>setOpen(value=>!value)} aria-expanded={open}><span className="sarina-launcher-title">{open?"SARINA Chat":"SARINA Chat"}</span><span className="sarina-launcher-subtitle">{isAdmin?"دستیار مدیر":"ارتباط و راهنمایی"}</span></button>
+   <button type="button" className="sarina-launcher-copy" onClick={()=>setOpen(value=>!value)} aria-expanded={open}><span className="sarina-launcher-title">SARINA Chat</span><span className="sarina-launcher-subtitle">{isAdmin?"دستیار مدیر":"ارتباط و راهنمایی"}</span></button>
    <button type="button" className={"sarina-launcher-avatar"+(open?" is-open":"")} onClick={()=>setOpen(value=>!value)} aria-label={open?"بستن مرکز ارتباط":"بازکردن مرکز ارتباط SARINA"} aria-expanded={open}><SarinaCharacter className="sarina-avatar" large/><span className="sarina-online-dot"/></button>
    <span className="sarina-launcher-chevron">{open?<ChevronDown size={15}/>:<MessageCircle size={15}/>}</span>
   </div>
