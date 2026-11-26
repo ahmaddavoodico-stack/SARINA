@@ -53,7 +53,7 @@ Do not infer that Manus is currently ready merely because the Edge Function is d
 - `offline`: the configured health window elapsed without a heartbeat.
 - `unknown`: current evidence is insufficient.
 
-A dedicated heartbeat/status tool and fleet dashboard are not yet implemented. Until then, the console must not display a fabricated green readiness state.
+The authenticated heartbeat tool and fleet dashboard are now implemented. The runtime registry is still empty until Manus sends a fresh signal; the console must not display a fabricated green readiness state.
 
 ## First pilot mission
 
@@ -74,7 +74,7 @@ The first report is intentionally presented to the project owner for a one-time 
 - The current MCP flow is Manus → SARINA (tool calls and draft submission). A secure SCI → Manus mission-dispatch path has not yet been demonstrated.
 - The SCI durable queue primitives exist, but a production worker does not yet consume them.
 - The current specialist collaboration planner and aggregator still require human review; exception-based automated quality review is a target operating policy, not an active runtime feature.
-- No provider heartbeat/capacity telemetry is yet available to support a truthful `ready` status.
+- No Manus heartbeat/capacity report has yet been received to support a truthful `ready` status.
 
 ## Required server secrets
 
