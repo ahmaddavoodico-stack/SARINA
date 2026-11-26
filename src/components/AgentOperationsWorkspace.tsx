@@ -1,5 +1,5 @@
 import {useCallback,useEffect,useState} from "react";
-import {Activity,AlertTriangle,CheckCircle2,Clock3,ExternalLink,FileText,RefreshCw,ShieldCheck,Wifi,WifiOff} from "lucide-react";
+import {Activity,AlertTriangle,CheckCircle2,Clock3,ExternalLink,FileText,RefreshCw,ShieldCheck,WifiOff} from "lucide-react";
 import {supabase} from "../lib/supabase";
 
 type Agent = {
@@ -67,7 +67,7 @@ export default function AgentOperationsWorkspace(){
       <span><Activity size={14} style={{verticalAlign:"middle"}}/> بار کاری: {agent.active_task_count}{agent.capacity===null?"":"/"+agent.capacity}</span>
       <span><ShieldCheck size={14} style={{verticalAlign:"middle"}}/> آزمون قابلیت: {agent.last_capability_check_at?timeAgo(agent.last_capability_check_at):"ثبت نشده"}</span>
      </div>
-     <small style={{display:"block",marginTop:8,color:"var(--muted,#64748b)"}}>دلیل وضعیت: {agent.reason_code} · dispatch خودکار: {agent.dispatch_enabled?"مجاز":"غیرفعال"}</small>
+     <small style={{display:"block",marginTop:8,color:"var(--muted,#64748b)"}}>دلیل وضعیت: {agent.reason_code} · dispatch خودکار: {agent.dispatch_enabled?"مجاز":"غیرفعال"}</small><small style={{display:"block",marginTop:5,color:"var(--muted,#64748b)"}}>قابلیت‌های تأییدشده: {(agent.capabilities??[]).join("، ")||"هنوز ثبت نشده"}</small>
     </article>):<div className="admin-empty"><WifiOff size={22}/> هنوز هیچ runtimeای heartbeat معتبر در SARINA ثبت نکرده است. اتصال Manus در گذشته موفق بوده، اما تا ثبت سیگنال تازه «آماده‌به‌کار» محسوب نمی‌شود.</div>}
    </div>
    <div style={{marginTop:22}}>
