@@ -188,12 +188,37 @@ begin
      or jsonb_typeof(coalesce(p_task -> 'request_payload', '{}'::jsonb)) <> 'object'
      or jsonb_typeof(coalesce(p_task -> 'context_refs', '[]'::jsonb)) <> 'array'
      or jsonb_typeof(coalesce(p_task -> 'payload_refs', '[]'::jsonb)) <> 'array'
-     or jsonb_typeof(coalesce(p_task -> 'modalities', '[]'::jsonb)) <> 'array' then
+     or jsonb_typeof(coalesce(p_task -> 'modalities', '[]'::jsonb)) <> 'array'
+     or jsonb_array_length(coalesce(p_task -> 'modalities', '[]'::jsonb)) = 0
+     or exists (
+       select 1 from jsonb_array_elements_text(coalesce(p_task -> 'modalities', '[]'::jsonb)) modality
+       where modality not in ('text', 'image', 'document', 'audio', 'other')
+     )
+     or exists (
+       select 1 from jsonb_array_elements(coalesce(p_task -> 'context_refs', '[]'::jsonb)) ref
+       where jsonb_typeof(ref) <> 'string'
+     )
+     or exists (
+       select 1 from jsonb_array_elements(coalesce(p_task -> 'payload_refs', '[]'::jsonb)) ref
+       where jsonb_typeof(ref) <> 'string'
+     ) then
     raise exception 'Invalid task envelope' using errcode = '22023';
   end if;
 
   if v_kind = 'specialist_proposal' and
-     (v_parent_id is null or v_status <> 'waiting_for_human' or v_agent_state = 'enabled') then
+     (v_parent_id is null or v_status <> 'waiting_for_human' or v_agent_state = 'enabled'
+      or not (
+        (v_domain = 'soil_water' and v_agent_id = 'soil_water_specialist')
+        or (v_domain = 'irrigation' and v_agent_id = 'irrigation_specialist')
+        or (v_domain = 'plant_nutrition' and v_agent_id = 'plant_nutrition_specialist')
+        or (v_domain = 'plant_health' and v_agent_id = 'plant_health_specialist')
+        or (v_domain = 'climate' and v_agent_id = 'climate_specialist')
+        or (v_domain = 'agricultural_knowledge' and v_agent_id = 'agricultural_knowledge_specialist')
+        or (v_domain = 'market_intelligence' and v_agent_id = 'market_intelligence_specialist')
+        or (v_domain = 'trade_export' and v_agent_id = 'trade_export_specialist')
+        or (v_domain = 'finance_economics' and v_agent_id = 'finance_economics_specialist')
+        or (v_domain = 'logistics_supply_chain' and v_agent_id = 'logistics_supply_chain_specialist')
+      )) then
     raise exception 'Specialist proposals must remain blocked until separately approved and enabled'
       using errcode = '42501';
   end if;
@@ -363,8 +388,8 @@ begin
     raise exception 'Service role required' using errcode = '42501';
   end if;
   if p_worker_id is null or char_length(trim(p_worker_id)) = 0
-     or p_limit < 1 or p_limit > 20
-     or p_lease_seconds < 5 or p_lease_seconds > 300 then
+     or p_limit is null or p_limit < 1 or p_limit > 20
+     or p_lease_seconds is null or p_lease_seconds < 5 or p_lease_seconds > 300 then
     raise exception 'Invalid worker claim parameters' using errcode = '22023';
   end if;
 
@@ -496,7 +521,7 @@ begin
   if coalesce(auth.jwt() ->> 'role', '') <> 'service_role' then
     raise exception 'Service role required' using errcode = '42501';
   end if;
-  if p_lease_seconds < 5 or p_lease_seconds > 300 then
+  if p_lease_seconds is null or p_lease_seconds < 5 or p_lease_seconds > 300 then
     raise exception 'Lease extension must be between 5 and 300 seconds' using errcode = '22023';
   end if;
   select * into v_task from sci_internal.sci_tasks
@@ -644,7 +669,7 @@ begin
   if coalesce(auth.jwt() ->> 'role', '') <> 'service_role' and current_user <> 'postgres' then
     raise exception 'Service role required' using errcode = '42501';
   end if;
-  if p_limit < 1 or p_limit > 200 then
+  if p_limit is null or p_limit < 1 or p_limit > 200 then
     raise exception 'Recovery limit must be between 1 and 200' using errcode = '22023';
   end if;
 
