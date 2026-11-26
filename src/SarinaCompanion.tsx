@@ -9,7 +9,8 @@ import "./components/sarina-communication-center.css";
 
 type ChatMessage={id:number;role:"farmer"|"sarina";text:string;audioUrl?:string};
 type NavTarget="learning"|"experts"|"expert-chat";
-type SarinaCompanionProps={isAdmin?:boolean;onNavigate?:(destination:NavTarget)=>void};
+type SarinaRole="admin"|"expert"|"farmer"|"organization"|"livestock_keeper";
+type SarinaCompanionProps={isAdmin?:boolean;role?:SarinaRole;userId?:string;onNavigate?:(destination:NavTarget)=>void};
 type VoicePayload={audio:Blob;mimeType:string};
 
 const guideItems=[
@@ -18,7 +19,7 @@ const guideItems=[
  {title:"پرسش‌های متداول",description:"پاسخ به سؤال‌های رایج کاربران",icon:CircleHelp,target:"learning" as NavTarget}
 ];
 
-export default function SarinaCompanion({isAdmin=false,onNavigate}:SarinaCompanionProps){
+export default function SarinaCompanion({isAdmin=false,role="farmer",userId,onNavigate}:SarinaCompanionProps){
  const[open,setOpen]=useState(false);
  const[drawerOpen,setDrawerOpen]=useState(true);
  const[draft,setDraft]=useState("");
@@ -98,13 +99,13 @@ export default function SarinaCompanion({isAdmin=false,onNavigate}:SarinaCompani
     <header className="sarina-chat-header">
      {!isAdmin&&!drawerOpen&&<button type="button" className="sarina-guide-open" onClick={()=>setDrawerOpen(true)} aria-label="بازکردن راهنمای سریع"><PanelRightOpen size={18}/></button>}
      <SarinaCharacter className="sarina-avatar"/>
-     <div className="sarina-chat-identity"><strong>سارینا</strong><span><i/>{isAdmin?"دستیار آزمایشی مدیر":"همراه کشاورزی شما"}</span></div>
+     <div className="sarina-chat-identity"><strong>سارینا</strong><span><i/>{isAdmin?"دستیار مدیر":role==="expert"?"ارتباطات متخصص":role==="organization"?"ارتباطات سازمانی":role==="livestock_keeper"?"ارتباطات دامدار":"همراه کشاورزی شما"}</span></div>
      <button type="button" className="sarina-chat-close" onClick={closePanel} aria-label="بستن گفتگو"><X size={18}/></button>
     </header>
     <div className="sarina-chat-body">
-     <div className="sarina-welcome-message"><span className="sarina-sparkle"><Sparkles size={15}/></span><strong>سلام! به SARINA خوش آمدید 🌱</strong><p>{isAdmin?"من نقش مدیر مرکزی شما را می‌شناسم. می‌توانم درباره کاربران، نقش‌ها، درخواست‌ها و وضعیت سامانه کمک کنم؛ لازم نیست اطلاعات مزرعه شخصی‌تان را وارد کنید.":"من همراه کشاورزی شما هستم. برای آشنایی بهتر با امکانات سارینا، می‌توانید از راهنمای سریع کنار گفتگو استفاده کنید. هیچ کشاورزی تنها نیست."}</p></div>
+     <div className="sarina-welcome-message"><span className="sarina-sparkle"><Sparkles size={15}/></span><strong>سلام! به SARINA خوش آمدید 🌱</strong><p>{isAdmin?"من نقش مدیر مرکزی شما را می‌شناسم. می‌توانم درباره کاربران، نقش‌ها، درخواست‌ها و وضعیت سامانه کمک کنم؛ لازم نیست اطلاعات مزرعه شخصی‌تان را وارد کنید.":role==="expert"?"این فضا برای دسترسی به ارتباطات تخصصی مجاز شما آماده می‌شود. پرونده‌ها و پیام‌ها فقط بر اساس ارجاع و سطح دسترسی شما نمایش داده خواهند شد.":role==="organization"?"این فضا برای مکاتبات سازمانی مجاز شماست. فقط گفتگوهای مرتبط با حساب و محدوده دسترسی سازمان نمایش داده می‌شوند.":role==="livestock_keeper"?"این فضا برای ارتباطات مرتبط با دامداری در نظر گرفته شده است؛ امکانات فقط پس از اتصال به مسیر معتبر و مجاز فعال می‌شوند.":"من همراه کشاورزی شما هستم. برای آشنایی بهتر با امکانات سارینا، می‌توانید از راهنمای سریع کنار گفتگو استفاده کنید. هیچ کشاورزی تنها نیست."}</p></div>
      {messages.map(message=><div key={message.id} className={"sarina-message "+(message.role==="farmer"?"from-farmer":"from-sarina")}><b className="sarina-message-sender">{message.role==="farmer"?"شما":"SARINA"}</b>{message.audioUrl&&<audio controls preload="metadata" src={message.audioUrl} aria-label={"پیام صوتی از "+(message.role==="farmer"?"شما":"SARINA")}/>}{message.text}</div>)}
-     {showNotice&&<div className="sarina-prototype-note">پیامت در این پیش‌نمایش ثبت شد. اتصال پاسخ‌گوی هوشمند برای این نقش هنوز فعال نشده است.</div>}
+     {showNotice&&<div className="sarina-prototype-note">{role==="farmer"?"پیامت در این پیش‌نمایش ثبت شد. اتصال پاسخ‌گوی هوشمند برای این نقش هنوز فعال نشده است.":"گفت‌وگوی عمومی این نقش هنوز به منبع پیام‌رسانی تأییدشده متصل نشده است؛ از نمایش یا ثبت پیام غیرواقعی خودداری می‌شود."}</div>}
      {status&&<div className="sarina-prototype-note" role="status">{status}</div>}
     </div>
     <form className={"sarina-chat-compose"+(isAdmin?" sarina-chat-compose-admin":"")} onSubmit={send}>
