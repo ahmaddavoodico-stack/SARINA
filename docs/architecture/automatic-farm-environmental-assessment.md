@@ -77,7 +77,10 @@ Do not create parallel orchestration, regional sync, evidence or benchmark syste
 - Refresh on meaningful changes, source updates or explicit user request; do not repeatedly re-run expensive collection on every page view.
 
 ### Stage 3 — expanded spatial and historical sources
-- Add elevation/terrain, historical climate normals and extremes, and remote-sensing summaries.
+- [Implemented in this feature branch] Add a caller-JWT-scoped historical climate adapter using the Open-Meteo Historical Weather API with ERA5-Land, a fixed 1991–2020 reference window, monthly temperature/rainfall summaries, annual rainfall, heat-day counts (daily maximum >=40°C and >=45°C), and historical maximum daily temperature.
+- [Implemented in this feature branch] Persist the climate evidence and provider provenance in the existing versioned farm assessment snapshot; display the coverage period, approximate grid resolution, and limitations to the farmer.
+- [Implemented in this feature branch] Gate provider requests behind an operator-configured commercial entitlement flag and server-side customer API key. The free Open-Meteo API is restricted to non-commercial use; SARINA must not call it for commercial workloads without the appropriate provider entitlement.
+- [Still pending] Add elevation and slope from a properly licensed, geographically validated DEM; add cloud-screened Sentinel-2 scene processing and vegetation/land-cover indicators; do not label catalogue discovery as image analysis.
 - Validate source coverage, licenses, update cadence, coordinate precision and geographic suitability before enabling each adapter.
 - Prefer open, low-cost sources and cache results by spatial cell and time window to reduce repeated external requests.
 - Add provider circuit breakers, bounded timeouts, retries and explicit unavailable states.
@@ -98,4 +101,4 @@ Do not create parallel orchestration, regional sync, evidence or benchmark syste
 
 The first farmer-facing panel invokes the existing `farm-land-context` and `farm-weather-context` Edge Functions through the authenticated Supabase client. It verifies the returned farm ID, displays existing soil/water test counts, the SoilGrids provider state, current model weather and seven-day forecast, and explains the difference between model data and farm measurements.
 
-This branch now persists append-only, versioned snapshots of the current land and weather context, source manifest, quality summary and known gaps. It still does not provide historical climate normals, elevation/terrain, satellite products or regional peer aggregation. Those remain later stages and must not be represented as completed. The migration has not been applied to Production.
+This branch now persists append-only, versioned snapshots of the current land and weather context, source manifest, quality summary and known gaps. It also includes a historical climate adapter for the 1991–2020 ERA5-Land reference period, but the adapter remains disabled until the operator configures a valid commercial-use entitlement and customer API key. When disabled or unavailable, the assessment records an explicit missing status rather than substituting data. Elevation/terrain, processed satellite products and regional peer aggregation remain later work and must not be represented as completed. The migration has not been applied to Production.
