@@ -151,7 +151,7 @@ Deno.serve(async (req: Request) => {
       risk: route.humanReviewRequired ? "high" : "low",
       modalities: ["text"],
       context_refs: ["farm:" + farmId, "weather-context:" + farmId, "land-context:" + farmId],
-      payload_refs: ["request:" + requestId],
+      payload_refs: ["request:" + idempotencyKey],
       permissions: ["read:verified_farm_context"],
       request_payload: { question, language, references },
       idempotency_key: idempotencyKey,
