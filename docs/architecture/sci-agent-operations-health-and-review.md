@@ -60,7 +60,7 @@ Every runtime status must carry its evidence and timestamp:
 
 Heartbeat freshness is adapter-specific and configurable. A long-running research job must report progress/heartbeat independently of task completion. If an adapter cannot provide heartbeats, SCI may show `responding` or `unknown`, but must not claim `ready`.
 
-The Manus MCP gateway should record successful authenticated tool activity. A dedicated status/heartbeat tool is a future integration step; it must not be simulated by a dashboard constant or by merely observing that the Edge Function is ACTIVE.
+The Manus MCP gateway now exposes an authenticated heartbeat tool and records successful authenticated tool activity. A connection check proves the MCP gateway and database draft store respond; a Manus heartbeat can report active-task count and capacity. If capacity is absent, SCI shows responding/unknown, never ready. The report-save fallback also records a minimal responding signal without inventing capacity.
 
 ## 5. Human attention policy: exception-based, not universal review
 
@@ -152,25 +152,27 @@ The first report is reviewed by the project owner. This is a one-time pilot eval
 
 ## 9. Current implementation facts and gaps
 
-As of this document's date:
+As of 2026-11-26:
 
-- SCI remains the existing command center.
+- SCI remains the existing command center; the production frontend includes the fleet-health and Manus report workspace.
 - The durable task database and queue primitives exist, but no production worker consumes the queue.
 - The ten new specialist roles remain registered-only and disabled.
-- The Manus MCP Edge Function is deployed and has previously passed a connection check; its database draft store was reported ready.
-- The Manus MCP gateway currently exposes connection/capability checks and private draft save/list/get operations.
-- The first research task exists in Manus, but its report save/read round-trip and factual quality have not yet been accepted.
+- The Manus MCP Edge Function is ACTIVE version 3. It exposes connection/capability checks, authenticated heartbeat reporting, and private draft save/list/get operations.
+- The sarina-agent-operations Edge Function is ACTIVE version 1 with JWT verification and an admin-role check.
+- Database migration version 20261126102437 is applied and aligned with the repository filename. Runtime, health-event, and external-mission tables have RLS enabled and no anon/authenticated table privileges.
+- The existing Khuzestan dates → UAE mission is linked to an SCI external-mission record without a fabricated farm or owner.
+- At the latest verification, the runtime registry contained no heartbeat rows and the Manus draft store contained no reports. No agent is therefore marked ready; the pilot mission remains awaiting its saved report.
 - The current collaboration planner/aggregator still hard-requires human review. Exception-based automated review is a target policy and must not be represented as already running.
 - The Manus MCP direction is currently Manus → SARINA. A secure SCI → Manus mission-dispatch mechanism has not yet been demonstrated. Until that exists, manually initiated Manus missions must be linked to SCI task records explicitly and must not be described as SCI-dispatched.
 
 ## 10. Implementation sequence and acceptance gates
 
-1. **Contract and truthful status:** update integration docs and define lifecycle/health/review states without enabling any new agent.
-2. **Runtime telemetry:** add a private SCI agent-runtime registry, authenticated heartbeat/capability reports, bounded freshness, and append-only health events. Do not expose provider credentials.
-3. **Command-center view:** extend the existing admin/SCI console with fleet health, task counts, alerts, and drill-down; no parallel command center and no fabricated status.
-4. **Manus result lifecycle:** link the existing pilot mission to an SCI task, ingest its private draft, validate report structure/evidence, and produce the first owner-visible evaluation.
-5. **Exception-based review engine:** implement deterministic quality gates and escalation reasons; keep high-risk/legal/commercial/SAI promotion gates intact.
-6. **Controlled dispatch:** only after the provider direction, authentication, idempotency, quotas, cancellation, retries, audit, and end-to-end tests are proven, allow SCI to dispatch to Manus.
+1. **Contract and truthful status:** complete; lifecycle/health/review states are defined without enabling new specialists.
+2. **Runtime telemetry:** deployed as service-role-only runtime records, authenticated Manus heartbeat/capability reports, bounded freshness, and append-only health events. Do not expose provider credentials.
+3. **Command-center view:** deployed in the existing admin/SCI console with fleet health, heartbeat freshness, adapter capability details, the pilot mission link, and private report drill-down.
+4. **Manus result lifecycle:** the existing pilot mission is linked to an SCI external-mission record. Draft ingestion supports an explicit external task reference, and the owner console can link an existing draft. The first owner-visible evaluation remains pending until the actual report is saved.
+5. **Exception-based review engine:** deterministic policy helpers are present and tested, but live task/result routing is not yet wired to them. Keep high-risk/legal/commercial/SAI promotion gates intact.
+6. **Controlled dispatch:** not implemented; the provider direction, authentication, idempotency, quotas, cancellation, retries, audit, and end-to-end tests must be proven before SCI dispatches to Manus.
 7. **One adapter at a time:** do not mark an agent ready or enable a specialist until live health, capability, permission, failure and recovery tests pass.
 
 No agent should be marked ready, no blanket human-review gate should be removed, and no worker/provider dispatch should be activated merely because this policy document exists.
