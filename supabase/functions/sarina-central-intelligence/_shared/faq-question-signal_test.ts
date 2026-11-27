@@ -26,7 +26,7 @@ Deno.test("FAQ question fingerprints are stable and keyed", async () => {
 });
 
 Deno.test("FAQ signal RPC receives only a fingerprint, language and topic reference", async () => {
-  let received: Record<string, unknown> | null = null;
+  let received: Record<string, unknown> = {};
   const client: FaqSignalRpcClient = {
     rpc: (_name, args) => {
       received = args;
@@ -38,12 +38,12 @@ Deno.test("FAQ signal RPC receives only a fingerprint, language and topic refere
     language: "fa",
   });
   assertEquals(ok, true);
-  assertEquals(Object.keys(received ?? {}).sort(), [
+  assertEquals(Object.keys(received).sort(), [
     "p_language_code", "p_question_fingerprint", "p_topic_id",
   ]);
-  assertEquals(received?.p_language_code, "fa");
-  assertEquals(received?.p_topic_id, null);
-  assertEquals(typeof received?.p_question_fingerprint, "string");
+  assertEquals(received.p_language_code, "fa");
+  assertEquals(received.p_topic_id, null);
+  assertEquals(typeof received.p_question_fingerprint, "string");
 });
 
 Deno.test("FAQ signal capture fails closed when RPC is unavailable", async () => {
