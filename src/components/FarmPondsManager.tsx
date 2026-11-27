@@ -30,13 +30,13 @@ export default function FarmPondsManager({farmId,fields,userId}:{farmId:string;f
    if(all.length)map.fitBounds(L.latLngBounds(all),{padding:[20,20],maxZoom:18});
   }catch{setError("نقشه ترسیم استخر بارگذاری نشد.");}
   return()=>{if(mapRef.current){mapRef.current.remove();mapRef.current=null;layerRef.current=null;}};
- },[farmId,open]);
+ },[farmId]);
  useEffect(()=>{
   const L=window.L,layer=layerRef.current,map=mapRef.current;if(!L||!layer||!map)return;layer.clearLayers();
   for(const f of fields){const g=parseGeometry(f.boundary);if(g?.type)try{L.geoJSON(g,{style:{color:"#f5f7f3",weight:2,fillOpacity:0.02,dashArray:"5 4"}}).addTo(layer);}catch{}}
   for(const p of items){const g=parseGeometry(p.geometry);if(!g?.type)continue;try{const poly=L.geoJSON(g,{style:{color:p.status==="active"?"#2d9a60":"#a0a7a1",weight:3,fillColor:p.status==="active"?"#36ad73":"#9ba39e",fillOpacity:p.status==="active"?.32:.16,dashArray:p.status==="active"?"":"6 5"}}).addTo(layer);poly.bindTooltip((p.attributes?.name||"استخر")+" · "+statusLabel(p.status));}catch{}}
   if(vertices.length){const line=L.polyline(vertices,{color:"#f2b544",weight:3,dashArray:"5 4"}).addTo(layer);vertices.forEach(v=>L.circleMarker(v,{radius:4,color:"#fff",fillColor:"#d9902f",fillOpacity:1}).addTo(layer));if(vertices.length>=3)L.polygon(vertices,{color:"#e7a43a",weight:2,fillOpacity:.12}).addTo(layer);if(vertices.length>1)map.fitBounds(line.getBounds(),{padding:[35,35],maxZoom:19});}
- },[fields,items,vertices,open]);
+ },[fields,items,vertices]);
  const reset=()=>{setOpen(false);setDrawing(false);drawingRef.current=false;verticesRef.current=[];setVertices([]);setName("");setKind("pond");setStatus("active");setFieldId("");setPurpose("irrigation");setConstruction("unknown");setWaterSource("");setWidth("");setLength("");setDepth("");setCapacity("");setCapacitySource("farmer_reported");setNotes("");setError("");};
  const startDrawing=()=>{verticesRef.current=[];setVertices([]);drawingRef.current=true;setDrawing(true);setError("روی تصویر ماهواره‌ای حداقل سه نقطه از گوشه‌های استخر را انتخاب کن؛ سپس «پایان ترسیم» را بزن.");};
  const finishDrawing=()=>{drawingRef.current=false;setDrawing(false);if(verticesRef.current.length<3){setError("برای ثبت محدوده استخر حداقل سه نقطه لازم است.");return;}setError("");};
@@ -67,10 +67,10 @@ export default function FarmPondsManager({farmId,fields,userId}:{farmId:string;f
    {capacity.trim()!==""&&<label>منبع ظرفیت<select value={capacitySource} onChange={e=>setCapacitySource(e.target.value)}><option value="farmer_reported">اعلام کشاورز</option><option value="measured">اندازه‌گیری‌شده</option><option value="calculated">محاسبه‌شده از ابعاد</option></select></label>}
    <label>یادداشت<textarea rows={2} value={notes} onChange={e=>setNotes(e.target.value)} placeholder="توضیحات تکمیلی، وضعیت تعمیرات و…"/></label>
    <div className="myfarm-pond-draw"><div><b>محدوده واقعی استخر روی نقشه</b><small>{vertices.length.toLocaleString("fa-IR")} نقطه ثبت شده</small></div><div><button type="button" onClick={startDrawing}><MapPin size={14}/> {drawing?"ترسیم دوباره":"شروع ترسیم محدوده"}</button>{drawing&&<button type="button" onClick={finishDrawing}><Check size={14}/> پایان ترسیم</button>}</div></div>
-   <div className="myfarm-pond-map" ref={mapHost}/>
    <p className="myfarm-pond-hint">برای ثبت محدوده، گوشه‌های استخر را روی تصویر ماهواره‌ای لمس کن. حداقل سه نقطه لازم است. فقط پس از ترسیم و تأیید محدوده، اطلاعات ذخیره می‌شود.</p>
    <div className="myfarm-pond-actions"><button type="button" onClick={reset}>انصراف</button><button type="button" disabled={busy||drawing||vertices.length<3||!name.trim()} onClick={save}><Save size={14}/> تأیید و ذخیره استخر</button></div>
   </div>}
+  <div className="myfarm-pond-map" ref={mapHost}/>
   {loading?<p className="myfarm-pond-hint">در حال دریافت استخرهای مزرعه…</p>:items.length===0?<p className="myfarm-pond-hint">هنوز استخری برای این مزرعه ثبت نشده است.</p>:<div className="myfarm-pond-list">{items.map(item=><article key={item.id}><div className="myfarm-pond-info"><span className={"myfarm-pond-status "+item.status}/><div><b>{item.attributes?.name|| (item.feature_type==="pond"?"استخر":"مخزن روباز")}</b><small>{item.feature_type==="pond"?"استخر":"مخزن روباز"} · {purposeLabel(item.attributes?.purpose)} · {statusLabel(item.status)}</small><small>{item.capacity_value!==null?"ظرفیت ثبت‌شده: "+item.capacity_value+" "+(item.capacity_unit==="m3"?"مترمکعب":item.capacity_unit||""):"ظرفیت ثبت نشده"}{item.is_geometry_confirmed?" · محدوده تأییدشده":" · محدوده تأییدنشده"}</small></div></div><label className="myfarm-pond-status-select">وضعیت<select value={item.status} disabled={busy} onChange={e=>updateStatus(item,e.target.value as PondStatus)}><option value="active">فعال</option><option value="inactive">غیرفعال</option><option value="retired">از رده خارج</option><option value="removed">جمع‌آوری‌شده</option></select></label></article>)}</div>}
  </section>;
 }
