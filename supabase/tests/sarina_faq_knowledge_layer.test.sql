@@ -39,8 +39,8 @@ BEGIN
     RAISE EXCEPTION 'Internal FAQ curation/usage signals must not be directly exposed';
   END IF;
 
-  IF NOT has_function_privilege('authenticated','public.search_sarina_faq(text,text,text,text,integer)','EXECUTE')
-     OR has_function_privilege('anon','public.search_sarina_faq(text,text,text,text,integer)','EXECUTE') THEN
+  IF NOT has_function_privilege('authenticated','public.search_sarina_faq(text,text,text,text,integer,text,text)','EXECUTE')
+     OR has_function_privilege('anon','public.search_sarina_faq(text,text,text,text,integer,text,text)','EXECUTE') THEN
     RAISE EXCEPTION 'FAQ retrieval RPC grants are incorrect';
   END IF;
 
