@@ -9,7 +9,6 @@ create index if not exists expert_recommendation_actions_field_schedule_idx
 create or replace function public.validate_expert_recommendation_action_field_scope()
 returns trigger
 language plpgsql
-security definer
 set search_path = ''
 as $$
 declare
