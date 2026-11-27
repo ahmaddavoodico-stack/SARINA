@@ -54,7 +54,10 @@ CREATE TABLE public.farm_trees (
   CONSTRAINT farm_trees_code_check
     CHECK (tree_code IS NULL OR length(btrim(tree_code)) BETWEEN 1 AND 80),
   CONSTRAINT farm_trees_location_source_check
-    CHECK (location_source IS NULL OR location_source IN ('farmer_pin', 'device_gps', 'surveyed', 'imported_verified')),
+    CHECK (
+      (location IS NULL AND location_source IS NULL)
+      OR (location IS NOT NULL AND location_source IN ('farmer_pin', 'device_gps', 'surveyed', 'imported_verified'))
+    ),
   CONSTRAINT farm_trees_accuracy_check
     CHECK (position_accuracy_m IS NULL OR position_accuracy_m BETWEEN 0 AND 10000),
   CONSTRAINT farm_trees_location_geometry_check
@@ -72,10 +75,22 @@ CREATE TABLE public.farm_trees (
       OR (is_location_confirmed = true AND location IS NOT NULL AND location_confirmed_at IS NOT NULL)
     ),
   CONSTRAINT farm_trees_age_check CHECK (age_years IS NULL OR age_years BETWEEN 0 AND 200),
+  CONSTRAINT farm_trees_age_provenance_check CHECK (
+    age_years IS NULL OR (age_source IS NOT NULL AND age_observed_at IS NOT NULL)
+  ),
+  CONSTRAINT farm_trees_age_source_check CHECK (
+    age_source IS NULL OR age_source IN ('farmer_reported', 'specialist_assessed', 'estimated_from_planting_date', 'imported_verified')
+  ),
   CONSTRAINT farm_trees_lifecycle_check
     CHECK (lifecycle_status IN ('alive', 'dead', 'removed', 'unknown')),
   CONSTRAINT farm_trees_death_source_check
     CHECK (death_evidence_source IS NULL OR death_evidence_source IN ('farmer_reported', 'specialist_assessed', 'unknown')),
+  CONSTRAINT farm_trees_death_provenance_check CHECK (
+    death_cause IS NULL OR death_evidence_source IS NOT NULL
+  ),
+  CONSTRAINT farm_trees_death_date_check CHECK (
+    death_date IS NULL OR lifecycle_status IN ('dead', 'removed')
+  ),
   CONSTRAINT farm_trees_metadata_object_check CHECK (jsonb_typeof(metadata) = 'object')
 );
 
@@ -324,6 +339,8 @@ BEGIN
 END;
 $$;
 
+REVOKE ALL ON FUNCTION public.validate_farm_tree_spatial_state() FROM PUBLIC, anon, authenticated;
+
 CREATE TRIGGER farm_trees_validate_spatial_state
   BEFORE INSERT OR UPDATE ON public.farm_trees
   FOR EACH ROW EXECUTE FUNCTION public.validate_farm_tree_spatial_state();
@@ -370,6 +387,8 @@ BEGIN
   RETURN NEW;
 END;
 $$;
+
+REVOKE ALL ON FUNCTION public.validate_farm_map_feature_spatial_state() FROM PUBLIC, anon, authenticated;
 
 CREATE TRIGGER farm_map_features_validate_spatial_state
   BEFORE INSERT OR UPDATE ON public.farm_map_features
@@ -439,6 +458,8 @@ BEGIN
   RETURN NEW;
 END;
 $$;
+
+REVOKE ALL ON FUNCTION public.validate_irrigation_network_edge() FROM PUBLIC, anon, authenticated;
 
 CREATE TRIGGER irrigation_network_edges_validate
   BEFORE INSERT OR UPDATE ON public.irrigation_network_edges
@@ -510,6 +531,7 @@ BEGIN
   ] LOOP
     EXECUTE format('ALTER TABLE public.%I ENABLE ROW LEVEL SECURITY', v_table);
     EXECUTE format('REVOKE ALL ON TABLE public.%I FROM anon', v_table);
+    EXECUTE format('REVOKE ALL ON TABLE public.%I FROM authenticated', v_table);
     EXECUTE format('GRANT ALL ON TABLE public.%I TO service_role', v_table);
   END LOOP;
 END;
