@@ -42,3 +42,53 @@ Deno.test("admin chat does not expose provider response bodies on errors", async
     "GROQ_CHAT_HTTP_429",
   );
 });
+
+
+Deno.test("admin chat exposes synthesize_speech and executes it with the caller JWT", async () => {
+  const requests: { url: string; init?: RequestInit }[] = [];
+  const result = await invokeGroqAdminChat({
+    apiKey: "test-secret",
+    accessToken: "user-jwt",
+    voiceApiBase: "https://sarina-preview.vercel.app/api/voice",
+    messages: [{ role: "user", content: "لطفاً خودت را با صدا معرفی کن." }],
+    fetchImpl: async (input, init) => {
+      const url = String(input);
+      requests.push({ url, init });
+      if (url.endsWith("/v1/synthesize")) {
+        return new Response(new Uint8Array([82, 73, 70, 70]), {
+          status: 200,
+          headers: { "Content-Type": "audio/wav" },
+        });
+      }
+      const body = JSON.parse(String(init?.body));
+      const chatCalls = requests.filter((item) => item.url.includes("chat/completions")).length;
+      if (chatCalls === 1) {
+        assertEquals(body.tools[0].function.name, "synthesize_speech");
+        return new Response(JSON.stringify({
+          choices: [{
+            message: {
+              role: "assistant",
+              content: null,
+              tool_calls: [{
+                id: "call_voice_1",
+                type: "function",
+                function: {
+                  name: "synthesize_speech",
+                  arguments: JSON.stringify({ text: "سلام، من سارینا هستم.", language: "fa" }),
+                },
+              }],
+            },
+          }],
+        }), { status: 200, headers: { "Content-Type": "application/json" } });
+      }
+      return new Response(JSON.stringify({
+        choices: [{ message: { role: "assistant", content: "سلام، من سارینا هستم." } }],
+      }), { status: 200, headers: { "Content-Type": "application/json" } });
+    },
+  });
+  assertEquals(result.answer, "سلام، من سارینا هستم.");
+  assertEquals(result.audioMimeType, "audio/wav");
+  assertEquals(result.audioBase64, "UklGRg==");
+  const voiceRequest = requests.find((item) => item.url.endsWith("/v1/synthesize"));
+  assertEquals(new Headers(voiceRequest?.init?.headers).get("authorization"), "Bearer user-jwt");
+});
