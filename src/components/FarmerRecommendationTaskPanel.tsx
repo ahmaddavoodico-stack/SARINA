@@ -1,5 +1,5 @@
-import {useEffect,useMemo,useState} from "react";
-import {AlertCircle,CheckCircle2,Play,Send} from "lucide-react";
+import {useEffect,useMemo,useRef,useState} from "react";
+import {AlertCircle,CheckCircle2,Play,Send,Volume2,Square} from "lucide-react";
 import {supabase} from "../lib/supabase";
 
 const db=supabase as any;
@@ -24,7 +24,21 @@ export default function FarmerRecommendationTaskPanel({farmId,recommendations,fi
  const [note,setNote]=useState("");
  const [busy,setBusy]=useState(false);
  const [notice,setNotice]=useState("");
+ const [speaking,setSpeaking]=useState(false);
+ const speechRef=useRef<SpeechSynthesisUtterance|null>(null);
  useEffect(()=>{setActiveId(selectedTaskId);setNote("");},[selectedTaskId]);
+ useEffect(()=>()=>{if(typeof window!=="undefined"&&window.speechSynthesis)window.speechSynthesis.cancel();},[]);
+ function toggleInstructionAudio(){
+  if(typeof window==="undefined"||!("speechSynthesis" in window)){setNotice("پخش صوت در این مرورگر پشتیبانی نمی‌شود.");return;}
+  if(speaking){window.speechSynthesis.cancel();speechRef.current=null;setSpeaking(false);return;}
+  const text=active?.instructions?.trim();if(!text)return;
+  window.speechSynthesis.cancel();
+  const utterance=new SpeechSynthesisUtterance(text);utterance.lang="fa-IR";utterance.rate=0.92;utterance.pitch=1.04;
+  const voices=window.speechSynthesis.getVoices();const persianVoice=voices.find(voice=>voice.lang.toLowerCase().startsWith("fa"));
+  if(persianVoice)utterance.voice=persianVoice;
+  utterance.onstart=()=>setSpeaking(true);utterance.onend=()=>{setSpeaking(false);speechRef.current=null;};utterance.onerror=()=>{setSpeaking(false);speechRef.current=null;setNotice("پخش صوت انجام نشد؛ لطفاً دوباره تلاش کن.");};
+  speechRef.current=utterance;window.speechSynthesis.speak(utterance);
+ }
  const today=localToday();
  const rows=useMemo(()=>[...recommendations].sort((a,b)=>{
   const aDue=a.due_on||"9999-12-31",bDue=b.due_on||"9999-12-31";
@@ -66,6 +80,7 @@ export default function FarmerRecommendationTaskPanel({farmId,recommendations,fi
   {active&&<div className="farm-task-detail">
    <div className="farm-task-detail-top"><div><b>{active.title}</b><small>اولویت: {priorityLabel(active.priority)} · محدوده: {active.field_id?(fields.find(f=>f.id===active.field_id)?.field_name||"قطعه ثبت‌شده"):"کل مزرعه"} · شروع: {dateLabel(active.starts_on)} · مهلت: {dateLabel(active.due_on)}</small></div><span className={"farm-task-priority "+priorityTone(active)}/></div>
    <p>{active.instructions}</p>
+   <div className="farm-task-audio-row"><button type="button" className="farm-task-audio-button" onClick={toggleInstructionAudio} disabled={!active.instructions?.trim()} aria-label={speaking?"توقف پخش توضیح صوتی":"پخش توضیح صوتی دستورالعمل"}>{speaking?<Square size={16}/>:<Volume2 size={17}/>} {speaking?"توقف پخش":"شنیدن توضیح این کار"}</button><small>با صدای فارسی دستگاه؛ در صورت پشتیبانی مرورگر</small></div>
    {active.status==="completed"&&<div className="farm-task-result"><CheckCircle2 size={16}/> اتمام کار توسط کشاورز در {active.completed_at?new Date(active.completed_at).toLocaleString("fa-IR"):"زمان ثبت‌شده"} اعلام شده است.</div>}
    {active.status==="needs_review"&&<div className="farm-task-result"><AlertCircle size={16}/> درخواست بازبینی برای متخصص ارسال شده است.</div>}
    {active.status!=="completed"&&active.status!=="needs_review"&&<>
