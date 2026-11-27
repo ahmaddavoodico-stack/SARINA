@@ -34,6 +34,13 @@ export default function ExpertRecommendationFollowUp({profileId,sarinaUserId,ver
   setLoading(false);
  },[profileId,verified]);
  useEffect(()=>{void refresh();},[refresh]);
+ useEffect(()=>{
+  if(!supabase||!verified)return;
+  const channel=supabase.channel("expert-recommendation-actions-"+profileId)
+   .on("postgres_changes",{event:"*",schema:"public",table:"expert_recommendation_actions",filter:"expert_profile_id=eq."+profileId},()=>{void refresh();})
+   .subscribe();
+  return()=>{void supabase.removeChannel(channel);};
+ },[profileId,verified,refresh]);
  const today=localDate();
  const counts=useMemo(()=>({
   total:rows.length,
