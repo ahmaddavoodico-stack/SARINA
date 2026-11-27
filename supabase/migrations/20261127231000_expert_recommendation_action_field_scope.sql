@@ -27,7 +27,9 @@ alter table public.expert_case_notifications
     'assignment_declined'::text,
     'expert_recommendation_approved'::text,
     'recommendation_completed'::text,
-    'recommendation_review_requested'::text
+    'recommendation_review_requested'::text,
+    'case_handover_offered'::text,
+    'case_handover_declined'::text
   ]));
 
 -- The recommendation's field must belong to its own farm.
