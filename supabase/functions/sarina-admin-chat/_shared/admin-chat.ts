@@ -172,7 +172,7 @@ export async function invokeGroqAdminChat(options: GroqAdminChatOptions): Promis
       ...options.messages,
       {
         role: "assistant",
-        content: first.content || null as unknown as string,
+        content: first.content,
         tool_calls: first.toolCalls,
       },
       { role: "tool", tool_call_id: call.id, content: toolResult },
