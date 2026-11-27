@@ -1,5 +1,6 @@
 import {useEffect,useMemo,useRef,useState} from "react";
-import {Check,MapPin,Plus,Save,X,Power,RotateCcw} from "lucide-react";
+import {Check,MapPin,Plus,Save,X} from "lucide-react";
+import {supabase} from "../lib/supabase";
 
 type Field={id:string;field_name:string;boundary:any};
 type PondStatus="active"|"inactive"|"retired"|"removed";
@@ -17,7 +18,6 @@ export default function FarmPondsManager({farmId,fields,userId}:{farmId:string;f
  const mapHost=useRef<HTMLDivElement>(null),mapRef=useRef<any>(null),layerRef=useRef<any>(null),drawingRef=useRef(false),verticesRef=useRef<[number,number][]>([]);
  const load=async()=>{setLoading(true);const r=await db.from("farm_map_features").select("id,farm_id,field_id,feature_type,geometry,is_geometry_confirmed,status,width_m,depth_m,length_m,capacity_value,capacity_unit,attributes").eq("farm_id",farmId).in("feature_type",["pond","reservoir"]).order("created_at",{ascending:false}).limit(500);if(r.error){setError("دریافت استخرها انجام نشد: "+r.error.message);setItems([]);}else{setItems((r.data??[]) as PondFeature[]);setError("");}setLoading(false);};
  useEffect(()=>{void load();},[farmId]);
- const fieldBounds=useMemo(()=>fields.map(f=>parseGeometry(f.boundary)).filter(g=>g?.type&&g?.coordinates),[fields]);
  useEffect(()=>{
   if(!mapHost.current||!window.L||mapRef.current)return;
   const L=window.L;let map:any;
@@ -26,12 +26,11 @@ export default function FarmPondsManager({farmId,fields,userId}:{farmId:string;f
    L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",{maxZoom:19,attribution:"Tiles © Esri"}).addTo(map);
    const layer=L.layerGroup().addTo(map);mapRef.current=map;layerRef.current=layer;
    map.on("click",(e:any)=>{if(!drawingRef.current)return;const next:[number,number]=[e.latlng.lat,e.latlng.lng];verticesRef.current=[...verticesRef.current,next];setVertices(verticesRef.current);});
-   const bounds:L.LatLngBoundsExpression=[] as any;
-   const all:any[]=[];for(const f of fields){const g=parseGeometry(f.boundary);if(g?.type==="Polygon"||g?.type==="MultiPolygon"){const coords=g.type==="Polygon"?g.coordinates:[].concat(...g.coordinates);for(const ring of coords[0]?[coords[0]]:[])for(const xy of ring)all.push([Number(xy[1]),Number(xy[0])]);}}
+   const all:any[]=[];for(const f of fields){const g=parseGeometry(f.boundary);if(g?.type==="Polygon"||g?.type==="MultiPolygon"){const polygons=g.type==="Polygon"?[g.coordinates]:g.coordinates;for(const polygon of polygons)for(const ring of polygon)for(const xy of ring)all.push([Number(xy[1]),Number(xy[0])]);}}
    if(all.length)map.fitBounds(L.latLngBounds(all),{padding:[20,20],maxZoom:18});
   }catch{setError("نقشه ترسیم استخر بارگذاری نشد.");}
   return()=>{if(mapRef.current){mapRef.current.remove();mapRef.current=null;layerRef.current=null;}};
- },[farmId]);
+ },[farmId,open]);
  useEffect(()=>{
   const L=window.L,layer=layerRef.current,map=mapRef.current;if(!L||!layer||!map)return;layer.clearLayers();
   for(const f of fields){const g=parseGeometry(f.boundary);if(g?.type)try{L.geoJSON(g,{style:{color:"#f5f7f3",weight:2,fillOpacity:0.02,dashArray:"5 4"}}).addTo(layer);}catch{}}
