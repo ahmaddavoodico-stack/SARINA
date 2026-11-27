@@ -6,7 +6,7 @@ import {supabase} from "../lib/supabase";
 type Farm={id:string;farm_name:string;total_area:number|null;area_unit:string;status:string};
 type Field={id:string;farm_id:string;field_name:string;area:number|null;area_unit:string;boundary:any};
 type Action={id:string;title:string;status:string;due_date:string|null;plan_id:string};
-type Plan={id:string;farm_id:string;title:string;status:string;priority:string;farm_improvement_actions?:Action[]};
+type Plan={id:string;farm_id:string;field_id:string|null;title:string;status:string;priority:string;farm_improvement_actions?:Action[]};
 declare global{interface Window{L?:any}}
 const db=supabase as any;
 const faNumber=(n:number)=>n.toLocaleString("fa-IR",{maximumFractionDigits:2});
@@ -16,7 +16,7 @@ function pointsFromBoundary(value:any):[number,number][][]{
   return rings.filter((ring:any)=>Array.isArray(ring)&&ring.length>=4).map((ring:any)=>ring.map((p:any)=>[Number(p[1]),Number(p[0])] as [number,number]));
  }catch{return [];}
 }
-function FarmMapView({fields}:{fields:Field[]}){
+function FarmMapView({fields,plans}:{fields:Field[];plans:Plan[]}){
  const host=useRef<HTMLDivElement>(null),mapRef=useRef<any>(null),layersRef=useRef<any>(null);
  const[ready,setReady]=useState(false),[error,setError]=useState("");
  useEffect(()=>{let cancelled=false;let timer:number|undefined;
@@ -26,8 +26,9 @@ function FarmMapView({fields}:{fields:Field[]}){
  },[]);
  useEffect(()=>{if(!ready||!mapRef.current||!layersRef.current)return;const L=window.L,group=layersRef.current;group.clearLayers();const bounds:any[]=[];
   for(const field of fields){const rings=pointsFromBoundary(field.boundary);for(const ring of rings){const polygon=L.polygon(ring,{color:"#24724e",weight:3,fillColor:"#75ad7b",fillOpacity:.28}).addTo(group);polygon.bindTooltip(field.field_name||"قطعه مزرعه");bounds.push(...ring);}}
+  for(const plan of plans){if(!plan.field_id)continue;const field=fields.find(x=>x.id===plan.field_id);if(!field)continue;const ring=pointsFromBoundary(field.boundary)[0];if(!ring?.length)continue;const lat=ring.reduce((s,p)=>s+p[0],0)/ring.length,lng=ring.reduce((s,p)=>s+p[1],0)/ring.length;L.marker([lat,lng],{icon:L.divIcon({className:"sarina-task-map-marker",html:"<span>✓</span>",iconSize:[30,30],iconAnchor:[15,15]})}).addTo(group).bindPopup(plan.title);}
   if(bounds.length)mapRef.current.fitBounds(bounds,{padding:[22,22],maxZoom:17});else mapRef.current.setView([25,0],2);
- },[ready,fields]);
+ },[ready,fields,plans]);
  return <div className="myfarm-map-wrap"><div ref={host} className="myfarm-map" aria-label="نقشه محدوده تأییدشده مزرعه"/>{!ready&&!error&&<div className="myfarm-map-state">در حال آماده‌سازی نقشه مزرعه…</div>}{error&&<div className="myfarm-map-state">{error}</div>}{ready&&fields.every(f=>!pointsFromBoundary(f.boundary).length)&&<div className="myfarm-map-empty"><Sprout size={24}/><b>مرز تأییدشده‌ای برای نمایش نداریم</b><span>می‌توانی محدوده مزرعه را از بخش ثبت مزرعه روی نقشه مشخص کنی.</span></div>}</div>;
 }
 function ConversationPreview({onClose}:{onClose:()=>void}){
@@ -41,7 +42,7 @@ export default function FarmerHomeExperience({session,onOpenFarms,onOpenChat}:{s
   if(!ids.length){setFields([]);setPlans([]);return;}
   const [fieldResult,planResult]=await Promise.all([
    db.from("farm_fields").select("id,farm_id,field_name,area,area_unit,boundary").in("farm_id",ids).limit(500),
-   db.from("farm_improvement_plans").select("id,farm_id,title,status,priority,farm_improvement_actions(id,title,status,due_date,plan_id)").in("farm_id",ids).eq("status","active").limit(100)
+   db.from("farm_improvement_plans").select("id,farm_id,field_id,title,status,priority,origin,requires_expert_review,farm_improvement_actions(id,title,status,due_date,plan_id)").in("farm_id",ids).eq("status","active").in("origin",["expert","sarina"]).eq("requires_expert_review",false).limit(100)
   ]);
   if(fieldResult.error)throw fieldResult.error;if(planResult.error)throw planResult.error;
   if(active){setFields((fieldResult.data??[]) as Field[]);setPlans((planResult.data??[]) as Plan[]);}
@@ -56,7 +57,7 @@ export default function FarmerHomeExperience({session,onOpenFarms,onOpenChat}:{s
   <div className="myfarm-heading"><div><span className="eyebrow">فضای اصلی مدیریت مزرعه</span><h2>مزرعه من</h2></div>{farms.length>0&&<span className="myfarm-count">مزرعه {faNumber(selected+1)} از {faNumber(farms.length)}</span>}</div>
   {loading?<div className="empty-state">در حال دریافت مزارع شما…</div>:error?<div className="notice warning" role="alert">{error}</div>:farms.length===0?<div className="myfarm-empty"><Sprout size={34}/><h3>هنوز مزرعه‌ای ثبت نکرده‌ای</h3><p>اولین مزرعه‌ات را روی نقشه مشخص کن تا فضای اختصاصی آن ساخته شود.</p><button type="button" onClick={onOpenFarms}>ثبت مزرعه روی نقشه <ChevronLeft size={17}/></button></div>:farm&&<article className="myfarm-card">
    <div className="myfarm-card-top"><div><b>{farm.farm_name}</b><span>{farm.total_area===null?"مساحت ثبت نشده":faNumber(Number(farm.total_area))+" "+(farm.area_unit==="hectare"?"هکتار":farm.area_unit)}</span></div><button type="button" onClick={onOpenFarms}>مدیریت اطلاعات مزرعه</button></div>
-   <FarmMapView fields={farmFields}/>
+   <FarmMapView fields={farmFields} plans={farmPlans}/>
    <div className="myfarm-productivity"><div><span>بهره‌وری مزرعه</span><b>—</b></div><p>برای ارزیابی معتبر، هنوز داده‌های کافی و قابل مقایسه ثبت نشده است.</p></div>
    <div className="myfarm-plan"><div className="myfarm-plan-head"><div><CalendarDays size={18}/><b>برنامه و اقدامات مزرعه</b></div><span>{faNumber(actions.length)} اقدام ثبت‌شده</span></div>
     {actions.length?actions.slice(0,4).map(a=><div className="myfarm-action" key={a.id}><span className={a.status==="completed"?"done":"pending"}/><div><b>{a.title}</b><small>{a.due_date?new Date(a.due_date+"T00:00:00").toLocaleDateString("fa-IR"):"زمان‌بندی ثبت نشده"}</small></div><span>{a.status==="completed"?"انجام‌شده":a.status==="in_progress"?"در حال انجام":"برنامه‌ریزی‌شده"}</span></div>):<p className="myfarm-no-actions">هنوز اقدام هفتگی تأییدشده‌ای برای نمایش ثبت نشده است. توصیه‌های معتبر پس از اتصال جریان تخصصی در همین بخش قرار می‌گیرند.</p>}
