@@ -8,6 +8,7 @@ type Props={
   onTranscription:(text:string)=>void;
   onVoiceMessage:(payload:VoicePayload)=>void|Promise<void>;
   textToSpeak?:string;
+  speechRequestId?:number;
   speechLanguage?:"fa"|"ar";
   disabled?:boolean;
   autoGenerateAudio?:boolean;
@@ -38,7 +39,7 @@ async function accessToken():Promise<string>{
   return data.session.access_token;
 }
 
-export default function VoiceMessageControls({onTranscription,onVoiceMessage,textToSpeak,speechLanguage="fa",disabled=false,autoGenerateAudio=false,onVoiceReplyAudio,onAudioGenerationComplete}:Props){
+export default function VoiceMessageControls({onTranscription,onVoiceMessage,textToSpeak,speechRequestId,speechLanguage="fa",disabled=false,autoGenerateAudio=false,onVoiceReplyAudio,onAudioGenerationComplete}:Props){
   const [recording,setRecording]=useState(false);
   const [processing,setProcessing]=useState(false);
   const [notice,setNotice]=useState("");
@@ -112,14 +113,15 @@ export default function VoiceMessageControls({onTranscription,onVoiceMessage,tex
     finally{setProcessing(false);onAudioGenerationComplete();}
   }
 
-  const lastGeneratedRef=useRef<string>("");
+  const lastGeneratedRef=useRef<string|number|undefined>(undefined);
   useEffect(()=>{
     const text=textToSpeak?.trim();
-    if(autoGenerateAudio&&text&&text!==lastGeneratedRef.current){
-      lastGeneratedRef.current=text;
+    const requestId=speechRequestId??text;
+    if(autoGenerateAudio&&text&&requestId!==lastGeneratedRef.current&&!disabled&&!processing){
+      lastGeneratedRef.current=requestId;
       void generateReplyAudio();
     }
-  },[autoGenerateAudio,textToSpeak]);
+  },[autoGenerateAudio,textToSpeak,speechRequestId,disabled,processing]);
 
   return <div className="sarina-voice-controls" dir="rtl">
     <div className="sarina-voice-actions">
