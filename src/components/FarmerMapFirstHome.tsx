@@ -1,6 +1,6 @@
 import {useEffect,useMemo,useRef,useState} from "react";
 import type {Session} from "@supabase/supabase-js";
-import {CalendarDays,ChevronLeft,ChevronRight,MapPin,Plus,Sprout,TrendingUp} from "lucide-react";
+import {CalendarDays,ChevronLeft,ChevronRight,MapPin,Plus,Sprout} from "lucide-react";
 import {supabase} from "../lib/supabase";
 
 type Farm={id:string;farm_name:string;total_area:number|null;area_unit:string};
