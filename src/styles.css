@@ -1671,3 +1671,5 @@
 .myfarm-map-legend i{display:inline-block;width:8px;height:8px;border-radius:50%}
 .myfarm-map-legend i.crop{background:#4c9363}.myfarm-map-legend i.water{background:#438bb4}.myfarm-map-legend i.task{background:#d49a42}
 @media(max-width:760px){.myfarm-iso-stage{min-height:250px;padding:10px 7px}.myfarm-iso-svg{min-height:190px}.myfarm-map-legend{gap:10px}}
+
+.myfarm-iso-stage .myfarm-map-empty{position:relative;inset:auto;min-height:245px;background:transparent;border:0}
