@@ -526,3 +526,69 @@
 }
 
 .admin-user-actions{display:flex;align-items:center;gap:7px;flex-wrap:wrap}.admin-user-footer .admin-user-actions button{width:auto}.admin-user-actions .danger-action{background:#fff1ed;color:#a45d4c}.admin-user-actions .primary-button{background:var(--g);color:#fff}
+
+
+/* SARINA V1 — map-first farmer home */
+.farmer-home-experience{display:grid;gap:16px}
+.myfarm-welcome-actions button,.myfarm-card-top button,.myfarm-empty button,.myfarm-bottom-actions button{border:1px solid #dce8dc;background:#fff;color:#245b43;border-radius:12px;padding:10px 14px;display:inline-flex;align-items:center;justify-content:center;gap:8px;font-size:11px;font-weight:700}
+.myfarm-heading{display:flex;align-items:end;justify-content:space-between;margin-top:4px}
+.myfarm-heading h2{font-size:19px;color:#214638;margin:5px 0 0}
+.myfarm-count{font-size:10px;color:#71877a;background:#eef5ed;border-radius:20px;padding:7px 11px}
+.myfarm-card{background:#fff;border:1px solid #e1eae1;border-radius:20px;padding:14px;box-shadow:0 10px 30px #183d2a08;min-width:0}
+.myfarm-card-top{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px}
+.myfarm-card-top b,.myfarm-card-top span{display:block}
+.myfarm-card-top b{font-size:14px;color:#214638}
+.myfarm-card-top span{font-size:10px;color:#8a9a90;margin-top:4px}
+.myfarm-card-top button{font-size:10px;padding:8px 10px;white-space:nowrap}
+.myfarm-map-wrap{height:clamp(240px,38vw,430px);position:relative;border-radius:15px;overflow:hidden;background:#e9f0e6}
+.myfarm-map{height:100%;width:100%;z-index:1}
+.myfarm-map-state,.myfarm-map-empty{position:absolute;z-index:2;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:9px;background:#f5f8f1eF;color:#587461;font-size:11px;text-align:center;padding:20px;pointer-events:none}
+.myfarm-map-empty span{font-size:10px;color:#87978d;max-width:320px;line-height:1.9}
+.myfarm-productivity{margin-top:12px;padding:13px 15px;border-radius:14px;background:#174d37;color:#fff}
+.myfarm-productivity>div{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.myfarm-productivity>div span{font-size:11px;color:#d6e9dc}
+.myfarm-productivity>div b{font-size:27px;line-height:1;font-weight:800}
+.myfarm-productivity p{font-size:10px;color:#d5e6d9;line-height:1.8;margin:8px 0 0}
+.myfarm-plan{margin-top:14px;border:1px solid #e8eee8;border-radius:14px;padding:13px}
+.myfarm-plan-head,.myfarm-plan-head>div{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.myfarm-plan-head>div{justify-content:flex-start;color:#356c4d}
+.myfarm-plan-head b{font-size:11px;color:#365846}
+.myfarm-plan-head>span{font-size:9px;color:#8d9a92}
+.myfarm-action{display:flex;align-items:center;gap:10px;padding:11px 2px;border-top:1px solid #edf1ed;margin-top:8px}
+.myfarm-action>span:first-child{width:8px;height:8px;border-radius:50%;background:#d6a34b;flex:none}
+.myfarm-action>span:first-child.done{background:#54a46c}
+.myfarm-action>div{flex:1;min-width:0}
+.myfarm-action b,.myfarm-action small{display:block}
+.myfarm-action b{font-size:10px;color:#405b4c}
+.myfarm-action small{font-size:9px;color:#9aa59e;margin-top:3px}
+.myfarm-action>span:last-child{font-size:9px;color:#8b9a90}
+.myfarm-no-actions{font-size:10px;line-height:2;color:#8b9a90;margin:10px 0 2px}
+.myfarm-switch{display:flex;align-items:center;justify-content:space-between;margin-top:12px}
+.myfarm-switch>button{width:34px;height:34px;border:1px solid #e4ece4;background:#fff;color:#477457;border-radius:50%;display:grid;place-items:center}
+.myfarm-switch>button:disabled{opacity:.3;cursor:default}
+.myfarm-switch>div{display:flex;align-items:center;gap:6px}
+.myfarm-switch>div button{width:7px;height:7px;border:0;border-radius:20px;background:#d5e1d6;padding:0}
+.myfarm-switch>div button.active{width:20px;background:#3c875a}
+.myfarm-empty{min-height:300px;border:1px dashed #d4e2d5;background:#fbfcfa;border-radius:18px;display:flex;align-items:center;justify-content:center;flex-direction:column;text-align:center;padding:25px;color:#54815f;gap:9px}
+.myfarm-empty h3{font-size:15px;color:#355b45;margin:0}
+.myfarm-empty p{font-size:10px;color:#8b9a90;line-height:1.9;max-width:360px;margin:0 0 6px}
+.myfarm-bottom-actions{display:flex;flex-wrap:wrap;gap:9px}
+.sarina-chat-overlay{position:fixed;inset:0;background:#10271f66;z-index:100;display:flex;align-items:flex-end;justify-content:center;padding:18px}
+.sarina-chat-panel{width:min(560px,100%);height:min(690px,90vh);background:#fff;border-radius:22px;box-shadow:0 24px 70px #10271f35;display:flex;flex-direction:column;overflow:hidden}
+.sarina-chat-panel>header{display:flex;align-items:center;gap:11px;padding:15px 17px;background:#174d37;color:#fff}
+.sarina-chat-avatar{width:39px;height:39px;border-radius:13px;background:#ffffff20;display:grid;place-items:center}
+.sarina-chat-panel>header>div:nth-child(2){flex:1}
+.sarina-chat-panel>header b,.sarina-chat-panel>header small{display:block}
+.sarina-chat-panel>header b{font-size:13px;letter-spacing:1px}
+.sarina-chat-panel>header small{font-size:9px;color:#d1e4d6;margin-top:3px}
+.sarina-chat-panel>header button{border:0;background:transparent;color:#fff;font-size:24px}
+.sarina-chat-welcome{margin:auto 18px 12px;padding:18px;background:#f1f6ef;border-radius:17px;color:#315c43}
+.sarina-chat-welcome span{font-size:13px;font-weight:700}
+.sarina-chat-welcome p{font-size:11px;line-height:2}
+.sarina-chat-welcome small{font-size:9px;color:#829287}
+.sarina-chat-disabled-note{margin:0 18px 14px;padding:11px 13px;border-radius:12px;background:#fff7e8;color:#987844;font-size:10px;line-height:1.9}
+.sarina-chat-composer{display:flex;align-items:center;gap:7px;padding:12px;border-top:1px solid #edf1ed}
+.sarina-chat-composer input{min-width:0;flex:1;height:42px;border:1px solid #e4ebe4;border-radius:12px;padding:0 12px;font-size:10px;background:#f8faf7}
+.sarina-chat-composer button{width:37px;height:37px;border:0;border-radius:11px;background:#edf4ed;color:#4c7c58;display:grid;place-items:center}
+.sarina-chat-composer button:disabled{opacity:.45}
+@media(max-width:760px){.myfarm-card{padding:10px}.myfarm-map-wrap{height:290px}.myfarm-card-top{align-items:flex-start}.myfarm-card-top button{font-size:9px}.myfarm-productivity{padding:12px}.myfarm-bottom-actions>*{flex:1}.sarina-chat-overlay{padding:0}.sarina-chat-panel{height:92vh;border-radius:20px 20px 0 0}}
