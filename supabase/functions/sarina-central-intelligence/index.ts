@@ -10,6 +10,7 @@ import {
 } from "./_shared/specialist-collaboration.ts";
 import { createDurableTaskStore } from "../_shared/durable-task-store.ts";
 import { retrieveFaqCandidates } from "./_shared/faq-retrieval.ts";
+import { recordFaqQuestionSignal } from "./_shared/faq-question-signal.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -64,6 +65,18 @@ Deno.serve(async (req: Request) => {
   // FAQ is a read-only candidate source. It never bypasses SCI routing,
   // risk policy, specialist review, or farmer-specific context validation.
   const faqRetrieval = await retrieveFaqCandidates(client, { question, language });
+
+  // Optional, privacy-preserving FAQ frequency capture. It is disabled unless
+  // explicitly enabled; only an HMAC fingerprint is stored, never question text.
+  if (Deno.env.get("SCI_FAQ_SIGNALS_ENABLED") === "true") {
+    const signalServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    if (signalServiceKey) {
+      const signalClient = createClient(supabaseUrl, signalServiceKey, {
+        auth: { persistSession: false, autoRefreshToken: false },
+      });
+      await recordFaqQuestionSignal(signalClient, signalServiceKey, { question, language });
+    }
+  }
 
   // Assemble minimum farm context through existing caller-JWT Edge Functions.
   // These endpoints independently enforce the same user's RLS access; no
