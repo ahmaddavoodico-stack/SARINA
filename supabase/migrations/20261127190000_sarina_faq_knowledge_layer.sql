@@ -70,15 +70,7 @@ CREATE TABLE public.sarina_faq_versions (
   valid_until date NULL,
   created_by uuid NULL REFERENCES public.users(id) ON DELETE SET NULL,
   created_at timestamptz NOT NULL DEFAULT now(),
-  search_document tsvector GENERATED ALWAYS AS (
-    to_tsvector(
-      'simple'::regconfig,
-      coalesce(canonical_question, '') || ' ' ||
-      coalesce(answer_short, '') || ' ' ||
-      coalesce(answer_markdown, '') || ' ' ||
-      array_to_string(keywords, ' ')
-    )
-  ) STORED,
+  search_document tsvector NOT NULL DEFAULT ''::tsvector,
   CONSTRAINT sarina_faq_versions_entry_version_language_key
     UNIQUE (faq_entry_id, version_no, language_code),
   CONSTRAINT sarina_faq_versions_version_check CHECK (version_no > 0),
@@ -104,6 +96,28 @@ CREATE TABLE public.sarina_faq_versions (
   CONSTRAINT sarina_faq_versions_validity_check
     CHECK (valid_until IS NULL OR valid_until >= valid_from)
 );
+
+CREATE OR REPLACE FUNCTION public.refresh_sarina_faq_search_document()
+RETURNS trigger
+LANGUAGE plpgsql
+SET search_path = ''
+AS $
+BEGIN
+  NEW.search_document := to_tsvector(
+    'simple'::regconfig,
+    coalesce(NEW.canonical_question, '') || ' ' ||
+    coalesce(NEW.answer_short, '') || ' ' ||
+    coalesce(NEW.answer_markdown, '') || ' ' ||
+    array_to_string(NEW.keywords, ' ')
+  );
+  RETURN NEW;
+END;
+$;
+REVOKE ALL ON FUNCTION public.refresh_sarina_faq_search_document() FROM PUBLIC, anon, authenticated;
+CREATE TRIGGER sarina_faq_versions_refresh_search_document
+  BEFORE INSERT OR UPDATE OF canonical_question, answer_short, answer_markdown, keywords
+  ON public.sarina_faq_versions
+  FOR EACH ROW EXECUTE FUNCTION public.refresh_sarina_faq_search_document();
 
 CREATE UNIQUE INDEX sarina_faq_one_published_version_per_language_uidx
   ON public.sarina_faq_versions (faq_entry_id, language_code)
