@@ -13,6 +13,23 @@ create index if not exists expert_recommendation_actions_field_schedule_idx
 create index if not exists farm_improvement_actions_field_schedule_idx
   on public.farm_improvement_actions (field_id, due_date);
 
+-- The existing completion trigger emits these two event types. The earlier
+-- notification constraint omitted them, which prevented completion/review
+-- updates from committing successfully.
+alter table public.expert_case_notifications
+  drop constraint if exists expert_case_notifications_event_type_check;
+
+alter table public.expert_case_notifications
+  add constraint expert_case_notifications_event_type_check
+  check (event_type = any (array[
+    'new_message'::text,
+    'assignment_accepted'::text,
+    'assignment_declined'::text,
+    'expert_recommendation_approved'::text,
+    'recommendation_completed'::text,
+    'recommendation_review_requested'::text
+  ]));
+
 -- The recommendation's field must belong to its own farm.
 create or replace function public.validate_expert_recommendation_field_scope()
 returns trigger
