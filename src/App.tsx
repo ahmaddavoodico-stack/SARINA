@@ -1,7 +1,7 @@
 import {useEffect,useMemo,useState} from "react";
 import type {FormEvent} from "react";
 import type {Session} from "@supabase/supabase-js";
-import {Activity,ArrowLeft,ArrowRight,Bell,BookOpen,Building2,CreditCard,CalendarDays,CheckCircle2,ChevronLeft,ClipboardList,CloudSun,Home,Landmark,LogOut,Menu,MessageCircle,Plus,Search,ShieldCheck,ShoppingBag,Sprout,Tractor,TrendingUp,UserRound,Users,Sparkles,PanelRightClose,PanelRightOpen} from "lucide-react";
+import {Activity,ArrowLeft,ArrowRight,Bell,BookOpen,Building2,CreditCard,CalendarDays,CheckCircle2,ChevronLeft,ClipboardList,CloudSun,Home,Landmark,LogOut,Menu,MessageCircle,Plus,Search,ShieldCheck,ShoppingBag,Sprout,Tractor,TrendingUp,UserRound,Users} from "lucide-react";
 import {isSupabaseConfigured,supabase} from "./lib/supabase";
 import OrganizationPortal from "./OrganizationPortal";
 import FarmWorkspace from "./FarmWorkspace";
@@ -11,7 +11,6 @@ import ProductivityWorkspace from "./ProductivityWorkspace";
 import ProductivityOversightWorkspace from "./ProductivityOversightWorkspace";
 import ExpertDashboard from "./components/ExpertDashboard";
 import FarmerExpertWorkspace from "./components/FarmerExpertWorkspace";
-import FarmerSpecialistChatInbox from "./components/FarmerSpecialistChatInbox";
 import AdminExpertVerificationWorkspace from "./components/AdminExpertVerificationWorkspace";
 import {SpecialistEconomyAdminPanel} from "./components/SpecialistEconomyWorkspace";
 import AdminDashboard from "./components/AdminDashboard";
@@ -23,7 +22,6 @@ import FarmerMapFirstHome from "./components/FarmerMapFirstHome";
 import MarketplaceWorkspace from "./components/MarketplaceWorkspace";
 import MarketIntelligenceWorkspace from "./components/MarketIntelligenceWorkspace";
 import SarinaCompanion from "./SarinaCompanion";
-import SarinaCharacter from "./components/SarinaCharacter";
 
 type Page="home"|"credits"|"farms"|"productivity"|"weekly-plan"|"services"|"institutions"|"companies"|"marketplace"|"market-intelligence"|"requests"|"learning"|"experts"|"expert-chat"|"admin-home"|"admin-users"|"admin-organizations"|"admin-institutions"|"admin-applications"|"admin-services"|"admin-requests"|"admin-farms"|"admin-expert-verification"|"admin-productivity"|"admin-regional"|"admin-specialist-economy"|"admin-role-management"|"admin-sarina";
 type Service={id:string;title:string;description:string|null;public_description:string|null;service_category:string|null;submission_mode:string;is_official_authority:boolean;legal_basis:string|null;official_service_url:string|null;response_sla_days:number|null;organization_id:string};
