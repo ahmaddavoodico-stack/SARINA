@@ -23,7 +23,7 @@ function MapCanvas({fields,recommendations}:{fields:Field[];recommendations:Reco
  },[]);
  useEffect(()=>{if(!ready||!mapRef.current||!layerRef.current)return;const L=window.L,group=layerRef.current;group.clearLayers();const bounds:any[]=[];const fieldCentres=new Map<string,[number,number]>();
  for(const field of fields){const rings=boundaryRings(field.boundary);for(const ring of rings){L.polygon(ring,{color:"#28764f",weight:3,fillColor:"#78b486",fillOpacity:.25}).addTo(group).bindTooltip(field.field_name||"قطعه مزرعه");bounds.push(...ring);if(!fieldCentres.has(field.id)){fieldCentres.set(field.id,[ring.reduce((s,p)=>s+p[0],0)/ring.length,ring.reduce((s,p)=>s+p[1],0)/ring.length]);}}}
- for(const rec of recommendations){const point=rec.field_id?fieldCentres.get(rec.field_id):undefined;if(!point)continue;const marker=L.circleMarker(point,{radius:10,color:"#fff",weight:3,fillColor:rec.priority==="urgent"||rec.priority==="high"?"#d28b37":"#347c54",fillOpacity:1}).addTo(group);marker.bindPopup("<strong>"+String(rec.title).replace(/[<>]/g,"")+"</strong>");}
+ for(const rec of recommendations){const point=rec.field_id?fieldCentres.get(rec.field_id):undefined;if(!point)continue;const marker=L.circleMarker(point,{radius:10,color:"#fff",weight:3,fillColor:rec.priority==="urgent"||rec.priority==="high"?"#d28b37":"#347c54",fillOpacity:1}).addTo(group);marker.bindTooltip(String(rec.title).slice(0,180));}
  if(bounds.length)mapRef.current.fitBounds(bounds,{padding:[24,24],maxZoom:17});else mapRef.current.setView([25,0],2);
  },[ready,fields,recommendations]);
  return <div className="myfarm-map-wrap"><div ref={host} className="myfarm-map" aria-label="نقشه مرزهای تأییدشده مزرعه"/>{!ready&&!error&&<div className="myfarm-map-state">در حال آماده‌سازی نقشه اختصاصی…</div>}{error&&<div className="myfarm-map-state">{error}</div>}{ready&&fields.every(f=>!boundaryRings(f.boundary).length)&&<div className="myfarm-map-empty"><MapPin size={25}/><b>مرز تأییدشده‌ای برای نمایش نداریم</b><span>محدوده مزرعه را از بخش ثبت مزرعه روی نقشه مشخص کن.</span></div>}</div>;
@@ -47,16 +47,13 @@ export default function FarmerMapFirstHome({session,onOpenFarms}:{session:Sessio
   const ps=(planResult.data??[]) as Plan[];let actionRows:PersonalAction[]=[];
   if(ps.length){const ar=await db.from("farm_improvement_actions").select("id,plan_id,title,status,due_date").in("plan_id",ps.map(x=>x.id)).order("due_date");if(ar.error)throw ar.error;actionRows=(ar.data??[]) as PersonalAction[];}
   if(!active)return;setFields((fieldResult.data??[]) as Field[]);setRecommendations(mapped);setPlans(ps);setActions(actionRows);
-  const farmId=rows[Math.min(selected,rows.length-1)]?.id??rows[0].id;
-  const [base,meas]=await Promise.all([
-   db.from("farm_productivity_baselines").select("baseline_date,metrics_snapshot").eq("farm_id",farmId).eq("status","confirmed").order("baseline_date",{ascending:false}).limit(1).maybeSingle(),
-   db.from("farm_productivity_measurements").select("metric_code,metric_value,unit_code,observed_at").eq("farm_id",farmId).eq("metric_code","marketable_yield").order("observed_at",{ascending:false}).limit(10)
-  ]);
-  if(!active)return;if(!base.error)setBaseline(base.data as Baseline|null);if(!meas.error)setMeasurements((meas.data??[]) as Measurement[]);
+
  }catch(e){if(active)setError(e instanceof Error?e.message:"دریافت اطلاعات مزرعه انجام نشد.");}finally{if(active)setLoading(false);}}
  void load();return()=>{active=false;};
  },[session.user.id]);
- const farm=farms[selected]??null,farmFields=useMemo(()=>fields.filter(x=>x.farm_id===farm?.id),[fields,farm?.id]),farmRecommendations=useMemo(()=>recommendations.filter(x=>x.farm_id===farm?.id),[recommendations,farm?.id]),farmPlans=useMemo(()=>plans.filter(x=>x.farm_id===farm?.id),[plans,farm?.id]),farmActions=useMemo(()=>actions.filter(a=>farmPlans.some(p=>p.id===a.plan_id)),[actions,farmPlans]);
+ const farm=farms[selected]??null;
+ useEffect(()=>{let active=true;async function loadProductivity(){if(!farm?.id||!db){setBaseline(null);setMeasurements([]);return;}const [base,meas]=await Promise.all([db.from("farm_productivity_baselines").select("baseline_date,metrics_snapshot").eq("farm_id",farm.id).eq("status","confirmed").order("baseline_date",{ascending:false}).limit(1).maybeSingle(),db.from("farm_productivity_measurements").select("metric_code,metric_value,unit_code,observed_at").eq("farm_id",farm.id).eq("metric_code","marketable_yield").order("observed_at",{ascending:false}).limit(10)]);if(!active)return;setBaseline(base.error?null:base.data as Baseline|null);setMeasurements(meas.error?[]:(meas.data??[]) as Measurement[]);}void loadProductivity();return()=>{active=false;};},[farm?.id]);
+ const farmFields=useMemo(()=>fields.filter(x=>x.farm_id===farm?.id),[fields,farm?.id]),farmRecommendations=useMemo(()=>recommendations.filter(x=>x.farm_id===farm?.id),[recommendations,farm?.id]),farmPlans=useMemo(()=>plans.filter(x=>x.farm_id===farm?.id),[plans,farm?.id]),farmActions=useMemo(()=>actions.filter(a=>farmPlans.some(p=>p.id===a.plan_id)),[actions,farmPlans]);
  const baselineYield=baseline?.metrics_snapshot?.marketable_yield,currentYield=measurements.find(x=>x.observed_at&&(!baseline?.baseline_date||x.observed_at.slice(0,10)>=baseline.baseline_date));
  const comparable=baselineYield&&typeof baselineYield.value==="number"&&baselineYield.value>0&&currentYield&&baselineYield.unit===currentYield.unit_code;
  const change=comparable?Math.round((currentYield.metric_value-baselineYield.value)/baselineYield.value*100):null;
