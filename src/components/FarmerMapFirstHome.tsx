@@ -17,7 +17,7 @@ type Measurement={metric_code:string;metric_value:number;unit_code:string;observ
 type FarmAssetType="tree"|"irrigation_valve"|"irrigation_pump"|"irrigation_line"|"water_tank"|"canal"|"drainage"|"building"|"sensor"|"other";
 type FarmAsset={id:string;farm_id:string;field_id:string|null;asset_type:FarmAssetType;asset_name:string;location:any;location_source:string;position_accuracy_m:number|null;is_location_confirmed:boolean;status:string;notes:string|null;metadata?:Record<string,any>|null};
 type InfrastructureTool="none"|"house"|"warehouse"|"livestock"|"road"|"pond";
-type FarmPondFeature={id:string;farm_id:string;field_id:string|null;feature_type:"pond"|"reservoir";geometry:any;is_geometry_confirmed:boolean;status:string;depth_m:number|null;capacity_value:number|null;capacity_unit:string|null;attributes:Record<string,any>};
+type FarmPondFeature={id:string;farm_id:string;field_id:string|null;feature_type:"pond"|"reservoir";geometry:any;is_geometry_confirmed:boolean;status:string;width_m:number|null;length_m:number|null;depth_m:number|null;capacity_value:number|null;capacity_unit:string|null;attributes:Record<string,any>};
 type FarmRouteFeature={id:string;geometry:any;attributes:Record<string,any>;status:string};
 type AssetPoint={lat:number;lng:number;accuracy:number|null;source:"farmer_pin"|"device_gps"};
 declare global{interface Window{L?:any}}
