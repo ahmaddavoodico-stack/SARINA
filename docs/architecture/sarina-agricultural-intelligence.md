@@ -231,3 +231,14 @@ The first engineering task is an **SAI readiness and data-lineage inventory**, n
 ---
 
 **Strategic outcome:** SARINA should become progressively more capable from its own verified agricultural experience, while retaining the ability to consult, compare, replace, or completely disconnect external AI providers without losing its core knowledge or operational control.
+
+
+## 13. Reusable FAQ answer shelf — implementation slice
+
+The FAQ shelf is a governed, low-latency subset of SAI's validated knowledge repository, not a parallel conversation system. It reuses \`ai_conversations\` and \`ai_messages\` as private history and keeps shared answer versions separate from raw chat.
+
+The V1 schema adds stable topics and entries, localized versioned answers, source references, append-only review events, redacted recurring-question signals, and privacy-minimized usage events. Only reviewed, in-date, evidence-backed versions are eligible for retrieval. High/critical-risk entries must be specialist-approved and use the \`must_escalate\` answer mode.
+
+SCI now has a caller-JWT/RLS-scoped retrieval adapter. It attaches candidate IDs and risk metadata to the simulated/durable task context; it does not return FAQ answer text, short-circuit specialist routing, invoke a model, or automatically answer. Direct FAQ answering remains disabled until retrieval thresholds, multilingual test sets, and risk-specific acceptance tests are calibrated.
+
+The initial retrieval contract is PostgreSQL full-text search with a \`simple\` text configuration and GIN index. This is a lexical baseline, not a semantic-search quality claim. The adapter requests global-scope entries only until trusted farm/crop/region context is explicitly passed to the retrieval function.
