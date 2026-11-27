@@ -513,7 +513,7 @@ BEGIN
 
   RETURN NEW;
 END;
-$;
+$$;
 REVOKE ALL ON FUNCTION public.append_farm_tree_event() FROM PUBLIC, anon, authenticated;
 
 CREATE TRIGGER farm_trees_append_history
