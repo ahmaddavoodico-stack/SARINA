@@ -14,7 +14,7 @@ const parse=(v:any)=>{try{return typeof v==="string"?JSON.parse(v):v;}catch{retu
 function fieldCoordinates(fields:Field[]){const all:any[]=[];for(const f of fields){const g=parse(f.boundary);if(!g?.type)continue;const polys=g.type==="Polygon"?[g.coordinates]:g.type==="MultiPolygon"?g.coordinates:[];for(const p of polys)for(const ring of p)for(const xy of ring)all.push([Number(xy[1]),Number(xy[0])]);}return all;}
 export default function FarmInfrastructureQuickMap({farmId,fields,userId}:{farmId:string;fields:Field[];userId:string}){
  const host=useRef<HTMLDivElement>(null),mapRef=useRef<any>(null),layerRef=useRef<any>(null);
- const[tool,setTool]=useState<Tool>("house"),[scale,setScale]=useState(1),[assets,setAssets]=useState<QuickAsset[]>([]),[routes,setRoutes]=useState<QuickRoute[]>([]),[vertices,setVertices]=useState<[number,number][]>([]),[busy,setBusy]=useState(false),[error,setError]=useState(""),[ready,setReady]=useState(false);
+ const[tool,setTool]=useState<Tool>("house"),[scale,setScale]=useState(1),[assets,setAssets]=useState<QuickAsset[]>([]),[routes,setRoutes]=useState<QuickRoute[]>([]),[vertices,setVertices]=useState<[number,number][]>([]),[busy,setBusy]=useState(false),[error,setError]=useState("");
  const load=async()=>{const [a,r]=await Promise.all([db.from("farm_assets").select("id,asset_name,location,metadata,status").eq("farm_id",farmId).eq("status","active").limit(500),db.from("farm_map_features").select("id,geometry,attributes,status").eq("farm_id",farmId).eq("feature_type","farm_route").eq("status","active").limit(200)]);if(a.error||r.error){setError("دریافت زیرساخت‌های نقشه انجام نشد.");return;}setAssets(((a.data??[]) as QuickAsset[]).filter(x=>x.metadata?.quick_map_asset===true));setRoutes((r.data??[]) as QuickRoute[]);};
  useEffect(()=>{void load();},[farmId]);
  useEffect(()=>{
@@ -23,7 +23,6 @@ export default function FarmInfrastructureQuickMap({farmId,fields,userId}:{farmI
    for(const f of fields){const g=parse(f.boundary);if(g?.type)L.geoJSON(g,{style:{color:"#f6fff5",weight:2,fillOpacity:.025,dashArray:"5 4"}}).addTo(layer);}
    const bounds=fieldCoordinates(fields);if(bounds.length)map.fitBounds(L.latLngBounds(bounds),{padding:[24,24],maxZoom:18});
    map.on("click",async(e:any)=>{const point:[number,number]=[e.latlng.lng,e.latlng.lat];if(tool==="road"){setVertices(v=>[...v,[e.latlng.lat,e.latlng.lng]]);return;}setBusy(true);setError("");const subtype=tool;const payload={farm_id:farmId,asset_type:"other",asset_name:labels[subtype],location:{type:"Point",coordinates:point},location_source:"farmer_pin",position_accuracy_m:null,is_location_confirmed:false,location_confirmed_at:null,status:"active",metadata:{quick_map_asset:true,asset_subtype:subtype,icon_scale:scale,location_precision:"approximate",registration_phase:1},created_by_auth_user_id:userId};const saved=await db.from("farm_assets").insert(payload).select("id,asset_name,location,metadata,status").single();if(saved.error)setError("ثبت موقعیت انجام نشد: "+saved.error.message);else setAssets(v=>[saved.data,...v]);setBusy(false);});
-   setReady(true);
   }catch{setError("نقشه ثبت زیرساخت بارگذاری نشد.");}
   return()=>{if(mapRef.current){mapRef.current.remove();mapRef.current=null;layerRef.current=null;}};
  },[farmId,fields,tool,scale,userId]);
