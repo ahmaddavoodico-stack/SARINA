@@ -42,7 +42,8 @@ CREATE TABLE IF NOT EXISTS public.farm_assets (
   ),
   CONSTRAINT farm_assets_asset_name_check CHECK (length(btrim(asset_name)) BETWEEN 1 AND 120),
   CONSTRAINT farm_assets_location_source_check CHECK (
-    location_source IS NULL OR location_source IN ('farmer_pin', 'device_gps', 'surveyed', 'imported_verified')
+    (location IS NULL AND location_source IS NULL)
+    OR (location IS NOT NULL AND location_source IN ('farmer_pin', 'device_gps', 'surveyed', 'imported_verified'))
   ),
   CONSTRAINT farm_assets_accuracy_check CHECK (
     position_accuracy_m IS NULL OR position_accuracy_m BETWEEN 0 AND 10000
