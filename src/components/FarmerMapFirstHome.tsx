@@ -63,6 +63,7 @@ function IsoFarmMap({fields,crops,irrigation,recommendations,aiRecommendations,a
 
 function SatelliteFarmMap({fields,assets,selection,onSelect,mode,infrastructureTool,onPlacePoint,onPlaceRoutePoint,routePoints,savedRoutes}:{fields:Field[];assets:FarmAsset[];selection:MapSelection|null;onSelect:(s:MapSelection|null)=>void;mode:"satellite"|"hybrid";infrastructureTool:InfrastructureTool;onPlacePoint:(p:AssetPoint)=>void;onPlaceRoutePoint:(p:AssetPoint)=>void;routePoints:AssetPoint[];savedRoutes:FarmRouteFeature[]}){
  const host=useRef<HTMLDivElement>(null);
+ const handlersRef=useRef({onSelect,onPlacePoint,onPlaceRoutePoint});handlersRef.current={onSelect,onPlacePoint,onPlaceRoutePoint};
  const[ready,setReady]=useState(false),[error,setError]=useState("");
  useEffect(()=>{
   let cancelled=false,map:any=null,retryTimer:number|undefined;
@@ -83,7 +84,7 @@ function SatelliteFarmMap({fields,assets,selection,onSelect,mode,infrastructureT
     rings.forEach(({field,ring})=>{
      const polygon=L.polygon(ring,{color:selection?.id===field.id?"#f0b34d":"#e8f3e8",weight:3,fillColor:"#78b77a",fillOpacity:0.08});
      polygon.addTo(layer);
-     polygon.on("click",()=>onSelect({kind:"field",id:field.id,title:field.field_name,detail:"قطعه ثبت‌شده · "+(field.area===null?"مساحت نامشخص":n(Number(field.area))+" "+(field.area_unit==="hectare"?"هکتار":field.area_unit)),fieldId:field.id}));
+     polygon.on("click",()=>handlersRef.current.onSelect({kind:"field",id:field.id,title:field.field_name,detail:"قطعه ثبت‌شده · "+(field.area===null?"مساحت نامشخص":n(Number(field.area))+" "+(field.area_unit==="hectare"?"هکتار":field.area_unit)),fieldId:field.id}));
     });
     {
      assets.filter(a=>a.status==="active"&&(a.metadata?.quick_map_asset===true||(mode==="hybrid"&&a.is_location_confirmed))).forEach(asset=>{
@@ -92,10 +93,10 @@ function SatelliteFarmMap({fields,assets,selection,onSelect,mode,infrastructureT
       if(!Array.isArray(xy)||xy.length<2||!Number.isFinite(Number(xy[0]))||!Number.isFinite(Number(xy[1])))return;
       const quick=asset.metadata?.quick_map_asset===true;const glyph=quick?({house:"🏠",warehouse:"🏚️",livestock:"🐄"}[asset.metadata?.asset_subtype as string]||"📍"):asset.asset_type==="tree"?"🌳":"📍";const size=quick?Math.round(28*(Number(asset.metadata?.icon_scale)||1)):14;const marker=quick?L.marker([Number(xy[1]),Number(xy[0])],{icon:L.divIcon({className:"sarina-quick-map-icon",html:'<span style="width:'+size+'px;height:'+size+'px;font-size:'+Math.round(size*.72)+'px">'+glyph+'</span>',iconSize:[size,size],iconAnchor:[size/2,size/2]})}).addTo(layer):L.circleMarker([Number(xy[1]),Number(xy[0])],{radius:7,color:"#fff",weight:2,fillColor:asset.asset_type==="tree"?"#27834e":"#347eae",fillOpacity:1}).addTo(layer);
       marker.bindTooltip(asset.asset_name);
-      marker.on("click",()=>onSelect({kind:"field",id:asset.id,title:asset.asset_name,detail:(quick?"موقعیت تقریبی · ":"دارایی تأییدشده · ")+assetTypeFa(asset.asset_type),fieldId:asset.field_id}));
+      marker.on("click",()=>handlersRef.current.onSelect({kind:"field",id:asset.id,title:asset.asset_name,detail:(quick?"موقعیت تقریبی · ":"دارایی تأییدشده · ")+assetTypeFa(asset.asset_type),fieldId:asset.field_id}));
      });
     }
-    map.on("click",(e:any)=>{if(infrastructureTool==="none")return;const point={lat:e.latlng.lat,lng:e.latlng.lng,accuracy:null,source:"farmer_pin" as const};if(infrastructureTool==="road")onPlaceRoutePoint(point);else onPlacePoint(point);});
+    map.on("click",(e:any)=>{if(infrastructureTool==="none")return;const point={lat:e.latlng.lat,lng:e.latlng.lng,accuracy:null,source:"farmer_pin" as const};if(infrastructureTool==="road")handlersRef.current.onPlaceRoutePoint(point);else handlersRef.current.onPlacePoint(point);});
     savedRoutes.filter(r=>r.status==="active").forEach(r=>{let g=r.geometry;try{if(typeof g==="string")g=JSON.parse(g);}catch{g=null;}if(g?.type==="LineString"&&Array.isArray(g.coordinates))L.geoJSON(g,{style:{color:"#d68b20",weight:4,dashArray:"7 5"}}).addTo(layer);});
     if(routePoints.length>1)L.polyline(routePoints.map(p=>[p.lat,p.lng]),{color:"#e49a24",weight:5,dashArray:"8 5",lineCap:"round"}).addTo(layer);
     map.fitBounds(L.latLngBounds(coords),{padding:[24,24],maxZoom:18});
