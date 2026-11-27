@@ -1644,3 +1644,9 @@
 .farmer-home-chat-entry h2{font-size:14px;color:#284c3b;margin:4px 0}
 .farmer-home-chat-entry p{font-size:10px;line-height:1.9;color:#89978e;margin:0}
 @media(max-width:760px){.myfarm-card{padding:10px}.myfarm-map-wrap{height:290px}.myfarm-card-top{align-items:flex-start}.myfarm-card-top button{font-size:9px;padding:8px}.myfarm-productivity{padding:12px}.farmer-home-chat-entry{align-items:flex-start}}
+
+
+.myfarm-action-button{width:100%;border:0;background:transparent;text-align:right;font:inherit;cursor:pointer}
+.myfarm-action-detail{margin:0 0 10px 18px;padding:10px 12px;border-radius:10px;background:#f5f8f3}
+.myfarm-action-detail p{font-size:10px;color:#506d59;line-height:2;margin:0 0 6px;white-space:pre-wrap}
+.myfarm-action-detail small{font-size:9px;color:#8b9a90}
