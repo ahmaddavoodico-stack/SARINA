@@ -14,60 +14,103 @@ export type Database = {
   }
   public: {
     Tables: {
-      farm_environmental_assessments: {
+      activepieces_automation_inbox: {
         Row: {
-          assessment_schema_version: string
-          assessment_status: string
-          assessed_at: string
-          created_at: string
-          created_by_auth_user_id: string | null
-          evidence_payload: Json
-          farm_id: string
+          error_code: string | null
+          event_id: string
+          event_type: string
           id: string
-          missing_domains: Json
-          quality_summary: Json
-          source_manifest: Json
-          valid_until: string | null
-          version: number
+          payload: Json
+          processed_at: string | null
+          received_at: string
+          status: string
         }
         Insert: {
-          assessment_schema_version?: string
-          assessment_status?: string
-          assessed_at?: string
-          created_at?: string
-          created_by_auth_user_id?: string | null
-          evidence_payload?: Json
-          farm_id: string
+          error_code?: string | null
+          event_id: string
+          event_type: string
           id?: string
-          missing_domains?: Json
-          quality_summary?: Json
-          source_manifest?: Json
-          valid_until?: string | null
-          version?: number
+          payload?: Json
+          processed_at?: string | null
+          received_at?: string
+          status?: string
         }
         Update: {
-          assessment_schema_version?: string
-          assessment_status?: string
-          assessed_at?: string
-          created_at?: string
-          created_by_auth_user_id?: string | null
-          evidence_payload?: Json
-          farm_id?: string
+          error_code?: string | null
+          event_id?: string
+          event_type?: string
           id?: string
-          missing_domains?: Json
-          quality_summary?: Json
-          source_manifest?: Json
-          valid_until?: string | null
-          version?: number
+          payload?: Json
+          processed_at?: string | null
+          received_at?: string
+          status?: string
+        }
+        Relationships: []
+      }
+      agricultural_admin_regions: {
+        Row: {
+          authority_namespace: string
+          country_id: string
+          created_at: string
+          display_name: string
+          id: string
+          is_active: boolean
+          official_code: string
+          parent_region_id: string | null
+          region_level: string
+          source_reference: string | null
+          source_version: string | null
+          updated_at: string
+          valid_from: string
+          valid_to: string | null
+        }
+        Insert: {
+          authority_namespace: string
+          country_id: string
+          created_at?: string
+          display_name: string
+          id?: string
+          is_active?: boolean
+          official_code: string
+          parent_region_id?: string | null
+          region_level: string
+          source_reference?: string | null
+          source_version?: string | null
+          updated_at?: string
+          valid_from?: string
+          valid_to?: string | null
+        }
+        Update: {
+          authority_namespace?: string
+          country_id?: string
+          created_at?: string
+          display_name?: string
+          id?: string
+          is_active?: boolean
+          official_code?: string
+          parent_region_id?: string | null
+          region_level?: string
+          source_reference?: string | null
+          source_version?: string | null
+          updated_at?: string
+          valid_from?: string
+          valid_to?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "farm_environmental_assessments_farm_id_fkey"
-            columns: ["farm_id"]
+            foreignKeyName: "agricultural_admin_regions_country_id_fkey"
+            columns: ["country_id"]
             isOneToOne: false
-            referencedRelation: "farms"
+            referencedRelation: "countries"
             referencedColumns: ["id"]
-          }
+          },
+          {
+            foreignKeyName: "agricultural_admin_regions_parent_region_id_fkey"
+            columns: ["parent_region_id"]
+            isOneToOne: false
+            referencedRelation: "agricultural_admin_regions"
+            referencedColumns: ["id"]
+          },
         ]
       }
       ai_analysis_runs: {
@@ -730,6 +773,153 @@ export type Database = {
           },
         ]
       }
+      authority_onboarding_request_events: {
+        Row: {
+          actor_user_id: string | null
+          from_status: string | null
+          id: string
+          occurred_at: string
+          request_id: string
+          review_notes: string | null
+          to_status: string
+        }
+        Insert: {
+          actor_user_id?: string | null
+          from_status?: string | null
+          id?: string
+          occurred_at?: string
+          request_id: string
+          review_notes?: string | null
+          to_status: string
+        }
+        Update: {
+          actor_user_id?: string | null
+          from_status?: string | null
+          id?: string
+          occurred_at?: string
+          request_id?: string
+          review_notes?: string | null
+          to_status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "authority_onboarding_request_events_actor_user_id_fkey"
+            columns: ["actor_user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "authority_onboarding_request_events_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "authority_onboarding_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      authority_onboarding_requests: {
+        Row: {
+          applicant_contact_email: string | null
+          applicant_contact_name: string
+          applicant_contact_phone: string | null
+          applicant_user_id: string
+          country_name: string
+          county_name: string
+          created_at: string
+          evidence_document_paths: string[]
+          id: string
+          mandate_reference: string | null
+          organization_display_name: string
+          organization_legal_name: string
+          organization_type: string
+          proposed_admin_email: string
+          proposed_admin_full_name: string
+          proposed_admin_phone: string | null
+          province_name: string
+          registration_or_authority_reference: string | null
+          requested_service_locations: string[]
+          review_notes: string | null
+          reviewed_at: string | null
+          reviewed_by_user_id: string | null
+          service_hub_name: string
+          service_scope_description: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          applicant_contact_email?: string | null
+          applicant_contact_name: string
+          applicant_contact_phone?: string | null
+          applicant_user_id: string
+          country_name?: string
+          county_name?: string
+          created_at?: string
+          evidence_document_paths?: string[]
+          id?: string
+          mandate_reference?: string | null
+          organization_display_name: string
+          organization_legal_name: string
+          organization_type?: string
+          proposed_admin_email: string
+          proposed_admin_full_name: string
+          proposed_admin_phone?: string | null
+          province_name?: string
+          registration_or_authority_reference?: string | null
+          requested_service_locations?: string[]
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by_user_id?: string | null
+          service_hub_name?: string
+          service_scope_description: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          applicant_contact_email?: string | null
+          applicant_contact_name?: string
+          applicant_contact_phone?: string | null
+          applicant_user_id?: string
+          country_name?: string
+          county_name?: string
+          created_at?: string
+          evidence_document_paths?: string[]
+          id?: string
+          mandate_reference?: string | null
+          organization_display_name?: string
+          organization_legal_name?: string
+          organization_type?: string
+          proposed_admin_email?: string
+          proposed_admin_full_name?: string
+          proposed_admin_phone?: string | null
+          province_name?: string
+          registration_or_authority_reference?: string | null
+          requested_service_locations?: string[]
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by_user_id?: string | null
+          service_hub_name?: string
+          service_scope_description?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "authority_onboarding_requests_applicant_user_id_fkey"
+            columns: ["applicant_user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "authority_onboarding_requests_reviewed_by_user_id_fkey"
+            columns: ["reviewed_by_user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       communication_logs: {
         Row: {
           channel_id: string
@@ -823,6 +1013,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contract_audit_events_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "expert_supervised_farm_dashboard"
+            referencedColumns: ["service_contract_id"]
           },
           {
             foreignKeyName: "contract_audit_events_contract_id_fkey"
@@ -928,6 +1125,13 @@ export type Database = {
             foreignKeyName: "contract_invoices_contract_id_fkey"
             columns: ["contract_id"]
             isOneToOne: false
+            referencedRelation: "expert_supervised_farm_dashboard"
+            referencedColumns: ["service_contract_id"]
+          },
+          {
+            foreignKeyName: "contract_invoices_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
             referencedRelation: "service_contracts"
             referencedColumns: ["id"]
           },
@@ -983,6 +1187,13 @@ export type Database = {
           status?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "contract_settlement_allocations_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "expert_supervised_farm_dashboard"
+            referencedColumns: ["service_contract_id"]
+          },
           {
             foreignKeyName: "contract_settlement_allocations_contract_id_fkey"
             columns: ["contract_id"]
@@ -1163,6 +1374,7 @@ export type Database = {
           created_by: string | null
           crop_id: string
           crop_label: string | null
+          crop_role: string
           cycle_name: string | null
           expected_harvest_date: string | null
           farm_id: string
@@ -1173,14 +1385,13 @@ export type Database = {
           planting_date: string | null
           planting_method: string | null
           status: string
+          tree_age_years: number | null
           updated_at: string
           variety_id: string | null
           variety_label: string | null
-          tree_age_years: number | null
+          yield_period: string | null
           yield_quantity: number | null
           yield_unit: string | null
-          yield_period: string | null
-          crop_role: string
         }
         Insert: {
           actual_harvest_date?: string | null
@@ -1189,6 +1400,7 @@ export type Database = {
           created_by?: string | null
           crop_id: string
           crop_label?: string | null
+          crop_role?: string
           cycle_name?: string | null
           expected_harvest_date?: string | null
           farm_id: string
@@ -1199,14 +1411,13 @@ export type Database = {
           planting_date?: string | null
           planting_method?: string | null
           status?: string
+          tree_age_years?: number | null
           updated_at?: string
           variety_id?: string | null
           variety_label?: string | null
-          tree_age_years?: number | null
+          yield_period?: string | null
           yield_quantity?: number | null
           yield_unit?: string | null
-          yield_period?: string | null
-          crop_role?: string
         }
         Update: {
           actual_harvest_date?: string | null
@@ -1215,6 +1426,7 @@ export type Database = {
           created_by?: string | null
           crop_id?: string
           crop_label?: string | null
+          crop_role?: string
           cycle_name?: string | null
           expected_harvest_date?: string | null
           farm_id?: string
@@ -1225,14 +1437,13 @@ export type Database = {
           planting_date?: string | null
           planting_method?: string | null
           status?: string
+          tree_age_years?: number | null
           updated_at?: string
           variety_id?: string | null
           variety_label?: string | null
-          tree_age_years?: number | null
+          yield_period?: string | null
           yield_quantity?: number | null
           yield_unit?: string | null
-          yield_period?: string | null
-          crop_role?: string
         }
         Relationships: [
           {
@@ -1314,6 +1525,363 @@ export type Database = {
           },
         ]
       }
+      deployment_regions: {
+        Row: {
+          created_at: string
+          display_name: string
+          hosting_country_iso2: string | null
+          id: string
+          notes: string | null
+          region_code: string
+          region_status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          display_name: string
+          hosting_country_iso2?: string | null
+          id?: string
+          notes?: string | null
+          region_code: string
+          region_status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          display_name?: string
+          hosting_country_iso2?: string | null
+          id?: string
+          notes?: string | null
+          region_code?: string
+          region_status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      educational_categories: {
+        Row: {
+          code: string
+          created_at: string
+          id: string
+          is_active: boolean
+          parent_id: string | null
+          sort_order: number
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          parent_id?: string | null
+          sort_order?: number
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          parent_id?: string | null
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "educational_categories_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "educational_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      educational_category_localizations: {
+        Row: {
+          category_id: string
+          description: string | null
+          id: string
+          language_code: string
+          name: string
+        }
+        Insert: {
+          category_id: string
+          description?: string | null
+          id?: string
+          language_code: string
+          name: string
+        }
+        Update: {
+          category_id?: string
+          description?: string | null
+          id?: string
+          language_code?: string
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "educational_category_localizations_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "educational_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      educational_content_localizations: {
+        Row: {
+          body: string | null
+          content_id: string
+          id: string
+          language_code: string
+          summary: string | null
+          title: string
+          transcript: string | null
+        }
+        Insert: {
+          body?: string | null
+          content_id: string
+          id?: string
+          language_code: string
+          summary?: string | null
+          title: string
+          transcript?: string | null
+        }
+        Update: {
+          body?: string | null
+          content_id?: string
+          id?: string
+          language_code?: string
+          summary?: string | null
+          title?: string
+          transcript?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "educational_content_localizations_content_id_fkey"
+            columns: ["content_id"]
+            isOneToOne: false
+            referencedRelation: "educational_contents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      educational_content_providers: {
+        Row: {
+          created_at: string
+          id: string
+          is_verified: boolean
+          organization_id: string | null
+          provider_name: string
+          provider_type: string
+          website_url: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_verified?: boolean
+          organization_id?: string | null
+          provider_name: string
+          provider_type?: string
+          website_url?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_verified?: boolean
+          organization_id?: string | null
+          provider_name?: string
+          provider_type?: string
+          website_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "educational_content_providers_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      educational_content_reviews: {
+        Row: {
+          content_id: string
+          created_at: string
+          id: string
+          rating: number
+          review_text: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          content_id: string
+          created_at?: string
+          id?: string
+          rating: number
+          review_text?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          content_id?: string
+          created_at?: string
+          id?: string
+          rating?: number
+          review_text?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "educational_content_reviews_content_id_fkey"
+            columns: ["content_id"]
+            isOneToOne: false
+            referencedRelation: "educational_contents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "educational_content_reviews_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      educational_contents: {
+        Row: {
+          age_max: number | null
+          age_min: number | null
+          category_id: string | null
+          content_type: string
+          created_at: string
+          difficulty_level: string | null
+          estimated_duration_minutes: number | null
+          external_content_reference: string | null
+          external_provider: string | null
+          id: string
+          provider_id: string | null
+          published_at: string | null
+          status: string
+          thumbnail_storage_key: string | null
+          updated_at: string
+        }
+        Insert: {
+          age_max?: number | null
+          age_min?: number | null
+          category_id?: string | null
+          content_type: string
+          created_at?: string
+          difficulty_level?: string | null
+          estimated_duration_minutes?: number | null
+          external_content_reference?: string | null
+          external_provider?: string | null
+          id?: string
+          provider_id?: string | null
+          published_at?: string | null
+          status?: string
+          thumbnail_storage_key?: string | null
+          updated_at?: string
+        }
+        Update: {
+          age_max?: number | null
+          age_min?: number | null
+          category_id?: string | null
+          content_type?: string
+          created_at?: string
+          difficulty_level?: string | null
+          estimated_duration_minutes?: number | null
+          external_content_reference?: string | null
+          external_provider?: string | null
+          id?: string
+          provider_id?: string | null
+          published_at?: string | null
+          status?: string
+          thumbnail_storage_key?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "educational_contents_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "educational_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "educational_contents_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "educational_content_providers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      educational_lesson_localizations: {
+        Row: {
+          body: string | null
+          id: string
+          language_code: string
+          lesson_id: string
+          title: string
+        }
+        Insert: {
+          body?: string | null
+          id?: string
+          language_code: string
+          lesson_id: string
+          title: string
+        }
+        Update: {
+          body?: string | null
+          id?: string
+          language_code?: string
+          lesson_id?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "educational_lesson_localizations_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: false
+            referencedRelation: "educational_lessons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      educational_lessons: {
+        Row: {
+          content_id: string
+          duration_minutes: number | null
+          external_content_reference: string | null
+          id: string
+          is_preview: boolean
+          lesson_order: number
+        }
+        Insert: {
+          content_id: string
+          duration_minutes?: number | null
+          external_content_reference?: string | null
+          id?: string
+          is_preview?: boolean
+          lesson_order: number
+        }
+        Update: {
+          content_id?: string
+          duration_minutes?: number | null
+          external_content_reference?: string | null
+          id?: string
+          is_preview?: boolean
+          lesson_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "educational_lessons_content_id_fkey"
+            columns: ["content_id"]
+            isOneToOne: false
+            referencedRelation: "educational_contents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       expert_audio_sessions: {
         Row: {
           consultation_id: string
@@ -1358,6 +1926,457 @@ export type Database = {
             columns: ["initiated_by"]
             isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      expert_authority_consents: {
+        Row: {
+          consent_scopes: string[]
+          consent_version: string
+          created_at: string
+          expert_profile_id: string
+          expires_at: string | null
+          granted_at: string
+          id: string
+          organization_id: string | null
+          purpose_code: string
+          revoked_at: string | null
+          status: string
+        }
+        Insert: {
+          consent_scopes?: string[]
+          consent_version?: string
+          created_at?: string
+          expert_profile_id: string
+          expires_at?: string | null
+          granted_at?: string
+          id?: string
+          organization_id?: string | null
+          purpose_code?: string
+          revoked_at?: string | null
+          status?: string
+        }
+        Update: {
+          consent_scopes?: string[]
+          consent_version?: string
+          created_at?: string
+          expert_profile_id?: string
+          expires_at?: string | null
+          granted_at?: string
+          id?: string
+          organization_id?: string | null
+          purpose_code?: string
+          revoked_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expert_authority_consents_expert_profile_id_fkey"
+            columns: ["expert_profile_id"]
+            isOneToOne: false
+            referencedRelation: "expert_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expert_authority_consents_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      expert_availability: {
+        Row: {
+          availability_status: string
+          expert_profile_id: string
+          id: string
+          max_open_cases: number
+          pause_new_cases: boolean
+          status_note: string | null
+          substitute_expert_profile_id: string | null
+          updated_at: string
+          vacation_end: string | null
+          vacation_start: string | null
+          working_hours: Json
+        }
+        Insert: {
+          availability_status?: string
+          expert_profile_id: string
+          id?: string
+          max_open_cases?: number
+          pause_new_cases?: boolean
+          status_note?: string | null
+          substitute_expert_profile_id?: string | null
+          updated_at?: string
+          vacation_end?: string | null
+          vacation_start?: string | null
+          working_hours?: Json
+        }
+        Update: {
+          availability_status?: string
+          expert_profile_id?: string
+          id?: string
+          max_open_cases?: number
+          pause_new_cases?: boolean
+          status_note?: string | null
+          substitute_expert_profile_id?: string | null
+          updated_at?: string
+          vacation_end?: string | null
+          vacation_start?: string | null
+          working_hours?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expert_availability_expert_profile_id_fkey"
+            columns: ["expert_profile_id"]
+            isOneToOne: true
+            referencedRelation: "expert_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expert_availability_substitute_expert_profile_id_fkey"
+            columns: ["substitute_expert_profile_id"]
+            isOneToOne: false
+            referencedRelation: "expert_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      expert_case_assistant_cases: {
+        Row: {
+          assistant_status: string
+          assistant_summary: string | null
+          completeness_status: string
+          escalated_at: string | null
+          id: string
+          last_reminded_at: string | null
+          missing_information: string[]
+          received_at: string
+          reminder_count: number
+          request_id: string
+          reviewed_at: string | null
+          reviewed_by_user_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          assistant_status?: string
+          assistant_summary?: string | null
+          completeness_status?: string
+          escalated_at?: string | null
+          id?: string
+          last_reminded_at?: string | null
+          missing_information?: string[]
+          received_at?: string
+          reminder_count?: number
+          request_id: string
+          reviewed_at?: string | null
+          reviewed_by_user_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          assistant_status?: string
+          assistant_summary?: string | null
+          completeness_status?: string
+          escalated_at?: string | null
+          id?: string
+          last_reminded_at?: string | null
+          missing_information?: string[]
+          received_at?: string
+          reminder_count?: number
+          request_id?: string
+          reviewed_at?: string | null
+          reviewed_by_user_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expert_case_assistant_cases_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: true
+            referencedRelation: "expert_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expert_case_assistant_cases_reviewed_by_user_id_fkey"
+            columns: ["reviewed_by_user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      expert_case_conversation_facts: {
+        Row: {
+          consultation_id: string
+          created_at: string
+          created_by: string
+          fact_kind: string
+          fact_text: string
+          id: string
+          request_id: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          source_message_id: string
+          status: string
+        }
+        Insert: {
+          consultation_id: string
+          created_at?: string
+          created_by: string
+          fact_kind?: string
+          fact_text: string
+          id?: string
+          request_id: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          source_message_id: string
+          status?: string
+        }
+        Update: {
+          consultation_id?: string
+          created_at?: string
+          created_by?: string
+          fact_kind?: string
+          fact_text?: string
+          id?: string
+          request_id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          source_message_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expert_case_conversation_facts_consultation_id_fkey"
+            columns: ["consultation_id"]
+            isOneToOne: false
+            referencedRelation: "expert_consultations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expert_case_conversation_facts_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expert_case_conversation_facts_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "expert_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expert_case_conversation_facts_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expert_case_conversation_facts_source_message_id_fkey"
+            columns: ["source_message_id"]
+            isOneToOne: false
+            referencedRelation: "expert_consultation_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      expert_case_handovers: {
+        Row: {
+          completed_at: string | null
+          farmer_responded_at: string | null
+          from_expert_profile_id: string
+          id: string
+          initiated_at: string
+          reason: string | null
+          request_id: string
+          requester_user_id: string
+          status: string
+          to_expert_profile_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          farmer_responded_at?: string | null
+          from_expert_profile_id: string
+          id?: string
+          initiated_at?: string
+          reason?: string | null
+          request_id: string
+          requester_user_id: string
+          status?: string
+          to_expert_profile_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          farmer_responded_at?: string | null
+          from_expert_profile_id?: string
+          id?: string
+          initiated_at?: string
+          reason?: string | null
+          request_id?: string
+          requester_user_id?: string
+          status?: string
+          to_expert_profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expert_case_handovers_from_expert_profile_id_fkey"
+            columns: ["from_expert_profile_id"]
+            isOneToOne: false
+            referencedRelation: "expert_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expert_case_handovers_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "expert_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expert_case_handovers_requester_user_id_fkey"
+            columns: ["requester_user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expert_case_handovers_to_expert_profile_id_fkey"
+            columns: ["to_expert_profile_id"]
+            isOneToOne: false
+            referencedRelation: "expert_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      expert_case_notes: {
+        Row: {
+          author_user_id: string
+          body: string
+          created_at: string
+          id: string
+          note_type: string
+          request_id: string
+          source_refs: Json
+        }
+        Insert: {
+          author_user_id: string
+          body: string
+          created_at?: string
+          id?: string
+          note_type?: string
+          request_id: string
+          source_refs?: Json
+        }
+        Update: {
+          author_user_id?: string
+          body?: string
+          created_at?: string
+          id?: string
+          note_type?: string
+          request_id?: string
+          source_refs?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expert_case_notes_author_user_id_fkey"
+            columns: ["author_user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expert_case_notes_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "expert_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      expert_case_notifications: {
+        Row: {
+          actor_user_id: string | null
+          consultation_id: string | null
+          created_at: string
+          event_type: string
+          id: string
+          preview: string | null
+          read_at: string | null
+          recipient_user_id: string
+          request_id: string
+        }
+        Insert: {
+          actor_user_id?: string | null
+          consultation_id?: string | null
+          created_at?: string
+          event_type: string
+          id?: string
+          preview?: string | null
+          read_at?: string | null
+          recipient_user_id: string
+          request_id: string
+        }
+        Update: {
+          actor_user_id?: string | null
+          consultation_id?: string | null
+          created_at?: string
+          event_type?: string
+          id?: string
+          preview?: string | null
+          read_at?: string | null
+          recipient_user_id?: string
+          request_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expert_case_notifications_consultation_id_fkey"
+            columns: ["consultation_id"]
+            isOneToOne: false
+            referencedRelation: "expert_consultations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expert_case_notifications_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "expert_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      expert_consultation_ai_messages: {
+        Row: {
+          consultation_id: string
+          created_at: string
+          id: string
+          message_text: string
+          status: string
+        }
+        Insert: {
+          consultation_id: string
+          created_at?: string
+          id?: string
+          message_text: string
+          status?: string
+        }
+        Update: {
+          consultation_id?: string
+          created_at?: string
+          id?: string
+          message_text?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expert_consultation_ai_messages_consultation_id_fkey"
+            columns: ["consultation_id"]
+            isOneToOne: false
+            referencedRelation: "expert_consultations"
             referencedColumns: ["id"]
           },
         ]
@@ -1410,6 +2429,7 @@ export type Database = {
           created_at: string
           ended_at: string | null
           external_session_ref: string | null
+          home_region_id: string | null
           id: string
           request_id: string
           scheduled_end: string | null
@@ -1422,6 +2442,7 @@ export type Database = {
           created_at?: string
           ended_at?: string | null
           external_session_ref?: string | null
+          home_region_id?: string | null
           id?: string
           request_id: string
           scheduled_end?: string | null
@@ -1434,6 +2455,7 @@ export type Database = {
           created_at?: string
           ended_at?: string | null
           external_session_ref?: string | null
+          home_region_id?: string | null
           id?: string
           request_id?: string
           scheduled_end?: string | null
@@ -1442,6 +2464,13 @@ export type Database = {
           status?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "expert_consultations_home_region_id_fkey"
+            columns: ["home_region_id"]
+            isOneToOne: false
+            referencedRelation: "deployment_regions"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "expert_consultations_request_id_fkey"
             columns: ["request_id"]
@@ -1861,6 +2890,44 @@ export type Database = {
           },
         ]
       }
+      expert_public_identifiers: {
+        Row: {
+          created_at: string
+          expert_profile_id: string
+          id: string
+          issued_at: string
+          public_code: string
+          retired_at: string | null
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          expert_profile_id: string
+          id?: string
+          issued_at?: string
+          public_code: string
+          retired_at?: string | null
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          expert_profile_id?: string
+          id?: string
+          issued_at?: string
+          public_code?: string
+          retired_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expert_public_identifiers_expert_profile_id_fkey"
+            columns: ["expert_profile_id"]
+            isOneToOne: true
+            referencedRelation: "expert_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       expert_recognition_awards: {
         Row: {
           award_code: string
@@ -2024,6 +3091,166 @@ export type Database = {
           },
         ]
       }
+      expert_recommendation_actions: {
+        Row: {
+          approved_at: string
+          author_user_id: string
+          completed_at: string | null
+          consultation_id: string
+          created_at: string
+          due_on: string | null
+          evidence: Json
+          expert_profile_id: string
+          farm_id: string
+          farmer_note: string | null
+          id: string
+          instructions: string
+          priority: string
+          request_id: string
+          starts_on: string
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          approved_at?: string
+          author_user_id: string
+          completed_at?: string | null
+          consultation_id: string
+          created_at?: string
+          due_on?: string | null
+          evidence?: Json
+          expert_profile_id: string
+          farm_id: string
+          farmer_note?: string | null
+          id?: string
+          instructions: string
+          priority?: string
+          request_id: string
+          starts_on?: string
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          approved_at?: string
+          author_user_id?: string
+          completed_at?: string | null
+          consultation_id?: string
+          created_at?: string
+          due_on?: string | null
+          evidence?: Json
+          expert_profile_id?: string
+          farm_id?: string
+          farmer_note?: string | null
+          id?: string
+          instructions?: string
+          priority?: string
+          request_id?: string
+          starts_on?: string
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expert_recommendation_actions_author_user_id_fkey"
+            columns: ["author_user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expert_recommendation_actions_consultation_id_fkey"
+            columns: ["consultation_id"]
+            isOneToOne: false
+            referencedRelation: "expert_consultations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expert_recommendation_actions_expert_profile_id_fkey"
+            columns: ["expert_profile_id"]
+            isOneToOne: false
+            referencedRelation: "expert_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expert_recommendation_actions_farm_id_fkey"
+            columns: ["farm_id"]
+            isOneToOne: false
+            referencedRelation: "farms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expert_recommendation_actions_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "expert_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      expert_recommendation_reviews: {
+        Row: {
+          created_at: string
+          created_by_user_id: string
+          evidence_assessment: string | null
+          id: string
+          outcome_status: string
+          outcome_summary: string
+          recommendation_id: string
+          reviewed_at: string
+          reviewer_user_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by_user_id: string
+          evidence_assessment?: string | null
+          id?: string
+          outcome_status: string
+          outcome_summary: string
+          recommendation_id: string
+          reviewed_at?: string
+          reviewer_user_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by_user_id?: string
+          evidence_assessment?: string | null
+          id?: string
+          outcome_status?: string
+          outcome_summary?: string
+          recommendation_id?: string
+          reviewed_at?: string
+          reviewer_user_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expert_recommendation_reviews_created_by_user_id_fkey"
+            columns: ["created_by_user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expert_recommendation_reviews_recommendation_id_fkey"
+            columns: ["recommendation_id"]
+            isOneToOne: true
+            referencedRelation: "expert_recommendation_actions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expert_recommendation_reviews_reviewer_user_id_fkey"
+            columns: ["reviewer_user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       expert_request_assignments: {
         Row: {
           assignment_status: string
@@ -2138,6 +3365,8 @@ export type Database = {
           preferred_language: string
           priority: string
           problem_description: string
+          referral_context: Json
+          referral_source: string
           request_type: string
           requested_mode: string
           requester_user_id: string
@@ -2159,6 +3388,8 @@ export type Database = {
           preferred_language?: string
           priority?: string
           problem_description: string
+          referral_context?: Json
+          referral_source?: string
           request_type?: string
           requested_mode?: string
           requester_user_id: string
@@ -2180,6 +3411,8 @@ export type Database = {
           preferred_language?: string
           priority?: string
           problem_description?: string
+          referral_context?: Json
+          referral_source?: string
           request_type?: string
           requested_mode?: string
           requester_user_id?: string
@@ -2333,6 +3566,138 @@ export type Database = {
           },
         ]
       }
+      farm_asset_events: {
+        Row: {
+          actor_auth_user_id: string | null
+          asset_id: string
+          created_at: string
+          event_details: Json
+          event_source: string
+          event_type: string
+          farm_id: string
+          id: string
+          new_location: unknown
+          occurred_at: string
+          previous_location: unknown
+        }
+        Insert: {
+          actor_auth_user_id?: string | null
+          asset_id: string
+          created_at?: string
+          event_details?: Json
+          event_source?: string
+          event_type: string
+          farm_id: string
+          id?: string
+          new_location?: unknown
+          occurred_at?: string
+          previous_location?: unknown
+        }
+        Update: {
+          actor_auth_user_id?: string | null
+          asset_id?: string
+          created_at?: string
+          event_details?: Json
+          event_source?: string
+          event_type?: string
+          farm_id?: string
+          id?: string
+          new_location?: unknown
+          occurred_at?: string
+          previous_location?: unknown
+        }
+        Relationships: [
+          {
+            foreignKeyName: "farm_asset_events_asset_farm_fkey"
+            columns: ["asset_id", "farm_id"]
+            isOneToOne: false
+            referencedRelation: "farm_assets"
+            referencedColumns: ["id", "farm_id"]
+          },
+          {
+            foreignKeyName: "farm_asset_events_farm_id_fkey"
+            columns: ["farm_id"]
+            isOneToOne: false
+            referencedRelation: "farms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      farm_assets: {
+        Row: {
+          asset_code: string | null
+          asset_name: string
+          asset_type: string
+          created_at: string
+          created_by_auth_user_id: string | null
+          farm_id: string
+          field_id: string | null
+          id: string
+          is_location_confirmed: boolean
+          location: unknown
+          location_confirmed_at: string | null
+          location_source: string | null
+          metadata: Json
+          notes: string | null
+          position_accuracy_m: number | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          asset_code?: string | null
+          asset_name: string
+          asset_type: string
+          created_at?: string
+          created_by_auth_user_id?: string | null
+          farm_id: string
+          field_id?: string | null
+          id?: string
+          is_location_confirmed?: boolean
+          location?: unknown
+          location_confirmed_at?: string | null
+          location_source?: string | null
+          metadata?: Json
+          notes?: string | null
+          position_accuracy_m?: number | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          asset_code?: string | null
+          asset_name?: string
+          asset_type?: string
+          created_at?: string
+          created_by_auth_user_id?: string | null
+          farm_id?: string
+          field_id?: string | null
+          id?: string
+          is_location_confirmed?: boolean
+          location?: unknown
+          location_confirmed_at?: string | null
+          location_source?: string | null
+          metadata?: Json
+          notes?: string | null
+          position_accuracy_m?: number | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "farm_assets_farm_id_fkey"
+            columns: ["farm_id"]
+            isOneToOne: false
+            referencedRelation: "farms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "farm_assets_field_farm_fkey"
+            columns: ["field_id", "farm_id"]
+            isOneToOne: false
+            referencedRelation: "farm_fields"
+            referencedColumns: ["id", "farm_id"]
+          },
+        ]
+      }
       farm_documents: {
         Row: {
           created_at: string
@@ -2384,43 +3749,99 @@ export type Database = {
           },
         ]
       }
+      farm_environmental_assessments: {
+        Row: {
+          assessed_at: string
+          assessment_schema_version: string
+          assessment_status: string
+          created_at: string
+          created_by_auth_user_id: string | null
+          evidence_payload: Json
+          farm_id: string
+          id: string
+          missing_domains: Json
+          quality_summary: Json
+          source_manifest: Json
+          valid_until: string | null
+          version: number
+        }
+        Insert: {
+          assessed_at?: string
+          assessment_schema_version?: string
+          assessment_status?: string
+          created_at?: string
+          created_by_auth_user_id?: string | null
+          evidence_payload?: Json
+          farm_id: string
+          id?: string
+          missing_domains?: Json
+          quality_summary?: Json
+          source_manifest?: Json
+          valid_until?: string | null
+          version: number
+        }
+        Update: {
+          assessed_at?: string
+          assessment_schema_version?: string
+          assessment_status?: string
+          created_at?: string
+          created_by_auth_user_id?: string | null
+          evidence_payload?: Json
+          farm_id?: string
+          id?: string
+          missing_domains?: Json
+          quality_summary?: Json
+          source_manifest?: Json
+          valid_until?: string | null
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "farm_environmental_assessments_farm_id_fkey"
+            columns: ["farm_id"]
+            isOneToOne: false
+            referencedRelation: "farms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       farm_fields: {
         Row: {
           area: number | null
           area_unit: string
-          boundary: Json | null
+          boundary: unknown
           boundary_capture_method: string | null
           boundary_confirmed_at: string | null
-          gps_accuracy_m: number | null
           created_at: string
           farm_id: string
           field_name: string
+          gps_accuracy_m: number | null
           id: string
           soil_description: string | null
         }
         Insert: {
           area?: number | null
           area_unit?: string
-          boundary?: Json | null
+          boundary?: unknown
           boundary_capture_method?: string | null
           boundary_confirmed_at?: string | null
-          gps_accuracy_m?: number | null
           created_at?: string
           farm_id: string
           field_name: string
+          gps_accuracy_m?: number | null
           id?: string
           soil_description?: string | null
         }
         Update: {
           area?: number | null
           area_unit?: string
-          boundary?: Json | null
+          boundary?: unknown
           boundary_capture_method?: string | null
           boundary_confirmed_at?: string | null
-          gps_accuracy_m?: number | null
           created_at?: string
           farm_id?: string
           field_name?: string
+          gps_accuracy_m?: number | null
           id?: string
           soil_description?: string | null
         }
@@ -2430,6 +3851,192 @@ export type Database = {
             columns: ["farm_id"]
             isOneToOne: false
             referencedRelation: "farms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      farm_improvement_actions: {
+        Row: {
+          actual_cost: number | null
+          completed_at: string | null
+          created_at: string
+          created_by: string | null
+          currency_code: string | null
+          description: string | null
+          due_date: string | null
+          id: string
+          outcome_notes: string | null
+          plan_id: string
+          source_recommendation_action_id: string | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          actual_cost?: number | null
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency_code?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          outcome_notes?: string | null
+          plan_id: string
+          source_recommendation_action_id?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          actual_cost?: number | null
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency_code?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          outcome_notes?: string | null
+          plan_id?: string
+          source_recommendation_action_id?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "farm_improvement_actions_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "farm_improvement_actions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "expert_farm_action_schedule"
+            referencedColumns: ["plan_id"]
+          },
+          {
+            foreignKeyName: "farm_improvement_actions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "farm_improvement_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "farm_improvement_actions_source_recommendation_action_id_fkey"
+            columns: ["source_recommendation_action_id"]
+            isOneToOne: false
+            referencedRelation: "expert_recommendation_actions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      farm_improvement_plans: {
+        Row: {
+          baseline_id: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          farm_id: string
+          field_id: string | null
+          id: string
+          origin: string
+          priority: string
+          requires_expert_review: boolean
+          source_consultation_id: string | null
+          source_request_id: string | null
+          start_date: string | null
+          status: string
+          target_date: string | null
+          target_metrics: Json
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          baseline_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          farm_id: string
+          field_id?: string | null
+          id?: string
+          origin?: string
+          priority?: string
+          requires_expert_review?: boolean
+          source_consultation_id?: string | null
+          source_request_id?: string | null
+          start_date?: string | null
+          status?: string
+          target_date?: string | null
+          target_metrics?: Json
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          baseline_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          farm_id?: string
+          field_id?: string | null
+          id?: string
+          origin?: string
+          priority?: string
+          requires_expert_review?: boolean
+          source_consultation_id?: string | null
+          source_request_id?: string | null
+          start_date?: string | null
+          status?: string
+          target_date?: string | null
+          target_metrics?: Json
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "farm_improvement_plans_baseline_id_fkey"
+            columns: ["baseline_id"]
+            isOneToOne: false
+            referencedRelation: "farm_productivity_baselines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "farm_improvement_plans_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "farm_improvement_plans_farm_id_fkey"
+            columns: ["farm_id"]
+            isOneToOne: false
+            referencedRelation: "farms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "farm_improvement_plans_field_id_fkey"
+            columns: ["field_id"]
+            isOneToOne: false
+            referencedRelation: "farm_fields"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "farm_improvement_plans_source_consultation_id_fkey"
+            columns: ["source_consultation_id"]
+            isOneToOne: false
+            referencedRelation: "expert_consultations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "farm_improvement_plans_source_request_id_fkey"
+            columns: ["source_request_id"]
+            isOneToOne: true
+            referencedRelation: "expert_requests"
             referencedColumns: ["id"]
           },
         ]
@@ -2481,6 +4088,154 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "farms"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      farm_map_feature_events: {
+        Row: {
+          actor_auth_user_id: string | null
+          created_at: string
+          event_details: Json
+          event_source: string
+          event_type: string
+          farm_id: string
+          feature_id: string
+          id: string
+          new_geometry: unknown
+          occurred_at: string
+          previous_geometry: unknown
+        }
+        Insert: {
+          actor_auth_user_id?: string | null
+          created_at?: string
+          event_details?: Json
+          event_source?: string
+          event_type: string
+          farm_id: string
+          feature_id: string
+          id?: string
+          new_geometry?: unknown
+          occurred_at?: string
+          previous_geometry?: unknown
+        }
+        Update: {
+          actor_auth_user_id?: string | null
+          created_at?: string
+          event_details?: Json
+          event_source?: string
+          event_type?: string
+          farm_id?: string
+          feature_id?: string
+          id?: string
+          new_geometry?: unknown
+          occurred_at?: string
+          previous_geometry?: unknown
+        }
+        Relationships: [
+          {
+            foreignKeyName: "farm_map_feature_events_farm_id_fkey"
+            columns: ["farm_id"]
+            isOneToOne: false
+            referencedRelation: "farms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "farm_map_feature_events_feature_farm_fkey"
+            columns: ["feature_id", "farm_id"]
+            isOneToOne: false
+            referencedRelation: "farm_map_features"
+            referencedColumns: ["id", "farm_id"]
+          },
+        ]
+      }
+      farm_map_features: {
+        Row: {
+          attributes: Json
+          capacity_unit: string | null
+          capacity_value: number | null
+          created_at: string
+          created_by_auth_user_id: string | null
+          crop_cycle_id: string | null
+          depth_m: number | null
+          farm_id: string
+          feature_type: string
+          field_id: string | null
+          geometry: unknown
+          geometry_confirmed_at: string | null
+          geometry_source: string
+          id: string
+          is_geometry_confirmed: boolean
+          length_m: number | null
+          position_accuracy_m: number | null
+          status: string
+          updated_at: string
+          width_m: number | null
+        }
+        Insert: {
+          attributes?: Json
+          capacity_unit?: string | null
+          capacity_value?: number | null
+          created_at?: string
+          created_by_auth_user_id?: string | null
+          crop_cycle_id?: string | null
+          depth_m?: number | null
+          farm_id: string
+          feature_type: string
+          field_id?: string | null
+          geometry: unknown
+          geometry_confirmed_at?: string | null
+          geometry_source?: string
+          id?: string
+          is_geometry_confirmed?: boolean
+          length_m?: number | null
+          position_accuracy_m?: number | null
+          status?: string
+          updated_at?: string
+          width_m?: number | null
+        }
+        Update: {
+          attributes?: Json
+          capacity_unit?: string | null
+          capacity_value?: number | null
+          created_at?: string
+          created_by_auth_user_id?: string | null
+          crop_cycle_id?: string | null
+          depth_m?: number | null
+          farm_id?: string
+          feature_type?: string
+          field_id?: string | null
+          geometry?: unknown
+          geometry_confirmed_at?: string | null
+          geometry_source?: string
+          id?: string
+          is_geometry_confirmed?: boolean
+          length_m?: number | null
+          position_accuracy_m?: number | null
+          status?: string
+          updated_at?: string
+          width_m?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "farm_map_features_crop_cycle_farm_fkey"
+            columns: ["crop_cycle_id", "farm_id"]
+            isOneToOne: false
+            referencedRelation: "crop_cycles"
+            referencedColumns: ["id", "farm_id"]
+          },
+          {
+            foreignKeyName: "farm_map_features_farm_id_fkey"
+            columns: ["farm_id"]
+            isOneToOne: false
+            referencedRelation: "farms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "farm_map_features_field_farm_fkey"
+            columns: ["field_id", "farm_id"]
+            isOneToOne: false
+            referencedRelation: "farm_fields"
+            referencedColumns: ["id", "farm_id"]
           },
         ]
       }
@@ -2555,6 +4310,714 @@ export type Database = {
           {
             foreignKeyName: "farm_observations_reported_by_fkey"
             columns: ["reported_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      farm_productivity_authority_consents: {
+        Row: {
+          access_scope: string
+          created_at: string
+          farm_id: string
+          granted_at: string
+          granted_by_user_id: string
+          id: string
+          organization_id: string
+          revoked_at: string | null
+          status: string
+        }
+        Insert: {
+          access_scope?: string
+          created_at?: string
+          farm_id: string
+          granted_at?: string
+          granted_by_user_id: string
+          id?: string
+          organization_id: string
+          revoked_at?: string | null
+          status?: string
+        }
+        Update: {
+          access_scope?: string
+          created_at?: string
+          farm_id?: string
+          granted_at?: string
+          granted_by_user_id?: string
+          id?: string
+          organization_id?: string
+          revoked_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "farm_productivity_authority_consents_farm_id_fkey"
+            columns: ["farm_id"]
+            isOneToOne: false
+            referencedRelation: "farms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "farm_productivity_authority_consents_granted_by_user_id_fkey"
+            columns: ["granted_by_user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "farm_productivity_authority_consents_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      farm_productivity_baselines: {
+        Row: {
+          baseline_date: string
+          completeness_percent: number
+          created_at: string
+          created_by: string | null
+          crop_cycle_id: string | null
+          farm_id: string
+          field_id: string | null
+          id: string
+          methodology_version: string
+          metrics_snapshot: Json
+          missing_metric_codes: string[]
+          notes: string | null
+          period_end: string | null
+          period_start: string | null
+          status: string
+        }
+        Insert: {
+          baseline_date?: string
+          completeness_percent?: number
+          created_at?: string
+          created_by?: string | null
+          crop_cycle_id?: string | null
+          farm_id: string
+          field_id?: string | null
+          id?: string
+          methodology_version?: string
+          metrics_snapshot?: Json
+          missing_metric_codes?: string[]
+          notes?: string | null
+          period_end?: string | null
+          period_start?: string | null
+          status?: string
+        }
+        Update: {
+          baseline_date?: string
+          completeness_percent?: number
+          created_at?: string
+          created_by?: string | null
+          crop_cycle_id?: string | null
+          farm_id?: string
+          field_id?: string | null
+          id?: string
+          methodology_version?: string
+          metrics_snapshot?: Json
+          missing_metric_codes?: string[]
+          notes?: string | null
+          period_end?: string | null
+          period_start?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "farm_productivity_baselines_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "farm_productivity_baselines_crop_cycle_id_fkey"
+            columns: ["crop_cycle_id"]
+            isOneToOne: false
+            referencedRelation: "crop_cycles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "farm_productivity_baselines_farm_id_fkey"
+            columns: ["farm_id"]
+            isOneToOne: false
+            referencedRelation: "farms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "farm_productivity_baselines_field_id_fkey"
+            columns: ["field_id"]
+            isOneToOne: false
+            referencedRelation: "farm_fields"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      farm_productivity_benchmarks: {
+        Row: {
+          climate_zone: string | null
+          country_code: string | null
+          created_at: string
+          crop_code: string | null
+          geographic_resolution: string | null
+          id: string
+          irrigation_type: string | null
+          metric_code: string
+          metric_value: number
+          period_end: string | null
+          period_start: string | null
+          production_system: string | null
+          quality_label: string
+          region_code: string | null
+          sample_size: number | null
+          soil_texture: string | null
+          source_license: string | null
+          source_name: string
+          source_url: string | null
+          statistic_type: string
+          status: string
+          uncertainty: Json
+          unit_code: string
+          updated_at: string
+          variety_code: string | null
+        }
+        Insert: {
+          climate_zone?: string | null
+          country_code?: string | null
+          created_at?: string
+          crop_code?: string | null
+          geographic_resolution?: string | null
+          id?: string
+          irrigation_type?: string | null
+          metric_code: string
+          metric_value: number
+          period_end?: string | null
+          period_start?: string | null
+          production_system?: string | null
+          quality_label?: string
+          region_code?: string | null
+          sample_size?: number | null
+          soil_texture?: string | null
+          source_license?: string | null
+          source_name: string
+          source_url?: string | null
+          statistic_type: string
+          status?: string
+          uncertainty?: Json
+          unit_code: string
+          updated_at?: string
+          variety_code?: string | null
+        }
+        Update: {
+          climate_zone?: string | null
+          country_code?: string | null
+          created_at?: string
+          crop_code?: string | null
+          geographic_resolution?: string | null
+          id?: string
+          irrigation_type?: string | null
+          metric_code?: string
+          metric_value?: number
+          period_end?: string | null
+          period_start?: string | null
+          production_system?: string | null
+          quality_label?: string
+          region_code?: string | null
+          sample_size?: number | null
+          soil_texture?: string | null
+          source_license?: string | null
+          source_name?: string
+          source_url?: string | null
+          statistic_type?: string
+          status?: string
+          uncertainty?: Json
+          unit_code?: string
+          updated_at?: string
+          variety_code?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "farm_productivity_benchmarks_metric_code_fkey"
+            columns: ["metric_code"]
+            isOneToOne: false
+            referencedRelation: "farm_productivity_metric_definitions"
+            referencedColumns: ["metric_code"]
+          },
+        ]
+      }
+      farm_productivity_candidate_signals: {
+        Row: {
+          baseline_id: string
+          comparable_metric_count: number
+          context_analysis: Json
+          created_at: string
+          evaluated_at: string
+          evidence_summary: Json
+          farm_id: string
+          id: string
+          methodology_version: string
+          negative_metric_count: number
+          positive_metric_count: number
+          review_status: string
+          signal_type: string
+          updated_at: string
+        }
+        Insert: {
+          baseline_id: string
+          comparable_metric_count?: number
+          context_analysis?: Json
+          created_at?: string
+          evaluated_at?: string
+          evidence_summary?: Json
+          farm_id: string
+          id?: string
+          methodology_version?: string
+          negative_metric_count?: number
+          positive_metric_count?: number
+          review_status?: string
+          signal_type: string
+          updated_at?: string
+        }
+        Update: {
+          baseline_id?: string
+          comparable_metric_count?: number
+          context_analysis?: Json
+          created_at?: string
+          evaluated_at?: string
+          evidence_summary?: Json
+          farm_id?: string
+          id?: string
+          methodology_version?: string
+          negative_metric_count?: number
+          positive_metric_count?: number
+          review_status?: string
+          signal_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "farm_productivity_candidate_signals_baseline_id_fkey"
+            columns: ["baseline_id"]
+            isOneToOne: true
+            referencedRelation: "farm_productivity_baselines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "farm_productivity_candidate_signals_farm_id_fkey"
+            columns: ["farm_id"]
+            isOneToOne: false
+            referencedRelation: "farms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      farm_productivity_context_observations: {
+        Row: {
+          confidence_score: number | null
+          created_at: string
+          crop_cycle_id: string | null
+          evidence_refs: Json
+          factor_code: string
+          farm_id: string
+          field_id: string | null
+          id: string
+          notes: string | null
+          numeric_value: number | null
+          observed_at: string
+          period_end: string | null
+          period_start: string | null
+          quality_label: string
+          recorded_by: string | null
+          source_type: string
+          text_value: string | null
+          unit_code: string | null
+          updated_at: string
+        }
+        Insert: {
+          confidence_score?: number | null
+          created_at?: string
+          crop_cycle_id?: string | null
+          evidence_refs?: Json
+          factor_code: string
+          farm_id: string
+          field_id?: string | null
+          id?: string
+          notes?: string | null
+          numeric_value?: number | null
+          observed_at?: string
+          period_end?: string | null
+          period_start?: string | null
+          quality_label?: string
+          recorded_by?: string | null
+          source_type?: string
+          text_value?: string | null
+          unit_code?: string | null
+          updated_at?: string
+        }
+        Update: {
+          confidence_score?: number | null
+          created_at?: string
+          crop_cycle_id?: string | null
+          evidence_refs?: Json
+          factor_code?: string
+          farm_id?: string
+          field_id?: string | null
+          id?: string
+          notes?: string | null
+          numeric_value?: number | null
+          observed_at?: string
+          period_end?: string | null
+          period_start?: string | null
+          quality_label?: string
+          recorded_by?: string | null
+          source_type?: string
+          text_value?: string | null
+          unit_code?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "farm_productivity_context_observations_farm_id_fkey"
+            columns: ["farm_id"]
+            isOneToOne: false
+            referencedRelation: "farms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      farm_productivity_knowledge_candidates: {
+        Row: {
+          anonymized_at: string | null
+          anonymized_summary: string
+          approved_at: string | null
+          approved_by: string | null
+          context_snapshot: Json
+          contribution_type: string
+          created_at: string
+          expert_consent_at: string | null
+          farm_id: string
+          farmer_consent_at: string | null
+          id: string
+          outcome_review_id: string
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          anonymized_at?: string | null
+          anonymized_summary: string
+          approved_at?: string | null
+          approved_by?: string | null
+          context_snapshot?: Json
+          contribution_type: string
+          created_at?: string
+          expert_consent_at?: string | null
+          farm_id: string
+          farmer_consent_at?: string | null
+          id?: string
+          outcome_review_id: string
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          anonymized_at?: string | null
+          anonymized_summary?: string
+          approved_at?: string | null
+          approved_by?: string | null
+          context_snapshot?: Json
+          contribution_type?: string
+          created_at?: string
+          expert_consent_at?: string | null
+          farm_id?: string
+          farmer_consent_at?: string | null
+          id?: string
+          outcome_review_id?: string
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "farm_productivity_knowledge_candidates_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "farm_productivity_knowledge_candidates_farm_id_fkey"
+            columns: ["farm_id"]
+            isOneToOne: false
+            referencedRelation: "farms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "farm_productivity_knowledge_candidates_outcome_review_id_fkey"
+            columns: ["outcome_review_id"]
+            isOneToOne: false
+            referencedRelation: "farm_productivity_outcome_reviews"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      farm_productivity_measurements: {
+        Row: {
+          confidence_score: number | null
+          created_at: string
+          crop_cycle_id: string | null
+          evidence_refs: Json
+          farm_id: string
+          field_id: string | null
+          id: string
+          metric_code: string
+          metric_value: number
+          notes: string | null
+          observed_at: string
+          period_end: string | null
+          period_start: string | null
+          quality_label: string
+          reported_by: string | null
+          source_type: string
+          unit_code: string
+        }
+        Insert: {
+          confidence_score?: number | null
+          created_at?: string
+          crop_cycle_id?: string | null
+          evidence_refs?: Json
+          farm_id: string
+          field_id?: string | null
+          id?: string
+          metric_code: string
+          metric_value: number
+          notes?: string | null
+          observed_at?: string
+          period_end?: string | null
+          period_start?: string | null
+          quality_label?: string
+          reported_by?: string | null
+          source_type?: string
+          unit_code: string
+        }
+        Update: {
+          confidence_score?: number | null
+          created_at?: string
+          crop_cycle_id?: string | null
+          evidence_refs?: Json
+          farm_id?: string
+          field_id?: string | null
+          id?: string
+          metric_code?: string
+          metric_value?: number
+          notes?: string | null
+          observed_at?: string
+          period_end?: string | null
+          period_start?: string | null
+          quality_label?: string
+          reported_by?: string | null
+          source_type?: string
+          unit_code?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "farm_productivity_measurements_crop_cycle_id_fkey"
+            columns: ["crop_cycle_id"]
+            isOneToOne: false
+            referencedRelation: "crop_cycles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "farm_productivity_measurements_farm_id_fkey"
+            columns: ["farm_id"]
+            isOneToOne: false
+            referencedRelation: "farms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "farm_productivity_measurements_field_id_fkey"
+            columns: ["field_id"]
+            isOneToOne: false
+            referencedRelation: "farm_fields"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "farm_productivity_measurements_metric_code_fkey"
+            columns: ["metric_code"]
+            isOneToOne: false
+            referencedRelation: "farm_productivity_metric_definitions"
+            referencedColumns: ["metric_code"]
+          },
+          {
+            foreignKeyName: "farm_productivity_measurements_reported_by_fkey"
+            columns: ["reported_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      farm_productivity_metric_definitions: {
+        Row: {
+          created_at: string
+          default_unit: string
+          description_fa: string | null
+          is_active: boolean
+          is_core: boolean
+          label_en: string
+          label_fa: string
+          metric_code: string
+          metric_family: string
+          sort_order: number
+        }
+        Insert: {
+          created_at?: string
+          default_unit: string
+          description_fa?: string | null
+          is_active?: boolean
+          is_core?: boolean
+          label_en: string
+          label_fa: string
+          metric_code: string
+          metric_family: string
+          sort_order?: number
+        }
+        Update: {
+          created_at?: string
+          default_unit?: string
+          description_fa?: string | null
+          is_active?: boolean
+          is_core?: boolean
+          label_en?: string
+          label_fa?: string
+          metric_code?: string
+          metric_family?: string
+          sort_order?: number
+        }
+        Relationships: []
+      }
+      farm_productivity_metric_evaluation_rules: {
+        Row: {
+          evaluation_enabled: boolean
+          metric_code: string
+          preferred_direction: string
+          rationale: string
+          updated_at: string
+        }
+        Insert: {
+          evaluation_enabled?: boolean
+          metric_code: string
+          preferred_direction: string
+          rationale: string
+          updated_at?: string
+        }
+        Update: {
+          evaluation_enabled?: boolean
+          metric_code?: string
+          preferred_direction?: string
+          rationale?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "farm_productivity_metric_evaluation_rules_metric_code_fkey"
+            columns: ["metric_code"]
+            isOneToOne: true
+            referencedRelation: "farm_productivity_metric_definitions"
+            referencedColumns: ["metric_code"]
+          },
+        ]
+      }
+      farm_productivity_outcome_reviews: {
+        Row: {
+          attribution_confidence: string
+          attribution_type: string
+          baseline_id: string | null
+          change_summary: Json
+          classification: string
+          created_at: string
+          evaluation_period_end: string | null
+          evaluation_period_start: string | null
+          evidence_quality: string
+          expert_impact_record_id: string | null
+          farm_id: string
+          followup_priority: string
+          followup_status: string
+          id: string
+          review_notes: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          updated_at: string
+        }
+        Insert: {
+          attribution_confidence?: string
+          attribution_type?: string
+          baseline_id?: string | null
+          change_summary?: Json
+          classification: string
+          created_at?: string
+          evaluation_period_end?: string | null
+          evaluation_period_start?: string | null
+          evidence_quality?: string
+          expert_impact_record_id?: string | null
+          farm_id: string
+          followup_priority?: string
+          followup_status?: string
+          id?: string
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          updated_at?: string
+        }
+        Update: {
+          attribution_confidence?: string
+          attribution_type?: string
+          baseline_id?: string | null
+          change_summary?: Json
+          classification?: string
+          created_at?: string
+          evaluation_period_end?: string | null
+          evaluation_period_start?: string | null
+          evidence_quality?: string
+          expert_impact_record_id?: string | null
+          farm_id?: string
+          followup_priority?: string
+          followup_status?: string
+          id?: string
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "farm_productivity_outcome_reviews_baseline_id_fkey"
+            columns: ["baseline_id"]
+            isOneToOne: false
+            referencedRelation: "farm_productivity_baselines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "farm_productivity_outcome_reviews_expert_impact_record_id_fkey"
+            columns: ["expert_impact_record_id"]
+            isOneToOne: false
+            referencedRelation: "expert_impact_records"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "farm_productivity_outcome_reviews_farm_id_fkey"
+            columns: ["farm_id"]
+            isOneToOne: false
+            referencedRelation: "farms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "farm_productivity_outcome_reviews_reviewed_by_fkey"
+            columns: ["reviewed_by"]
             isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
@@ -2657,6 +5120,240 @@ export type Database = {
           },
         ]
       }
+      farm_tree_events: {
+        Row: {
+          actor_auth_user_id: string | null
+          created_at: string
+          event_details: Json
+          event_source: string
+          event_type: string
+          farm_id: string
+          id: string
+          new_location: unknown
+          occurred_at: string
+          previous_location: unknown
+          tree_id: string
+        }
+        Insert: {
+          actor_auth_user_id?: string | null
+          created_at?: string
+          event_details?: Json
+          event_source?: string
+          event_type: string
+          farm_id: string
+          id?: string
+          new_location?: unknown
+          occurred_at?: string
+          previous_location?: unknown
+          tree_id: string
+        }
+        Update: {
+          actor_auth_user_id?: string | null
+          created_at?: string
+          event_details?: Json
+          event_source?: string
+          event_type?: string
+          farm_id?: string
+          id?: string
+          new_location?: unknown
+          occurred_at?: string
+          previous_location?: unknown
+          tree_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "farm_tree_events_farm_id_fkey"
+            columns: ["farm_id"]
+            isOneToOne: false
+            referencedRelation: "farms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "farm_tree_events_tree_farm_fkey"
+            columns: ["tree_id", "farm_id"]
+            isOneToOne: false
+            referencedRelation: "farm_trees"
+            referencedColumns: ["id", "farm_id"]
+          },
+        ]
+      }
+      farm_trees: {
+        Row: {
+          age_observed_at: string | null
+          age_source: string | null
+          age_years: number | null
+          created_at: string
+          created_by_auth_user_id: string | null
+          crop_cycle_id: string | null
+          death_cause: string | null
+          death_date: string | null
+          death_evidence_source: string | null
+          farm_id: string
+          field_id: string | null
+          id: string
+          is_location_confirmed: boolean
+          lifecycle_status: string
+          location: unknown
+          location_confirmed_at: string | null
+          location_source: string | null
+          metadata: Json
+          notes: string | null
+          planting_date: string | null
+          position_accuracy_m: number | null
+          replaced_by_tree_id: string | null
+          tree_code: string | null
+          updated_at: string
+        }
+        Insert: {
+          age_observed_at?: string | null
+          age_source?: string | null
+          age_years?: number | null
+          created_at?: string
+          created_by_auth_user_id?: string | null
+          crop_cycle_id?: string | null
+          death_cause?: string | null
+          death_date?: string | null
+          death_evidence_source?: string | null
+          farm_id: string
+          field_id?: string | null
+          id?: string
+          is_location_confirmed?: boolean
+          lifecycle_status?: string
+          location?: unknown
+          location_confirmed_at?: string | null
+          location_source?: string | null
+          metadata?: Json
+          notes?: string | null
+          planting_date?: string | null
+          position_accuracy_m?: number | null
+          replaced_by_tree_id?: string | null
+          tree_code?: string | null
+          updated_at?: string
+        }
+        Update: {
+          age_observed_at?: string | null
+          age_source?: string | null
+          age_years?: number | null
+          created_at?: string
+          created_by_auth_user_id?: string | null
+          crop_cycle_id?: string | null
+          death_cause?: string | null
+          death_date?: string | null
+          death_evidence_source?: string | null
+          farm_id?: string
+          field_id?: string | null
+          id?: string
+          is_location_confirmed?: boolean
+          lifecycle_status?: string
+          location?: unknown
+          location_confirmed_at?: string | null
+          location_source?: string | null
+          metadata?: Json
+          notes?: string | null
+          planting_date?: string | null
+          position_accuracy_m?: number | null
+          replaced_by_tree_id?: string | null
+          tree_code?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "farm_trees_crop_cycle_farm_fkey"
+            columns: ["crop_cycle_id", "farm_id"]
+            isOneToOne: false
+            referencedRelation: "crop_cycles"
+            referencedColumns: ["id", "farm_id"]
+          },
+          {
+            foreignKeyName: "farm_trees_farm_id_fkey"
+            columns: ["farm_id"]
+            isOneToOne: false
+            referencedRelation: "farms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "farm_trees_field_farm_fkey"
+            columns: ["field_id", "farm_id"]
+            isOneToOne: false
+            referencedRelation: "farm_fields"
+            referencedColumns: ["id", "farm_id"]
+          },
+          {
+            foreignKeyName: "farm_trees_replacement_same_farm_fkey"
+            columns: ["replaced_by_tree_id", "farm_id"]
+            isOneToOne: false
+            referencedRelation: "farm_trees"
+            referencedColumns: ["id", "farm_id"]
+          },
+        ]
+      }
+      farmer_authority_consents: {
+        Row: {
+          consent_scopes: string[]
+          consent_version: string
+          created_at: string
+          expires_at: string | null
+          granted_at: string
+          granted_by_user_id: string
+          id: string
+          organization_id: string
+          purpose_code: string
+          revoked_at: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          consent_scopes: string[]
+          consent_version: string
+          created_at?: string
+          expires_at?: string | null
+          granted_at?: string
+          granted_by_user_id: string
+          id?: string
+          organization_id: string
+          purpose_code: string
+          revoked_at?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          consent_scopes?: string[]
+          consent_version?: string
+          created_at?: string
+          expires_at?: string | null
+          granted_at?: string
+          granted_by_user_id?: string
+          id?: string
+          organization_id?: string
+          purpose_code?: string
+          revoked_at?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "farmer_authority_consents_granted_by_user_id_fkey"
+            columns: ["granted_by_user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "farmer_authority_consents_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "farmer_authority_consents_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       farmer_credentials: {
         Row: {
           created_at: string
@@ -2727,6 +5424,44 @@ export type Database = {
           {
             foreignKeyName: "farmer_credentials_reviewed_by_user_id_fkey"
             columns: ["reviewed_by_user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      farmer_public_identifiers: {
+        Row: {
+          created_at: string
+          id: string
+          issued_at: string
+          public_code: string
+          retired_at: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          issued_at?: string
+          public_code: string
+          retired_at?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          issued_at?: string
+          public_code?: string
+          retired_at?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "farmer_public_identifiers_user_id_fkey"
+            columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
@@ -2818,53 +5553,73 @@ export type Database = {
       }
       farms: {
         Row: {
+          admin_region_id: string | null
           area_unit: string
           country_id: string | null
           created_at: string
           farm_name: string
+          home_region_id: string | null
           id: string
+          irrigation_systems: Json
           organization_id: string | null
           owner_user_id: string
           status: string
           total_area: number | null
           updated_at: string
           water_structures: Json
-          irrigation_systems: Json
         }
         Insert: {
+          admin_region_id?: string | null
           area_unit?: string
           country_id?: string | null
           created_at?: string
           farm_name: string
+          home_region_id?: string | null
           id?: string
+          irrigation_systems?: Json
           organization_id?: string | null
           owner_user_id: string
           status?: string
           total_area?: number | null
           updated_at?: string
           water_structures?: Json
-          irrigation_systems?: Json
         }
         Update: {
+          admin_region_id?: string | null
           area_unit?: string
           country_id?: string | null
           created_at?: string
           farm_name?: string
+          home_region_id?: string | null
           id?: string
+          irrigation_systems?: Json
           organization_id?: string | null
           owner_user_id?: string
           status?: string
           total_area?: number | null
           updated_at?: string
           water_structures?: Json
-          irrigation_systems?: Json
         }
         Relationships: [
+          {
+            foreignKeyName: "farms_admin_region_id_fkey"
+            columns: ["admin_region_id"]
+            isOneToOne: false
+            referencedRelation: "agricultural_admin_regions"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "farms_country_id_fkey"
             columns: ["country_id"]
             isOneToOne: false
             referencedRelation: "countries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "farms_home_region_id_fkey"
+            columns: ["home_region_id"]
+            isOneToOne: false
+            referencedRelation: "deployment_regions"
             referencedColumns: ["id"]
           },
           {
@@ -2879,6 +5634,206 @@ export type Database = {
             columns: ["owner_user_id"]
             isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      institutional_access_audit_events: {
+        Row: {
+          access_decision: string
+          action_code: string
+          actor_user_id: string
+          country_id: string | null
+          created_at: string
+          id: string
+          metadata: Json
+          organization_id: string
+          purpose_code: string
+          request_id: string
+          resource_farm_id: string | null
+          resource_type: string
+          resource_user_id: string | null
+        }
+        Insert: {
+          access_decision: string
+          action_code: string
+          actor_user_id: string
+          country_id?: string | null
+          created_at?: string
+          id?: string
+          metadata?: Json
+          organization_id: string
+          purpose_code: string
+          request_id?: string
+          resource_farm_id?: string | null
+          resource_type: string
+          resource_user_id?: string | null
+        }
+        Update: {
+          access_decision?: string
+          action_code?: string
+          actor_user_id?: string
+          country_id?: string | null
+          created_at?: string
+          id?: string
+          metadata?: Json
+          organization_id?: string
+          purpose_code?: string
+          request_id?: string
+          resource_farm_id?: string | null
+          resource_type?: string
+          resource_user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "institutional_access_audit_events_actor_user_id_fkey"
+            columns: ["actor_user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "institutional_access_audit_events_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "countries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "institutional_access_audit_events_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "institutional_access_audit_events_resource_farm_id_fkey"
+            columns: ["resource_farm_id"]
+            isOneToOne: false
+            referencedRelation: "farms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "institutional_access_audit_events_resource_user_id_fkey"
+            columns: ["resource_user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      institutional_message_threads: {
+        Row: {
+          created_at: string
+          created_by_user_id: string
+          id: string
+          organization_display_name: string | null
+          organization_id: string
+          recipient_code: string
+          recipient_country_id: string | null
+          recipient_kind: string
+          recipient_user_id: string
+          status: string
+          subject: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by_user_id: string
+          id?: string
+          organization_display_name?: string | null
+          organization_id: string
+          recipient_code: string
+          recipient_country_id?: string | null
+          recipient_kind: string
+          recipient_user_id: string
+          status?: string
+          subject: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by_user_id?: string
+          id?: string
+          organization_display_name?: string | null
+          organization_id?: string
+          recipient_code?: string
+          recipient_country_id?: string | null
+          recipient_kind?: string
+          recipient_user_id?: string
+          status?: string
+          subject?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "institutional_message_threads_created_by_user_id_fkey"
+            columns: ["created_by_user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "institutional_message_threads_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "institutional_message_threads_recipient_country_id_fkey"
+            columns: ["recipient_country_id"]
+            isOneToOne: false
+            referencedRelation: "countries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "institutional_message_threads_recipient_user_id_fkey"
+            columns: ["recipient_user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      institutional_messages: {
+        Row: {
+          created_at: string
+          id: string
+          message_text: string
+          read_at: string | null
+          sender_user_id: string
+          thread_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message_text: string
+          read_at?: string | null
+          sender_user_id: string
+          thread_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message_text?: string
+          read_at?: string | null
+          sender_user_id?: string
+          thread_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "institutional_messages_sender_user_id_fkey"
+            columns: ["sender_user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "institutional_messages_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "institutional_message_threads"
             referencedColumns: ["id"]
           },
         ]
@@ -3330,6 +6285,159 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      irrigation_network_edge_events: {
+        Row: {
+          actor_auth_user_id: string | null
+          created_at: string
+          edge_id: string
+          event_details: Json
+          event_source: string
+          event_type: string
+          farm_id: string
+          id: string
+          new_state: Json | null
+          occurred_at: string
+          previous_state: Json | null
+        }
+        Insert: {
+          actor_auth_user_id?: string | null
+          created_at?: string
+          edge_id: string
+          event_details?: Json
+          event_source?: string
+          event_type: string
+          farm_id: string
+          id?: string
+          new_state?: Json | null
+          occurred_at?: string
+          previous_state?: Json | null
+        }
+        Update: {
+          actor_auth_user_id?: string | null
+          created_at?: string
+          edge_id?: string
+          event_details?: Json
+          event_source?: string
+          event_type?: string
+          farm_id?: string
+          id?: string
+          new_state?: Json | null
+          occurred_at?: string
+          previous_state?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "irrigation_network_edge_events_edge_farm_fkey"
+            columns: ["edge_id", "farm_id"]
+            isOneToOne: false
+            referencedRelation: "irrigation_network_edges"
+            referencedColumns: ["id", "farm_id"]
+          },
+          {
+            foreignKeyName: "irrigation_network_edge_events_farm_id_fkey"
+            columns: ["farm_id"]
+            isOneToOne: false
+            referencedRelation: "farms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      irrigation_network_edges: {
+        Row: {
+          connection_confirmed_at: string | null
+          connection_source: string
+          created_at: string
+          created_by_auth_user_id: string | null
+          farm_id: string
+          flow_direction: string
+          from_asset_id: string | null
+          id: string
+          irrigation_zone_feature_id: string | null
+          is_connection_confirmed: boolean
+          line_feature_id: string
+          metadata: Json
+          network_role: string
+          notes: string | null
+          status: string
+          to_asset_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          connection_confirmed_at?: string | null
+          connection_source?: string
+          created_at?: string
+          created_by_auth_user_id?: string | null
+          farm_id: string
+          flow_direction?: string
+          from_asset_id?: string | null
+          id?: string
+          irrigation_zone_feature_id?: string | null
+          is_connection_confirmed?: boolean
+          line_feature_id: string
+          metadata?: Json
+          network_role?: string
+          notes?: string | null
+          status?: string
+          to_asset_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          connection_confirmed_at?: string | null
+          connection_source?: string
+          created_at?: string
+          created_by_auth_user_id?: string | null
+          farm_id?: string
+          flow_direction?: string
+          from_asset_id?: string | null
+          id?: string
+          irrigation_zone_feature_id?: string | null
+          is_connection_confirmed?: boolean
+          line_feature_id?: string
+          metadata?: Json
+          network_role?: string
+          notes?: string | null
+          status?: string
+          to_asset_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "irrigation_network_edges_farm_id_fkey"
+            columns: ["farm_id"]
+            isOneToOne: false
+            referencedRelation: "farms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "irrigation_network_edges_from_asset_farm_fkey"
+            columns: ["from_asset_id", "farm_id"]
+            isOneToOne: false
+            referencedRelation: "farm_assets"
+            referencedColumns: ["id", "farm_id"]
+          },
+          {
+            foreignKeyName: "irrigation_network_edges_line_farm_fkey"
+            columns: ["line_feature_id", "farm_id"]
+            isOneToOne: false
+            referencedRelation: "farm_map_features"
+            referencedColumns: ["id", "farm_id"]
+          },
+          {
+            foreignKeyName: "irrigation_network_edges_to_asset_farm_fkey"
+            columns: ["to_asset_id", "farm_id"]
+            isOneToOne: false
+            referencedRelation: "farm_assets"
+            referencedColumns: ["id", "farm_id"]
+          },
+          {
+            foreignKeyName: "irrigation_network_edges_zone_farm_fkey"
+            columns: ["irrigation_zone_feature_id", "farm_id"]
+            isOneToOne: false
+            referencedRelation: "farm_map_features"
+            referencedColumns: ["id", "farm_id"]
           },
         ]
       }
@@ -4138,6 +7246,7 @@ export type Database = {
           harvest_at: string | null
           id: string
           image_urls: Json
+          is_sarina_premium: boolean
           license_reference: string | null
           market_section: string
           minimum_order_qty: number
@@ -4170,6 +7279,7 @@ export type Database = {
           harvest_at?: string | null
           id?: string
           image_urls?: Json
+          is_sarina_premium?: boolean
           license_reference?: string | null
           market_section: string
           minimum_order_qty?: number
@@ -4202,6 +7312,7 @@ export type Database = {
           harvest_at?: string | null
           id?: string
           image_urls?: Json
+          is_sarina_premium?: boolean
           license_reference?: string | null
           market_section?: string
           minimum_order_qty?: number
@@ -5018,6 +8129,7 @@ export type Database = {
           label: string | null
           organization_id: string
           scope_type: string
+          target_admin_region_id: string | null
           target_farm_id: string | null
           target_user_id: string | null
         }
@@ -5029,6 +8141,7 @@ export type Database = {
           label?: string | null
           organization_id: string
           scope_type: string
+          target_admin_region_id?: string | null
           target_farm_id?: string | null
           target_user_id?: string | null
         }
@@ -5040,6 +8153,7 @@ export type Database = {
           label?: string | null
           organization_id?: string
           scope_type?: string
+          target_admin_region_id?: string | null
           target_farm_id?: string | null
           target_user_id?: string | null
         }
@@ -5063,6 +8177,13 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "organization_access_scopes_target_admin_region_id_fkey"
+            columns: ["target_admin_region_id"]
+            isOneToOne: false
+            referencedRelation: "agricultural_admin_regions"
             referencedColumns: ["id"]
           },
           {
@@ -5723,6 +8844,7 @@ export type Database = {
           is_active: boolean
           license_name: string | null
           provider: string | null
+          region_id: string | null
           source_name: string
           source_url: string | null
           update_frequency: string | null
@@ -5734,6 +8856,7 @@ export type Database = {
           is_active?: boolean
           license_name?: string | null
           provider?: string | null
+          region_id?: string | null
           source_name: string
           source_url?: string | null
           update_frequency?: string | null
@@ -5745,11 +8868,93 @@ export type Database = {
           is_active?: boolean
           license_name?: string | null
           provider?: string | null
+          region_id?: string | null
           source_name?: string
           source_url?: string | null
           update_frequency?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "regional_data_sources_region_id_fkey"
+            columns: ["region_id"]
+            isOneToOne: false
+            referencedRelation: "deployment_regions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      regional_data_transfer_consents: {
+        Row: {
+          consent_status: string
+          consent_text_version: string
+          consenting_user_id: string
+          created_at: string
+          expires_at: string | null
+          granted_at: string
+          id: string
+          permitted_categories: Json
+          purpose_code: string
+          revoked_at: string | null
+          source_region_id: string
+          subject_id: string
+          subject_type: string
+          target_region_id: string
+        }
+        Insert: {
+          consent_status?: string
+          consent_text_version: string
+          consenting_user_id: string
+          created_at?: string
+          expires_at?: string | null
+          granted_at?: string
+          id?: string
+          permitted_categories?: Json
+          purpose_code: string
+          revoked_at?: string | null
+          source_region_id: string
+          subject_id: string
+          subject_type: string
+          target_region_id: string
+        }
+        Update: {
+          consent_status?: string
+          consent_text_version?: string
+          consenting_user_id?: string
+          created_at?: string
+          expires_at?: string | null
+          granted_at?: string
+          id?: string
+          permitted_categories?: Json
+          purpose_code?: string
+          revoked_at?: string | null
+          source_region_id?: string
+          subject_id?: string
+          subject_type?: string
+          target_region_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "regional_data_transfer_consents_consenting_user_id_fkey"
+            columns: ["consenting_user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "regional_data_transfer_consents_source_region_id_fkey"
+            columns: ["source_region_id"]
+            isOneToOne: false
+            referencedRelation: "deployment_regions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "regional_data_transfer_consents_target_region_id_fkey"
+            columns: ["target_region_id"]
+            isOneToOne: false
+            referencedRelation: "deployment_regions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       regional_datasets: {
         Row: {
@@ -5760,6 +8965,7 @@ export type Database = {
           observed_at: string | null
           payload: Json
           quality_score: number | null
+          region_id: string | null
           retrieved_at: string
           source_id: string
           valid_until: string | null
@@ -5772,6 +8978,7 @@ export type Database = {
           observed_at?: string | null
           payload?: Json
           quality_score?: number | null
+          region_id?: string | null
           retrieved_at?: string
           source_id: string
           valid_until?: string | null
@@ -5784,6 +8991,7 @@ export type Database = {
           observed_at?: string | null
           payload?: Json
           quality_score?: number | null
+          region_id?: string | null
           retrieved_at?: string
           source_id?: string
           valid_until?: string | null
@@ -5797,10 +9005,425 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "regional_datasets_region_id_fkey"
+            columns: ["region_id"]
+            isOneToOne: false
+            referencedRelation: "deployment_regions"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "regional_datasets_source_id_fkey"
             columns: ["source_id"]
             isOneToOne: false
             referencedRelation: "regional_data_sources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      regional_entity_registry: {
+        Row: {
+          audited_at: string
+          data_classification: string
+          entity_name: string
+          notes: string | null
+          ownership_class: string
+          ownership_paths: Json
+          region_resolution: string
+          relation_kind: string
+          review_status: string
+          sync_mode: string
+        }
+        Insert: {
+          audited_at?: string
+          data_classification?: string
+          entity_name: string
+          notes?: string | null
+          ownership_class?: string
+          ownership_paths?: Json
+          region_resolution?: string
+          relation_kind: string
+          review_status?: string
+          sync_mode?: string
+        }
+        Update: {
+          audited_at?: string
+          data_classification?: string
+          entity_name?: string
+          notes?: string | null
+          ownership_class?: string
+          ownership_paths?: Json
+          region_resolution?: string
+          relation_kind?: string
+          review_status?: string
+          sync_mode?: string
+        }
+        Relationships: []
+      }
+      regional_sync_audit_events: {
+        Row: {
+          action_code: string
+          aggregate_id: string | null
+          aggregate_type: string | null
+          event_id: string | null
+          id: string
+          metadata: Json
+          occurred_at: string
+          outcome_code: string
+          region_id: string
+        }
+        Insert: {
+          action_code: string
+          aggregate_id?: string | null
+          aggregate_type?: string | null
+          event_id?: string | null
+          id?: string
+          metadata?: Json
+          occurred_at?: string
+          outcome_code: string
+          region_id: string
+        }
+        Update: {
+          action_code?: string
+          aggregate_id?: string | null
+          aggregate_type?: string | null
+          event_id?: string | null
+          id?: string
+          metadata?: Json
+          occurred_at?: string
+          outcome_code?: string
+          region_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "regional_sync_audit_events_region_id_fkey"
+            columns: ["region_id"]
+            isOneToOne: false
+            referencedRelation: "deployment_regions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      regional_sync_conflicts: {
+        Row: {
+          aggregate_id: string
+          aggregate_type: string
+          conflict_code: string
+          created_at: string
+          current_event_id: string | null
+          current_event_version: number | null
+          id: string
+          incoming_event_id: string
+          incoming_event_version: number
+          resolution_metadata: Json
+          resolution_status: string
+          resolved_at: string | null
+          source_region_id: string
+          target_region_id: string
+        }
+        Insert: {
+          aggregate_id: string
+          aggregate_type: string
+          conflict_code: string
+          created_at?: string
+          current_event_id?: string | null
+          current_event_version?: number | null
+          id?: string
+          incoming_event_id: string
+          incoming_event_version: number
+          resolution_metadata?: Json
+          resolution_status?: string
+          resolved_at?: string | null
+          source_region_id: string
+          target_region_id: string
+        }
+        Update: {
+          aggregate_id?: string
+          aggregate_type?: string
+          conflict_code?: string
+          created_at?: string
+          current_event_id?: string | null
+          current_event_version?: number | null
+          id?: string
+          incoming_event_id?: string
+          incoming_event_version?: number
+          resolution_metadata?: Json
+          resolution_status?: string
+          resolved_at?: string | null
+          source_region_id?: string
+          target_region_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "regional_sync_conflicts_source_region_id_fkey"
+            columns: ["source_region_id"]
+            isOneToOne: false
+            referencedRelation: "deployment_regions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "regional_sync_conflicts_target_region_id_fkey"
+            columns: ["target_region_id"]
+            isOneToOne: false
+            referencedRelation: "deployment_regions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      regional_sync_inbox: {
+        Row: {
+          aggregate_id: string
+          aggregate_type: string
+          consent_id: string
+          error_code: string | null
+          event_payload: Json
+          event_type: string
+          event_version: number
+          id: string
+          payload_sha256: string
+          processed_at: string | null
+          processing_status: string
+          received_at: string
+          schema_version: number
+          source_event_id: string
+          source_region_id: string
+          target_region_id: string
+        }
+        Insert: {
+          aggregate_id: string
+          aggregate_type: string
+          consent_id: string
+          error_code?: string | null
+          event_payload?: Json
+          event_type: string
+          event_version: number
+          id?: string
+          payload_sha256: string
+          processed_at?: string | null
+          processing_status?: string
+          received_at?: string
+          schema_version: number
+          source_event_id: string
+          source_region_id: string
+          target_region_id: string
+        }
+        Update: {
+          aggregate_id?: string
+          aggregate_type?: string
+          consent_id?: string
+          error_code?: string | null
+          event_payload?: Json
+          event_type?: string
+          event_version?: number
+          id?: string
+          payload_sha256?: string
+          processed_at?: string | null
+          processing_status?: string
+          received_at?: string
+          schema_version?: number
+          source_event_id?: string
+          source_region_id?: string
+          target_region_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "regional_sync_inbox_consent_id_fkey"
+            columns: ["consent_id"]
+            isOneToOne: false
+            referencedRelation: "regional_data_transfer_consents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "regional_sync_inbox_source_region_id_fkey"
+            columns: ["source_region_id"]
+            isOneToOne: false
+            referencedRelation: "deployment_regions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "regional_sync_inbox_target_region_id_fkey"
+            columns: ["target_region_id"]
+            isOneToOne: false
+            referencedRelation: "deployment_regions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      regional_sync_outbox: {
+        Row: {
+          acknowledged_at: string | null
+          aggregate_id: string
+          aggregate_type: string
+          attempt_count: number
+          available_at: string
+          consent_id: string
+          created_at: string
+          data_categories: Json
+          delivery_status: string
+          event_payload: Json
+          event_type: string
+          event_version: number
+          id: string
+          idempotency_key: string
+          last_error_code: string | null
+          locked_at: string | null
+          schema_version: number
+          sent_at: string | null
+          source_region_id: string
+          target_region_id: string
+          updated_at: string
+        }
+        Insert: {
+          acknowledged_at?: string | null
+          aggregate_id: string
+          aggregate_type: string
+          attempt_count?: number
+          available_at?: string
+          consent_id: string
+          created_at?: string
+          data_categories?: Json
+          delivery_status?: string
+          event_payload?: Json
+          event_type: string
+          event_version?: number
+          id?: string
+          idempotency_key: string
+          last_error_code?: string | null
+          locked_at?: string | null
+          schema_version?: number
+          sent_at?: string | null
+          source_region_id: string
+          target_region_id: string
+          updated_at?: string
+        }
+        Update: {
+          acknowledged_at?: string | null
+          aggregate_id?: string
+          aggregate_type?: string
+          attempt_count?: number
+          available_at?: string
+          consent_id?: string
+          created_at?: string
+          data_categories?: Json
+          delivery_status?: string
+          event_payload?: Json
+          event_type?: string
+          event_version?: number
+          id?: string
+          idempotency_key?: string
+          last_error_code?: string | null
+          locked_at?: string | null
+          schema_version?: number
+          sent_at?: string | null
+          source_region_id?: string
+          target_region_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "regional_sync_outbox_consent_id_fkey"
+            columns: ["consent_id"]
+            isOneToOne: false
+            referencedRelation: "regional_data_transfer_consents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "regional_sync_outbox_source_region_id_fkey"
+            columns: ["source_region_id"]
+            isOneToOne: false
+            referencedRelation: "deployment_regions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "regional_sync_outbox_target_region_id_fkey"
+            columns: ["target_region_id"]
+            isOneToOne: false
+            referencedRelation: "deployment_regions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      regional_sync_projections: {
+        Row: {
+          aggregate_id: string
+          aggregate_type: string
+          last_event_id: string
+          last_event_version: number
+          projection_data: Json
+          received_at: string
+          schema_version: number
+          source_region_id: string
+          source_updated_at: string
+          target_region_id: string
+        }
+        Insert: {
+          aggregate_id: string
+          aggregate_type: string
+          last_event_id: string
+          last_event_version: number
+          projection_data: Json
+          received_at?: string
+          schema_version: number
+          source_region_id: string
+          source_updated_at?: string
+          target_region_id: string
+        }
+        Update: {
+          aggregate_id?: string
+          aggregate_type?: string
+          last_event_id?: string
+          last_event_version?: number
+          projection_data?: Json
+          received_at?: string
+          schema_version?: number
+          source_region_id?: string
+          source_updated_at?: string
+          target_region_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "regional_sync_projections_source_region_id_fkey"
+            columns: ["source_region_id"]
+            isOneToOne: false
+            referencedRelation: "deployment_regions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "regional_sync_projections_target_region_id_fkey"
+            columns: ["target_region_id"]
+            isOneToOne: false
+            referencedRelation: "deployment_regions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      regional_sync_request_nonces: {
+        Row: {
+          expires_at: string
+          id: string
+          received_at: string
+          request_nonce: string
+          source_region_id: string
+        }
+        Insert: {
+          expires_at: string
+          id?: string
+          received_at?: string
+          request_nonce: string
+          source_region_id: string
+        }
+        Update: {
+          expires_at?: string
+          id?: string
+          received_at?: string
+          request_nonce?: string
+          source_region_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "regional_sync_request_nonces_source_region_id_fkey"
+            columns: ["source_region_id"]
+            isOneToOne: false
+            referencedRelation: "deployment_regions"
             referencedColumns: ["id"]
           },
         ]
@@ -5856,6 +9479,791 @@ export type Database = {
         }
         Relationships: []
       }
+      sarina_admin_account_status_audit: {
+        Row: {
+          actor_user_id: string | null
+          after_status: string
+          before_status: string
+          created_at: string
+          id: string
+          target_user_id: string | null
+        }
+        Insert: {
+          actor_user_id?: string | null
+          after_status: string
+          before_status: string
+          created_at?: string
+          id?: string
+          target_user_id?: string | null
+        }
+        Update: {
+          actor_user_id?: string | null
+          after_status?: string
+          before_status?: string
+          created_at?: string
+          id?: string
+          target_user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sarina_admin_account_status_audit_actor_user_id_fkey"
+            columns: ["actor_user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sarina_admin_account_status_audit_target_user_id_fkey"
+            columns: ["target_user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sarina_admin_application_audit: {
+        Row: {
+          actor_user_id: string | null
+          after_status: string
+          application_id: string
+          before_status: string
+          created_at: string
+          id: string
+        }
+        Insert: {
+          actor_user_id?: string | null
+          after_status: string
+          application_id: string
+          before_status: string
+          created_at?: string
+          id?: string
+        }
+        Update: {
+          actor_user_id?: string | null
+          after_status?: string
+          application_id?: string
+          before_status?: string
+          created_at?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sarina_admin_application_audit_actor_user_id_fkey"
+            columns: ["actor_user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sarina_admin_audit_logs: {
+        Row: {
+          action: string
+          actor_user_id: string | null
+          after_state: Json
+          before_state: Json
+          created_at: string
+          id: string
+          target_user_id: string | null
+        }
+        Insert: {
+          action: string
+          actor_user_id?: string | null
+          after_state?: Json
+          before_state?: Json
+          created_at?: string
+          id?: string
+          target_user_id?: string | null
+        }
+        Update: {
+          action?: string
+          actor_user_id?: string | null
+          after_state?: Json
+          before_state?: Json
+          created_at?: string
+          id?: string
+          target_user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sarina_admin_audit_logs_actor_user_id_fkey"
+            columns: ["actor_user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sarina_admin_audit_logs_target_user_id_fkey"
+            columns: ["target_user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sarina_connect_channel_routes: {
+        Row: {
+          channel_id: string
+          connection_id: string | null
+          consent_scope: Json
+          consented_at: string | null
+          consultation_id: string
+          created_at: string
+          endpoint_secret_ref: string | null
+          id: string
+          last_verified_at: string | null
+          revoked_at: string | null
+          route_status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          channel_id: string
+          connection_id?: string | null
+          consent_scope?: Json
+          consented_at?: string | null
+          consultation_id: string
+          created_at?: string
+          endpoint_secret_ref?: string | null
+          id?: string
+          last_verified_at?: string | null
+          revoked_at?: string | null
+          route_status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          channel_id?: string
+          connection_id?: string | null
+          consent_scope?: Json
+          consented_at?: string | null
+          consultation_id?: string
+          created_at?: string
+          endpoint_secret_ref?: string | null
+          id?: string
+          last_verified_at?: string | null
+          revoked_at?: string | null
+          route_status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sarina_connect_channel_routes_channel_id_fkey"
+            columns: ["channel_id"]
+            isOneToOne: false
+            referencedRelation: "messaging_channels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sarina_connect_channel_routes_connection_id_fkey"
+            columns: ["connection_id"]
+            isOneToOne: false
+            referencedRelation: "messaging_connections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sarina_connect_channel_routes_consultation_id_fkey"
+            columns: ["consultation_id"]
+            isOneToOne: false
+            referencedRelation: "expert_consultations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sarina_connect_channel_routes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sarina_connect_consent_events: {
+        Row: {
+          actor_user_id: string
+          consent_scope: Json
+          event_type: string
+          id: string
+          recorded_at: string
+          route_id: string
+        }
+        Insert: {
+          actor_user_id: string
+          consent_scope?: Json
+          event_type: string
+          id?: string
+          recorded_at?: string
+          route_id: string
+        }
+        Update: {
+          actor_user_id?: string
+          consent_scope?: Json
+          event_type?: string
+          id?: string
+          recorded_at?: string
+          route_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sarina_connect_consent_events_actor_user_id_fkey"
+            columns: ["actor_user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sarina_connect_consent_events_route_id_fkey"
+            columns: ["route_id"]
+            isOneToOne: false
+            referencedRelation: "sarina_connect_channel_routes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sarina_connect_delivery_jobs: {
+        Row: {
+          attempt_count: number
+          available_at: string
+          created_at: string
+          delivered_at: string | null
+          delivery_status: string
+          id: string
+          idempotency_key: string
+          last_error_code: string | null
+          locked_at: string | null
+          message_id: string
+          provider_message_ref: string | null
+          route_id: string
+          sent_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          attempt_count?: number
+          available_at?: string
+          created_at?: string
+          delivered_at?: string | null
+          delivery_status?: string
+          id?: string
+          idempotency_key: string
+          last_error_code?: string | null
+          locked_at?: string | null
+          message_id: string
+          provider_message_ref?: string | null
+          route_id: string
+          sent_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          attempt_count?: number
+          available_at?: string
+          created_at?: string
+          delivered_at?: string | null
+          delivery_status?: string
+          id?: string
+          idempotency_key?: string
+          last_error_code?: string | null
+          locked_at?: string | null
+          message_id?: string
+          provider_message_ref?: string | null
+          route_id?: string
+          sent_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sarina_connect_delivery_jobs_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "expert_consultation_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sarina_connect_delivery_jobs_route_id_fkey"
+            columns: ["route_id"]
+            isOneToOne: false
+            referencedRelation: "sarina_connect_channel_routes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sarina_connect_provider_events: {
+        Row: {
+          event_type: string
+          id: string
+          message_id: string | null
+          processed_at: string | null
+          processing_status: string
+          provider_code: string
+          provider_event_ref: string
+          received_at: string
+          route_id: string | null
+          safe_metadata: Json
+        }
+        Insert: {
+          event_type: string
+          id?: string
+          message_id?: string | null
+          processed_at?: string | null
+          processing_status?: string
+          provider_code: string
+          provider_event_ref: string
+          received_at?: string
+          route_id?: string | null
+          safe_metadata?: Json
+        }
+        Update: {
+          event_type?: string
+          id?: string
+          message_id?: string | null
+          processed_at?: string | null
+          processing_status?: string
+          provider_code?: string
+          provider_event_ref?: string
+          received_at?: string
+          route_id?: string | null
+          safe_metadata?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sarina_connect_provider_events_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "expert_consultation_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sarina_connect_provider_events_route_id_fkey"
+            columns: ["route_id"]
+            isOneToOne: false
+            referencedRelation: "sarina_connect_channel_routes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sarina_faq_entries: {
+        Row: {
+          answer_mode: string
+          created_at: string
+          created_by: string | null
+          entry_slug: string
+          id: string
+          risk_level: string
+          scope_key: string | null
+          scope_type: string
+          status: string
+          topic_id: string
+          updated_at: string
+        }
+        Insert: {
+          answer_mode?: string
+          created_at?: string
+          created_by?: string | null
+          entry_slug: string
+          id?: string
+          risk_level?: string
+          scope_key?: string | null
+          scope_type?: string
+          status?: string
+          topic_id: string
+          updated_at?: string
+        }
+        Update: {
+          answer_mode?: string
+          created_at?: string
+          created_by?: string | null
+          entry_slug?: string
+          id?: string
+          risk_level?: string
+          scope_key?: string | null
+          scope_type?: string
+          status?: string
+          topic_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sarina_faq_entries_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sarina_faq_entries_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "sarina_faq_topics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sarina_faq_question_signals: {
+        Row: {
+          created_at: string
+          first_seen_at: string
+          id: string
+          language_code: string
+          last_seen_at: string
+          linked_faq_entry_id: string | null
+          normalized_question_redacted: string | null
+          occurrence_count: number
+          privacy_redacted: boolean
+          question_fingerprint: string
+          signal_status: string
+          topic_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          first_seen_at?: string
+          id?: string
+          language_code: string
+          last_seen_at?: string
+          linked_faq_entry_id?: string | null
+          normalized_question_redacted?: string | null
+          occurrence_count?: number
+          privacy_redacted?: boolean
+          question_fingerprint: string
+          signal_status?: string
+          topic_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          first_seen_at?: string
+          id?: string
+          language_code?: string
+          last_seen_at?: string
+          linked_faq_entry_id?: string | null
+          normalized_question_redacted?: string | null
+          occurrence_count?: number
+          privacy_redacted?: boolean
+          question_fingerprint?: string
+          signal_status?: string
+          topic_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sarina_faq_question_signals_linked_faq_entry_id_fkey"
+            columns: ["linked_faq_entry_id"]
+            isOneToOne: false
+            referencedRelation: "sarina_faq_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sarina_faq_question_signals_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "sarina_faq_topics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sarina_faq_review_events: {
+        Row: {
+          action: string
+          created_at: string
+          details: Json
+          faq_version_id: string
+          id: string
+          rationale: string
+          reviewer_role: string
+          reviewer_user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          details?: Json
+          faq_version_id: string
+          id?: string
+          rationale: string
+          reviewer_role: string
+          reviewer_user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          details?: Json
+          faq_version_id?: string
+          id?: string
+          rationale?: string
+          reviewer_role?: string
+          reviewer_user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sarina_faq_review_events_faq_version_id_fkey"
+            columns: ["faq_version_id"]
+            isOneToOne: false
+            referencedRelation: "sarina_faq_versions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sarina_faq_review_events_reviewer_user_id_fkey"
+            columns: ["reviewer_user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sarina_faq_source_references: {
+        Row: {
+          accessed_at: string
+          citation_locator: string | null
+          content_sha256: string | null
+          created_at: string
+          faq_version_id: string
+          id: string
+          publisher: string | null
+          source_published_at: string | null
+          source_title: string
+          source_type: string
+          source_uri: string
+          valid_until: string | null
+        }
+        Insert: {
+          accessed_at?: string
+          citation_locator?: string | null
+          content_sha256?: string | null
+          created_at?: string
+          faq_version_id: string
+          id?: string
+          publisher?: string | null
+          source_published_at?: string | null
+          source_title: string
+          source_type: string
+          source_uri: string
+          valid_until?: string | null
+        }
+        Update: {
+          accessed_at?: string
+          citation_locator?: string | null
+          content_sha256?: string | null
+          created_at?: string
+          faq_version_id?: string
+          id?: string
+          publisher?: string | null
+          source_published_at?: string | null
+          source_title?: string
+          source_type?: string
+          source_uri?: string
+          valid_until?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sarina_faq_source_references_faq_version_id_fkey"
+            columns: ["faq_version_id"]
+            isOneToOne: false
+            referencedRelation: "sarina_faq_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sarina_faq_topics: {
+        Row: {
+          created_at: string
+          id: string
+          sort_order: number
+          status: string
+          topic_slug: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          sort_order?: number
+          status?: string
+          topic_slug: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          sort_order?: number
+          status?: string
+          topic_slug?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      sarina_faq_usage_events: {
+        Row: {
+          created_at: string
+          faq_version_id: string
+          id: string
+          language_code: string
+          outcome: string
+          retrieval_method: string
+          retrieval_score: number | null
+        }
+        Insert: {
+          created_at?: string
+          faq_version_id: string
+          id?: string
+          language_code: string
+          outcome?: string
+          retrieval_method: string
+          retrieval_score?: number | null
+        }
+        Update: {
+          created_at?: string
+          faq_version_id?: string
+          id?: string
+          language_code?: string
+          outcome?: string
+          retrieval_method?: string
+          retrieval_score?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sarina_faq_usage_events_faq_version_id_fkey"
+            columns: ["faq_version_id"]
+            isOneToOne: false
+            referencedRelation: "sarina_faq_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sarina_faq_versions: {
+        Row: {
+          answer_markdown: string
+          answer_short: string
+          approval_role: string | null
+          approved_at: string | null
+          approved_by: string | null
+          canonical_question: string
+          confidence: number
+          created_at: string
+          created_by: string | null
+          faq_entry_id: string
+          id: string
+          keywords: string[]
+          language_code: string
+          published_at: string | null
+          search_document: unknown
+          status: string
+          valid_from: string
+          valid_until: string | null
+          version_no: number
+        }
+        Insert: {
+          answer_markdown: string
+          answer_short: string
+          approval_role?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          canonical_question: string
+          confidence?: number
+          created_at?: string
+          created_by?: string | null
+          faq_entry_id: string
+          id?: string
+          keywords?: string[]
+          language_code: string
+          published_at?: string | null
+          search_document?: unknown
+          status?: string
+          valid_from?: string
+          valid_until?: string | null
+          version_no: number
+        }
+        Update: {
+          answer_markdown?: string
+          answer_short?: string
+          approval_role?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          canonical_question?: string
+          confidence?: number
+          created_at?: string
+          created_by?: string | null
+          faq_entry_id?: string
+          id?: string
+          keywords?: string[]
+          language_code?: string
+          published_at?: string | null
+          search_document?: unknown
+          status?: string
+          valid_from?: string
+          valid_until?: string | null
+          version_no?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sarina_faq_versions_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sarina_faq_versions_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sarina_faq_versions_faq_entry_id_fkey"
+            columns: ["faq_entry_id"]
+            isOneToOne: false
+            referencedRelation: "sarina_faq_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sarina_manus_market_research_drafts: {
+        Row: {
+          created_at: string
+          external_mission_id: string | null
+          findings: Json
+          id: string
+          market_scope: string
+          recommendations: Json
+          sources: Json
+          status: string
+          submitted_by: string
+          summary: string
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          external_mission_id?: string | null
+          findings?: Json
+          id?: string
+          market_scope: string
+          recommendations?: Json
+          sources?: Json
+          status?: string
+          submitted_by?: string
+          summary: string
+          title: string
+        }
+        Update: {
+          created_at?: string
+          external_mission_id?: string | null
+          findings?: Json
+          id?: string
+          market_scope?: string
+          recommendations?: Json
+          sources?: Json
+          status?: string
+          submitted_by?: string
+          summary?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sarina_manus_market_research_drafts_external_mission_id_fkey"
+            columns: ["external_mission_id"]
+            isOneToOne: false
+            referencedRelation: "sci_external_missions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sarina_service_entitlements: {
         Row: {
           access_status: string
@@ -5899,6 +10307,166 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sci_agent_health_events: {
+        Row: {
+          agent_instance_id: string
+          event_type: string
+          evidence: Json
+          health: string
+          id: number
+          occurred_at: string
+          reason_code: string
+          runtime_state: string
+        }
+        Insert: {
+          agent_instance_id: string
+          event_type: string
+          evidence?: Json
+          health: string
+          id?: never
+          occurred_at?: string
+          reason_code: string
+          runtime_state: string
+        }
+        Update: {
+          agent_instance_id?: string
+          event_type?: string
+          evidence?: Json
+          health?: string
+          id?: never
+          occurred_at?: string
+          reason_code?: string
+          runtime_state?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sci_agent_health_events_agent_instance_id_fkey"
+            columns: ["agent_instance_id"]
+            isOneToOne: false
+            referencedRelation: "sci_agent_runtime"
+            referencedColumns: ["agent_instance_id"]
+          },
+        ]
+      }
+      sci_agent_runtime: {
+        Row: {
+          active_task_count: number
+          adapter_id: string
+          agent_instance_id: string
+          capabilities: string[]
+          capability_check_ok: boolean | null
+          capacity: number | null
+          created_at: string
+          dispatch_enabled: boolean
+          last_capability_check_at: string | null
+          last_error_at: string | null
+          last_error_code: string | null
+          last_heartbeat_at: string | null
+          last_success_at: string | null
+          lifecycle_state: string
+          runtime_metadata: Json
+          specialist_role: string
+          updated_at: string
+        }
+        Insert: {
+          active_task_count?: number
+          adapter_id: string
+          agent_instance_id: string
+          capabilities?: string[]
+          capability_check_ok?: boolean | null
+          capacity?: number | null
+          created_at?: string
+          dispatch_enabled?: boolean
+          last_capability_check_at?: string | null
+          last_error_at?: string | null
+          last_error_code?: string | null
+          last_heartbeat_at?: string | null
+          last_success_at?: string | null
+          lifecycle_state?: string
+          runtime_metadata?: Json
+          specialist_role: string
+          updated_at?: string
+        }
+        Update: {
+          active_task_count?: number
+          adapter_id?: string
+          agent_instance_id?: string
+          capabilities?: string[]
+          capability_check_ok?: boolean | null
+          capacity?: number | null
+          created_at?: string
+          dispatch_enabled?: boolean
+          last_capability_check_at?: string | null
+          last_error_at?: string | null
+          last_error_code?: string | null
+          last_heartbeat_at?: string | null
+          last_success_at?: string | null
+          lifecycle_state?: string
+          runtime_metadata?: Json
+          specialist_role?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      sci_external_missions: {
+        Row: {
+          adapter_id: string
+          created_at: string
+          domain: string
+          draft_id: string | null
+          external_started_at: string | null
+          external_task_id: string
+          external_task_url: string
+          id: string
+          linked_by_auth_user_id: string | null
+          report_received_at: string | null
+          specialist_role: string
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          adapter_id: string
+          created_at?: string
+          domain: string
+          draft_id?: string | null
+          external_started_at?: string | null
+          external_task_id: string
+          external_task_url: string
+          id?: string
+          linked_by_auth_user_id?: string | null
+          report_received_at?: string | null
+          specialist_role: string
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          adapter_id?: string
+          created_at?: string
+          domain?: string
+          draft_id?: string | null
+          external_started_at?: string | null
+          external_task_id?: string
+          external_task_url?: string
+          id?: string
+          linked_by_auth_user_id?: string | null
+          report_received_at?: string | null
+          specialist_role?: string
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sci_external_missions_draft_id_fkey"
+            columns: ["draft_id"]
+            isOneToOne: false
+            referencedRelation: "sarina_manus_market_research_drafts"
             referencedColumns: ["id"]
           },
         ]
@@ -6200,6 +10768,417 @@ export type Database = {
         }
         Relationships: []
       }
+      specialist_productivity_reward_events: {
+        Row: {
+          awarded_credit_units: number | null
+          created_at: string
+          evidence_summary: Json
+          expert_profile_id: string
+          farm_id: string
+          id: string
+          improvement_action_id: string | null
+          measurement_id: string | null
+          product_id: string
+          requested_credit_units: number
+          review_note: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          awarded_credit_units?: number | null
+          created_at?: string
+          evidence_summary?: Json
+          expert_profile_id: string
+          farm_id: string
+          id?: string
+          improvement_action_id?: string | null
+          measurement_id?: string | null
+          product_id: string
+          requested_credit_units: number
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          awarded_credit_units?: number | null
+          created_at?: string
+          evidence_summary?: Json
+          expert_profile_id?: string
+          farm_id?: string
+          id?: string
+          improvement_action_id?: string | null
+          measurement_id?: string | null
+          product_id?: string
+          requested_credit_units?: number
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "specialist_productivity_reward_event_improvement_action_id_fkey"
+            columns: ["improvement_action_id"]
+            isOneToOne: false
+            referencedRelation: "expert_farm_action_schedule"
+            referencedColumns: ["action_id"]
+          },
+          {
+            foreignKeyName: "specialist_productivity_reward_event_improvement_action_id_fkey"
+            columns: ["improvement_action_id"]
+            isOneToOne: false
+            referencedRelation: "farm_improvement_actions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "specialist_productivity_reward_events_expert_profile_id_fkey"
+            columns: ["expert_profile_id"]
+            isOneToOne: false
+            referencedRelation: "expert_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "specialist_productivity_reward_events_farm_id_fkey"
+            columns: ["farm_id"]
+            isOneToOne: false
+            referencedRelation: "farms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "specialist_productivity_reward_events_measurement_id_fkey"
+            columns: ["measurement_id"]
+            isOneToOne: false
+            referencedRelation: "farm_productivity_measurements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "specialist_productivity_reward_events_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "marketplace_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "specialist_productivity_reward_events_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      specialist_productivity_reward_rules: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          credit_units: number
+          id: string
+          is_active: boolean
+          minimum_measurements: number
+          product_id: string
+          requires_expert_review: boolean
+          rule_notes: string | null
+          updated_at: string
+          valid_from: string
+          valid_until: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          credit_units: number
+          id?: string
+          is_active?: boolean
+          minimum_measurements?: number
+          product_id: string
+          requires_expert_review?: boolean
+          rule_notes?: string | null
+          updated_at?: string
+          valid_from?: string
+          valid_until?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          credit_units?: number
+          id?: string
+          is_active?: boolean
+          minimum_measurements?: number
+          product_id?: string
+          requires_expert_review?: boolean
+          rule_notes?: string | null
+          updated_at?: string
+          valid_from?: string
+          valid_until?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "specialist_productivity_reward_rules_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "specialist_productivity_reward_rules_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "marketplace_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      specialist_workspace_credit_ledger: {
+        Row: {
+          created_at: string
+          delta_units: number
+          description_code: string
+          entry_type: string
+          expert_profile_id: string
+          id: string
+          idempotency_key: string
+          metadata: Json
+          source_event_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          delta_units: number
+          description_code: string
+          entry_type: string
+          expert_profile_id: string
+          id?: string
+          idempotency_key: string
+          metadata?: Json
+          source_event_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          delta_units?: number
+          description_code?: string
+          entry_type?: string
+          expert_profile_id?: string
+          id?: string
+          idempotency_key?: string
+          metadata?: Json
+          source_event_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "specialist_workspace_credit_ledger_expert_profile_id_fkey"
+            columns: ["expert_profile_id"]
+            isOneToOne: false
+            referencedRelation: "expert_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      specialist_workspace_pricing: {
+        Row: {
+          ai_price_per_1k_tokens: number
+          billing_enabled: boolean
+          credit_unit_price: number
+          currency_code: string
+          grace_period_days: number
+          id: number
+          included_monthly_credits: number
+          overage_enabled: boolean
+          reward_multiplier: number
+          reward_review_required: boolean
+          updated_at: string
+          updated_by: string | null
+          workspace_monthly_fee: number
+        }
+        Insert: {
+          ai_price_per_1k_tokens?: number
+          billing_enabled?: boolean
+          credit_unit_price?: number
+          currency_code?: string
+          grace_period_days?: number
+          id?: number
+          included_monthly_credits?: number
+          overage_enabled?: boolean
+          reward_multiplier?: number
+          reward_review_required?: boolean
+          updated_at?: string
+          updated_by?: string | null
+          workspace_monthly_fee?: number
+        }
+        Update: {
+          ai_price_per_1k_tokens?: number
+          billing_enabled?: boolean
+          credit_unit_price?: number
+          currency_code?: string
+          grace_period_days?: number
+          id?: number
+          included_monthly_credits?: number
+          overage_enabled?: boolean
+          reward_multiplier?: number
+          reward_review_required?: boolean
+          updated_at?: string
+          updated_by?: string | null
+          workspace_monthly_fee?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "specialist_workspace_pricing_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      specialist_workspace_subscriptions: {
+        Row: {
+          billing_status: string
+          created_at: string
+          current_period_end: string | null
+          current_period_start: string | null
+          expert_profile_id: string
+          external_customer_ref: string | null
+          external_subscription_ref: string | null
+          id: string
+          metadata: Json
+          next_billing_at: string | null
+          plan_code: string
+          starts_at: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          billing_status?: string
+          created_at?: string
+          current_period_end?: string | null
+          current_period_start?: string | null
+          expert_profile_id: string
+          external_customer_ref?: string | null
+          external_subscription_ref?: string | null
+          id?: string
+          metadata?: Json
+          next_billing_at?: string | null
+          plan_code?: string
+          starts_at?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          billing_status?: string
+          created_at?: string
+          current_period_end?: string | null
+          current_period_start?: string | null
+          expert_profile_id?: string
+          external_customer_ref?: string | null
+          external_subscription_ref?: string | null
+          id?: string
+          metadata?: Json
+          next_billing_at?: string | null
+          plan_code?: string
+          starts_at?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "specialist_workspace_subscriptions_expert_profile_id_fkey"
+            columns: ["expert_profile_id"]
+            isOneToOne: true
+            referencedRelation: "expert_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_content_bookmarks: {
+        Row: {
+          content_id: string
+          created_at: string
+          user_id: string
+        }
+        Insert: {
+          content_id: string
+          created_at?: string
+          user_id: string
+        }
+        Update: {
+          content_id?: string
+          created_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_content_bookmarks_content_id_fkey"
+            columns: ["content_id"]
+            isOneToOne: false
+            referencedRelation: "educational_contents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_content_bookmarks_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_content_progress: {
+        Row: {
+          completed_at: string | null
+          content_id: string
+          id: string
+          last_accessed_at: string
+          last_position_seconds: number | null
+          lesson_id: string | null
+          progress_percent: number
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          content_id: string
+          id?: string
+          last_accessed_at?: string
+          last_position_seconds?: number | null
+          lesson_id?: string | null
+          progress_percent?: number
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          content_id?: string
+          id?: string
+          last_accessed_at?: string
+          last_position_seconds?: number | null
+          lesson_id?: string | null
+          progress_percent?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_content_progress_content_id_fkey"
+            columns: ["content_id"]
+            isOneToOne: false
+            referencedRelation: "educational_contents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_content_progress_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: false
+            referencedRelation: "educational_lessons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_content_progress_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           granted_at: string
@@ -6261,10 +11240,17 @@ export type Database = {
           created_at: string
           email: string | null
           full_name: string | null
+          has_shop: boolean | null
+          home_region_id: string | null
           id: string
+          livestock_types: string[]
+          organization_region: string | null
+          organization_region_scope: string | null
           phone_e164: string | null
           preferred_language: string
+          registration_track: string | null
           updated_at: string
+          username: string | null
         }
         Insert: {
           account_status?: string
@@ -6274,10 +11260,17 @@ export type Database = {
           created_at?: string
           email?: string | null
           full_name?: string | null
+          has_shop?: boolean | null
+          home_region_id?: string | null
           id?: string
+          livestock_types?: string[]
+          organization_region?: string | null
+          organization_region_scope?: string | null
           phone_e164?: string | null
           preferred_language?: string
+          registration_track?: string | null
           updated_at?: string
+          username?: string | null
         }
         Update: {
           account_status?: string
@@ -6287,10 +11280,17 @@ export type Database = {
           created_at?: string
           email?: string | null
           full_name?: string | null
+          has_shop?: boolean | null
+          home_region_id?: string | null
           id?: string
+          livestock_types?: string[]
+          organization_region?: string | null
+          organization_region_scope?: string | null
           phone_e164?: string | null
           preferred_language?: string
+          registration_track?: string | null
           updated_at?: string
+          username?: string | null
         }
         Relationships: [
           {
@@ -6298,6 +11298,13 @@ export type Database = {
             columns: ["country_id"]
             isOneToOne: false
             referencedRelation: "countries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "users_home_region_id_fkey"
+            columns: ["home_region_id"]
+            isOneToOne: false
+            referencedRelation: "deployment_regions"
             referencedColumns: ["id"]
           },
         ]
@@ -6463,6 +11470,140 @@ export type Database = {
       }
     }
     Views: {
+      expert_farm_action_schedule: {
+        Row: {
+          action_description: string | null
+          action_id: string | null
+          action_status: string | null
+          action_title: string | null
+          actual_cost: number | null
+          completed_at: string | null
+          currency_code: string | null
+          due_date: string | null
+          farm_id: string | null
+          farm_name: string | null
+          farmer_user_id: string | null
+          is_due_this_week: boolean | null
+          is_overdue: boolean | null
+          outcome_notes: string | null
+          plan_id: string | null
+          plan_origin: string | null
+          plan_priority: string | null
+          plan_status: string | null
+          plan_title: string | null
+          requires_expert_review: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "farm_improvement_plans_farm_id_fkey"
+            columns: ["farm_id"]
+            isOneToOne: false
+            referencedRelation: "farms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "farms_owner_user_id_fkey"
+            columns: ["farmer_user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      expert_farm_productivity_timeline: {
+        Row: {
+          confidence_score: number | null
+          crop_cycle_id: string | null
+          default_unit: string | null
+          evidence_refs: Json | null
+          farm_id: string | null
+          farm_name: string | null
+          field_id: string | null
+          label_en: string | null
+          label_fa: string | null
+          metric_code: string | null
+          metric_value: number | null
+          notes: string | null
+          observed_at: string | null
+          period_end: string | null
+          period_start: string | null
+          quality_label: string | null
+          source_type: string | null
+          unit_code: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "farm_productivity_measurements_crop_cycle_id_fkey"
+            columns: ["crop_cycle_id"]
+            isOneToOne: false
+            referencedRelation: "crop_cycles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "farm_productivity_measurements_farm_id_fkey"
+            columns: ["farm_id"]
+            isOneToOne: false
+            referencedRelation: "farms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "farm_productivity_measurements_field_id_fkey"
+            columns: ["field_id"]
+            isOneToOne: false
+            referencedRelation: "farm_fields"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "farm_productivity_measurements_metric_code_fkey"
+            columns: ["metric_code"]
+            isOneToOne: false
+            referencedRelation: "farm_productivity_metric_definitions"
+            referencedColumns: ["metric_code"]
+          },
+        ]
+      }
+      expert_supervised_farm_dashboard: {
+        Row: {
+          actions_due_this_week_count: number | null
+          active_plan_count: number | null
+          area_unit: string | null
+          contract_status: string | null
+          country_id: string | null
+          farm_id: string | null
+          farm_name: string | null
+          farmer_user_id: string | null
+          latest_farm_observation_at: string | null
+          latest_productivity_measurement_at: string | null
+          overdue_action_count: number | null
+          service_contract_id: string | null
+          service_end_at: string | null
+          service_start_at: string | null
+          total_area: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "farms_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "countries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_contracts_farm_id_fkey"
+            columns: ["farm_id"]
+            isOneToOne: false
+            referencedRelation: "farms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_contracts_farmer_user_id_fkey"
+            columns: ["farmer_user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       geography_columns: {
         Row: {
           coord_dimension: number | null
@@ -6650,6 +11791,51 @@ export type Database = {
             }
             Returns: string
           }
+      admin_create_specialist_productivity_reward_rule: {
+        Args: {
+          p_credit_units: number
+          p_minimum_measurements?: number
+          p_product_id: string
+          p_rule_notes?: string
+        }
+        Returns: string
+      }
+      admin_list_marketplace_review_queue: { Args: never; Returns: Json }
+      admin_list_sarina_users: {
+        Args: never
+        Returns: {
+          account_status: string
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          role_codes: string[]
+        }[]
+      }
+      admin_review_expert_profile: {
+        Args: { p_profile_id: string; p_status: string }
+        Returns: Json
+      }
+      admin_review_marketplace_product: {
+        Args: { p_notes?: string; p_product_id: string; p_status: string }
+        Returns: Json
+      }
+      admin_review_marketplace_seller: {
+        Args: { p_notes?: string; p_seller_id: string; p_status: string }
+        Returns: Json
+      }
+      admin_review_organization_application: {
+        Args: { p_application_id: string; p_status: string }
+        Returns: Json
+      }
+      admin_set_sarina_user_roles: {
+        Args: { p_role_codes: string[]; p_target_user_id: string }
+        Returns: Json
+      }
+      admin_set_sarina_user_status: {
+        Args: { p_status: string; p_target_user_id: string }
+        Returns: Json
+      }
       cancel_marketplace_order: {
         Args: { p_order_id: string }
         Returns: boolean
@@ -6671,10 +11857,6 @@ export type Database = {
           p_unit_label: string
         }
         Returns: string
-      }
-      admin_review_expert_profile: {
-        Args: { p_profile_id: string; p_status: string }
-        Returns: Json
       }
       current_sarina_user_id: { Args: never; Returns: string }
       current_user_has_role: { Args: { p_role_code: string }; Returns: boolean }
@@ -6710,7 +11892,13 @@ export type Database = {
         | { Args: { schema_name: string; table_name: string }; Returns: string }
         | { Args: { table_name: string }; Returns: string }
       enablelongtransactions: { Args: never; Returns: string }
+      ensure_my_expert_public_identifier: { Args: never; Returns: string }
+      ensure_my_sarina_farmer_identifier: { Args: never; Returns: string }
       equals: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean }
+      farmer_has_organization_service_scope: {
+        Args: { p_organization_id: string }
+        Returns: boolean
+      }
       geometry: { Args: { "": string }; Returns: unknown }
       geometry_above: {
         Args: { geom1: unknown; geom2: unknown }
@@ -6810,6 +11998,10 @@ export type Database = {
       }
       geomfromewkt: { Args: { "": string }; Returns: unknown }
       gettransactionid: { Args: never; Returns: unknown }
+      is_current_user_active_expert_for_farm: {
+        Args: { p_farm_id: string }
+        Returns: boolean
+      }
       is_sarina_admin: { Args: never; Returns: boolean }
       list_my_marketplace_organizations: {
         Args: never
@@ -6831,6 +12023,31 @@ export type Database = {
         }[]
       }
       longtransactionsenabled: { Args: never; Returns: boolean }
+      lookup_farmer_by_public_code: {
+        Args: { p_organization_id: string; p_public_code: string }
+        Returns: {
+          administrative_regions: string[]
+          consent_expires_at: string
+          consent_scopes: string[]
+          country_id: string
+          farmer_code: string
+          farmer_name: string
+          visible_farm_count: number
+        }[]
+      }
+      lookup_institutional_message_recipient: {
+        Args: { p_organization_id: string; p_public_code: string }
+        Returns: {
+          consent_expires_at: string
+          display_name: string
+          public_code: string
+          recipient_kind: string
+        }[]
+      }
+      mark_institutional_thread_read: {
+        Args: { p_thread_id: string }
+        Returns: number
+      }
       organization_has_scoped_access: {
         Args: {
           p_capability_code: string
@@ -6895,6 +12112,117 @@ export type Database = {
       }
       postgis_version: { Args: never; Returns: string }
       postgis_wagyu_version: { Args: never; Returns: string }
+      record_sarina_faq_question_signal: {
+        Args: {
+          p_language_code: string
+          p_question_fingerprint: string
+          p_topic_id?: string
+        }
+        Returns: undefined
+      }
+      regional_accept_sync_event: {
+        Args: {
+          p_aggregate_id: string
+          p_aggregate_type: string
+          p_consent_id: string
+          p_data_categories: Json
+          p_event_payload: Json
+          p_event_type: string
+          p_event_version: number
+          p_payload_sha256: string
+          p_request_nonce: string
+          p_schema_version: number
+          p_source_event_id: string
+          p_source_region_id: string
+          p_source_updated_at?: string
+          p_target_region_id: string
+        }
+        Returns: Json
+      }
+      regional_claim_sync_outbox: {
+        Args: { p_lease_seconds?: number; p_limit?: number }
+        Returns: {
+          acknowledged_at: string | null
+          aggregate_id: string
+          aggregate_type: string
+          attempt_count: number
+          available_at: string
+          consent_id: string
+          created_at: string
+          data_categories: Json
+          delivery_status: string
+          event_payload: Json
+          event_type: string
+          event_version: number
+          id: string
+          idempotency_key: string
+          last_error_code: string | null
+          locked_at: string | null
+          schema_version: number
+          sent_at: string | null
+          source_region_id: string
+          target_region_id: string
+          updated_at: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "regional_sync_outbox"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      regional_enqueue_sync_event: {
+        Args: {
+          p_aggregate_id: string
+          p_aggregate_type: string
+          p_consent_id: string
+          p_data_categories: Json
+          p_event_payload: Json
+          p_event_type: string
+          p_event_version: number
+          p_idempotency_key: string
+          p_schema_version: number
+          p_source_region_id: string
+          p_target_region_id: string
+        }
+        Returns: string
+      }
+      regional_record_sync_delivery: {
+        Args: {
+          p_error_code?: string
+          p_event_id: string
+          p_retry_after_seconds?: number
+          p_success: boolean
+        }
+        Returns: Json
+      }
+      reply_institutional_message: {
+        Args: { p_message: string; p_thread_id: string }
+        Returns: string
+      }
+      resolve_institutional_message_recipient: {
+        Args: { p_organization_id: string; p_public_code: string }
+        Returns: {
+          consent_expires_at: string
+          country_id: string
+          display_name: string
+          public_code: string
+          recipient_kind: string
+          recipient_user_id: string
+        }[]
+      }
+      respond_to_expert_case_handover: {
+        Args: { p_accept: boolean; p_handover_id: string }
+        Returns: Json
+      }
+      review_authority_onboarding_request: {
+        Args: {
+          p_new_status: string
+          p_request_id: string
+          p_review_notes: string
+        }
+        Returns: Json
+      }
       review_marketplace_seller_change_request: {
         Args: {
           p_decision: string
@@ -6902,6 +12230,116 @@ export type Database = {
           p_review_note?: string
         }
         Returns: boolean
+      }
+      review_specialist_productivity_reward: {
+        Args: {
+          p_approve: boolean
+          p_review_note?: string
+          p_reward_event_id: string
+        }
+        Returns: string
+      }
+      revoke_my_farmer_authority_consent: {
+        Args: { p_consent_id: string }
+        Returns: boolean
+      }
+      run_farm_productivity_context_analysis: {
+        Args: { p_farm_id?: string }
+        Returns: Json
+      }
+      run_farm_productivity_evaluation: {
+        Args: { p_farm_id?: string }
+        Returns: Json
+      }
+      sci_authorize_task_dispatch: {
+        Args: {
+          p_human_approval_ref?: string
+          p_policy_decision_ref: string
+          p_task_id: string
+        }
+        Returns: Json
+      }
+      sci_cancel_task: {
+        Args: { p_owner_auth_user_id: string; p_task_id: string }
+        Returns: Json
+      }
+      sci_claim_tasks: {
+        Args: {
+          p_lease_seconds?: number
+          p_limit?: number
+          p_worker_id: string
+        }
+        Returns: Json[]
+      }
+      sci_complete_task: {
+        Args: { p_lease_token: string; p_result: Json; p_task_id: string }
+        Returns: Json
+      }
+      sci_create_task: { Args: { p_task: Json }; Returns: Json }
+      sci_fail_task: {
+        Args: {
+          p_error_code: string
+          p_lease_token: string
+          p_retryable?: boolean
+          p_task_id: string
+        }
+        Returns: Json
+      }
+      sci_get_task_tree: {
+        Args: { p_owner_auth_user_id: string; p_task_id: string }
+        Returns: Json
+      }
+      sci_heartbeat_task: {
+        Args: {
+          p_lease_seconds?: number
+          p_lease_token: string
+          p_task_id: string
+        }
+        Returns: Json
+      }
+      sci_recover_expired_tasks: { Args: { p_limit?: number }; Returns: Json }
+      search_sarina_faq: {
+        Args: {
+          p_fallback_language_code?: string
+          p_language_code?: string
+          p_limit?: number
+          p_query: string
+          p_scope_key?: string
+          p_scope_type?: string
+          p_topic_slug?: string
+        }
+        Returns: {
+          answer_markdown: string
+          answer_mode: string
+          answer_short: string
+          canonical_question: string
+          confidence: number
+          faq_entry_id: string
+          faq_version_id: string
+          language_code: string
+          retrieval_score: number
+          risk_level: string
+          source_references: Json
+          topic_slug: string
+        }[]
+      }
+      send_institutional_message: {
+        Args: {
+          p_message: string
+          p_organization_id: string
+          p_public_code: string
+          p_subject: string
+        }
+        Returns: {
+          message_id: string
+          recipient_kind: string
+          recipient_name: string
+          thread_id: string
+        }[]
+      }
+      set_expert_profile_avatar: {
+        Args: { p_avatar_path: string }
+        Returns: undefined
       }
       set_my_sarina_roles: {
         Args: { p_role_codes: string[] }
@@ -7515,6 +12953,20 @@ export type Database = {
         Returns: Json
       }
       unlockrows: { Args: { "": string }; Returns: number }
+      update_institutional_service_request: {
+        Args: {
+          p_event_message?: string
+          p_organization_response?: string
+          p_request_id: string
+          p_status: string
+        }
+        Returns: {
+          new_status: string
+          old_status: string
+          request_id: string
+          updated_at: string
+        }[]
+      }
       updategeometrysrid: {
         Args: {
           catalogn_name: string
