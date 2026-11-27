@@ -1798,3 +1798,12 @@
 .myfarm-quick-asset-list{display:flex;gap:6px;flex-wrap:wrap}
 .myfarm-quick-asset-list button{border:1px solid #dce8dd;border-radius:9px;padding:7px 9px;background:#fff;color:#567260;font:inherit;font-size:10px}
 .myfarm-quick-asset-list button.active{border-color:#245b43;background:#eff6ef;color:#245b43}
+
+
+/* Infrastructure tools live in the primary farm map toolbar. */
+.myfarm-infrastructure-toolbar{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:8px 0;padding:8px 10px;border:1px solid #dce9df;border-radius:12px;background:#f8fbf8}
+.myfarm-infrastructure-toolbar>span{font-size:10px;font-weight:700;color:#567260;margin-inline-end:3px}
+.myfarm-infrastructure-toolbar button{border:1px solid #dce8dd;border-radius:9px;padding:7px 10px;background:#fff;color:#567260;font:inherit;font-size:10px;font-weight:700}
+.myfarm-infrastructure-toolbar button.active{background:#245b43;color:#fff;border-color:#245b43}
+.myfarm-quick-actions input[type=range]{flex:1;min-width:90px;accent-color:#2d7650}
+@media(max-width:520px){.myfarm-infrastructure-toolbar{gap:4px}.myfarm-infrastructure-toolbar button{padding:7px 8px;font-size:9px}}
