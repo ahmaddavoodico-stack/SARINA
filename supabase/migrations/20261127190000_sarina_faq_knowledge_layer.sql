@@ -101,7 +101,7 @@ CREATE OR REPLACE FUNCTION public.refresh_sarina_faq_search_document()
 RETURNS trigger
 LANGUAGE plpgsql
 SET search_path = ''
-AS $
+AS $$
 BEGIN
   NEW.search_document := to_tsvector(
     'simple'::regconfig,
@@ -112,7 +112,7 @@ BEGIN
   );
   RETURN NEW;
 END;
-$;
+$$;
 REVOKE ALL ON FUNCTION public.refresh_sarina_faq_search_document() FROM PUBLIC, anon, authenticated;
 CREATE TRIGGER sarina_faq_versions_refresh_search_document
   BEFORE INSERT OR UPDATE OF canonical_question, answer_short, answer_markdown, keywords
