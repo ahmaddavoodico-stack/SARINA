@@ -86,3 +86,10 @@ A later semantic retriever may be added behind the same contract using a locally
 - Training a model from raw chat transcripts.
 - Claiming semantic retrieval quality from a lexical search index.
 - Using farmer-specific data outside its authorized farm context.
+
+
+## 9. Current SCI integration boundary
+
+The central intelligence Edge Function uses the caller's JWT to call the read-only FAQ RPC. The adapter validates candidate IDs, language, risk and score, and carries only candidate references plus metadata into the task context. It does not copy answer text into the task payload, expose a raw transcript to shared knowledge, bypass the domain router, or auto-answer. Until the database migration is applied and the multilingual retrieval test set is calibrated, the adapter fails closed to \`unavailable\` and the existing SCI route continues normally.
+
+Only global-scope FAQs are requested in this first integration. Country, region, crop and variety entries remain excluded until the request contains trusted, validated scope inputs.
