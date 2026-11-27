@@ -145,7 +145,7 @@ export async function invokeGroqAdminChat(options: GroqAdminChatOptions): Promis
     let audioMimeType: string | undefined;
     let toolResult: string;
     try {
-      const voiceUrl = new URL("/v1/synthesize", options.voiceApiBase.endsWith("/") ? options.voiceApiBase : options.voiceApiBase + "/");
+      const voiceUrl = new URL("v1/synthesize", options.voiceApiBase.endsWith("/") ? options.voiceApiBase : options.voiceApiBase + "/");
       const voiceResponse = await fetchImpl(voiceUrl, {
         method: "POST",
         headers: { Authorization: `Bearer ${options.accessToken}`, "Content-Type": "application/json" },
