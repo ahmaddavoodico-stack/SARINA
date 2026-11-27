@@ -36,11 +36,11 @@ export default function ExpertRecommendationFollowUp({profileId,sarinaUserId,ver
  useEffect(()=>{void refresh();},[refresh]);
  useEffect(()=>{
   if(!supabase||!verified)return;
-  const channel=supabase.channel("expert-recommendation-actions-"+profileId)
-   .on("postgres_changes",{event:"*",schema:"public",table:"expert_recommendation_actions",filter:"expert_profile_id=eq."+profileId},()=>{void refresh();})
+  const channel=supabase.channel("expert-recommendation-notifications-"+sarinaUserId)
+   .on("postgres_changes",{event:"INSERT",schema:"public",table:"expert_case_notifications",filter:"recipient_user_id=eq."+sarinaUserId},()=>{void refresh();})
    .subscribe();
   return()=>{void supabase.removeChannel(channel);};
- },[profileId,verified,refresh]);
+ },[sarinaUserId,verified,refresh]);
  const today=localDate();
  const counts=useMemo(()=>({
   total:rows.length,
