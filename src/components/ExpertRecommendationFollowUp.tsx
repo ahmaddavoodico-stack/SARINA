@@ -4,7 +4,7 @@ import {supabase} from "../lib/supabase";
 const db=supabase as any;
 
 type Recommendation={
- id:string;request_id:string;farm_id:string;title:string;instructions:string;priority:string;
+ id:string;request_id:string;farm_id:string;field_id:string|null;title:string;instructions:string;priority:string;
  starts_on:string;due_on:string|null;status:string;approved_at:string;completed_at:string|null;
  farmer_note:string|null;evidence:unknown[];updated_at:string;
  expert_requests?:{subject:string;requester_user_id:string}|null;
@@ -22,7 +22,7 @@ export default function ExpertRecommendationFollowUp({profileId,sarinaUserId,ver
   if(!supabase||!verified){setRows([]);setReviews({});setLoading(false);return;}
   setLoading(true);setNotice("");
   const [actions,reviewRows]=await Promise.all([
-   db.from("expert_recommendation_actions").select("id,request_id,farm_id,title,instructions,priority,starts_on,due_on,status,approved_at,completed_at,farmer_note,evidence,updated_at,expert_requests!inner(subject,requester_user_id)").eq("expert_profile_id",profileId).order("updated_at",{ascending:false}).limit(200),
+   db.from("expert_recommendation_actions").select("id,request_id,farm_id,field_id,title,instructions,priority,starts_on,due_on,status,approved_at,completed_at,farmer_note,evidence,updated_at,expert_requests!inner(subject,requester_user_id)").eq("expert_profile_id",profileId).order("updated_at",{ascending:false}).limit(200),
    db.from("expert_recommendation_reviews").select("id,recommendation_id,reviewer_user_id,outcome_status,outcome_summary,evidence_assessment,reviewed_at,updated_at")
   ]);
   if(actions.error){setNotice("دریافت توصیه‌ها انجام نشد: "+actions.error.message);setRows([]);setLoading(false);return;}
@@ -34,6 +34,13 @@ export default function ExpertRecommendationFollowUp({profileId,sarinaUserId,ver
   setLoading(false);
  },[profileId,verified]);
  useEffect(()=>{void refresh();},[refresh]);
+ useEffect(()=>{
+  const client=supabase;if(!client||!verified)return;
+  const channel=client.channel("expert-recommendation-notifications-"+sarinaUserId)
+   .on("postgres_changes",{event:"INSERT",schema:"public",table:"expert_case_notifications",filter:"recipient_user_id=eq."+sarinaUserId},()=>{void refresh();})
+   .subscribe();
+  return()=>{void client.removeChannel(channel);};
+ },[sarinaUserId,verified,refresh]);
  const today=localDate();
  const counts=useMemo(()=>({
   total:rows.length,
@@ -79,7 +86,7 @@ export default function ExpertRecommendationFollowUp({profileId,sarinaUserId,ver
   {loading?<div className="expert-empty">در حال دریافت سوابق توصیه‌ها...</div>:rows.length===0?<div className="expert-empty">هنوز توصیه‌ای برای پرونده‌های شما ثبت نشده است. پس از تأیید توصیه توسط متخصص و ثبت آن در برنامه کشاورز، اینجا ظاهر می‌شود.</div>:Object.entries(grouped).map(([requestId,items])=><section className="expert-panel expert-recommendation-case" key={requestId}>
    <header><div><b>{items[0].expert_requests?.subject||"پرونده کشاورز"}</b><small>شناسه پرونده: {requestId.slice(0,8)} · مزرعه: {items[0].farm_id.slice(0,8)} · {items.length.toLocaleString("fa-IR")} توصیه</small></div><ShieldCheck size={18}/></header>
    {items.map(r=>{const d=drafts[r.id]||{status:"acknowledged",summary:"",evidence:""};const review=reviews[r.id];const overdue=!!r.due_on&&r.due_on<today&&["approved","in_progress"].includes(r.status);const hasEvidence=Array.isArray(r.evidence)&&r.evidence.length>0;const suggestion=r.status==="needs_review"?"درخواست بازبینی کشاورز را بررسی کنید و در صورت نیاز اطلاعات تکمیلی بخواهید.":overdue?"موعد گذشته است؛ علت تأخیر و امکان اجرای توصیه را از کشاورز پیگیری کنید.":r.status==="completed"&&!r.farmer_note&&!hasEvidence?"تکمیل فقط اعلام شده است؛ پیش از تأیید نتیجه، گزارش اجرایی یا شواهد بخواهید.":r.status==="completed"&&!hasEvidence?"گزارش متنی ثبت شده؛ کفایت آن برای تأیید نتیجه را بررسی کنید.":r.status==="in_progress"&&!r.farmer_note?"از کشاورز بخواهید پیشرفت کار را با یادداشت یا مدرک ثبت کند.":r.status==="approved"?"وضعیت شروع اجرا را تا نزدیک شدن موعد زیر نظر داشته باشید.":"";return <article className="expert-recommendation-followup-item" key={r.id}>
-    <div className="expert-recommendation-followup-top"><div><b>{r.title}</b><small>شروع: {fmt(r.starts_on)} · مهلت: {fmt(r.due_on)}</small></div><span className={overdue?"expert-tag warning":"expert-tag"}>{overdue?"از موعد گذشته":r.status==="completed"?"کشاورز تکمیل را اعلام کرده":r.status==="needs_review"?"درخواست بازبینی":r.status==="in_progress"?"در حال اجرا":"تأییدشده / در انتظار اجرا"}</span></div>
+    <div className="expert-recommendation-followup-top"><div><b>{r.title}</b><small>شروع: {fmt(r.starts_on)} · مهلت: {fmt(r.due_on)} · محدوده: {r.field_id?"قطعه متصل به نقشه":"کل مزرعه"}</small></div><span className={overdue?"expert-tag warning":"expert-tag"}>{overdue?"از موعد گذشته":r.status==="completed"?"کشاورز تکمیل را اعلام کرده":r.status==="needs_review"?"درخواست بازبینی":r.status==="in_progress"?"در حال اجرا":"تأییدشده / در انتظار اجرا"}</span></div>
     <p className="recommendation-instructions">{r.instructions}</p>
     <div className="expert-recommendation-farmer-report"><b>گزارش کشاورز</b><p>{r.farmer_note||"هنوز یادداشت اجرایی ثبت نشده است."}</p><small>مدارک ساختاریافته ثبت‌شده: {Array.isArray(r.evidence)?r.evidence.length.toLocaleString("fa-IR"):"۰"} · ثبت تکمیل: {r.completed_at?new Date(r.completed_at).toLocaleString("fa-IR"):"ندارد"}</small></div>
 <div className="expert-recommendation-next-step"><b>پیشنهاد پیگیری مبتنی بر قواعد</b><p>{suggestion||"در حال حاضر اقدام پیگیری مشخصی از روی وضعیت ثبت‌شده پیشنهاد نمی‌شود."}</p></div>
