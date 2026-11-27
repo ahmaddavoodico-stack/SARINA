@@ -102,9 +102,11 @@ BEGIN
   END IF;
 
   IF NOT EXISTS (
-    SELECT 1 FROM public.geometry_columns
-    WHERE f_table_schema = 'public' AND f_table_name = 'farm_map_features'
-      AND f_geometry_column = 'geometry' AND srid = 4326 AND type = 'GEOMETRY'
+    SELECT 1 FROM pg_attribute a
+    WHERE a.attrelid = 'public.farm_map_features'::regclass
+      AND a.attname = 'geometry' AND NOT a.attisdropped
+      AND public.postgis_typmod_type(a.atttypmod) = 'Geometry'
+      AND public.postgis_typmod_srid(a.atttypmod) = 4326
   ) THEN
     RAISE EXCEPTION 'farm_map_features.geometry must be generic WGS84 geometry with constrained line/polygon families';
   END IF;
