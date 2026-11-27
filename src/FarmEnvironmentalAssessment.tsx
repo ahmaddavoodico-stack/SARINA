@@ -193,6 +193,9 @@ export default function FarmEnvironmentalAssessment({ farmId, farmName }: Props)
       ];
 
       const { error: saveError } = await supabase.from("farm_environmental_assessments").insert({
+        // The BEFORE INSERT database trigger atomically replaces this placeholder
+        // with the next per-farm version while holding the farm-scoped advisory lock.
+        version: 1,
         farm_id: farmId,
         assessment_status: missingDomains.length ? "needs_review" : "partial",
         source_manifest: sourceManifest as unknown as Json,
