@@ -76,6 +76,19 @@ Deno.serve(async (req: Request) => {
       apiKey: Deno.env.get("GROQ_API_KEY") ?? "",
       systemContext: verifiedAdminContext,
       messages: (body as Record<string, unknown>).messages as { role: "user" | "assistant"; content: string }[],
+      accessToken,
+      voiceApiBase: (() => {
+        const origin = req.headers.get("origin");
+        if (!origin) throw new Error("SARINA_VOICE_ORIGIN_REQUIRED");
+        const parsed = new URL(origin);
+        const configuredHosts = (Deno.env.get("SARINA_APP_HOSTS") ?? "").split(",").map((host) => host.trim().toLowerCase()).filter(Boolean);
+        const hostname = parsed.hostname.toLowerCase();
+        const isSarinaVercelHost = hostname.endsWith(".vercel.app") && hostname.includes("sarina");
+        if (parsed.protocol !== "https:" || (!isSarinaVercelHost && !configuredHosts.includes(hostname))) {
+          throw new Error("SARINA_VOICE_ORIGIN_NOT_ALLOWED");
+        }
+        return new URL("/api/voice", parsed.origin).toString();
+      })(),
     });
     return reply(200, {
       ok: true,
@@ -83,6 +96,7 @@ Deno.serve(async (req: Request) => {
       provider: "groq",
       model: result.model,
       answer: result.answer,
+      ...(result.audioBase64 ? { audio_base64: result.audioBase64, audio_mime_type: result.audioMimeType ?? "audio/wav" } : {}),
     });
   } catch (error) {
     const code = error instanceof Error ? error.message : "GROQ_CHAT_FAILED";
