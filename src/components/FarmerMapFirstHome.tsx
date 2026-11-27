@@ -30,7 +30,7 @@ function MapCanvas({fields,recommendations}:{fields:Field[];recommendations:Reco
 }
 export default function FarmerMapFirstHome({session,onOpenFarms}:{session:Session;onOpenFarms:()=>void}){
  const[farms,setFarms]=useState<Farm[]>([]),[fields,setFields]=useState<Field[]>([]),[recommendations,setRecommendations]=useState<Recommendation[]>([]),[actions,setActions]=useState<PersonalAction[]>([]),[plans,setPlans]=useState<Plan[]>([]),[baseline,setBaseline]=useState<Baseline|null>(null),[measurements,setMeasurements]=useState<Measurement[]>([]);
- const[loading,setLoading]=useState(true),[error,setError]=useState(""),[selected,setSelected]=useState(0);
+ const[loading,setLoading]=useState(true),[error,setError]=useState(""),[selected,setSelected]=useState(0);const touchStart=useRef<number|null>(null);
  useEffect(()=>{let active=true;async function load(){if(!db){setLoading(false);return;}setLoading(true);setError("");try{
   const fr=await db.from("farms").select("id,farm_name,total_area,area_unit").order("created_at",{ascending:false}).limit(50);if(fr.error)throw fr.error;const rows=(fr.data??[]) as Farm[];if(!active)return;setFarms(rows);
   if(!rows.length){setFields([]);setRecommendations([]);setActions([]);setPlans([]);setBaseline(null);setMeasurements([]);return;}
@@ -57,12 +57,10 @@ export default function FarmerMapFirstHome({session,onOpenFarms}:{session:Sessio
  const baselineYield=baseline?.metrics_snapshot?.marketable_yield,currentYield=measurements.find(x=>x.observed_at&&(!baseline?.baseline_date||x.observed_at.slice(0,10)>=baseline.baseline_date));
  const comparable=baselineYield&&typeof baselineYield.value==="number"&&baselineYield.value>0&&currentYield&&baselineYield.unit===currentYield.unit_code;
  const change=comparable?Math.round((currentYield.metric_value-baselineYield.value)/baselineYield.value*100):null;
- const first=session.user.user_metadata?.full_name?.split(" ")[0]||"کشاورز عزیز";
  const shift=(delta:number)=>setSelected(v=>Math.min(Math.max(v+delta,0),Math.max(0,farms.length-1)));
  return <section className="farmer-map-first-home" dir="rtl">
-  <div className="welcome-row"><div><span className="eyebrow">امروز، فرصتی تازه برای رشد</span><h1>سلام {first}، خوش آمدی 🌱</h1><p>بیایید وضعیت مزرعه و مسیر پیشرفتتان را با هم دنبال کنیم.</p></div></div>
   <div className="myfarm-heading"><div><span className="eyebrow">فضای اصلی مدیریت مزرعه</span><h2>مزرعه من</h2></div>{farm&&<span className="myfarm-count">مزرعه {n(selected+1)} از {n(farms.length)}</span>}</div>
-  {loading?<div className="empty-state">در حال دریافت مزارع شما…</div>:error?<div className="notice warning" role="alert">{error}</div>:!farm?<div className="myfarm-empty"><Sprout size={34}/><h3>هنوز مزرعه‌ای ثبت نکرده‌ای</h3><p>اولین مزرعه‌ات را روی نقشه مشخص کن تا فضای اختصاصی آن ساخته شود.</p><button type="button" onClick={onOpenFarms}><Plus size={16}/> ثبت مزرعه روی نقشه</button></div>:<article className="myfarm-card">
+  {loading?<div className="empty-state">در حال دریافت مزارع شما…</div>:error?<div className="notice warning" role="alert">{error}</div>:!farm?<div className="myfarm-empty"><Sprout size={34}/><h3>هنوز مزرعه‌ای ثبت نکرده‌ای</h3><p>اولین مزرعه‌ات را روی نقشه مشخص کن تا فضای اختصاصی آن ساخته شود.</p><button type="button" onClick={onOpenFarms}><Plus size={16}/> ثبت مزرعه روی نقشه</button></div>:<article className="myfarm-card" onTouchStart={e=>{if(!(e.target as HTMLElement).closest(".myfarm-map-wrap"))touchStart.current=e.touches[0]?.clientX??null;}} onTouchEnd={e=>{if(touchStart.current===null)return;const delta=e.changedTouches[0]?.clientX-touchStart.current;touchStart.current=null;if(Math.abs(delta)>65)shift(delta<0?1:-1);}}>
   <div className="myfarm-card-top"><div><b>{farm.farm_name}</b><span>{farm.total_area===null?"مساحت ثبت نشده":n(Number(farm.total_area))+" "+(farm.area_unit==="hectare"?"هکتار":farm.area_unit)}</span></div><button type="button" onClick={onOpenFarms}>ویرایش اطلاعات مزرعه</button></div>
   <MapCanvas fields={farmFields} recommendations={farmRecommendations}/>
   <div className="myfarm-productivity"><div><span>تغییر عملکرد نسبت به خط پایه</span><b>{change===null?"—":(change>0?"+":"")+n(change)+"٪"}</b></div><p>{change===null?"برای ارزیابی معتبر، هنوز داده عملکرد قابل مقایسه ثبت نشده است.":("عملکرد ثبت‌شده نسبت به خط پایه "+(change>0?"افزایش":change<0?"کاهش":"تغییر")+" داشته است؛ این مقایسه به‌تنهایی علت تغییر را مشخص نمی‌کند.")}</p></div>
