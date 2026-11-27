@@ -13,7 +13,7 @@ const candidate = {
 };
 
 Deno.test("FAQ retrieval requests only global, language-aware candidates", async () => {
-  let args: Record<string, unknown> | null = null;
+  let args: Record<string, unknown> = {};
   const client: FaqRpcClient = {
     rpc: (_name, received) => {
       args = received;
@@ -23,11 +23,11 @@ Deno.test("FAQ retrieval requests only global, language-aware candidates", async
   const result = await retrieveFaqCandidates(client, { question: "روش آبیاری چیست؟", language: "fa" });
   assertEquals(result.status, "matched");
   assertEquals(result.candidates.length, 1);
-  assertEquals(args?.p_language_code, "fa");
-  assertEquals(args?.p_fallback_language_code, "en");
-  assertEquals(args?.p_scope_type, "global");
-  assertEquals(args?.p_scope_key, null);
-  assertEquals(args?.p_limit, 5);
+  assertEquals(args.p_language_code, "fa");
+  assertEquals(args.p_fallback_language_code, "en");
+  assertEquals(args.p_scope_type, "global");
+  assertEquals(args.p_scope_key, null);
+  assertEquals(args.p_limit, 5);
 });
 
 Deno.test("FAQ retrieval never treats high-risk content as auto-answerable", async () => {
