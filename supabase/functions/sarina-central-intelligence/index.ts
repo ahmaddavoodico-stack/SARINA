@@ -9,6 +9,7 @@ import {
   type CollaborationPlan,
 } from "./_shared/specialist-collaboration.ts";
 import { createDurableTaskStore } from "../_shared/durable-task-store.ts";
+import { retrieveFaqCandidates } from "./_shared/faq-retrieval.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -54,6 +55,15 @@ Deno.serve(async (req: Request) => {
   const { data: farm, error: farmError } = await client
     .from("farms").select("id").eq("id", farmId).maybeSingle();
   if (farmError || !farm) return reply(404, { ok: false, code: "FARM_ACCESS_DENIED" });
+
+  const requestBody = body as Record<string, unknown>;
+  const question = requestBody.question as string;
+  const language = requestBody.language === "en" || requestBody.language === "ar"
+    ? requestBody.language
+    : "fa";
+  // FAQ is a read-only candidate source. It never bypasses SCI routing,
+  // risk policy, specialist review, or farmer-specific context validation.
+  const faqRetrieval = await retrieveFaqCandidates(client, { question, language });
 
   // Assemble minimum farm context through existing caller-JWT Edge Functions.
   // These endpoints independently enforce the same user's RLS access; no
@@ -123,6 +133,12 @@ Deno.serve(async (req: Request) => {
       execution_mode: "simulated",
       persistence: "in_memory_invocation_only",
       orchestration: dryRun,
+      faq_retrieval: {
+        status: faqRetrieval.status,
+        candidate_count: faqRetrieval.candidates.length,
+        candidates: faqRetrieval.candidates,
+        automatic_answering_enabled: false,
+      },
       farm_access: "verified_under_caller_jwt_and_rls",
       context_manifest: {
         farm_id: farmId,
@@ -159,8 +175,6 @@ Deno.serve(async (req: Request) => {
   });
   const taskStore = createDurableTaskStore(adminClient);
   const requestId = crypto.randomUUID();
-  const question = (body as Record<string, unknown>).question as string;
-  const language = (body as Record<string, unknown>).language === "en" ? "en" : "fa";
   const references = Array.isArray((body as Record<string, unknown>).references)
     ? (body as Record<string, unknown>).references as string[]
     : [];
@@ -192,10 +206,30 @@ Deno.serve(async (req: Request) => {
       priority: "normal",
       risk: route.humanReviewRequired ? "high" : "low",
       modalities: ["text"],
-      context_refs: ["farm:" + farmId, "weather-context:" + farmId, "land-context:" + farmId],
+      context_refs: [
+        "farm:" + farmId,
+        "weather-context:" + farmId,
+        "land-context:" + farmId,
+        ...faqRetrieval.candidates.map((candidate) => "faq-version:" + candidate.faq_version_id),
+      ],
       payload_refs: ["request:" + idempotencyKey],
       permissions: ["read:verified_farm_context"],
-      request_payload: { question, language, references },
+      request_payload: {
+        question,
+        language,
+        references,
+        faq_retrieval: {
+          status: faqRetrieval.status,
+          candidate_refs: faqRetrieval.candidates.map((candidate) => ({
+            faq_entry_id: candidate.faq_entry_id,
+            faq_version_id: candidate.faq_version_id,
+            risk_level: candidate.risk_level,
+            answer_mode: candidate.answer_mode,
+            confidence: candidate.confidence,
+            retrieval_score: candidate.retrieval_score,
+          })),
+        },
+      },
       idempotency_key: idempotencyKey,
       human_review_required: route.humanReviewRequired || route.status !== "assigned",
       deadline_at: deadlineAt,
@@ -298,6 +332,12 @@ Deno.serve(async (req: Request) => {
     status: parentTask.status,
     execution_mode: "durable_pending_authorization",
     persistence: "supabase_postgres_and_pgmq",
+    faq_retrieval: {
+      status: faqRetrieval.status,
+      candidate_count: faqRetrieval.candidates.length,
+      candidates: faqRetrieval.candidates,
+      automatic_answering_enabled: false,
+    },
     orchestration: {
       route,
       collaboration_status: collaboration?.status ?? "not_required",
