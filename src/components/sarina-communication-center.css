@@ -67,3 +67,36 @@
  .sarina-chat-panel,.sarina-chat-panel.farmer-mode{width:calc(100vw - 10px)!important;height:calc(100svh - 82px)!important}
 }
 @media(prefers-reduced-motion:reduce){.sarina-chat-panel{animation:none}}
+
+
+/* Keep the administrator's floating chat centered in the viewport,
+   independent of the RTL admin workspace/sidebar layout. */
+.sarina-companion.sarina-companion-admin{
+ left:50%!important;
+ right:auto!important;
+ transform:translateX(-50%)!important;
+ width:min(1120px,calc(100vw - 48px))!important;
+ max-width:calc(100vw - 24px)!important;
+ display:flex!important;
+ flex-direction:column!important;
+ align-items:center!important;
+}
+.sarina-companion-admin .sarina-chat-panel{
+ align-self:center!important;
+ width:100%!important;
+ margin-inline:auto!important;
+}
+.sarina-companion-admin .sarina-launcher-wrap{align-self:center!important}
+@media(max-width:760px){
+ .sarina-companion.sarina-companion-admin{
+  left:50%!important;
+  right:auto!important;
+  bottom:10px!important;
+  width:calc(100vw - 16px)!important;
+  max-width:calc(100vw - 16px)!important;
+ }
+ .sarina-companion-admin .sarina-chat-panel{
+  width:100%!important;
+  max-width:100%!important;
+ }
+}
