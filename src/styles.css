@@ -592,3 +592,5 @@
 .sarina-chat-composer button{width:37px;height:37px;border:0;border-radius:11px;background:#edf4ed;color:#4c7c58;display:grid;place-items:center}
 .sarina-chat-composer button:disabled{opacity:.45}
 @media(max-width:760px){.myfarm-card{padding:10px}.myfarm-map-wrap{height:290px}.myfarm-card-top{align-items:flex-start}.myfarm-card-top button{font-size:9px}.myfarm-productivity{padding:12px}.myfarm-bottom-actions>*{flex:1}.sarina-chat-overlay{padding:0}.sarina-chat-panel{height:92vh;border-radius:20px 20px 0 0}}
+
+.sarina-task-map-marker{background:transparent;border:0}.sarina-task-map-marker span{width:30px;height:30px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);display:grid;place-items:center;background:#fff;border:2px solid #2d8154;color:#2d8154;font-weight:800;box-shadow:0 3px 12px #153c2740}.sarina-task-map-marker span::first-letter{transform:rotate(45deg)}
