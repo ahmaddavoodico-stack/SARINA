@@ -1725,3 +1725,43 @@
 .myfarm-satellite-stage .leaflet-control-attribution{font-size:8px!important}
 .myfarm-satellite-stage .leaflet-control-attribution a{color:#315b40}
 @media(max-width:760px){.myfarm-map-view-toolbar{width:100%;display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}.myfarm-map-view-toolbar button{padding:9px 5px;font-size:9px}.myfarm-satellite-map{height:290px}.myfarm-satellite-caption{max-width:88%;font-size:8px}}
+
+/* Farm pond registry — multiple independent polygon assets with lifecycle status */
+.myfarm-ponds{margin:14px 0;padding:14px;border:1px solid #dce9df;border-radius:16px;background:#fff;display:grid;gap:12px}
+.myfarm-ponds-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.myfarm-ponds-head>div,.myfarm-pond-info>div{display:grid;gap:4px}
+.myfarm-ponds-head b{font-size:14px;color:#244b36}
+.myfarm-ponds-head small,.myfarm-pond-info small,.myfarm-pond-draw small{font-size:11px;color:#718276;line-height:1.6}
+.myfarm-ponds-head button,.myfarm-pond-draw button,.myfarm-pond-actions button{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1px solid #cfe0d2;border-radius:10px;padding:8px 11px;background:#f4faf5;color:#286344;font-size:12px;font-weight:700;cursor:pointer}
+.myfarm-ponds-summary{display:flex;flex-wrap:wrap;gap:8px 18px;padding:9px 11px;border-radius:10px;background:#f5f9f5;color:#65776a;font-size:11px}
+.myfarm-ponds-summary b{color:#2d6545}
+.myfarm-ponds-error{margin:0;padding:9px 11px;border-radius:9px;background:#fff5ed;color:#9a4d20;font-size:11px;line-height:1.7}
+.myfarm-pond-form{display:grid;gap:11px;padding:12px;border:1px solid #e0e9e1;border-radius:13px;background:#fbfdfb}
+.myfarm-pond-form-head,.myfarm-pond-draw,.myfarm-pond-actions{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.myfarm-pond-form-head b,.myfarm-pond-draw b{font-size:13px;color:#315740}
+.myfarm-pond-form-head>button{display:grid;place-items:center;width:30px;height:30px;border:0;border-radius:8px;background:#edf4ee;color:#456b51}
+.myfarm-pond-form label{display:grid;gap:5px;color:#526b59;font-size:11px;font-weight:700}
+.myfarm-pond-form input,.myfarm-pond-form select,.myfarm-pond-form textarea,.myfarm-pond-status-select select{width:100%;min-width:0;border:1px solid #d7e3d9;border-radius:9px;background:#fff;padding:9px 10px;color:#294936;font:inherit;font-size:12px;outline:none}
+.myfarm-pond-form input:focus,.myfarm-pond-form select:focus,.myfarm-pond-form textarea:focus{border-color:#6b9c78;box-shadow:0 0 0 2px #6b9c781a}
+.myfarm-pond-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.myfarm-pond-numbers{grid-template-columns:repeat(4,minmax(0,1fr))}
+.myfarm-pond-draw>div:first-child{display:grid;gap:3px}
+.myfarm-pond-draw>div:last-child{display:flex;flex-wrap:wrap;gap:7px}
+.myfarm-pond-map{height:270px;min-height:220px;border:1px solid #d6e3d8;border-radius:12px;overflow:hidden;background:#e8eee8}
+.myfarm-pond-map .leaflet-control-attribution{font-size:8px!important}
+.myfarm-pond-hint{margin:0;color:#748477;font-size:10px;line-height:1.8}
+.myfarm-pond-actions{justify-content:flex-end}
+.myfarm-pond-actions button:last-child{background:#286344;color:#fff;border-color:#286344}
+.myfarm-pond-actions button:disabled{opacity:.45;cursor:not-allowed}
+.myfarm-pond-list{display:grid;gap:8px}
+.myfarm-pond-list article{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px;border:1px solid #e3ebe4;border-radius:11px;background:#fcfdfc}
+.myfarm-pond-info{display:flex;align-items:flex-start;gap:9px;min-width:0}
+.myfarm-pond-info>div{min-width:0}
+.myfarm-pond-info b{font-size:12px;color:#2e5039}
+.myfarm-pond-status{flex:0 0 9px;width:9px;height:9px;margin-top:5px;border-radius:50%;background:#aab3ac}
+.myfarm-pond-status.active{background:#2b9a5b;box-shadow:0 0 0 3px #2b9a5b1c}
+.myfarm-pond-status.inactive{background:#d39a38}
+.myfarm-pond-status.retired,.myfarm-pond-status.removed{background:#929b94}
+.myfarm-pond-status-select{display:grid;gap:4px;flex:0 0 110px;color:#66786a;font-size:10px}
+.myfarm-pond-status-select select{padding:7px;font-size:11px}
+@media(max-width:600px){.myfarm-ponds{padding:11px}.myfarm-ponds-head{align-items:flex-start}.myfarm-ponds-head button{white-space:nowrap}.myfarm-pond-numbers{grid-template-columns:repeat(2,minmax(0,1fr))}.myfarm-pond-list article{align-items:flex-start;flex-direction:column}.myfarm-pond-status-select{width:100%;flex-basis:auto}.myfarm-pond-map{height:240px}}
