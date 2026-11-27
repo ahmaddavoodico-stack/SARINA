@@ -69,6 +69,22 @@ BEGIN
     RAISE EXCEPTION 'Authenticated farmers need the controlled farmer-reported event insert grant';
   END IF;
 
+  IF has_table_privilege('authenticated', 'public.farm_assets', 'TRUNCATE')
+     OR has_table_privilege('authenticated', 'public.farm_assets', 'REFERENCES')
+     OR has_table_privilege('authenticated', 'public.farm_assets', 'TRIGGER')
+     OR has_table_privilege('authenticated', 'public.farm_trees', 'TRUNCATE')
+     OR has_table_privilege('authenticated', 'public.farm_map_features', 'TRUNCATE')
+     OR has_table_privilege('authenticated', 'public.irrigation_network_edges', 'TRUNCATE') THEN
+    RAISE EXCEPTION 'Authenticated has unexpected elevated table privileges';
+  END IF;
+
+  IF has_function_privilege('anon', 'public.append_farm_tree_event()', 'EXECUTE')
+     OR has_function_privilege('authenticated', 'public.append_farm_tree_event()', 'EXECUTE')
+     OR has_function_privilege('anon', 'public.validate_farm_tree_spatial_state()', 'EXECUTE')
+     OR has_function_privilege('authenticated', 'public.validate_farm_tree_spatial_state()', 'EXECUTE') THEN
+    RAISE EXCEPTION 'Trigger-only functions must not be directly executable by client roles';
+  END IF;
+
   IF NOT EXISTS (
     SELECT 1 FROM public.geometry_columns
     WHERE f_table_schema = 'public' AND f_table_name = 'farm_assets'
