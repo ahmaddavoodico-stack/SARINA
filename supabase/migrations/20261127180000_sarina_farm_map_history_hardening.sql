@@ -358,7 +358,7 @@ BEGIN
     'farm_asset_events', 'farm_map_feature_events', 'irrigation_network_edge_events'
   ] LOOP
     EXECUTE format('ALTER TABLE public.%I ENABLE ROW LEVEL SECURITY', v_table);
-    EXECUTE format('REVOKE ALL ON TABLE public.%I FROM anon, authenticated', v_table);
+    EXECUTE format('REVOKE ALL ON TABLE public.%I FROM PUBLIC, anon, authenticated', v_table);
     EXECUTE format('GRANT ALL ON TABLE public.%I TO service_role', v_table);
     EXECUTE format('GRANT SELECT, INSERT ON TABLE public.%I TO authenticated', v_table);
   END LOOP;
