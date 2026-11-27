@@ -1713,3 +1713,15 @@
 .myfarm-asset-list button{display:grid;place-items:center;width:30px;height:30px;border:1px solid #e3ebe3;border-radius:8px;background:#fff;color:#5c8067}
 .myfarm-asset-list button:disabled{opacity:.4}
 @media(max-width:420px){.myfarm-assets{padding:10px}.myfarm-assets-head{align-items:flex-start}.myfarm-assets-head>button{font-size:9px;padding:7px}.myfarm-asset-location>div button{flex:1}}
+
+/* Satellite and hybrid views for the farmer's digital farm twin */
+.myfarm-map-view-toolbar{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:0 0 10px;padding:5px;border:1px solid #e4ece3;border-radius:12px;background:#f7faf6;width:max-content;max-width:100%}
+.myfarm-map-view-toolbar button{border:0;background:transparent;color:#718477;border-radius:9px;padding:8px 13px;font:inherit;font-size:10px;font-weight:700;white-space:nowrap}
+.myfarm-map-view-toolbar button.active{background:#245b43;color:#fff;box-shadow:0 2px 6px #245b4326}
+.myfarm-satellite-stage{position:relative;min-height:290px;border:1px solid #e1e9df;border-radius:16px;overflow:hidden;background:#e8eee7;padding:0}
+.myfarm-satellite-map{height:clamp(290px,39vw,460px);width:100%;z-index:1}
+.myfarm-satellite-state{position:absolute;z-index:500;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;background:#f5f8f1e8;color:#587461;font-size:11px;line-height:2;pointer-events:none}
+.myfarm-satellite-caption{position:absolute;z-index:450;right:10px;top:10px;max-width:75%;padding:7px 10px;border:1px solid #ffffffb8;border-radius:9px;background:#ffffffed;color:#315b40;font-size:9px;box-shadow:0 2px 9px #173f3518;pointer-events:none}
+.myfarm-satellite-stage .leaflet-control-attribution{font-size:8px!important}
+.myfarm-satellite-stage .leaflet-control-attribution a{color:#315b40}
+@media(max-width:760px){.myfarm-map-view-toolbar{width:100%;display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}.myfarm-map-view-toolbar button{padding:9px 5px;font-size:9px}.myfarm-satellite-map{height:290px}.myfarm-satellite-caption{max-width:88%;font-size:8px}}
