@@ -4,6 +4,10 @@
 
 BEGIN;
 
+-- Composite key required by same-farm event references.
+CREATE UNIQUE INDEX IF NOT EXISTS irrigation_network_edges_id_farm_id_uidx
+  ON public.irrigation_network_edges (id, farm_id);
+
 -- Preserve exact previous/current coordinates for individual-tree history.
 ALTER TABLE public.farm_tree_events
   ADD COLUMN IF NOT EXISTS previous_location public.geometry(Point, 4326),
