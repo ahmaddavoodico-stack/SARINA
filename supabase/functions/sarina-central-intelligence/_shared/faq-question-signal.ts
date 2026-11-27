@@ -53,11 +53,16 @@ export async function recordFaqQuestionSignal(
   hmacSecret: string,
   input: { question: string; language: FaqSignalLanguage },
 ): Promise<boolean> {
-  const fingerprint = await buildFaqQuestionFingerprint(
-    input.question,
-    input.language,
-    hmacSecret,
-  );
+  let fingerprint: string | null;
+  try {
+    fingerprint = await buildFaqQuestionFingerprint(
+      input.question,
+      input.language,
+      hmacSecret,
+    );
+  } catch {
+    return false;
+  }
   if (!fingerprint) return false;
 
   try {
