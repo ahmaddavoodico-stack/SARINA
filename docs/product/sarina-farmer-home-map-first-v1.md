@@ -72,3 +72,22 @@ Do not mark this workstream complete or merge for release until the remaining 3D
 3. Bind every scheduled task to its source (specialist or eligible SARINA intelligence), field/crop/asset, due window, evidence, and status.
 4. Add accessible touch/keyboard selection, map/task deep links, and end-to-end tests with multiple farms and complex/multipart polygons.
 5. Validate query policies and real linked Supabase data in an authenticated test account; CI build alone does not prove RLS/data correctness.
+
+
+## Farm asset location model — implementation slice 3 foundation
+
+A branch-only migration, `20261127160000_farmer_confirmed_farm_asset_locations.sql`, now defines the canonical `farm_assets` model.
+
+- Stores physical objects as WGS84 PostGIS points: trees, irrigation valves/pumps/lines, tanks, canals, drainage, buildings, sensors and other assets.
+- Each asset belongs to one farm and may be associated with a field. A database trigger rejects a field that belongs to a different farm.
+- Stores capture provenance (`farmer_pin`, `device_gps`, `surveyed`, `imported_verified`), optional accuracy, notes and structured metadata.
+- A location is not eligible for a verified map marker until the farmer confirms it; no field centroid, farm pin or inferred point is backfilled.
+- RLS allows the owning farmer to manage their assets and an active contracted expert to read them, following the existing farm access model.
+- This migration has been committed to the feature branch only. It has **not** been applied to Supabase, and no production or development database schema/data was changed.
+
+### UI work still required
+
+- Add a farmer-friendly asset placement flow: choose asset category, tap/confirm a position on the farm map or use device GPS, review accuracy, assign an optional field, and save only after confirmation.
+- Render only active, confirmed asset points using their actual coordinates; provide edit, move, retire and unlocated states.
+- Add authenticated RLS tests and migration regression checks before any database rollout.
+- Link weekly actions to an optional asset ID only when a real association exists; otherwise retain the field-level or farm-level association.
