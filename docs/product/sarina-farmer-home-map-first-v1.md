@@ -53,3 +53,22 @@ The current branch is an initial integration slice, not a release-complete imple
 - The first CI run caught unused imports only; those imports were removed in follow-up commits. A fresh successful build has not yet been observed.
 
 Do not mark this workstream complete or merge for release until the remaining 3D, conversation backend, mobile interaction, and acceptance gates pass.
+
+
+## Isometric farm map — implementation slice 2
+
+- The flat 2D basemap has been replaced in the farmer home by a boundary-derived isometric SVG scene. Polygon geometry is sourced from the farmer-confirmed `farm_fields.boundary`; field proportions are preserved using latitude-aware projection.
+- The scene renders shallow extruded field faces, field labels, crop-cycle markers, field-linked irrigation-event markers, and field-linked expert/AI recommendation markers.
+- Selecting a marker opens a compact detail panel; weekly guidance is also available in the task list.
+- AI recommendations are only read when `requires_expert_review=false` and status is suggested/accepted/in_progress; expired recommendations are filtered out. Expert-authored actions retain their existing workflow statuses.
+- Crop and irrigation markers are **field-level indicators**, not surveyed tree/equipment coordinates. SARINA currently has crop-cycle-to-field and irrigation-event-to-field relations, but no canonical tree/valve/pump coordinate model was found. Do not present these markers as exact individual tree or irrigation-device locations.
+- This is an isometric 3D-style rendering of real field boundaries, **not yet a photogrammetric 3D terrain model, satellite imagery, or elevation-derived surface**. Those require an approved imagery/DEM source and licensing decision.
+- No schema migration or production data write was made.
+
+## Remaining map work before release
+
+1. Add farmer-confirmed positions for individual trees, irrigation assets, water structures and other farm objects; support placement/editing on the map.
+2. Decide on licensed satellite imagery and elevation/terrain source; then add true terrain/3D scene without inventing elevation.
+3. Bind every scheduled task to its source (specialist or eligible SARINA intelligence), field/crop/asset, due window, evidence, and status.
+4. Add accessible touch/keyboard selection, map/task deep links, and end-to-end tests with multiple farms and complex/multipart polygons.
+5. Validate query policies and real linked Supabase data in an authenticated test account; CI build alone does not prove RLS/data correctness.
