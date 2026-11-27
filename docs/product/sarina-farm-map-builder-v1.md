@@ -121,3 +121,49 @@ Do not put all business meaning into unvalidated JSON metadata. Keep query-criti
 4. Add tree lifecycle/history and crop-plot workflows.
 5. Add the context-aware sticker palette and connect every sticker to a persisted record.
 6. Run authenticated data/RLS and mobile end-to-end acceptance before considering merge/release.
+
+
+## Existing database schema audit — read-only, 2026-11-27
+
+The connected Supabase project was inspected read-only. No SQL DDL, data writes, migrations, or policy changes were performed.
+
+### Existing structures that should be reused
+
+- `farms`: farm identity, owner, total area and area unit already exist. It also contains legacy `water_structures` and `irrigation_systems` JSON arrays. Treat these as compatibility/summary data until their consumers are audited; do not add a competing farm-level copy of authoritative geometry.
+- `farm_fields`: already stores `boundary geometry`, area/unit, capture method, GPS accuracy and `boundary_confirmed_at`. This is the natural foundation for confirmed farm subdivisions/field polygons. The existing boundary column is generic PostGIS geometry; application validation should constrain expected geometry type/SRID and reject invalid polygons.
+- `crop_catalog` and `crop_varieties`: reusable catalog and variety vocabulary already exists.
+- `crop_cycles`: already links a farm, optional field, crop and variety, planting/harvest dates, planted area, `crop_role` (main_crop/intercrop/forage/cover_crop/other), tree age and yield. This is the right existing record for crop-cycle and intercropping context; do not create a parallel generic crop-cycle table.
+- `irrigation_events`: records irrigation occurrences (method, source, time, volume, duration) linked to farm/field/crop cycle. It is an event/history table, not a physical irrigation-network topology model.
+- `crop_activities`: records farm/field/crop-cycle activities and inputs.
+
+### Important gaps confirmed
+
+1. **No production `farm_assets` table was found.** The point-asset migration in this feature branch is not applied to the connected Supabase database. The asset UI must remain staged until an approved test database migration and validation exist.
+2. **No individual tree register was found among the inspected tables.** `crop_cycles.tree_age_years` is a crop-cycle-level attribute; it cannot represent stable per-tree identity, exact tree position, alive/dead/removed lifecycle, death history, or replacement lineage.
+3. **No generalized spatial feature layer was found** for polygon infrastructure (pond/greenhouse/building), linear infrastructure (drains/canals/pipes), irrigation zones, or crop-plot geometries.
+4. **Irrigation network topology is not represented** by `irrigation_events`. Event records must not be misused as permanent pipes, routes, valves, or connectivity edges.
+5. `farm_fields` has owner-management and active contracted-expert read policies. `farms` also has organization-scoped read access; `crop_cycles` has owner-management and contracted-expert read policies. `crop_catalog` and `crop_varieties` are readable by authenticated users only when active. Any new tables must be checked against these access boundaries and the existing farm ownership helper conventions.
+
+### Recommended entity boundaries
+
+- Keep `farms` as farm aggregate and `farm_fields` as field/plot boundaries.
+- Keep `crop_catalog`, `crop_varieties`, and `crop_cycles` as the crop vocabulary and crop-season/intercropping register. Add spatial crop-block geometry only through a deliberate extension that links to an existing `crop_cycles.id`; do not duplicate crop names/variety records.
+- Keep `irrigation_events` for dated water applications.
+- Retain `farm_assets` for point-like physical assets only (individual tree positions, pumps, valves, point tanks/sensors), if its migration is revised and approved.
+- Introduce a separate typed spatial feature model for line/polygon infrastructure and irrigation zones only after schema/RLS review. It should use explicit geometry type and geometry constraints, parent farm/optional field references, source/provenance, confirmation state, dimensions/capacity fields where appropriate, and lifecycle/audit fields.
+- Introduce a normalized individual-tree register with stable tree IDs, farm/field references, optional crop-cycle linkage, species/variety references or farmer-entered labels, age/planting-date evidence, location reference, lifecycle state, death details with provenance, and replacement-tree linkage. A tree's death must be a state/history transition, not deletion of its record.
+- Sticker assets remain presentation only and reference one of these persistent records; sticker size/rotation must never modify geographic geometry.
+
+### RLS and integrity requirements before any migration
+
+- Mirror the current farm-owner write and active contracted-expert read model only where the business purpose requires it; organization oversight must be considered explicitly rather than inherited accidentally.
+- Validate that every `field_id` belongs to the same `farm_id` on every new child table.
+- Validate point/line/polygon geometry type, SRID 4326, non-empty/valid geometry, and containment within the confirmed parent field/farm boundary where applicable.
+- Ensure cross-farm references are impossible, including crop-cycle and irrigation-zone relationships.
+- Add indexes for farm/field foreign keys and GiST geometry queries.
+- Test owner, unrelated authenticated user, active contracted expert, revoked/expired expert, and organization-scoped reader separately.
+- Preserve unconfirmed/draft geometry distinctly; never display it as verified.
+
+### Next implementation gate
+
+The schema audit is complete, but it does **not** authorize a migration. The next safe engineering slice is to prepare a migration design and test matrix on the feature branch, reconcile the existing point-only asset migration with the proposed tree and generalized geometry entities, and obtain an explicitly approved non-production database before applying anything. Production remains untouched.
