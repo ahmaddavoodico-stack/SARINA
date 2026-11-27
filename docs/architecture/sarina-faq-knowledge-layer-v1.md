@@ -93,3 +93,10 @@ A later semantic retriever may be added behind the same contract using a locally
 The central intelligence Edge Function uses the caller's JWT to call the read-only FAQ RPC. The adapter validates candidate IDs, language, risk and score, and carries only candidate references plus metadata into the task context. It does not copy answer text into the task payload, expose a raw transcript to shared knowledge, bypass the domain router, or auto-answer. Until the database migration is applied and the multilingual retrieval test set is calibrated, the adapter fails closed to \`unavailable\` and the existing SCI route continues normally.
 
 Only global-scope FAQs are requested in this first integration. Country, region, crop and variety entries remain excluded until the request contains trusted, validated scope inputs.
+
+
+## 10. Recurring-question signal capture
+
+The SCI integration includes an opt-in capture path controlled by \`SCI_FAQ_SIGNALS_ENABLED=true\`. When enabled and a server-side Supabase service key is available, it normalizes the question in memory, computes an HMAC-SHA256 fingerprint using the server secret, and calls a service-role-only aggregation function. The database stores only language, keyed fingerprint, optional topic ID, occurrence count and timestamps. It does not store question text, user ID, farm ID, conversation ID or message ID.
+
+Capture is disabled by default. Failure to fingerprint or write a signal never blocks the farmer's ordinary SCI request. Rotation of the service-role key changes the HMAC namespace; existing counts remain historical and are not silently merged with the new key's fingerprints.
