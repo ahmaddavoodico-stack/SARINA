@@ -1673,3 +1673,43 @@
 @media(max-width:760px){.myfarm-iso-stage{min-height:250px;padding:10px 7px}.myfarm-iso-svg{min-height:190px}.myfarm-map-legend{gap:10px}}
 
 .myfarm-iso-stage .myfarm-map-empty{position:relative;inset:auto;min-height:245px;background:transparent;border:0}
+
+
+/* Farmer-confirmed asset locations on the isometric farm map */
+.myfarm-iso-svg.is-placing{cursor:crosshair;touch-action:manipulation}
+.myfarm-asset-marker{cursor:pointer;filter:drop-shadow(0 2px 3px #244b343d)}
+.myfarm-asset-marker text{font-size:12px;pointer-events:none}
+.myfarm-place-hint{pointer-events:none}
+.myfarm-map-legend i.asset{background:#2d7650}
+.myfarm-assets{margin-top:12px;padding:13px;border:1px solid #e5ece4;border-radius:14px;background:#fbfdfb}
+.myfarm-assets-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.myfarm-assets-head b,.myfarm-assets-head small{display:block}
+.myfarm-assets-head b{font-size:12px;color:#315b40}
+.myfarm-assets-head small{font-size:9px;color:#89998e;margin-top:4px;line-height:1.8}
+.myfarm-assets-head>button,.myfarm-asset-location button,.myfarm-asset-form-actions button{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1px solid #dbe8dc;border-radius:10px;padding:8px 10px;background:#fff;color:#356c4d;font-size:10px;font-weight:700;white-space:nowrap}
+.myfarm-assets-head>button:disabled{opacity:.45;cursor:not-allowed}
+.myfarm-assets-hint{font-size:9px;line-height:1.9;color:#84958a;margin:10px 0 0}
+.myfarm-assets-error{font-size:10px;line-height:1.8;color:#a34236;background:#fff4f1;border-radius:9px;padding:8px 10px}
+.myfarm-asset-form{display:grid;gap:10px;margin-top:12px;padding:12px;border:1px solid #dce9dc;border-radius:12px;background:#fff}
+.myfarm-asset-form-head{display:flex;align-items:center;justify-content:space-between}
+.myfarm-asset-form-head b{font-size:12px;color:#315b40}
+.myfarm-asset-form-head button{border:0;background:#f2f6f1;color:#66816e;border-radius:8px;padding:6px;display:grid;place-items:center}
+.myfarm-asset-form label{display:grid;gap:5px;font-size:10px;font-weight:700;color:#56705e}
+.myfarm-asset-form input,.myfarm-asset-form select,.myfarm-asset-form textarea{width:100%;min-width:0;border:1px solid #dfe8df;border-radius:9px;background:#fcfdfb;padding:9px 10px;color:#365846;font:inherit;font-size:11px;outline-color:#6b9b76}
+.myfarm-asset-location{display:grid;gap:7px;padding:10px;border-radius:10px;background:#f5f8f3}
+.myfarm-asset-location>b{font-size:10px;color:#45664f}
+.myfarm-asset-location>span{font-size:10px;color:#72877a;direction:ltr;text-align:right;overflow-wrap:anywhere}
+.myfarm-asset-location>div{display:flex;gap:7px;flex-wrap:wrap}
+.myfarm-asset-form-actions{display:flex;justify-content:flex-end;gap:8px}
+.myfarm-asset-form-actions button:last-child{background:#245b43;color:#fff;border-color:#245b43}
+.myfarm-asset-form-actions button:disabled{opacity:.45;cursor:not-allowed}
+.myfarm-asset-list{display:grid;gap:7px;margin-top:12px}
+.myfarm-asset-list>div{display:flex;align-items:center;gap:9px;padding:9px 2px;border-top:1px solid #edf2ed}
+.myfarm-asset-dot{width:8px;height:8px;flex:none;border-radius:50%;background:#43875a}
+.myfarm-asset-list>div>div{flex:1;min-width:0}
+.myfarm-asset-list b,.myfarm-asset-list small{display:block}
+.myfarm-asset-list b{font-size:10px;color:#405b4c}
+.myfarm-asset-list small{font-size:9px;color:#93a096;margin-top:3px}
+.myfarm-asset-list button{display:grid;place-items:center;width:30px;height:30px;border:1px solid #e3ebe3;border-radius:8px;background:#fff;color:#5c8067}
+.myfarm-asset-list button:disabled{opacity:.4}
+@media(max-width:420px){.myfarm-assets{padding:10px}.myfarm-assets-head{align-items:flex-start}.myfarm-assets-head>button{font-size:9px;padding:7px}.myfarm-asset-location>div button{flex:1}}
