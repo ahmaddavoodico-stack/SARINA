@@ -1650,3 +1650,24 @@
 .myfarm-action-detail{margin:0 0 10px 18px;padding:10px 12px;border-radius:10px;background:#f5f8f3}
 .myfarm-action-detail p{font-size:10px;color:#506d59;line-height:2;margin:0 0 6px;white-space:pre-wrap}
 .myfarm-action-detail small{font-size:9px;color:#8b9a90}
+
+
+/* Isometric, boundary-derived farm scene */
+.myfarm-iso-stage{position:relative;min-height:290px;border-radius:16px;overflow:hidden;background:radial-gradient(ellipse at 50% 45%,#f7fbf3 0%,#e8f1e4 70%,#dfeadd 100%);padding:12px 10px 10px}
+.myfarm-iso-caption{display:flex;justify-content:space-between;gap:10px;color:#6e8875;font-size:9px;position:relative;z-index:2}
+.myfarm-iso-svg{display:block;width:100%;height:auto;max-height:350px;overflow:visible;touch-action:pan-y}
+.myfarm-iso-svg g[role=button]{cursor:pointer;outline:none}
+.myfarm-iso-svg g[role=button]:focus-visible polygon:first-of-type{stroke:#d18b2e;stroke-width:4}
+.myfarm-iso-svg g.is-selected polygon:first-of-type{filter:drop-shadow(0 3px 3px #284f3430)}
+.myfarm-iso-field-label{font-size:11px;font-weight:800;fill:#285a3c;paint-order:stroke;stroke:#f2f8ed;stroke-width:3px;stroke-linejoin:round}
+.myfarm-iso-marker{cursor:pointer;filter:drop-shadow(0 2px 2px #254b3430)}
+.myfarm-iso-marker text{font-size:15px;pointer-events:none}
+.myfarm-map-selection{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 12px;border:1px solid #e1ebdf;background:#fff;border-radius:12px;margin:2px 0 8px}
+.myfarm-map-selection b{font-size:11px;color:#315b40}
+.myfarm-map-selection p{font-size:10px;line-height:1.8;color:#819186;margin:4px 0 0;white-space:pre-wrap}
+.myfarm-map-selection button{border:0;border-radius:9px;background:#edf5ed;color:#3f7650;padding:8px 12px;font-size:10px}
+.myfarm-map-legend{display:flex;align-items:center;justify-content:center;gap:15px;flex-wrap:wrap;padding:5px 0 0;color:#728679;font-size:9px}
+.myfarm-map-legend span{display:flex;align-items:center;gap:5px}
+.myfarm-map-legend i{display:inline-block;width:8px;height:8px;border-radius:50%}
+.myfarm-map-legend i.crop{background:#4c9363}.myfarm-map-legend i.water{background:#438bb4}.myfarm-map-legend i.task{background:#d49a42}
+@media(max-width:760px){.myfarm-iso-stage{min-height:250px;padding:10px 7px}.myfarm-iso-svg{min-height:190px}.myfarm-map-legend{gap:10px}}
