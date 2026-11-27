@@ -1,4 +1,4 @@
-import {useEffect,useMemo,useRef,useState} from "react";
+import {useEffect,useRef,useState} from "react";
 import {Check,MapPin,Plus,Save,X} from "lucide-react";
 import {supabase} from "../lib/supabase";
 
@@ -22,7 +22,7 @@ export default function FarmPondsManager({farmId,fields,userId}:{farmId:string;f
   if(!mapHost.current||!window.L||mapRef.current)return;
   const L=window.L;let map:any;
   try{
-   map=L.map(mapHost.current,{zoomControl:true,scrollWheelZoom:false,doubleClickZoom:false}).setView([32.0,48.5],14);
+   map=L.map(mapHost.current,{zoomControl:true,scrollWheelZoom:false,doubleClickZoom:false}).setView([0,0],2);
    L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",{maxZoom:19,attribution:"Tiles © Esri"}).addTo(map);
    const layer=L.layerGroup().addTo(map);mapRef.current=map;layerRef.current=layer;
    map.on("click",(e:any)=>{if(!drawingRef.current)return;const next:[number,number]=[e.latlng.lat,e.latlng.lng];verticesRef.current=[...verticesRef.current,next];setVertices(verticesRef.current);});
@@ -36,7 +36,7 @@ export default function FarmPondsManager({farmId,fields,userId}:{farmId:string;f
   for(const f of fields){const g=parseGeometry(f.boundary);if(g?.type)try{L.geoJSON(g,{style:{color:"#f5f7f3",weight:2,fillOpacity:0.02,dashArray:"5 4"}}).addTo(layer);}catch{}}
   for(const p of items){const g=parseGeometry(p.geometry);if(!g?.type)continue;try{const poly=L.geoJSON(g,{style:{color:p.status==="active"?"#2d9a60":"#a0a7a1",weight:3,fillColor:p.status==="active"?"#36ad73":"#9ba39e",fillOpacity:p.status==="active"?.32:.16,dashArray:p.status==="active"?"":"6 5"}}).addTo(layer);poly.bindTooltip((p.attributes?.name||"استخر")+" · "+statusLabel(p.status));}catch{}}
   if(vertices.length){const line=L.polyline(vertices,{color:"#f2b544",weight:3,dashArray:"5 4"}).addTo(layer);vertices.forEach(v=>L.circleMarker(v,{radius:4,color:"#fff",fillColor:"#d9902f",fillOpacity:1}).addTo(layer));if(vertices.length>=3)L.polygon(vertices,{color:"#e7a43a",weight:2,fillOpacity:.12}).addTo(layer);if(vertices.length>1)map.fitBounds(line.getBounds(),{padding:[35,35],maxZoom:19});}
- },[fields,items,vertices]);
+ },[fields,items,vertices,open]);
  const reset=()=>{setOpen(false);setDrawing(false);drawingRef.current=false;verticesRef.current=[];setVertices([]);setName("");setKind("pond");setStatus("active");setFieldId("");setPurpose("irrigation");setConstruction("unknown");setWaterSource("");setWidth("");setLength("");setDepth("");setCapacity("");setCapacitySource("farmer_reported");setNotes("");setError("");};
  const startDrawing=()=>{verticesRef.current=[];setVertices([]);drawingRef.current=true;setDrawing(true);setError("روی تصویر ماهواره‌ای حداقل سه نقطه از گوشه‌های استخر را انتخاب کن؛ سپس «پایان ترسیم» را بزن.");};
  const finishDrawing=()=>{drawingRef.current=false;setDrawing(false);if(verticesRef.current.length<3){setError("برای ثبت محدوده استخر حداقل سه نقطه لازم است.");return;}setError("");};
