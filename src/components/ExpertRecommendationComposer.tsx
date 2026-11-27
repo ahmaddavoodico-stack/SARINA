@@ -6,7 +6,7 @@ const db=supabase as any;
 type FieldOption={id:string;field_name:string};
 export default function ExpertRecommendationComposer({requestId,farmId,profileId}:{requestId:string;farmId:string|null;profileId:string}){
  const[title,setTitle]=useState(""),[instructions,setInstructions]=useState(""),[startsOn,setStartsOn]=useState(new Date().toISOString().slice(0,10)),[dueOn,setDueOn]=useState(""),[priority,setPriority]=useState("normal"),[fieldId,setFieldId]=useState(""),[fields,setFields]=useState<FieldOption[]>([]),[fieldError,setFieldError]=useState(""),[busy,setBusy]=useState(false),[message,setMessage]=useState("");
- useEffect(()=>{let active=true;async function loadFields(){if(!farmId){setFields([]);setFieldId("");return;}const{data,error}=await db.from("farm_fields").select("id,field_name").eq("farm_id",farmId).order("created_at",{ascending:true});if(!active)return;if(error){setFieldError("فهرست قطعات در دسترس نیست: "+error.message);setFields([]);return;}setFieldError("");setFields(data||[]);}void loadFields();return()=>{active=false;};},[farmId]);
+ useEffect(()=>{let active=true;async function loadFields(){if(!farmId){setFields([]);setFieldId("");return;}setFieldId("");const{data,error}=await db.from("farm_fields").select("id,field_name").eq("farm_id",farmId).order("created_at",{ascending:true});if(!active)return;if(error){setFieldError("فهرست قطعات در دسترس نیست: "+error.message);setFields([]);return;}setFieldError("");setFields(data||[]);}void loadFields();return()=>{active=false;};},[farmId]);
  async function submit(e:React.FormEvent){
   e.preventDefault();if(!supabase||!farmId||!title.trim()||!instructions.trim())return;
   setBusy(true);setMessage("");
