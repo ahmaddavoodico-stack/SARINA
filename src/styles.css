@@ -1765,3 +1765,31 @@
 .myfarm-pond-status-select{display:grid;gap:4px;flex:0 0 110px;color:#66786a;font-size:10px}
 .myfarm-pond-status-select select{padding:7px;font-size:11px}
 @media(max-width:600px){.myfarm-ponds{padding:11px}.myfarm-ponds-head{align-items:flex-start}.myfarm-ponds-head button{white-space:nowrap}.myfarm-pond-numbers{grid-template-columns:repeat(2,minmax(0,1fr))}.myfarm-pond-list article{align-items:flex-start;flex-direction:column}.myfarm-pond-status-select{width:100%;flex-basis:auto}.myfarm-pond-map{height:240px}}
+
+
+/* Phase-one quick farm infrastructure placement: approximate locations only. */
+.myfarm-quick-infrastructure{margin:14px 0;padding:14px;border:1px solid #dce9df;border-radius:16px;background:#fff;display:grid;gap:10px}
+.myfarm-quick-infrastructure-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.myfarm-quick-infrastructure-head b,.myfarm-quick-infrastructure-head small{display:block}
+.myfarm-quick-infrastructure-head b{font-size:13px;color:#244b36}
+.myfarm-quick-infrastructure-head small{font-size:10px;color:#718276;margin-top:4px;line-height:1.7}
+.myfarm-quick-infrastructure-head>span{font-size:10px;color:#477457;background:#eff6ef;padding:6px 9px;border-radius:20px;white-space:nowrap}
+.myfarm-quick-tools{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.myfarm-quick-tools button{display:flex;align-items:center;justify-content:center;gap:6px;min-width:0;padding:10px 5px;border:1px solid #dce8dd;border-radius:10px;background:#fbfdfb;color:#567260;font:inherit;font-size:11px;font-weight:700}
+.myfarm-quick-tools button.active{background:#245b43;color:#fff;border-color:#245b43}
+.myfarm-quick-scale{display:flex;align-items:center;gap:10px;color:#567260;font-size:10px}
+.myfarm-quick-scale input{flex:1;min-width:0;accent-color:#2d7650}
+.myfarm-quick-scale b{min-width:38px;text-align:left;direction:ltr}
+.myfarm-quick-map{height:300px;width:100%;border:1px solid #d6e3d8;border-radius:12px;overflow:hidden;background:#e8eee8}
+.myfarm-quick-map .leaflet-control-attribution{font-size:8px!important}
+.sarina-quick-map-icon{background:transparent;border:0}
+.sarina-quick-map-icon span{display:flex;align-items:center;justify-content:center;border:2px solid #fff;border-radius:50%;background:#fff;box-shadow:0 2px 9px #173f3540;line-height:1}
+.myfarm-quick-hint,.myfarm-quick-footnote{margin:0;color:#748477;font-size:10px;line-height:1.8}
+.myfarm-quick-actions{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.myfarm-quick-actions span{margin-inline-end:auto;color:#748477;font-size:10px}
+.myfarm-quick-actions button{display:inline-flex;align-items:center;gap:5px;padding:8px 10px;border:1px solid #dce8dd;border-radius:9px;background:#f7faf7;color:#356c4d;font:inherit;font-size:10px;font-weight:700}
+.myfarm-quick-actions button:last-child{background:#245b43;color:#fff;border-color:#245b43}
+.myfarm-quick-actions button:disabled{opacity:.4}
+.myfarm-quick-error{margin:0;padding:9px 11px;border-radius:9px;background:#fff3ef;color:#a34436;font-size:10px;line-height:1.8}
+.myfarm-quick-footnote{padding:9px 11px;border-radius:9px;background:#f4f8f3;color:#718276}
+@media(max-width:520px){.myfarm-quick-infrastructure{padding:11px}.myfarm-quick-tools{gap:4px}.myfarm-quick-tools button{flex-direction:column;gap:4px;font-size:9px;padding:9px 3px}.myfarm-quick-map{height:260px}}
