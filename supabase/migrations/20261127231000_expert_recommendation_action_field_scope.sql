@@ -13,37 +13,24 @@ create index if not exists expert_recommendation_actions_field_schedule_idx
 create index if not exists farm_improvement_actions_field_schedule_idx
   on public.farm_improvement_actions (field_id, due_date);
 
--- The target field must belong to the farm that owns the recommendation or plan.
-create or replace function public.validate_recommendation_field_scope()
+-- The recommendation's field must belong to its own farm.
+create or replace function public.validate_expert_recommendation_field_scope()
 returns trigger
 language plpgsql
 set search_path = ''
 as $$
 declare
   related_farm_id uuid;
-  expected_farm_id uuid;
 begin
   if new.field_id is null then
     return new;
   end if;
 
-  select f.farm_id
-    into related_farm_id
+  select f.farm_id into related_farm_id
   from public.farm_fields f
   where f.id = new.field_id;
 
-  if tg_table_name = 'expert_recommendation_actions' then
-    expected_farm_id := new.farm_id;
-  elsif tg_table_name = 'farm_improvement_actions' then
-    select p.farm_id
-      into expected_farm_id
-    from public.farm_improvement_plans p
-    where p.id = new.plan_id;
-  else
-    raise exception 'Unsupported recommendation target table.';
-  end if;
-
-  if related_farm_id is null or expected_farm_id is null or related_farm_id <> expected_farm_id then
+  if related_farm_id is null or related_farm_id <> new.farm_id then
     raise exception 'The selected field must belong to the same farm.';
   end if;
 
@@ -51,22 +38,86 @@ begin
 end;
 $$;
 
-revoke all on function public.validate_recommendation_field_scope()
+revoke all on function public.validate_expert_recommendation_field_scope()
   from public, anon, authenticated;
 
-drop trigger if exists validate_expert_recommendation_action_field_scope_before_write
+drop trigger if exists validate_expert_recommendation_field_scope_before_write
   on public.expert_recommendation_actions;
-create trigger validate_expert_recommendation_action_field_scope_before_write
+create trigger validate_expert_recommendation_field_scope_before_write
 before insert or update of field_id, farm_id
 on public.expert_recommendation_actions
-for each row execute function public.validate_recommendation_field_scope();
+for each row execute function public.validate_expert_recommendation_field_scope();
 
-drop trigger if exists validate_farm_improvement_action_field_scope_before_write
-  on public.farm_improvement_actions;
-create trigger validate_farm_improvement_action_field_scope_before_write
-before insert or update of field_id, plan_id
-on public.farm_improvement_actions
-for each row execute function public.validate_recommendation_field_scope();
+-- Extend the existing productivity-scope validator: farm-improvement actions
+-- inherit their farm from their parent plan, not from a farm_id column.
+create or replace function public.validate_farm_productivity_scope()
+returns trigger
+language plpgsql
+set search_path = ''
+as $function$
+declare
+  related_farm_id uuid;
+  expected_farm_id uuid;
+  actor_id uuid;
+begin
+  if to_jsonb(new)->>'field_id' is not null then
+    select farm_id into related_farm_id
+    from public.farm_fields
+    where id=(to_jsonb(new)->>'field_id')::uuid;
+
+    if tg_table_name='farm_improvement_actions' then
+      select farm_id into expected_farm_id
+      from public.farm_improvement_plans
+      where id=(to_jsonb(new)->>'plan_id')::uuid;
+    else
+      expected_farm_id := nullif(to_jsonb(new)->>'farm_id','')::uuid;
+    end if;
+
+    if related_farm_id is null or expected_farm_id is null or related_farm_id <> expected_farm_id then
+      raise exception 'The selected field must belong to the same farm.';
+    end if;
+  end if;
+
+  if to_jsonb(new)->>'crop_cycle_id' is not null then
+    select farm_id into related_farm_id
+    from public.crop_cycles
+    where id=(to_jsonb(new)->>'crop_cycle_id')::uuid;
+    if related_farm_id is null or related_farm_id <> (to_jsonb(new)->>'farm_id')::uuid then
+      raise exception 'The selected crop cycle must belong to the same farm.';
+    end if;
+  end if;
+
+  if tg_table_name='farm_improvement_plans' and to_jsonb(new)->>'baseline_id' is not null then
+    select farm_id into related_farm_id
+    from public.farm_productivity_baselines
+    where id=(to_jsonb(new)->>'baseline_id')::uuid;
+    if related_farm_id is null or related_farm_id <> (to_jsonb(new)->>'farm_id')::uuid then
+      raise exception 'The selected baseline must belong to the same farm.';
+    end if;
+  end if;
+
+  -- Preserve the original author when an authorized farmer or expert updates
+  -- an existing plan/action. RLS remains the authorization boundary for UPDATE.
+  if tg_op = 'UPDATE'
+     and (to_jsonb(new)->>'created_by') is not distinct from (to_jsonb(old)->>'created_by') then
+    actor_id := null;
+  else
+    actor_id := coalesce(
+      nullif(to_jsonb(new)->>'created_by','')::uuid,
+      nullif(to_jsonb(new)->>'reported_by','')::uuid
+    );
+  end if;
+
+  if actor_id is not null and not exists (
+    select 1 from public.users u
+    where u.id=actor_id and u.auth_user_id=(select auth.uid())
+  ) then
+    raise exception 'The recorded actor must match the authenticated user.';
+  end if;
+
+  return new;
+end;
+$function$;
 
 -- Preserve the existing bidirectional task lifecycle while copying the target field
 -- to the canonical farmer-plan action. Do not create a second task record.
