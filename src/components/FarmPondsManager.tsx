@@ -9,7 +9,7 @@ declare global{interface Window{L?:any}}
 const db=supabase as any;
 function parseGeometry(value:any){try{return typeof value==="string"?JSON.parse(value):value;}catch{return null;}}
 const statusLabel=(s:PondStatus)=>({active:"فعال",inactive:"غیرفعال",retired:"از رده خارج",removed:"جمع‌آوری‌شده"}[s]);
-const purposeLabel=(s:string)=>({irrigation:"ذخیره آب آبیاری",emergency:"ذخیره اضطراری",settling:"ته‌نشینی و رسوب‌گیری",treatment:"تصفیه و آماده‌سازی",aquaculture:"آبزی‌پروری",rainwater:"جمع‌آوری آب باران",fertigation:"آب کودآبیاری",mixed:"کاربری ترکیبی",other:"سایر"}[s]||"ثبت نشده");
+const purposeLabel=(s:string)=>(({irrigation:"ذخیره آب آبیاری",emergency:"ذخیره اضطراری",settling:"ته‌نشینی و رسوب‌گیری",treatment:"تصفیه و آماده‌سازی",aquaculture:"آبزی‌پروری",rainwater:"جمع‌آوری آب باران",fertigation:"آب کودآبیاری",mixed:"کاربری ترکیبی",other:"سایر"} as Record<string,string>)[s]||"ثبت نشده");
 export default function FarmPondsManager({farmId,fields,userId}:{farmId:string;fields:Field[];userId:string}){
  const[items,setItems]=useState<PondFeature[]>([]),[loading,setLoading]=useState(true),[error,setError]=useState("");
  const[open,setOpen]=useState(false),[drawing,setDrawing]=useState(false),[vertices,setVertices]=useState<[number,number][]>([]),[busy,setBusy]=useState(false);
