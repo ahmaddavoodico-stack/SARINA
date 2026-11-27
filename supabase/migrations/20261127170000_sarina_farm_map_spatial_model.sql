@@ -12,7 +12,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS crop_cycles_id_farm_id_uidx
 -- Individual tree registry. Crop/variety identity remains canonical in crop_cycles.
 CREATE TABLE public.farm_trees (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  farm_id uuid NOT NULL REFERENCES public.farms(id) ON DELETE CASCADE,
+  farm_id uuid NOT NULL REFERENCES public.farms(id) ON DELETE RESTRICT,
   field_id uuid NULL,
   crop_cycle_id uuid NULL,
   tree_code text NULL,
@@ -99,7 +99,7 @@ COMMENT ON COLUMN public.farm_trees.death_cause IS
 -- Append-only tree history. Updates/deletes are deliberately not granted to clients.
 CREATE TABLE public.farm_tree_events (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  farm_id uuid NOT NULL REFERENCES public.farms(id) ON DELETE CASCADE,
+  farm_id uuid NOT NULL REFERENCES public.farms(id) ON DELETE RESTRICT,
   tree_id uuid NOT NULL,
   event_type text NOT NULL,
   event_source text NOT NULL DEFAULT 'system',
@@ -124,7 +124,7 @@ CREATE INDEX farm_tree_events_tree_time_idx
 -- Non-point features: line and polygon geometry only.
 CREATE TABLE public.farm_map_features (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  farm_id uuid NOT NULL REFERENCES public.farms(id) ON DELETE CASCADE,
+  farm_id uuid NOT NULL REFERENCES public.farms(id) ON DELETE RESTRICT,
   field_id uuid NULL,
   crop_cycle_id uuid NULL,
   feature_type text NOT NULL,
@@ -208,7 +208,7 @@ CREATE INDEX farm_map_features_geometry_gix
 -- Explicit irrigation graph edges. Geometry proximity never creates a connection.
 CREATE TABLE public.irrigation_network_edges (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  farm_id uuid NOT NULL REFERENCES public.farms(id) ON DELETE CASCADE,
+  farm_id uuid NOT NULL REFERENCES public.farms(id) ON DELETE RESTRICT,
   line_feature_id uuid NOT NULL,
   from_asset_id uuid NULL,
   to_asset_id uuid NULL,
@@ -448,6 +448,7 @@ CREATE TRIGGER irrigation_network_edges_validate
 CREATE OR REPLACE FUNCTION public.append_farm_tree_event()
 RETURNS trigger
 LANGUAGE plpgsql
+SECURITY DEFINER
 SET search_path = ''
 AS $$
 DECLARE
@@ -491,7 +492,8 @@ BEGIN
 
   RETURN NEW;
 END;
-$$;
+$;
+REVOKE ALL ON FUNCTION public.append_farm_tree_event() FROM PUBLIC, anon, authenticated;
 
 CREATE TRIGGER farm_trees_append_history
   AFTER INSERT OR UPDATE ON public.farm_trees
@@ -513,7 +515,7 @@ BEGIN
 END;
 $$;
 
-GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.farm_trees TO authenticated;
+GRANT SELECT, INSERT, UPDATE ON TABLE public.farm_trees TO authenticated;
 GRANT SELECT, INSERT ON TABLE public.farm_tree_events TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.farm_map_features TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.irrigation_network_edges TO authenticated;
@@ -555,7 +557,7 @@ CREATE POLICY farmer_read_farm_tree_events ON public.farm_tree_events
   ));
 CREATE POLICY farmer_append_farm_tree_events ON public.farm_tree_events
   FOR INSERT TO authenticated
-  WITH CHECK (EXISTS (
+  WITH CHECK (event_source = 'farmer_reported' AND EXISTS (
     SELECT 1 FROM public.farms f
     JOIN public.users u ON u.id = f.owner_user_id
     WHERE f.id = farm_tree_events.farm_id AND u.auth_user_id = (SELECT auth.uid())
