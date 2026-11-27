@@ -48,7 +48,7 @@ export default function FarmerRecommendationTaskPanel({farmId,recommendations,fi
  }
  return <section className="farm-task-cycle" aria-label="اقدامات تخصصی برنامه هفتگی">
   <div className="farm-task-cycle-heading">
-   <div><b>اقدامات تخصصی و پیگیری اجرا</b><small>هر اقدام به محدوده ثبت‌شده مزرعه متصل است؛ محل نامشخص به‌صورت ساختگی روی نقشه قرار نمی‌گیرد.</small></div>
+   <div><b>اقدامات تخصصی برنامه هفتگی و پیگیری اجرا</b><small>هر اقدام به محدوده ثبت‌شده مزرعه متصل است؛ محل نامشخص به‌صورت ساختگی روی نقشه قرار نمی‌گیرد.</small></div>
    <span>{rows.length.toLocaleString("fa-IR")} اقدام</span>
   </div>
   <div className="farm-task-priority-legend">
