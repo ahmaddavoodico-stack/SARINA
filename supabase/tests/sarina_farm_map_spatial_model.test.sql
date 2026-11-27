@@ -165,11 +165,11 @@ BEGIN
   IF NOT EXISTS (
     SELECT 1 FROM pg_policies
     WHERE schemaname = 'public' AND tablename = 'farm_trees'
-      AND policyname = 'expert_read_farm_trees' AND cmd = 'SELECT'
+      AND policyname = 'farm_trees_scoped_read' AND cmd = 'SELECT'
   ) OR NOT EXISTS (
     SELECT 1 FROM pg_policies
     WHERE schemaname = 'public' AND tablename = 'farm_map_features'
-      AND policyname = 'organization_read_farm_map_features' AND cmd = 'SELECT'
+      AND policyname = 'farm_map_features_scoped_read' AND cmd = 'SELECT'
   ) THEN
     RAISE EXCEPTION 'Expected expert and organization read policies are missing';
   END IF;
