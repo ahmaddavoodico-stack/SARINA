@@ -23,7 +23,7 @@ export default function FarmerRecommendationTaskPanel({farmId,recommendations,se
  const [note,setNote]=useState("");
  const [busy,setBusy]=useState(false);
  const [notice,setNotice]=useState("");
- useEffect(()=>{if(selectedTaskId){setActiveId(selectedTaskId);setNote("");}},[selectedTaskId]);
+ useEffect(()=>{setActiveId(selectedTaskId);setNote("");},[selectedTaskId]);
  const today=localToday();
  const rows=useMemo(()=>[...recommendations].sort((a,b)=>{
   const aDue=a.due_on||"9999-12-31",bDue=b.due_on||"9999-12-31";
