@@ -90,7 +90,8 @@ export default function SarinaCompanion({isAdmin=false,role="farmer",onNavigate}
   if(isAdmin){setStatus("سارینا در حال آماده‌کردن پاسخ شماست…");void requestAdminReply(next);}else{setShowNotice(true);setStatus("پیام صوتی دریافت شد؛ پاسخ‌گویی هوشمند برای این نقش هنوز فعال نشده است.");}
  }
 
- const latestSarinaReply=[...messages].reverse().find(message=>message.role==="sarina")?.text;
+ const latestSarinaReplyMessage=[...messages].reverse().find(message=>message.role==="sarina");
+ const latestSarinaReply=latestSarinaReplyMessage?.text;
  return <div className="sarina-companion" dir="rtl">
   {open&&<section className={"sarina-chat-panel"+(!isAdmin?" farmer-mode":"")} aria-label="مرکز ارتباط و راهنمایی سارینا">
    {!isAdmin&&drawerOpen&&<aside className="sarina-guide-drawer">
@@ -115,7 +116,7 @@ export default function SarinaCompanion({isAdmin=false,role="farmer",onNavigate}
      {status&&<div className="sarina-prototype-note" role="status">{status}</div>}
     </div>
     <form className={"sarina-chat-compose"+(isAdmin?" sarina-chat-compose-admin":"")} onSubmit={send}>
-     <VoiceMessageControls onVoiceMessage={receiveVoiceMessage} onTranscription={receiveTranscription} textToSpeak={latestSarinaReply} speechLanguage="fa" onVoiceReplyAudio={receiveVoiceReplyAudio} onAudioGenerationComplete={()=>{}} disabled={busy}/>
+     <VoiceMessageControls onVoiceMessage={receiveVoiceMessage} onTranscription={receiveTranscription} textToSpeak={latestSarinaReplyMessage?.audioUrl?undefined:latestSarinaReply} speechRequestId={latestSarinaReplyMessage?.id} speechLanguage="fa" autoGenerateAudio onVoiceReplyAudio={receiveVoiceReplyAudio} onAudioGenerationComplete={()=>{}} disabled={busy}/>
      <input value={draft} onChange={e=>setDraft(e.target.value)} placeholder="اینجا برای سارینا بنویس..." aria-label="پیام شما به سارینا" maxLength={2000} disabled={busy}/>
      <button type="submit" disabled={!draft.trim()||busy} aria-label="ارسال پیام">{busy?<span className="sarina-chat-spinner"/>:<ArrowUp size={18}/>}</button>
     </form>
