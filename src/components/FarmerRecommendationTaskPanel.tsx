@@ -10,6 +10,7 @@ type Recommendation={
 type Props={
  farmId:string;
  recommendations:Recommendation[];
+ fields:{id:string;field_name:string}[];
  selectedTaskId:string|null;
  onSelect:(task:Recommendation)=>void;
  onUpdated:(task:Recommendation)=>void;
@@ -18,7 +19,7 @@ const priorityLabel=(value:string)=>value==="urgent"?"فوری":value==="high"?"
 const statusLabel=(value:string)=>({approved:"در انتظار شروع",in_progress:"در حال انجام",completed:"کشاورز اتمام کار را ثبت کرده",needs_review:"در انتظار بازبینی متخصص"} as Record<string,string>)[value]||value;
 const dateLabel=(value:string|null)=>value?new Date(value+"T12:00:00").toLocaleDateString("fa-IR"):"بدون مهلت مشخص";
 const localToday=()=>{const d=new Date();return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10)};
-export default function FarmerRecommendationTaskPanel({farmId,recommendations,selectedTaskId,onSelect,onUpdated}:Props){
+export default function FarmerRecommendationTaskPanel({farmId,recommendations,fields,selectedTaskId,onSelect,onUpdated}:Props){
  const [activeId,setActiveId]=useState<string|null>(selectedTaskId);
  const [note,setNote]=useState("");
  const [busy,setBusy]=useState(false);
@@ -55,15 +56,15 @@ export default function FarmerRecommendationTaskPanel({farmId,recommendations,se
   </div>
   {rows.length===0?<div className="farm-task-empty">هنوز توصیه تخصصی تأییدشده‌ای برای این مزرعه ثبت نشده است.</div>:
    <div className="farm-task-list">{rows.map(r=>{
-    const tone=priorityTone(r),selected=r.id===activeId,overdue=!!r.due_on&&r.due_on<today&&["approved","in_progress"].includes(r.status);
+    const tone=priorityTone(r),selected=r.id===activeId,overdue=!!r.due_on&&r.due_on<today&&["approved","in_progress"].includes(r.status),fieldName=r.field_id?(fields.find(f=>f.id===r.field_id)?.field_name||"قطعه ثبت‌شده"):"کل مزرعه";
     return <button type="button" key={r.id} className={"farm-task-row"+(selected?" selected":"")} onClick={()=>{setActiveId(r.id);setNote("");onSelect(r);}}>
-     <i className={"farm-task-priority "+tone}/><span className="farm-task-row-copy"><b>{r.title}</b><small>{dateLabel(r.due_on)} · {r.field_id?"متصل به قطعه مزرعه":"کل مزرعه / محل دقیق ثبت نشده"}</small></span>
+     <i className={"farm-task-priority "+tone}/><span className="farm-task-row-copy"><b>{r.title}</b><small>{dateLabel(r.due_on)} · {fieldName}</small></span>
      <span className={"farm-task-state "+(r.status==="completed"?"done":r.status==="needs_review"?"review":"")}>{overdue?"از موعد گذشته":statusLabel(r.status)}</span>
     </button>;
    })}</div>
   }
   {active&&<div className="farm-task-detail">
-   <div className="farm-task-detail-top"><div><b>{active.title}</b><small>اولویت: {priorityLabel(active.priority)} · شروع: {dateLabel(active.starts_on)} · مهلت: {dateLabel(active.due_on)}</small></div><span className={"farm-task-priority "+priorityTone(active)}/></div>
+   <div className="farm-task-detail-top"><div><b>{active.title}</b><small>اولویت: {priorityLabel(active.priority)} · محدوده: {active.field_id?(fields.find(f=>f.id===active.field_id)?.field_name||"قطعه ثبت‌شده"):"کل مزرعه"} · شروع: {dateLabel(active.starts_on)} · مهلت: {dateLabel(active.due_on)}</small></div><span className={"farm-task-priority "+priorityTone(active)}/></div>
    <p>{active.instructions}</p>
    {active.status==="completed"&&<div className="farm-task-result"><CheckCircle2 size={16}/> اتمام کار توسط کشاورز در {active.completed_at?new Date(active.completed_at).toLocaleString("fa-IR"):"زمان ثبت‌شده"} اعلام شده است.</div>}
    {active.status==="needs_review"&&<div className="farm-task-result"><AlertCircle size={16}/> درخواست بازبینی برای متخصص ارسال شده است.</div>}
