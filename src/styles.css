@@ -1849,3 +1849,6 @@
 .farm-task-notice{color:var(--accent,#28764a)}
 .farm-task-map-marker{cursor:pointer}
 @media(max-width:640px){.farm-task-row{align-items:flex-start;flex-wrap:wrap}.farm-task-state{margin-right:20px}.farm-task-actions button{flex:1 1 auto}}
+
+.myfarm-action-controls{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.myfarm-action-controls .myfarm-action-button{white-space:nowrap}
