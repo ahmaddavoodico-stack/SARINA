@@ -1852,3 +1852,13 @@
 
 .myfarm-action-controls{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .myfarm-action-controls .myfarm-action-button{white-space:nowrap}
+
+
+/* Spoken instructions keep the task detail accessible without adding visual clutter. */
+.farm-task-audio-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:10px 0 14px}
+.farm-task-audio-row small{font-size:10px;color:var(--muted,#819087)}
+.farm-task-audio-button{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:38px;padding:8px 14px;border:1px solid #cfe2d1;border-radius:999px;background:#f2f8f1;color:#246b43;font:inherit;font-size:12px;font-weight:700;cursor:pointer}
+.farm-task-audio-button:hover{background:#e8f3e7}
+.farm-task-audio-button:focus-visible{outline:3px solid #9bc8a3;outline-offset:2px}
+.farm-task-audio-button:disabled{opacity:.5;cursor:not-allowed}
+.farm-task-map-marker{cursor:pointer;filter:drop-shadow(0 2px 2px #17442b30)}
