@@ -133,6 +133,7 @@ CREATE POLICY organization_scoped_read_farm_assets
 -- RLS and SQL privileges are separate. Default privileges in this project
 -- grant table access to anon; explicitly remove it for this table.
 REVOKE ALL ON TABLE public.farm_assets FROM anon;
+REVOKE ALL ON TABLE public.farm_assets FROM authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.farm_assets TO authenticated;
 GRANT ALL ON TABLE public.farm_assets TO service_role;
 
@@ -167,6 +168,8 @@ BEGIN
   RETURN NEW;
 END;
 $$;
+
+REVOKE ALL ON FUNCTION public.validate_farm_asset_location() FROM PUBLIC, anon, authenticated;
 
 DROP TRIGGER IF EXISTS farm_assets_validate_location ON public.farm_assets;
 DROP TRIGGER IF EXISTS farm_assets_validate_field_scope ON public.farm_assets;
