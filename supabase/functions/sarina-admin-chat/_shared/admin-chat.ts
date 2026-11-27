@@ -25,8 +25,8 @@ export type GroqAdminChatOptions = {
   apiKey: string;
   messages: AdminChatMessage[];
   systemContext?: string;
-  accessToken: string;
-  voiceApiBase: string;
+  accessToken?: string;
+  voiceApiBase?: string;
   fetchImpl?: typeof fetch;
   timeoutMs?: number;
 };
@@ -140,6 +140,8 @@ export async function invokeGroqAdminChat(options: GroqAdminChatOptions): Promis
       (args.language !== "fa" && args.language !== "ar")) {
       throw new Error("SARINA_VOICE_TOOL_INVALID_ARGUMENTS");
     }
+
+    if (!options.accessToken || !options.voiceApiBase) throw new Error("SARINA_VOICE_TOOL_CONFIGURATION_MISSING");
 
     let audioBase64: string | undefined;
     let audioMimeType: string | undefined;
