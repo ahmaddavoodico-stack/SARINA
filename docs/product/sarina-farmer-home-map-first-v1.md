@@ -91,3 +91,16 @@ A branch-only migration, `20261127160000_farmer_confirmed_farm_asset_locations.s
 - Render only active, confirmed asset points using their actual coordinates; provide edit, move, retire and unlocated states.
 - Add authenticated RLS tests and migration regression checks before any database rollout.
 - Link weekly actions to an optional asset ID only when a real association exists; otherwise retain the field-level or farm-level association.
+
+
+## Farmer asset placement UI — implementation slice 4
+
+- Added an asset register to the farmer's map card for trees, irrigation valves/pumps/lines, water tanks, canals, drainage, buildings, sensors and other assets.
+- A farmer can choose a category, name the asset, optionally assign a field, and either place a point by tapping the isometric map or request high-accuracy device GPS.
+- Manual map placement is reverse-projected from the SVG scene into WGS84 and accepted only inside a saved field boundary. When a field is selected, the chosen point must fall inside that field; otherwise the containing field is assigned automatically.
+- The form displays the selected coordinates and reported GPS accuracy and requires an explicit save/confirmation. Only active, confirmed assets are rendered as individual map markers.
+- Existing assets can be edited/moved or retired. Retired assets are removed from the active map display but retained in the database for history.
+- The map card avoids interpreting map gestures as farm-switch swipes while the user interacts with the map or asset manager.
+- The UI checks whether `farm_assets` is available. Until the branch migration is reviewed and applied in an approved environment, asset registration remains visibly staged and no insert/update is attempted.
+- GPS requires browser permission and a secure browser context. Manual placement is available as an alternative.
+- Remaining acceptance work: verify PostgREST GeoJSON serialization and geometry writes in a disposable test database, validate RLS as owner/non-owner/contracted expert, run TypeScript/build and mobile interaction tests, and test multipart boundaries. No live database writes have been made.
