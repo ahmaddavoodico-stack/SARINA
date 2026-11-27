@@ -41,3 +41,15 @@
 - Mobile touch interaction does not hijack map panning.
 - Existing specialist, farm registration, weekly-plan and productivity workflows remain available.
 - No migration, production data change, secret activation, or production deployment is part of this branch.
+
+
+## Current implementation checkpoint
+
+The current branch is an initial integration slice, not a release-complete implementation:
+- The map-first home surface reads the farmer's saved boundaries and renders them on the existing Leaflet/OpenStreetMap 2D map foundation.
+- Farm switching, evidence-aware yield comparison, and visible specialist recommendations/actions are wired to existing records.
+- The approved 3D farm rendering, satellite/terrain provider decision, full map interaction for each asset, and complete weekly task lifecycle are still outstanding.
+- The existing SARINA Companion is mounted as the farmer's conversation entry, but the general farmer AI response/persistence path is still a prototype and must not be represented as live.
+- The first CI run caught unused imports only; those imports were removed in follow-up commits. A fresh successful build has not yet been observed.
+
+Do not mark this workstream complete or merge for release until the remaining 3D, conversation backend, mobile interaction, and acceptance gates pass.
