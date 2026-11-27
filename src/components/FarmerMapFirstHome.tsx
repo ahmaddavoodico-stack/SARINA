@@ -65,7 +65,7 @@ function IsoFarmMap({fields,crops,irrigation,recommendations,aiRecommendations,a
 }
 
 function SatelliteFarmMap({fields,assets,ponds,pondDrawing,pondDraft,onPlacePondPoint,selection,onSelect,mode,infrastructureTool,onPlacePoint,onPlaceRoutePoint,routePoints,savedRoutes}:{fields:Field[];assets:FarmAsset[];ponds:FarmPondFeature[];pondDrawing:boolean;pondDraft:AssetPoint[];onPlacePondPoint:(p:AssetPoint)=>void;selection:MapSelection|null;onSelect:(s:MapSelection|null)=>void;mode:"satellite"|"hybrid";infrastructureTool:InfrastructureTool;onPlacePoint:(p:AssetPoint)=>void;onPlaceRoutePoint:(p:AssetPoint)=>void;routePoints:AssetPoint[];savedRoutes:FarmRouteFeature[]}){
- const host=useRef<HTMLDivElement>(null);
+ const host=useRef<HTMLDivElement>(null),draftLayerRef=useRef<any>(null);
  const handlersRef=useRef({onSelect,onPlacePoint,onPlaceRoutePoint,onPlacePondPoint});handlersRef.current={onSelect,onPlacePoint,onPlaceRoutePoint,onPlacePondPoint};
  const[ready,setReady]=useState(false),[error,setError]=useState("");
  useEffect(()=>{
@@ -78,7 +78,7 @@ function SatelliteFarmMap({fields,assets,ponds,pondDrawing,pondDraft,onPlacePond
     const coords=rings.flatMap(x=>x.ring);
     if(!coords.length){setError("برای نمایش موقعیت ماهواره‌ای، ابتدا مرز تأییدشده مزرعه لازم است.");return true;}
     map=L.map(host.current,{zoomControl:false,preferCanvas:true,scrollWheelZoom:false});
-    const layer=L.layerGroup().addTo(map);
+    const layer=L.layerGroup().addTo(map);const draftLayer=L.layerGroup().addTo(map);draftLayerRef.current=draftLayer;
     const imagery=L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",{
      maxZoom:19,
      attribution:"Tiles © Esri — Sources: Esri, Maxar, Earthstar Geographics, and the GIS User Community"
@@ -100,7 +100,6 @@ function SatelliteFarmMap({fields,assets,ponds,pondDrawing,pondDraft,onPlacePond
      });
     }
     ponds.filter(p=>p.status!=="removed").forEach(pond=>{let g=pond.geometry;try{if(typeof g==="string")g=JSON.parse(g);}catch{g=null;}if(!g?.type)return;const layerPond=L.geoJSON(g,{style:{color:pond.status==="active"?"#176f9b":"#788383",weight:3,fillColor:pond.status==="active"?"#3d9bc0":"#9aa5a5",fillOpacity:pond.status==="active"?.30:.14,dashArray:pond.status==="active"?"":"6 4"}}).addTo(layer);layerPond.on("click",()=>handlersRef.current.onSelect({kind:"pond",id:pond.id,title:pond.attributes?.name||(pond.feature_type==="pond"?"استخر":"مخزن روباز"),detail:(pond.status==="active"?"فعال":"غیرفعال/از رده خارج")+" · "+(pond.attributes?.purpose||"کاربری ثبت‌نشده"),fieldId:pond.field_id}));});
-    if(pondDraft.length){const draftLatLngs=pondDraft.map(p=>[p.lat,p.lng]);L.polyline(draftLatLngs,{color:"#e49a24",weight:4,dashArray:"7 5"}).addTo(layer);pondDraft.forEach(p=>L.circleMarker([p.lat,p.lng],{radius:5,color:"#fff",weight:2,fillColor:"#e49a24",fillOpacity:1}).addTo(layer));if(pondDraft.length>=3)L.polygon(draftLatLngs,{color:"#e49a24",weight:2,fillColor:"#e49a24",fillOpacity:.16}).addTo(layer);}
     map.on("click",(e:any)=>{const point={lat:e.latlng.lat,lng:e.latlng.lng,accuracy:null,source:"farmer_pin" as const};if(pondDrawing){handlersRef.current.onPlacePondPoint(point);return;}if(infrastructureTool==="none")return;if(infrastructureTool==="road")handlersRef.current.onPlaceRoutePoint(point);else if(infrastructureTool!=="pond")handlersRef.current.onPlacePoint(point);});
     savedRoutes.filter(r=>r.status==="active").forEach(r=>{let g=r.geometry;try{if(typeof g==="string")g=JSON.parse(g);}catch{g=null;}if(g?.type==="LineString"&&Array.isArray(g.coordinates))L.geoJSON(g,{style:{color:"#d68b20",weight:4,dashArray:"7 5"}}).addTo(layer);});
     if(routePoints.length>1)L.polyline(routePoints.map(p=>[p.lat,p.lng]),{color:"#e49a24",weight:5,dashArray:"8 5",lineCap:"round"}).addTo(layer);
@@ -114,8 +113,9 @@ function SatelliteFarmMap({fields,assets,ponds,pondDrawing,pondDraft,onPlacePond
    const retry=()=>{if(cancelled)return;if(setup())return;if(++attempts<30)retryTimer=window.setTimeout(retry,150);else setError("کتابخانه نقشه بارگذاری نشد.");};
    retryTimer=window.setTimeout(retry,100);
   }
-  return()=>{cancelled=true;if(retryTimer)window.clearTimeout(retryTimer);if(map)map.remove();};
- },[fields,assets,ponds,pondDrawing,pondDraft,mode,infrastructureTool,routePoints,savedRoutes]);
+  return()=>{cancelled=true;if(retryTimer)window.clearTimeout(retryTimer);if(map)map.remove();draftLayerRef.current=null;};
+ },[fields,assets,ponds,pondDrawing,mode,infrastructureTool,routePoints,savedRoutes]);
+ useEffect(()=>{const L=window.L,layer=draftLayerRef.current;if(!L||!layer)return;layer.clearLayers();if(!pondDraft.length)return;const points=pondDraft.map(p=>[p.lat,p.lng]);L.polyline(points,{color:"#e49a24",weight:4,dashArray:"7 5"}).addTo(layer);pondDraft.forEach(p=>L.circleMarker([p.lat,p.lng],{radius:5,color:"#fff",weight:2,fillColor:"#e49a24",fillOpacity:1}).addTo(layer));if(pondDraft.length>=3)L.polygon(points,{color:"#e49a24",weight:2,fillColor:"#e49a24",fillOpacity:.16}).addTo(layer);},[pondDraft]);
  return <div className="myfarm-satellite-stage">
   <div ref={host} className="myfarm-satellite-map" aria-label={mode==="hybrid"?"نمای ترکیبی ماهواره‌ای مزرعه":"نمای ماهواره‌ای مزرعه"}/>
   {!ready&&!error&&<div className="myfarm-satellite-state">در حال بارگذاری تصاویر ماهواره‌ای…</div>}
