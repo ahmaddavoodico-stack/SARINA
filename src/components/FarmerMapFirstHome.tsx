@@ -19,10 +19,10 @@ const n=(v:number)=>v.toLocaleString("fa-IR",{maximumFractionDigits:2});
 function boundaryRings(value:any):[number,number][][]{try{const g=typeof value==="string"?JSON.parse(value):value;if(!g?.coordinates)return[];const polygons=g.type==="MultiPolygon"?g.coordinates:g.type==="Polygon"?[g.coordinates]:[];return polygons.flatMap((p:any[])=>p.filter((r:any)=>Array.isArray(r)&&r.length>=4).map((r:any)=>r.map((xy:any)=>[Number(xy[1]),Number(xy[0])] as [number,number])));}catch{return[];}}
 type MapSelection={kind:"field"|"crop"|"water"|"task";id:string;title:string;detail:string;fieldId:string|null};
 function projectRing(ring:[number,number][],bounds:{minLat:number;maxLat:number;minLng:number;maxLng:number}){
- const latRange=Math.max(bounds.maxLat-bounds.minLat,0.00001),lngRange=Math.max(bounds.maxLng-bounds.minLng,0.00001);
- return ring.map(([lat,lng])=>{const x=(lng-bounds.minLng)/lngRange,y=(lat-bounds.minLat)/latRange;return [300+(x-y)*235,54+(x+y)*112] as [number,number];});
+ const meanLat=(bounds.minLat+bounds.maxLat)/2*Math.PI/180,cosLat=Math.max(Math.cos(meanLat),0.05),centerLat=(bounds.minLat+bounds.maxLat)/2,centerLng=(bounds.minLng+bounds.maxLng)/2,span=Math.max((bounds.maxLng-bounds.minLng)*cosLat,bounds.maxLat-bounds.minLat,0.00001);
+ return ring.map(([lat,lng])=>{const x=(lng-centerLng)*cosLat/span,y=(lat-centerLat)/span;return [300+(x-y)*215,165+(x+y)*108] as [number,number];});
 }
-function IsoFarmMap({fields,crops,irrigation,recommendations,aiRecommendations,selection,onSelect}:{fields:Field[];crops:CropCycle[];irrigation:IrrigationEvent[];recommendations:Recommendation[];aiRecommendations:AIRecommendation[];selection:MapSelection|null;onSelect:(s:MapSelection)=>void}){
+function IsoFarmMap({fields,crops,irrigation,recommendations,aiRecommendations,selection,onSelect}:{fields:Field[];crops:CropCycle[];irrigation:IrrigationEvent[];recommendations:Recommendation[];aiRecommendations:AIRecommendation[];selection:MapSelection|null;onSelect:(s:MapSelection|null)=>void}){
  const allRings=fields.flatMap(f=>boundaryRings(f.boundary)),all=allRings.flat();const bounds=all.length?{minLat:Math.min(...all.map(p=>p[0])),maxLat:Math.max(...all.map(p=>p[0])),minLng:Math.min(...all.map(p=>p[1])),maxLng:Math.max(...all.map(p=>p[1]))}:null;
  const projected=fields.map(field=>{const rings=boundaryRings(field.boundary).map(r=>projectRing(r,bounds!));const first=rings[0]??[];const center=first.length?first.reduce((a,p)=>[a[0]+p[0]/first.length,a[1]+p[1]/first.length],[0,0] as [number,number]):null;return{field,rings,center};});
  const selectedField=selection?.fieldId??null;
@@ -41,7 +41,7 @@ function IsoFarmMap({fields,crops,irrigation,recommendations,aiRecommendations,s
     {(rec||ai)&&<g className="myfarm-iso-marker" transform={"translate("+center[0]+","+(center[1]-48)+")"} onClick={()=>{const item=rec?{kind:"task" as const,id:rec.id,title:rec.title,detail:rec.instructions,fieldId:field.id}:{kind:"task" as const,id:ai!.id,title:ai!.title,detail:ai!.recommendation_text,fieldId:field.id};onSelect(item);}} role="button" tabIndex={0}><circle r="16" fill="#fff" stroke="#d49a42" strokeWidth="2"/><text y="5" textAnchor="middle">!</text></g>}
    </g>;})}
   </svg>
-  {selection&&<div className="myfarm-map-selection"><div><b>{selection.title}</b><p>{selection.detail}</p></div><button type="button" onClick={()=>onSelect({kind:"field",id:selection.fieldId||selection.id,title:"نمای مزرعه",detail:"برای دیدن جزئیات، یکی از نشانگرها را انتخاب کن.",fieldId:selection.fieldId})}>بستن</button></div>}
+  {selection&&<div className="myfarm-map-selection"><div><b>{selection.title}</b><p>{selection.detail}</p></div><button type="button" onClick={()=>onSelect(null)}>بستن</button></div>}
   <div className="myfarm-map-legend"><span><i className="crop"/> کشت ثبت‌شده</span><span><i className="water"/> رویداد آبیاری</span><span><i className="task"/> توصیه و اقدام</span></div>
  </div>;
 }
@@ -77,7 +77,7 @@ export default function FarmerMapFirstHome({session,onOpenFarms}:{session:Sessio
  const baselineYield=baseline?.metrics_snapshot?.marketable_yield,currentYield=measurements.find(x=>x.observed_at&&(!baseline?.baseline_date||x.observed_at.slice(0,10)>=baseline.baseline_date));
  const comparable=baselineYield&&typeof baselineYield.value==="number"&&baselineYield.value>0&&currentYield&&baselineYield.unit===currentYield.unit_code;
  const change=comparable?Math.round((currentYield.metric_value-baselineYield.value)/baselineYield.value*100):null;
- const shift=(delta:number)=>setSelected(v=>Math.min(Math.max(v+delta,0),Math.max(0,farms.length-1)));
+ const shift=(delta:number)=>{setSelected(v=>Math.min(Math.max(v+delta,0),Math.max(0,farms.length-1)));setMapSelection(null);setExpandedRecommendation(null);};
  return <section className="farmer-map-first-home" dir="rtl">
   <div className="myfarm-heading"><div><span className="eyebrow">فضای اصلی مدیریت مزرعه</span><h2>مزرعه من</h2></div>{farm&&<span className="myfarm-count">مزرعه {n(selected+1)} از {n(farms.length)}</span>}</div>
   {loading?<div className="empty-state">در حال دریافت مزارع شما…</div>:error?<div className="notice warning" role="alert">{error}</div>:!farm?<div className="myfarm-empty"><Sprout size={34}/><h3>هنوز مزرعه‌ای ثبت نکرده‌ای</h3><p>اولین مزرعه‌ات را روی نقشه مشخص کن تا فضای اختصاصی آن ساخته شود.</p><button type="button" onClick={onOpenFarms}><Plus size={16}/> ثبت مزرعه روی نقشه</button></div>:<article className="myfarm-card" onTouchStart={e=>{if(!(e.target as HTMLElement).closest(".myfarm-map-wrap"))touchStart.current=e.touches[0]?.clientX??null;}} onTouchEnd={e=>{if(touchStart.current===null)return;const delta=e.changedTouches[0]?.clientX-touchStart.current;touchStart.current=null;if(Math.abs(delta)>65)shift(delta<0?1:-1);}}>
