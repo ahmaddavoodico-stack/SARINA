@@ -18,7 +18,7 @@ export function validateSciRequest(value: unknown): ValidationIssue[] {
   } else if (value.question.trim().length > 4000) {
     issues.push({ code: "QUESTION_TOO_LONG", field: "question" });
   }
-  if (value.language !== undefined && value.language !== "fa" && value.language !== "en") {
+  if (value.language !== undefined && value.language !== "fa" && value.language !== "en" && value.language !== "ar") {
     issues.push({ code: "UNSUPPORTED_LANGUAGE", field: "language" });
   }
   if (value.references !== undefined &&
