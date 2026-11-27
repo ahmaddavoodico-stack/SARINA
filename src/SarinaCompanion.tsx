@@ -13,9 +13,6 @@ type SarinaRole="admin"|"expert"|"farmer"|"organization"|"livestock_keeper";
 type SarinaCompanionProps={isAdmin?:boolean;role?:SarinaRole;onNavigate?:(destination:NavTarget)=>void};
 type VoicePayload={audio:Blob;mimeType:string};
 
-function requestsSpokenReply(text:string):boolean{
- return /(?:پیام\s*صوتی|پیام\s*صدا(?:یی)?|به\s*صورت\s*صوتی|با\s+(?:یک\s+)?(?:پیام\s+)?صدا|با\s+صدای|صوتی.{0,24}(?:بگو|پاسخ|معرفی)|(?:بگو|معرفی\s*کن).{0,32}(?:صدا|صوت)|(?:صدا|صوت).{0,32}(?:بگو|معرفی|پاسخ)|بخون)/i.test(text);
-}
 const guideItems=[
  {title:"فیلم معرفی SARINA",description:"آشنایی کوتاه با امکانات سامانه",icon:PlayCircle,target:"learning" as NavTarget},
  {title:"راهنمای ثبت مزرعه",description:"شروع کار و ثبت اطلاعات مزرعه",icon:ClipboardList,target:"learning" as NavTarget},
@@ -29,7 +26,6 @@ export default function SarinaCompanion({isAdmin=false,role="farmer",onNavigate}
  const[messages,setMessages]=useState<ChatMessage[]>([]);
  const[showNotice,setShowNotice]=useState(false);
  const[busy,setBusy]=useState(false);
- const[voiceReplyPending,setVoiceReplyPending]=useState(false);
  const[status,setStatus]=useState("");
  const messagesRef=useRef<ChatMessage[]>([]);
  const pendingVoiceIdRef=useRef<number|null>(null);
@@ -45,11 +41,17 @@ export default function SarinaCompanion({isAdmin=false,role="farmer",onNavigate}
   try{
    const{data,error}=await supabase.functions.invoke("sarina-admin-chat",{body:{mode:"admin_chat",messages:nextMessages.map(message=>({role:message.role==="farmer"?"user":"assistant",content:message.internalText||message.text})).filter(message=>message.content.trim())}});
    if(error||!data?.ok||typeof data.answer!=="string")throw new Error(typeof data?.code==="string"?data.code:"ADMIN_CHAT_REQUEST_FAILED");
-   commitMessages([...messagesRef.current,{id:Date.now()+1,role:"sarina" as const,text:data.answer}].slice(-12));
+   let audioUrl:string|undefined;
+   if(typeof data.audio_base64==="string"&&data.audio_base64.length>0){
+    const binary=atob(data.audio_base64);
+    const bytes=new Uint8Array(binary.length);
+    for(let index=0;index<binary.length;index++)bytes[index]=binary.charCodeAt(index);
+    audioUrl=URL.createObjectURL(new Blob([bytes],{type:typeof data.audio_mime_type==="string"?data.audio_mime_type:"audio/wav"}));
+   }
+   commitMessages([...messagesRef.current,{id:Date.now()+1,role:"sarina" as const,text:data.answer,...(audioUrl?{audioUrl}:{})}].slice(-12));
    setStatus(`پاسخ آزمایشی از Groq · ${data.model||"مدل تأییدشده"}`);
   }catch(error){
-   setVoiceReplyPending(false);
-   const code=error instanceof Error?error.message:"ADMIN_CHAT_REQUEST_FAILED";
+    const code=error instanceof Error?error.message:"ADMIN_CHAT_REQUEST_FAILED";
    setStatus(code.includes("ADMIN_ACCESS_REQUIRED")?"این قابلیت فقط برای مدیر تأییدشده فعال است.":code.includes("GROQ_CHAT_KEY_MISSING")?"کلید Groq در محیط تابع سرور در دسترس نیست.":code.includes("GROQ_CHAT_HTTP_401")?"سرویس Groq کلید را نپذیرفت؛ اعتبار کلید باید بررسی شود.":code.includes("GROQ_CHAT_HTTP_429")?"سهمیه یا محدودیت درخواست Groq مانع پاسخ شد.":"ارتباط با پاسخ‌گوی آزمایشی برقرار نشد. وضعیت تابع سرور و گزارش خطا را بررسی کنید.");
   }finally{setBusy(false);}
  }
@@ -60,7 +62,6 @@ export default function SarinaCompanion({isAdmin=false,role="farmer",onNavigate}
   const next=[...messagesRef.current,{id:Date.now(),role:"farmer" as const,text:normalized}].slice(-12);
   commitMessages(next);setDraft("");
   if(!isAdmin){setShowNotice(true);return;}
-  setVoiceReplyPending(requestsSpokenReply(normalized));
   await requestAdminReply(next);
  }
  async function send(e:FormEvent){e.preventDefault();await sendText(draft);}
@@ -86,7 +87,7 @@ export default function SarinaCompanion({isAdmin=false,role="farmer",onNavigate}
   const next=messagesRef.current.map(message=>message.id===id?{...message,text:"پیام صوتی",internalText:text}:message);
   pendingVoiceIdRef.current=null;
   commitMessages(next);
-  if(isAdmin){setVoiceReplyPending(true);setStatus("سارینا در حال آماده‌کردن پاسخ شماست…");void requestAdminReply(next);}else{setShowNotice(true);setStatus("پیام صوتی دریافت شد؛ پاسخ‌گویی هوشمند برای این نقش هنوز فعال نشده است.");}
+  if(isAdmin){setStatus("سارینا در حال آماده‌کردن پاسخ شماست…");void requestAdminReply(next);}else{setShowNotice(true);setStatus("پیام صوتی دریافت شد؛ پاسخ‌گویی هوشمند برای این نقش هنوز فعال نشده است.");}
  }
 
  const latestSarinaReply=[...messages].reverse().find(message=>message.role==="sarina")?.text;
@@ -114,7 +115,7 @@ export default function SarinaCompanion({isAdmin=false,role="farmer",onNavigate}
      {status&&<div className="sarina-prototype-note" role="status">{status}</div>}
     </div>
     <form className={"sarina-chat-compose"+(isAdmin?" sarina-chat-compose-admin":"")} onSubmit={send}>
-     <VoiceMessageControls onVoiceMessage={receiveVoiceMessage} onTranscription={receiveTranscription} textToSpeak={latestSarinaReply} speechLanguage="fa" autoGenerateAudio={isAdmin&&voiceReplyPending&&!busy&&messages[messages.length-1]?.role==="sarina"} onVoiceReplyAudio={receiveVoiceReplyAudio} onAudioGenerationComplete={()=>setVoiceReplyPending(false)} disabled={busy}/>
+     <VoiceMessageControls onVoiceMessage={receiveVoiceMessage} onTranscription={receiveTranscription} textToSpeak={latestSarinaReply} speechLanguage="fa" onVoiceReplyAudio={receiveVoiceReplyAudio} onAudioGenerationComplete={()=>{}} disabled={busy}/>
      <input value={draft} onChange={e=>setDraft(e.target.value)} placeholder="اینجا برای سارینا بنویس..." aria-label="پیام شما به سارینا" maxLength={2000} disabled={busy}/>
      <button type="submit" disabled={!draft.trim()||busy} aria-label="ارسال پیام">{busy?<span className="sarina-chat-spinner"/>:<ArrowUp size={18}/>}</button>
     </form>
