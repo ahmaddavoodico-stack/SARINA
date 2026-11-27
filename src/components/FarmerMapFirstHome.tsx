@@ -55,9 +55,66 @@ function IsoFarmMap({fields,crops,irrigation,recommendations,aiRecommendations,a
   <div className="myfarm-map-legend"><span><i className="crop"/> کشت ثبت‌شده</span><span><i className="water"/> رویداد آبیاری</span><span><i className="task"/> توصیه و اقدام</span><span><i className="asset"/> موقعیت تأییدشده دارایی</span></div>
  </div>;
 }
+
+function SatelliteFarmMap({fields,assets,selection,onSelect,mode}:{fields:Field[];assets:FarmAsset[];selection:MapSelection|null;onSelect:(s:MapSelection|null)=>void;mode:"satellite"|"hybrid"}){
+ const host=useRef<HTMLDivElement>(null);
+ const[ready,setReady]=useState(false),[error,setError]=useState("");
+ useEffect(()=>{
+  let cancelled=false,map:any=null,retryTimer:number|undefined;
+  const setup=()=>{
+   if(cancelled||!host.current||!window.L)return false;
+   const L=window.L;
+   try{
+    const rings=fields.map(field=>({field,rings:boundaryRings(field.boundary)})).flatMap(x=>x.rings.map(ring=>({field:x.field,ring})));
+    const coords=rings.flatMap(x=>x.ring);
+    if(!coords.length){setError("برای نمایش موقعیت ماهواره‌ای، ابتدا مرز تأییدشده مزرعه لازم است.");return true;}
+    map=L.map(host.current,{zoomControl:false,preferCanvas:true,scrollWheelZoom:false});
+    const layer=L.layerGroup().addTo(map);
+    const imagery=L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",{
+     maxZoom:19,
+     attribution:"Tiles © Esri — Sources: Esri, Maxar, Earthstar Geographics, and the GIS User Community"
+    }).addTo(map);
+    imagery.on("tileerror",()=>{if(!cancelled)setError("تصاویر ماهواره‌ای در دسترس نیستند؛ اتصال یا سرویس نقشه را بررسی کنید.");});
+    rings.forEach(({field,ring})=>{
+     const polygon=L.polygon(ring,{color:selection?.id===field.id?"#f0b34d":"#e8f3e8",weight:3,fillColor:"#78b77a",fillOpacity:0.08});
+     polygon.addTo(layer);
+     polygon.on("click",()=>onSelect({kind:"field",id:field.id,title:field.field_name,detail:"قطعه ثبت‌شده · "+(field.area===null?"مساحت نامشخص":n(Number(field.area))+" "+(field.area_unit==="hectare"?"هکتار":field.area_unit)),fieldId:field.id}));
+    });
+    if(mode==="hybrid"){
+     assets.filter(a=>a.status==="active"&&a.is_location_confirmed).forEach(asset=>{
+      let g=asset.location;try{if(typeof g==="string")g=JSON.parse(g);}catch{g=null;}
+      const xy=g?.type==="Point"?g.coordinates:null;
+      if(!Array.isArray(xy)||xy.length<2||!Number.isFinite(Number(xy[0]))||!Number.isFinite(Number(xy[1])))return;
+      const marker=L.circleMarker([Number(xy[1]),Number(xy[0])],{radius:7,color:"#fff",weight:2,fillColor:asset.asset_type==="tree"?"#27834e":"#347eae",fillOpacity:1}).addTo(layer);
+      marker.bindTooltip(asset.asset_name);
+      marker.on("click",()=>onSelect({kind:"field",id:asset.id,title:asset.asset_name,detail:"دارایی تأییدشده · "+assetTypeFa(asset.asset_type),fieldId:asset.field_id}));
+     });
+    }
+    map.fitBounds(L.latLngBounds(coords),{padding:[24,24],maxZoom:18});
+    setReady(true);setError("");
+   }catch(e){setError(e instanceof Error?e.message:"بارگذاری نقشه ماهواره‌ای انجام نشد.");}
+   return true;
+  };
+  if(!setup()){
+   let attempts=0;
+   const retry=()=>{if(cancelled)return;if(setup())return;if(++attempts<30)retryTimer=window.setTimeout(retry,150);else setError("کتابخانه نقشه بارگذاری نشد.");};
+   retryTimer=window.setTimeout(retry,100);
+  }
+  return()=>{cancelled=true;if(retryTimer)window.clearTimeout(retryTimer);if(map)map.remove();};
+ },[fields,assets,mode,selection?.id,onSelect]);
+ return <div className="myfarm-satellite-stage">
+  <div ref={host} className="myfarm-satellite-map" aria-label={mode==="hybrid"?"نمای ترکیبی ماهواره‌ای مزرعه":"نمای ماهواره‌ای مزرعه"}/>
+  {!ready&&!error&&<div className="myfarm-satellite-state">در حال بارگذاری تصاویر ماهواره‌ای…</div>}
+  {error&&<div className="myfarm-satellite-state">{error}</div>}
+  <div className="myfarm-satellite-caption">{mode==="hybrid"?"مرز قطعات و موقعیت دارایی‌های تأییدشده":"مرز قطعات تأییدشده روی تصویر ماهواره‌ای"}</div>
+  {selection&&<div className="myfarm-map-selection"><div><b>{selection.title}</b><p>{selection.detail}</p></div><button type="button" onClick={()=>onSelect(null)}>بستن</button></div>}
+ </div>;
+}
+
 export default function FarmerMapFirstHome({session,onOpenFarms}:{session:Session;onOpenFarms:()=>void}){
  const[farms,setFarms]=useState<Farm[]>([]),[fields,setFields]=useState<Field[]>([]),[recommendations,setRecommendations]=useState<Recommendation[]>([]),[aiRecommendations,setAiRecommendations]=useState<AIRecommendation[]>([]),[crops,setCrops]=useState<CropCycle[]>([]),[irrigation,setIrrigation]=useState<IrrigationEvent[]>([]),[actions,setActions]=useState<PersonalAction[]>([]),[plans,setPlans]=useState<Plan[]>([]),[baseline,setBaseline]=useState<Baseline|null>(null),[measurements,setMeasurements]=useState<Measurement[]>([]);
  const[loading,setLoading]=useState(true),[error,setError]=useState(""),[selected,setSelected]=useState(0),[expandedRecommendation,setExpandedRecommendation]=useState<string|null>(null),[mapSelection,setMapSelection]=useState<MapSelection|null>(null);
+ const[mapView,setMapView]=useState<"isometric"|"satellite"|"hybrid">("isometric");
  const[assets,setAssets]=useState<FarmAsset[]>([]),[assetTableReady,setAssetTableReady]=useState<boolean|null>(null),[assetBusy,setAssetBusy]=useState(false),[assetError,setAssetError]=useState(""),[assetFormOpen,setAssetFormOpen]=useState(false),[placingAsset,setPlacingAsset]=useState(false),[assetType,setAssetType]=useState<FarmAssetType>("tree"),[assetName,setAssetName]=useState(""),[assetFieldId,setAssetFieldId]=useState(""),[assetNotes,setAssetNotes]=useState(""),[assetPoint,setAssetPoint]=useState<AssetPoint|null>(null),[editingAsset,setEditingAsset]=useState<string|null>(null);
  const touchStart=useRef<number|null>(null);
  useEffect(()=>{let active=true;async function load(){if(!db){setLoading(false);return;}setLoading(true);setError("");try{
@@ -101,7 +158,7 @@ export default function FarmerMapFirstHome({session,onOpenFarms}:{session:Sessio
   <div className="myfarm-heading"><div><span className="eyebrow">فضای اصلی مدیریت مزرعه</span><h2>مزرعه من</h2></div>{farm&&<span className="myfarm-count">مزرعه {n(selected+1)} از {n(farms.length)}</span>}</div>
   {loading?<div className="empty-state">در حال دریافت مزارع شما…</div>:error?<div className="notice warning" role="alert">{error}</div>:!farm?<div className="myfarm-empty"><Sprout size={34}/><h3>هنوز مزرعه‌ای ثبت نکرده‌ای</h3><p>اولین مزرعه‌ات را روی نقشه مشخص کن تا فضای اختصاصی آن ساخته شود.</p><button type="button" onClick={onOpenFarms}><Plus size={16}/> ثبت مزرعه روی نقشه</button></div>:<article className="myfarm-card" onTouchStart={e=>{if(!(e.target as HTMLElement).closest(".myfarm-map-wrap,.myfarm-iso-stage,.myfarm-assets"))touchStart.current=e.touches[0]?.clientX??null;}} onTouchEnd={e=>{if(touchStart.current===null)return;const delta=e.changedTouches[0]?.clientX-touchStart.current;touchStart.current=null;if(Math.abs(delta)>65)shift(delta<0?1:-1);}}>
   <div className="myfarm-card-top"><div><b>{farm.farm_name}</b><span>{farm.total_area===null?"مساحت ثبت نشده":n(Number(farm.total_area))+" "+(farm.area_unit==="hectare"?"هکتار":farm.area_unit)}</span></div><button type="button" onClick={onOpenFarms}>ویرایش اطلاعات مزرعه</button></div>
-  <IsoFarmMap fields={farmFields} crops={farmCrops} irrigation={farmIrrigation} recommendations={farmRecommendations} aiRecommendations={farmAIRecommendations} assets={assets} selection={mapSelection} onSelect={setMapSelection} placing={placingAsset} onPlacePoint={p=>{const containing=findContainingField(farmFields,p.lat,p.lng);if(!containing){setAssetError("لطفاً نقطه را داخل محدوده یکی از قطعات ثبت‌شده انتخاب کن.");return;}if(assetFieldId&&assetFieldId!==containing.id){setAssetError("نقطه انتخاب‌شده داخل قطعه انتخابی نیست؛ قطعه را اصلاح کن یا نقطه دیگری بزن.");return;}setAssetPoint(p);if(!assetFieldId)setAssetFieldId(containing.id);setPlacingAsset(false);setAssetError("");}}/>
+  <div className="myfarm-map-view-toolbar" role="group" aria-label="حالت نمایش نقشه"><button type="button" className={mapView==="isometric"?"active":""} aria-pressed={mapView==="isometric"} onClick={()=>setMapView("isometric")}>نمای سه‌بعدی</button><button type="button" className={mapView==="satellite"?"active":""} aria-pressed={mapView==="satellite"} onClick={()=>setMapView("satellite")}>ماهواره‌ای</button><button type="button" className={mapView==="hybrid"?"active":""} aria-pressed={mapView==="hybrid"} onClick={()=>setMapView("hybrid")}>ترکیبی</button></div>{mapView==="isometric"?<IsoFarmMap fields={farmFields} crops={farmCrops} irrigation={farmIrrigation} recommendations={farmRecommendations} aiRecommendations={farmAIRecommendations} assets={assets} selection={mapSelection} onSelect={setMapSelection} placing={placingAsset} onPlacePoint={p=>{const containing=findContainingField(farmFields,p.lat,p.lng);if(!containing){setAssetError("لطفاً نقطه را داخل محدوده یکی از قطعات ثبت‌شده انتخاب کن.");return;}if(assetFieldId&&assetFieldId!==containing.id){setAssetError("نقطه انتخاب‌شده داخل قطعه انتخابی نیست؛ قطعه را اصلاح کن یا نقطه دیگری بزن.");return;}setAssetPoint(p);if(!assetFieldId)setAssetFieldId(containing.id);setPlacingAsset(false);setAssetError("");}}/>:<SatelliteFarmMap key={farm.id+mapView} fields={farmFields} assets={assets} selection={mapSelection} onSelect={setMapSelection} mode={mapView}/>}
   <section className="myfarm-assets" aria-label="مدیریت درختان و تجهیزات مزرعه">
    <div className="myfarm-assets-head"><div><b>درختان و تجهیزات مزرعه</b><small>موقعیت فقط پس از تأیید شما روی نقشه ثبت می‌شود.</small></div><button type="button" disabled={assetTableReady===false} onClick={()=>{setAssetFormOpen(true);setEditingAsset(null);setAssetPoint(null);setAssetName("");setAssetNotes("");setAssetFieldId("");setAssetType("tree");setAssetError("");}}><Plus size={15}/> افزودن موقعیت</button></div>
    {assetTableReady===false?<p className="myfarm-assets-hint">زیرساخت ثبت موقعیت در انتظار انتشار و فعال‌سازی Migration است؛ هنوز هیچ مختصاتی ذخیره نمی‌شود.</p>:assetTableReady===null?<p className="myfarm-assets-hint">در حال بررسی موقعیت‌های ثبت‌شده…</p>:null}
