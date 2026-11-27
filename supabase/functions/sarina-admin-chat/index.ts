@@ -83,7 +83,7 @@ Deno.serve(async (req: Request) => {
         const parsed = new URL(origin);
         const configuredHosts = (Deno.env.get("SARINA_APP_HOSTS") ?? "").split(",").map((host) => host.trim().toLowerCase()).filter(Boolean);
         const hostname = parsed.hostname.toLowerCase();
-        const isSarinaVercelHost = hostname.endsWith(".vercel.app") && hostname.includes("sarina");
+        const isSarinaVercelHost = hostname === "sarina.vercel.app" || hostname.endsWith("-sarina6.vercel.app");
         if (parsed.protocol !== "https:" || (!isSarinaVercelHost && !configuredHosts.includes(hostname))) {
           throw new Error("SARINA_VOICE_ORIGIN_NOT_ALLOWED");
         }
