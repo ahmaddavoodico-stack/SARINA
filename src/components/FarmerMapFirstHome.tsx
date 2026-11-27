@@ -152,7 +152,9 @@ export default function FarmerMapFirstHome({session,onOpenFarms}:{session:Sessio
   const recs=(recResult.data??[]) as Recommendation[],reqIds=[...new Set(recs.map(x=>x.request_id))];
   let fieldByRequest:Record<string,string|null>={};if(reqIds.length){const req=await db.from("expert_requests").select("id,field_id").in("id",reqIds);if(!req.error)for(const row of req.data??[])fieldByRequest[row.id]=row.field_id??null;}
   const mapped=recs.map(x=>({...x,field_id:x.field_id??fieldByRequest[x.request_id]??null}));
-  if(!active)return;setFields((fieldResult.data??[]) as Field[]);setRecommendations(mapped);setAiRecommendations(aiResult.error?[]:(aiResult.data??[]) as AIRecommendation[]);setCrops(cropResult.error?[]:(cropResult.data??[]) as CropCycle[]);setIrrigation(waterResult.error?[]:(waterResult.data??[]) as IrrigationEvent[]);setPlans(ps);setActions(actionRows);
+  const planRows=(planResult.data??[]) as Plan[];let actionRows:PersonalAction[]=[];
+  if(planRows.length){const actionResult=await db.from("farm_improvement_actions").select("id,plan_id,title,status,due_date,source_recommendation_action_id").in("plan_id",planRows.map(x=>x.id)).limit(300);if(!actionResult.error)actionRows=(actionResult.data??[]) as PersonalAction[];}
+  if(!active)return;setFields((fieldResult.data??[]) as Field[]);setRecommendations(mapped);setAiRecommendations(aiResult.error?[]:(aiResult.data??[]) as AIRecommendation[]);setCrops(cropResult.error?[]:(cropResult.data??[]) as CropCycle[]);setIrrigation(waterResult.error?[]:(waterResult.data??[]) as IrrigationEvent[]);setPlans(planRows);setActions(actionRows);
 
  }catch(e){if(active)setError(e instanceof Error?e.message:"دریافت اطلاعات مزرعه انجام نشد.");}finally{if(active)setLoading(false);}}
  void load();return()=>{active=false;};
