@@ -187,17 +187,44 @@ Run each case as separate authenticated identities and assert both SELECT and wr
 - Existing farm/field/crop-cycle/irrigation-event workflows continue to work without schema regressions.
 - Backup/restore rehearsal and migration rollback are demonstrated in non-production.
 
-## 8. Explicit unresolved checks before executable SQL
+## 8. Verified target-database findings (read-only, 2026-11-27)
 
-These must be verified from the exact target database before writing migration files:
+The following checks were completed against Supabase project `wwgkiclcpgpdktneovrx`. No DDL/DML or migration was run.
 
-1. Exact data types and existing unique constraints for `farms.id`, `farm_fields.id/farm_id`, `crop_cycles.id/farm_id`, and `farm_assets` references.
-2. Full definitions and grants for `is_current_user_active_expert_for_farm`, `organization_has_scoped_access`, and `is_sarina_admin`.
-3. Whether `postgis` is installed in `public` or `extensions`; use the actual extension schema in geometry references/functions.
-4. Existing triggers for `updated_at`, audit, boundary validation, and farm/field deletion.
-5. Data API default privileges and exact grants required by the current app clients.
-6. Whether the point-asset migration needs to be revised before any spatial feature UI can be activated.
+1. **PostGIS:** extension `postgis 3.3.7` is installed in schema `public`. Existing `farm_fields.boundary` is `MULTIPOLYGON`, SRID 4326.
+2. **Primary keys:** `farms.id`, `farm_fields.id`, `crop_cycles.id`, `crop_catalog.id`, and `crop_varieties.id` are UUID primary keys. `farm_fields` has `UNIQUE(farm_id, field_name)`; `crop_varieties` has `UNIQUE(crop_id, variety_name)`. The new migrations add composite candidate keys `(id, farm_id)` where new child tables need same-farm FKs.
+3. **Existing crop linkage:** `crop_cycles.field_id` and `irrigation_events.field_id` currently use simple FKs with `ON DELETE SET NULL`. A read-only data check found zero current rows where their field belongs to another farm. The new spatial child tables use composite FKs; a future hardening task may convert legacy relations after client behavior and deletion semantics are separately reviewed.
+4. **Farm assets:** `public.farm_assets`, `public.farm_trees`, and `public.farm_map_features` are absent from the connected database. The point-asset migration exists only on the feature branch and has not been applied.
+5. **Boundary validation:** `farm_fields_boundary_area_before_write` invokes `set_farm_field_boundary_area()`. It rejects invalid, empty, or non-4326 geometry and calculates area from geography. There are no existing timestamp/audit triggers on the inspected farm, field, crop-cycle, crop-activity, or irrigation-event tables.
+6. **Authorization helpers:** `is_current_user_active_expert_for_farm(uuid)` checks verified expert profiles and accepted/active, mutually accepted, in-date service contracts. `organization_has_scoped_access(...)` is SECURITY DEFINER with an empty search path and checks active membership, enabled capability, and explicit scope. `is_sarina_admin()` resolves the global admin role through trusted user-role records. Ownership maps `auth.uid()` to `users.auth_user_id` via `current_sarina_user_id()`.
+7. **Current RLS pattern:** farmers manage their own farm children; active contracted experts have read-only policies on farms/fields/crop cycles; farms additionally have organization-scoped read. The new child policies reuse those exact helpers and the `oversight.farm.read` capability.
+8. **Default privileges:** default privileges in schema `public` grant table privileges to `anon`, `authenticated`, and `service_role`. Therefore each new public table explicitly revokes all direct privileges from `anon`; RLS remains independently enabled and configured.
+9. **Deletion policy:** tree identities and their append-only history must not be hard-deleted by farmer clients. New spatial child records use restrictive farm references where needed to prevent accidental loss of the map model; farm archival should be preferred over hard deletion once map records exist.
 
-## 9. Acceptance gate
+## 9. Branch-only implementation artifacts
 
-This design is ready for implementation review, **not** database application. The next authorized engineering step is to verify the six unresolved checks above and convert the approved design into migration files plus automated SQL/RLS tests on the isolated branch. Applying those migrations requires separate explicit authorization and an approved non-production target. Production, live data, PR merge, and production deployment remain untouched.
+The isolated feature branch now contains:
+
+- `supabase/migrations/20261127160000_farmer_confirmed_farm_asset_locations.sql` — revised to define point-like assets only, with optional WGS84 point locations, same-farm field FK, confirmed-boundary containment, explicit RLS and grants. Trees, lines, canals, drains, buildings and polygons are deliberately excluded from this table.
+- `supabase/migrations/20261127170000_sarina_farm_map_spatial_model.sql` — adds stable individual tree records and append-only history, typed line/polygon map features, explicit irrigation-network edges, composite same-farm references, geometry validation, and owner/expert/organization-scoped policies.
+- `supabase/tests/sarina_farm_map_spatial_model.test.sql` — read-only post-migration structural/security smoke test for PostGIS, geometry types, composite FKs, triggers, RLS, policies and grants.
+
+### Important implementation boundaries
+
+- These SQL files are committed to the feature branch only. They have **not** been executed against the connected Supabase project.
+- The test file is a structural/grant smoke test. It does not replace seeded identity tests for owner, active expert, revoked expert, organization capability/scope, unrelated user and anonymous role. Those must run on an isolated Supabase branch with controlled fixtures.
+- The new migration uses a narrowly scoped SECURITY DEFINER trigger function only to append trusted system-generated tree-history events; it is not a client-callable authorization bypass.
+- Tree age, death cause, and map provenance remain explicitly sourced/qualified; the schema does not turn farmer reports into specialist diagnoses.
+- The line/polygon feature model is distinct from point assets. Irrigation edges require explicit references and confirmation; proximity is never treated as connectivity.
+
+## 10. Acceptance gate and next step
+
+The design has been reconciled with the observed schema and the first implementation files are present on the feature branch. Before any application:
+
+1. Review the two migration files line by line, including PostgreSQL syntax and trigger/RLS behavior.
+2. Run the migrations only on an isolated Supabase development branch, never the connected/live project.
+3. Run the structural smoke test and seeded per-identity RLS tests.
+4. Verify existing farmer workflows and farm/field deletion/archive behavior.
+5. Inspect the resulting schema, grants, RLS policies, and query plans before considering any production migration.
+
+No merge, connected-database migration, production deployment, or live-data modification is authorized by this work.
