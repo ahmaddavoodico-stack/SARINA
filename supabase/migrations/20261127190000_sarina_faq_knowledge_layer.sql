@@ -37,6 +37,11 @@ CREATE TABLE public.sarina_faq_entries (
     CHECK (risk_level IN ('low','medium','high','critical')),
   CONSTRAINT sarina_faq_entries_answer_mode_check
     CHECK (answer_mode IN ('auto_answer','answer_with_caution','must_escalate')),
+  CONSTRAINT sarina_faq_entries_risk_answer_mode_check CHECK (
+    (risk_level IN ('high','critical') AND answer_mode = 'must_escalate')
+    OR (risk_level = 'medium' AND answer_mode IN ('answer_with_caution','must_escalate'))
+    OR (risk_level = 'low' AND answer_mode IN ('auto_answer','answer_with_caution','must_escalate'))
+  ),
   CONSTRAINT sarina_faq_entries_scope_check
     CHECK (
       (scope_type = 'global' AND scope_key IS NULL)
@@ -216,9 +221,10 @@ SET search_path = ''
 AS $$
 DECLARE
   v_risk_level text;
+  v_answer_mode text;
 BEGIN
   IF NEW.status = 'published' THEN
-    SELECT e.risk_level INTO v_risk_level
+    SELECT e.risk_level, e.answer_mode INTO v_risk_level, v_answer_mode
     FROM public.sarina_faq_entries e
     WHERE e.id = NEW.faq_entry_id;
 
@@ -228,9 +234,25 @@ BEGIN
         USING ERRCODE = '23514';
     END IF;
 
+    IF v_risk_level IN ('high','critical') AND v_answer_mode <> 'must_escalate' THEN
+      RAISE EXCEPTION 'High/critical risk FAQ entries must use must_escalate answer mode'
+        USING ERRCODE = '23514';
+    END IF;
+
     IF v_risk_level IN ('high','critical')
        AND NEW.approval_role <> 'qualified_specialist' THEN
       RAISE EXCEPTION 'High/critical risk FAQ answers require qualified specialist approval'
+        USING ERRCODE = '23514';
+    END IF;
+
+    IF NOT EXISTS (
+      SELECT 1 FROM public.sarina_faq_review_events r
+      WHERE r.faq_version_id = NEW.id
+        AND r.action = 'approved'
+        AND r.reviewer_user_id = NEW.approved_by
+        AND r.reviewer_role = NEW.approval_role
+    ) THEN
+      RAISE EXCEPTION 'Published FAQ versions require a matching append-only approval review event'
         USING ERRCODE = '23514';
     END IF;
 
@@ -279,7 +301,7 @@ ALTER TABLE public.sarina_faq_usage_events ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON TABLE public.sarina_faq_topics, public.sarina_faq_entries,
   public.sarina_faq_versions, public.sarina_faq_source_references,
   public.sarina_faq_review_events, public.sarina_faq_question_signals,
-  public.sarina_faq_usage_events FROM anon, authenticated;
+  public.sarina_faq_usage_events FROM PUBLIC, anon, authenticated;
 GRANT SELECT ON TABLE public.sarina_faq_topics, public.sarina_faq_entries,
   public.sarina_faq_versions, public.sarina_faq_source_references TO authenticated;
 GRANT ALL ON TABLE public.sarina_faq_topics, public.sarina_faq_entries,
@@ -321,7 +343,9 @@ CREATE OR REPLACE FUNCTION public.search_sarina_faq(
   p_language_code text DEFAULT 'fa',
   p_fallback_language_code text DEFAULT 'en',
   p_topic_slug text DEFAULT NULL,
-  p_limit integer DEFAULT 5
+  p_limit integer DEFAULT 5,
+  p_scope_type text DEFAULT 'global',
+  p_scope_key text DEFAULT NULL
 )
 RETURNS TABLE (
   faq_entry_id uuid,
@@ -384,6 +408,10 @@ AS $$
     AND t.status = 'active'
     AND v.language_code IN (p_language_code, p_fallback_language_code)
     AND (p_topic_slug IS NULL OR t.topic_slug = p_topic_slug)
+    AND (
+      (e.scope_type = 'global' AND e.scope_key IS NULL)
+      OR (p_scope_type <> 'global' AND e.scope_type = p_scope_type AND e.scope_key = p_scope_key)
+    )
     AND v.search_document @@ q.tsq
   ORDER BY
     CASE WHEN v.language_code = p_language_code THEN 0 ELSE 1 END,
@@ -391,8 +419,8 @@ AS $$
     v.published_at DESC
   LIMIT least(greatest(coalesce(p_limit, 5), 1), 10);
 $$;
-REVOKE ALL ON FUNCTION public.search_sarina_faq(text, text, text, text, integer) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.search_sarina_faq(text, text, text, text, integer) TO authenticated;
+REVOKE ALL ON FUNCTION public.search_sarina_faq(text, text, text, text, integer, text, text) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.search_sarina_faq(text, text, text, text, integer, text, text) TO authenticated;
 
 COMMENT ON TABLE public.sarina_faq_entries IS
   'Stable FAQ knowledge identity; localized approved content lives in immutable version rows.';
@@ -402,7 +430,7 @@ COMMENT ON TABLE public.sarina_faq_question_signals IS
   'Aggregated frequency signals using redacted question templates and one-way fingerprints; no user/farm/message IDs.';
 COMMENT ON TABLE public.sarina_faq_usage_events IS
   'Privacy-minimized FAQ retrieval outcomes; no conversation body or farmer identity is stored.';
-COMMENT ON FUNCTION public.search_sarina_faq(text, text, text, text, integer) IS
-  'Read-only, RLS-respecting full-text retrieval of published FAQ versions with current evidence references.';
+COMMENT ON FUNCTION public.search_sarina_faq(text, text, text, text, integer, text, text) IS
+  'Read-only, RLS-respecting full-text retrieval of published FAQ versions with current evidence references and explicit applicability-scope filtering.';
 
 COMMIT;
