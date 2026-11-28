@@ -7,12 +7,13 @@ async function callContext(
   functionName: string,
   farmId: string,
   headers: Record<string, string>,
+  extraBody: Record<string, unknown> = {},
 ): Promise<DomainResult> {
   try {
     const response = await fetch(`${baseUrl}/functions/v1/${functionName}`, {
       method: "POST",
       headers,
-      body: JSON.stringify({ farm_id: farmId }),
+      body: JSON.stringify({ farm_id: farmId, ...extraBody }),
       signal: AbortSignal.timeout(40_000),
     });
     let body: unknown = null;
@@ -93,7 +94,13 @@ export async function buildEnvironmentalDossier(input: {
     "farm-spatial-context",
   ] as const;
   const results = await Promise.all(names.map((name) =>
-    callContext(input.supabaseUrl, name, input.farmId, headers)
+    callContext(
+      input.supabaseUrl,
+      name,
+      input.farmId,
+      headers,
+      name === "farm-weather-context" ? { read_only: true } : {},
+    )
   ));
   const [weatherResult, landResult, climateResult, spatialResult] = results;
 
