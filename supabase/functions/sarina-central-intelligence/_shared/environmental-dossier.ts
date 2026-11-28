@@ -197,7 +197,7 @@ export async function buildEnvironmentalDossier(input: {
   }));
   if (!soilLabTests.length) missingDomains.push("soil_laboratory_measurements");
   if (!waterLabTests.length) missingDomains.push("water_laboratory_measurements");
-    const regional = land && isRecord(land.regional_context) ? land.regional_context : null;
+  const regional = land && isRecord(land.regional_context) ? land.regional_context : null;
   const soilGrids = regional && isRecord(regional.soilgrids) ? regional.soilgrids : null;
   const regionalStatus = typeof soilGrids?.status === "string" ? soilGrids.status : "not_available";
   manifest.push(sourceEntry({
