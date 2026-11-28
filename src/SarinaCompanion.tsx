@@ -23,7 +23,9 @@ export default function SarinaCompanion({isAdmin=false,role="farmer",onNavigate}
  const[open,setOpen]=useState(false);
  const[drawerOpen,setDrawerOpen]=useState(true);
  const[draft,setDraft]=useState("");
- const[messages,setMessages]=useState<ChatMessage[]>([]);\n const[conversationId,setConversationId]=useState<string|null>(null);\n const[historyLoaded,setHistoryLoaded]=useState(false);
+ const[messages,setMessages]=useState<ChatMessage[]>([]);
+ const[conversationId,setConversationId]=useState<string|null>(null);
+ const[historyLoaded,setHistoryLoaded]=useState(false);
  const showNotice=false;
  const[busy,setBusy]=useState(false);
  const[status,setStatus]=useState("");
@@ -63,10 +65,12 @@ export default function SarinaCompanion({isAdmin=false,role="farmer",onNavigate}
   try{
    const{data,error}=await supabase.functions.invoke("sarina-central-intelligence",{body:{
     mode:"conversation",
+    conversation_id:conversationId,
     messages:nextMessages.map(message=>({role:message.role==="farmer"?"user":"assistant",content:message.internalText||message.text})).filter(message=>message.content.trim()).slice(-8)
    }});
    if(error||!data?.ok||typeof data.answer!=="string")throw new Error(typeof data?.code==="string"?data.code:"SARINA_CHAT_REQUEST_FAILED");
-   if(typeof data.conversation_id==="string")setConversationId(data.conversation_id);\n   commitMessages([...messagesRef.current,{id:typeof data.assistant_message_id==="string"?data.assistant_message_id:Date.now()+1,role:"sarina" as const,text:data.answer}].slice(-12));
+   if(typeof data.conversation_id==="string")setConversationId(data.conversation_id);
+   commitMessages([...messagesRef.current,{id:typeof data.assistant_message_id==="string"?data.assistant_message_id:Date.now()+1,role:"sarina" as const,text:data.answer}].slice(-12));
    setStatus("پاسخ سارینا · گفت‌وگوی امن و ثبت مصرف");
   }catch(error){
    const code=error instanceof Error?error.message:"SARINA_CHAT_REQUEST_FAILED";
@@ -134,8 +138,8 @@ export default function SarinaCompanion({isAdmin=false,role="farmer",onNavigate}
     </div>
     <form className={"sarina-chat-compose"+(isAdmin?" sarina-chat-compose-admin":"")} onSubmit={send}>
      <VoiceMessageControls onVoiceMessage={receiveVoiceMessage} onTranscription={receiveTranscription} textToSpeak={latestSarinaReplyMessage?.audioUrl?undefined:latestSarinaReply} speechRequestId={latestSarinaReplyMessage?.id} speechLanguage="fa" autoGenerateAudio onVoiceReplyAudio={receiveVoiceReplyAudio} onAudioGenerationComplete={()=>{}} disabled={busy||!historyLoaded}/>
-     <input value={draft} onChange={e=>setDraft(e.target.value)} placeholder="اینجا برای سارینا بنویس..." aria-label="پیام شما به سارینا" maxLength={2000} disabled={busy}/>
-     <button type="submit" disabled={!draft.trim()||busy} aria-label="ارسال پیام">{busy?<span className="sarina-chat-spinner"/>:<ArrowUp size={18}/>}</button>
+     <input value={draft} onChange={e=>setDraft(e.target.value)} placeholder="اینجا برای سارینا بنویس..." aria-label="پیام شما به سارینا" maxLength={2000} disabled={busy||!historyLoaded}/>
+     <button type="submit" disabled={!draft.trim()||busy||!historyLoaded} aria-label="ارسال پیام">{busy?<span className="sarina-chat-spinner"/>:<ArrowUp size={18}/>}</button>
     </form>
     <div className="sarina-chat-foot">{isAdmin?"گفت‌وگوی امن با هوش مرکزی SARINA":"گفت‌وگوی مستقیم با سارینا"} <Leaf size={12}/></div>
    </div>
