@@ -57,3 +57,22 @@ export async function moveChatAudio(fromId:string|number,toId:string|number):Pro
  });
  db.close();
 }
+
+export async function pruneChatAudio():Promise<void>{
+ const db=await openDatabase();
+ await new Promise<void>((resolve,reject)=>{
+  const tx=db.transaction(STORE_NAME,"readwrite");
+  const store=tx.objectStore(STORE_NAME);
+  const request=store.openCursor();
+  request.onsuccess=()=>{
+   const cursor=request.result;
+   if(!cursor)return;
+   const record=cursor.value as AudioRecord;
+   if(!record.expiresAt||record.expiresAt<=Date.now())cursor.delete();
+   cursor.continue();
+  };
+  tx.oncomplete=()=>resolve();
+  tx.onerror=()=>reject(tx.error??new Error("CHAT_AUDIO_PRUNE_FAILED"));
+ });
+ db.close();
+}
