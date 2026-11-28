@@ -111,7 +111,7 @@ export default function SarinaCompanion({isAdmin=false,role="farmer",onNavigate}
      {status&&<div className="sarina-prototype-note" role="status">{status}</div>}
     </div>
     <form className={"sarina-chat-compose"+(isAdmin?" sarina-chat-compose-admin":"")} onSubmit={send}>
-     <VoiceMessageControls onVoiceMessage={receiveVoiceMessage} onTranscription={receiveTranscription} textToSpeak={latestSarinaReplyMessage?.audioUrl?undefined:latestSarinaReply} speechRequestId={latestSarinaReplyMessage?.id} speechLanguage="fa" autoGenerateAudio onVoiceReplyAudio={receiveVoiceReplyAudio} onAudioGenerationComplete={()=>{}} disabled={busy}/>
+     <VoiceMessageControls onVoiceMessage={receiveVoiceMessage} onTranscription={receiveTranscription} textToSpeak={latestSarinaReplyMessage?.audioUrl?undefined:latestSarinaReply} speechRequestId={latestSarinaReplyMessage?.id} speechLanguage={localStorage.getItem("sarina-language")==="ar"?"ar":"fa"} autoGenerateAudio onVoiceReplyAudio={receiveVoiceReplyAudio} onAudioGenerationComplete={()=>{}} disabled={busy}/>
      <input value={draft} onChange={e=>setDraft(e.target.value)} placeholder="اینجا برای سارینا بنویس..." aria-label="پیام شما به سارینا" maxLength={2000} disabled={busy}/>
      <button type="submit" disabled={!draft.trim()||busy} aria-label="ارسال پیام">{busy?<span className="sarina-chat-spinner"/>:<ArrowUp size={18}/>}</button>
     </form>
