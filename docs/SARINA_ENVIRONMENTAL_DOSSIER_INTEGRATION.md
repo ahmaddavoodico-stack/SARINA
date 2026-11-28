@@ -100,6 +100,26 @@ Missing metadata must remain null/unknown rather than be invented.
 - Verify snapshot persistence, RLS, source manifests, cache/budget behavior, and chat context inclusion.
 - No merge to `main`, production migration, or deployment without explicit release approval.
 
+
+### Step 3 — Read-only central dossier builder (implemented on feature branch)
+
+**Implementation commit(s):** `6895f61d5564adf7bd9e39d00c859729d41fd147`, `09c95193b115bc0e9d382effc9b76c83d800bee1`
+
+- Added `_shared/environmental-dossier.ts` under the existing `sarina-central-intelligence` function.
+- Added the authenticated request mode `mode: "environmental_dossier"`; the central function validates the caller JWT and resolves `farm_id` through the caller-scoped `farms` query before invoking any domain context function.
+- The builder concurrently requests the existing weather, land, historical-climate, and spatial context functions using the caller JWT and publishable key. It applies per-call timeouts and preserves independent failures as domain-level outcomes.
+- Normalizes a versioned response envelope with `source_manifest`, `quality_summary`, `missing_domains`, provider call outcomes, and explicit safety flags. The response is marked `read_only_not_persisted`; no snapshot is written.
+- Handles the current weather function's flat response and the land function's nested `{ ok, context }` response.
+- Keeps current weather and forecast data classified as model estimates; farmer reports remain unverified observations; soil/water test records are counted separately from regional SoilGrids estimates.
+- Historical climate status and Copernicus terrain/satellite statuses are preserved as returned by their existing adapters.
+- The current spatial adapter still reports a centroid-buffer proxy, not the confirmed farm-field polygon. The dossier records this scope limitation rather than describing the result as parcel-level analysis.
+- `sarina-regional-sync` is deliberately not invoked: its current contract is signed inter-region event transport, not a farm-scoped regional dataset query. The dossier marks governed regional datasets as not connected.
+- No new Edge Function, database table, migration, provider secret, or parallel orchestration service was created.
+
+**Validation boundary:** repository diff and branch state were checked. A local Deno type-check/test could not be run in this environment because the Deno executable is unavailable. The Vercel commit check was still pending at the time of inspection. This is not a production or end-to-end verification.
+
+**Remaining before persistence/release:** review and test all evidence-class mappings; add unit tests for partial failures and freshness; verify field-polygon support in the spatial adapter; define an approved farm-scoped regional dataset read contract; run owner/specialist/cross-farm authorization tests; reconcile migration history; then separately authorize snapshot persistence and deployment.
+
 ## Acceptance criteria
 
 - One farm can produce a traceable versioned dossier with domain-level completeness and missing-domain reasons.
