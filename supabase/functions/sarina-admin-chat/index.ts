@@ -17,6 +17,8 @@ function reply(status: number, payload: Record<string, unknown>) {
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return reply(405, { ok: false, code: "METHOD_NOT_ALLOWED" });
+  // Prevent an unmetered legacy path from bypassing the central monthly hard budget.
+  return reply(410, { ok: false, code: "CENTRAL_CHAT_REQUIRED" });
 
   const authorization = req.headers.get("Authorization");
   if (!authorization?.startsWith("Bearer ")) return reply(401, { ok: false, code: "AUTH_REQUIRED" });
