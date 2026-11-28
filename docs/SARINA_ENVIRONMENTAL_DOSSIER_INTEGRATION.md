@@ -120,6 +120,21 @@ Missing metadata must remain null/unknown rather than be invented.
 
 **Remaining before persistence/release:** review and test all evidence-class mappings; add unit tests for partial failures and freshness; verify field-polygon support in the spatial adapter; define an approved farm-scoped regional dataset read contract; run owner/specialist/cross-farm authorization tests; reconcile migration history; then separately authorize snapshot persistence and deployment.
 
+
+### Step 4 — Security/correctness hardening and automated test coverage (implemented on feature branch)
+
+**Implementation commits:** `7e6ec3ea8dcd8a6c07dbaa56c21b74afd0d1b3cd`, `e8bf9fef7a295d74cdd55c547b2d89a9e9504a9f`, `ae670307c2399198d35d7ae253ccdfc89f16ed19`, `a48ad73e702e6d36d2e2c92084da25b069e9d8af`, `b57670e0ba701bc9dfe34e3e267eb30ca58ecad3`, `14d2a7b60e11f09ad70be8e0982a0312d430daf7`
+
+- A side-effect review found that the existing weather context endpoint normally persists current/forecast records to `weather_records`. The dossier builder now explicitly calls it with `read_only: true`.
+- The weather endpoint honors that flag by skipping all service-role writes and returns `persistence: "not_persisted"` and `stored_records: 0`. Its existing default behavior remains the persistence path for ordinary callers.
+- The read-only weather path no longer requires a service-role secret; the service credential is narrowed to the persistence branch only.
+- Added deterministic Deno unit coverage for four-adapter invocation, caller JWT/publishable-key forwarding, read-only weather request, partial provider failure, all-provider failure, and separation of lab evidence from other records and farmer observations.
+- Added a security/integration test plan covering missing/invalid JWT, owner access, cross-farm IDOR, assigned/unassigned expert access, weather side effects, no snapshot writes, and secret isolation.
+
+**Verification boundary:** the test source is committed but could not be executed in this environment because Deno is unavailable and external network access is disabled. No green test run is claimed. Live RLS tests require controlled test identities and a dedicated test project; they have not been executed. The Vercel check is not a substitute for Deno unit tests or Edge Function authorization tests.
+
+**Next gate:** execute the Deno test in CI/local Deno, run the documented live authorization and row-count matrix in a non-production Supabase test project, and verify the weather read-only response before enabling any snapshot persistence.
+
 ## Acceptance criteria
 
 - One farm can produce a traceable versioned dossier with domain-level completeness and missing-domain reasons.
