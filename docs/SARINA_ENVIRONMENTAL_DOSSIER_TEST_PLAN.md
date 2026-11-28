@@ -15,7 +15,7 @@ The deterministic test stubs all four existing context endpoints and checks:
 
 Run from the repository root with Deno:
 ```sh
-deno test --allow-env --allow-net supabase/functions/sarina-central-intelligence/_shared/environmental-dossier_test.ts
+deno test supabase/functions/sarina-central-intelligence/_shared/environmental-dossier_test.ts
 ```
 
 The test has been committed but has **not** been executed in this environment; a green test result must not be inferred from its presence.
