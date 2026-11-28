@@ -73,7 +73,7 @@ export async function handlePublicConversation(input: {
   if (!conversation) {
     const { data } = await serviceClient.from("ai_conversations").select("id")
       .eq("user_id", profile.id).eq("conversation_type", "general").eq("status", "active")
-      .gte("updated_at", cutoff).order("updated_at", { ascending: false }).limit(1).maybeSingle();
+      .order("updated_at", { ascending: false }).limit(1).maybeSingle();
     conversation = data;
   }
   if (!conversation) {
@@ -89,7 +89,8 @@ export async function handlePublicConversation(input: {
   const latestUserMessage = messages[messages.length - 1];
   if (!latestUserMessage || latestUserMessage.role !== "user") return json(422, { ok: false, code: "INVALID_CONVERSATION_MESSAGES" });
   const { data: previousMessages, error: historyError } = await serviceClient.from("ai_messages")
-    .select("sender_type,message_text").eq("conversation_id", conversationId).gte("created_at", cutoff)
+    .select("sender_type,message_text").eq("conversation_id", conversationId)
+    .or(`retention_expires_at.is.null,retention_expires_at.gt.${new Date().toISOString()}`)
     .in("sender_type", ["user", "assistant"]).not("message_text", "is", null)
     .order("created_at", { ascending: false }).limit(7);
   if (historyError) return json(503, { ok: false, code: "CHAT_HISTORY_UNAVAILABLE" });
@@ -97,7 +98,7 @@ export async function handlePublicConversation(input: {
     role: item.sender_type as "user" | "assistant", content: item.message_text,
   }));
   const { data: savedUserMessage, error: saveUserError } = await serviceClient.from("ai_messages")
-    .insert({ conversation_id: conversationId, sender_type: "user", sender_user_id: profile.id, message_text: latestUserMessage.content, status: "complete" })
+    .insert({ conversation_id: conversationId, sender_type: "user", sender_user_id: profile.id, message_text: latestUserMessage.content, status: "complete", first_human_viewed_at: new Date().toISOString(), retention_expires_at: new Date(Date.now() + HISTORY_WINDOW_MS).toISOString() })
     .select("id").single();
   if (saveUserError || !savedUserMessage) return json(503, { ok: false, code: "CHAT_MESSAGE_SAVE_FAILED" });
   await serviceClient.from("ai_conversations").update({ updated_at: new Date().toISOString() }).eq("id", conversationId);
@@ -226,15 +227,14 @@ export async function handlePublicConversationHistory(input: {
   const { data: verifiedAdmin, error: adminCheckError } = await client.rpc("is_sarina_admin");
   if (adminCheckError) return json(503, { ok: false, code: "ROLE_LOOKUP_FAILED" });
   if (verifiedAdmin !== true && roleCodes.length === 0) return json(403, { ok: false, code: "SARINA_ROLE_REQUIRED" });
-  const cutoff = new Date(Date.now() - HISTORY_WINDOW_MS).toISOString();
   const { data: conversation, error: conversationError } = await serviceClient.from("ai_conversations")
     .select("id").eq("user_id", profile.id).eq("conversation_type", "general").eq("status", "active")
-    .gte("updated_at", cutoff).order("updated_at", { ascending: false }).limit(1).maybeSingle();
+    .order("updated_at", { ascending: false }).limit(1).maybeSingle();
   if (conversationError) return json(503, { ok: false, code: "CHAT_HISTORY_UNAVAILABLE" });
   if (!conversation) return json(200, { ok: true, conversation_id: null, messages: [] });
   const { data: rows, error: messagesError } = await serviceClient.from("ai_messages")
-    .select("id,sender_type,message_text,created_at").eq("conversation_id", conversation.id)
-    .gte("created_at", cutoff).in("sender_type", ["user", "assistant"])
+    .select("id,sender_type,message_text,created_at,first_human_viewed_at,retention_expires_at").eq("conversation_id", conversation.id)
+    .or(`retention_expires_at.is.null,retention_expires_at.gt.${new Date().toISOString()}`).in("sender_type", ["user", "assistant"])
     .not("message_text", "is", null).order("created_at", { ascending: true }).limit(12);
   if (messagesError) return json(503, { ok: false, code: "CHAT_HISTORY_UNAVAILABLE" });
   const messages = (rows ?? []).map((row: StoredMessage) => ({
@@ -242,4 +242,30 @@ export async function handlePublicConversationHistory(input: {
     text: row.message_text ?? "", created_at: row.created_at,
   }));
   return json(200, { ok: true, conversation_id: conversation.id, messages });
+}
+
+
+export async function handlePublicConversationMarkRead(input: {
+  client: SupabaseClient;
+  serviceClient: SupabaseClient;
+  authUser: User;
+}) {
+  const { client, serviceClient, authUser } = input;
+  const { data: profile, error } = await client.from("users")
+    .select("id,account_status").eq("auth_user_id", authUser.id).maybeSingle();
+  if (error) return json(503, { ok: false, code: "PROFILE_LOOKUP_FAILED" });
+  if (!profile || profile.account_status !== "active") return json(403, { ok: false, code: "ACTIVE_ACCOUNT_REQUIRED" });
+  const { data: conversation, error: conversationError } = await serviceClient.from("ai_conversations")
+    .select("id").eq("user_id", profile.id).eq("conversation_type", "general").eq("status", "active")
+    .order("updated_at", { ascending: false }).limit(1).maybeSingle();
+  if (conversationError) return json(503, { ok: false, code: "CHAT_HISTORY_UNAVAILABLE" });
+  if (!conversation) return json(200, { ok: true, marked_read: 0 });
+  const viewedAt = new Date().toISOString();
+  const expiresAt = new Date(Date.now() + HISTORY_WINDOW_MS).toISOString();
+  const { data, error: updateError } = await serviceClient.from("ai_messages")
+    .update({ first_human_viewed_at: viewedAt, retention_expires_at: expiresAt })
+    .eq("conversation_id", conversation.id).eq("sender_type", "assistant")
+    .is("first_human_viewed_at", null).select("id");
+  if (updateError) return json(503, { ok: false, code: "CHAT_READ_RECEIPT_FAILED" });
+  return json(200, { ok: true, marked_read: data?.length ?? 0 });
 }

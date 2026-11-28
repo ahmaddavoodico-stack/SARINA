@@ -59,6 +59,12 @@ export default function SarinaCompanion({isAdmin=false,role="farmer",onNavigate}
   return()=>{active=false;};
  },[]);
 
+ // The floating companion is mounted while closed. Only mark replies read once the user actually opens it.
+ useEffect(()=>{
+  if(!open||!historyLoaded||!supabase)return;
+  void supabase.functions.invoke("sarina-central-intelligence",{body:{mode:"conversation_mark_read"}});
+ },[open,historyLoaded]);
+
  useEffect(()=>()=>{for(const message of messagesRef.current){if(message.audioUrl)URL.revokeObjectURL(message.audioUrl);}},[]);
  function closePanel(){setOpen(false);}
  function go(target:NavTarget){closePanel();onNavigate?.(target);}
@@ -82,6 +88,8 @@ export default function SarinaCompanion({isAdmin=false,role="farmer",onNavigate}
     ?messagesRef.current.map(message=>message.id===latestUserMessage.id?{...message,id:data.user_message_id}:message)
     :messagesRef.current;
    commitMessages([...normalizedMessages,{id:typeof data.assistant_message_id==="string"?data.assistant_message_id:Date.now()+1,role:"sarina" as const,text:data.answer}].slice(-12));
+   // The reply is now visible in the open panel; record its first human view and start the 24-hour TTL.
+   try{await supabase.functions.invoke("sarina-central-intelligence",{body:{mode:"conversation_mark_read"}});}catch{/* Never block the delivered answer on an optional read receipt. */}
    setStatus("پاسخ سارینا · گفت‌وگوی امن و ثبت مصرف");
   }catch(error){
    const code=error instanceof Error?error.message:"SARINA_CHAT_REQUEST_FAILED";
