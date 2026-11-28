@@ -45,11 +45,12 @@ export async function handlePublicConversation(input: {
 
   const { data: assignments, error: roleError } = await client
     .from("user_roles")
-    .select("roles(code,name)")
+    .select("granted_by,roles(code,name)")
     .eq("user_id", profile.id);
   if (roleError) return json(503, { ok: false, code: "ROLE_LOOKUP_FAILED" });
   const allowed = new Set(["admin", "expert", "farmer", "organization", "livestock_keeper"]);
   const roleCodes = [...new Set((assignments ?? [])
+    .filter((item: any) => item.granted_by !== null)
     .map((item: any) => item.roles?.code)
     .filter((code: unknown): code is string => typeof code === "string" && allowed.has(code)))];
   const { data: verifiedAdmin, error: adminCheckError } = await client.rpc("is_sarina_admin");
