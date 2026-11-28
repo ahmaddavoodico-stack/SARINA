@@ -49,6 +49,19 @@ create table public.sarina_ai_budget_reservations (
 create index sarina_ai_budget_reservations_month_idx
   on public.sarina_ai_budget_reservations(month_start, expires_at);
 
+-- Persistent attempt ledger keeps per-user throttling effective even when
+-- provider calls fail and their temporary budget reservations are released.
+create table public.sarina_ai_chat_requests (
+  request_id uuid primary key,
+  user_id uuid not null references public.users(id) on delete restrict,
+  created_at timestamptz not null default now()
+);
+create index sarina_ai_chat_requests_user_created_idx
+  on public.sarina_ai_chat_requests(user_id, created_at desc);
+alter table public.sarina_ai_chat_requests enable row level security;
+revoke all on public.sarina_ai_chat_requests from anon, authenticated;
+grant all on public.sarina_ai_chat_requests to service_role;
+
 alter table public.sarina_ai_budget_policy enable row level security;
 alter table public.sarina_ai_budget_reservations enable row level security;
 revoke all on public.sarina_ai_budget_policy, public.sarina_ai_budget_reservations from anon, authenticated;
@@ -93,15 +106,8 @@ begin
     where month_start = v_month and expires_at >= now();
 
   select count(*) into v_request_count
-    from public.ai_usage_events
-    where user_id = p_user_id and created_at >= now() - interval '1 hour'
-      and feature_code = 'public_conversation'
-      and status in ('succeeded','failed','timeout')
-    ;
-  v_request_count := v_request_count + (
-    select count(*) from public.sarina_ai_budget_reservations
-    where user_id = p_user_id and created_at >= now() - interval '1 hour'
-  );
+    from public.sarina_ai_chat_requests
+    where user_id = p_user_id and created_at >= now() - interval '1 hour';
   if v_request_count >= 20 then
     return query select false, 'RATE_LIMITED'::text, 0::numeric; return;
   end if;
@@ -115,6 +121,8 @@ begin
     return query select false, 'BUDGET_EXHAUSTED'::text, 0::numeric; return;
   end if;
 
+  insert into public.sarina_ai_chat_requests(request_id, user_id)
+    values (p_request_id, p_user_id);
   insert into public.sarina_ai_budget_reservations(
     request_id, user_id, month_start, reserved_usd, expires_at
   ) values (p_request_id, p_user_id, v_month, v_reserve, now() + interval '2 minutes');
