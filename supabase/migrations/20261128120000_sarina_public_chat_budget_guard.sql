@@ -209,7 +209,7 @@ returns boolean
 language plpgsql
 security definer
 set search_path = public, pg_temp
-as $
+as $$
 declare
   v_reservation public.sarina_ai_budget_reservations%rowtype;
   v_policy public.sarina_ai_budget_policy%rowtype;
