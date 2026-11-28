@@ -103,14 +103,14 @@ Missing metadata must remain null/unknown rather than be invented.
 
 ### Step 3 — Read-only central dossier builder (implemented on feature branch)
 
-**Implementation commit(s):** `6895f61d5564adf7bd9e39d00c859729d41fd147`, `09c95193b115bc0e9d382effc9b76c83d800bee1`
+**Implementation commit(s):** `6895f61d5564adf7bd9e39d00c859729d41fd147`, `09c95193b115bc0e9d382effc9b76c83d800bee1`, `b4c42bdb5f511e81f31c85148c45979225f9b042`
 
 - Added `_shared/environmental-dossier.ts` under the existing `sarina-central-intelligence` function.
 - Added the authenticated request mode `mode: "environmental_dossier"`; the central function validates the caller JWT and resolves `farm_id` through the caller-scoped `farms` query before invoking any domain context function.
 - The builder concurrently requests the existing weather, land, historical-climate, and spatial context functions using the caller JWT and publishable key. It applies per-call timeouts and preserves independent failures as domain-level outcomes.
 - Normalizes a versioned response envelope with `source_manifest`, `quality_summary`, `missing_domains`, provider call outcomes, and explicit safety flags. The response is marked `read_only_not_persisted`; no snapshot is written.
 - Handles the current weather function's flat response and the land function's nested `{ ok, context }` response.
-- Keeps current weather and forecast data classified as model estimates; farmer reports remain unverified observations; soil/water test records are counted separately from regional SoilGrids estimates.
+- Keeps current weather and forecast data classified as model estimates; farmer reports remain unverified observations; soil/water laboratory-tagged tests are separated from other recorded sources and regional SoilGrids estimates.
 - Historical climate status and Copernicus terrain/satellite statuses are preserved as returned by their existing adapters.
 - The current spatial adapter still reports a centroid-buffer proxy, not the confirmed farm-field polygon. The dossier records this scope limitation rather than describing the result as parcel-level analysis.
 - `sarina-regional-sync` is deliberately not invoked: its current contract is signed inter-region event transport, not a farm-scoped regional dataset query. The dossier marks governed regional datasets as not connected.
