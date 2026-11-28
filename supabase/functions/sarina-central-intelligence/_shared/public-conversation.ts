@@ -52,6 +52,9 @@ export async function handlePublicConversation(input: {
   const roleCodes = [...new Set((assignments ?? [])
     .map((item: any) => item.roles?.code)
     .filter((code: unknown): code is string => typeof code === "string" && allowed.has(code)))];
+  const { data: verifiedAdmin, error: adminCheckError } = await client.rpc("is_sarina_admin");
+  if (adminCheckError) return json(503, { ok: false, code: "ROLE_LOOKUP_FAILED" });
+  if (verifiedAdmin === true && !roleCodes.includes("admin")) roleCodes.push("admin");
   if (!roleCodes.length) return json(403, { ok: false, code: "SARINA_ROLE_REQUIRED" });
 
   const requestId = crypto.randomUUID();
