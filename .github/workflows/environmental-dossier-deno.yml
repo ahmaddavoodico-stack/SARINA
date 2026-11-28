@@ -1,0 +1,29 @@
+name: Environmental dossier Deno tests
+
+on:
+  push:
+    branches:
+      - test/environmental-dossier-ci
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "supabase/functions/sarina-central-intelligence/**"
+      - "supabase/functions/farm-weather-context/**"
+      - ".github/workflows/environmental-dossier-deno.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  environmental-dossier:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Run environmental dossier tests
+        run: deno test --no-check supabase/functions/sarina-central-intelligence/_shared/environmental-dossier_test.ts
