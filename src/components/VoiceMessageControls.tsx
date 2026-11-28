@@ -8,7 +8,7 @@ type Props={
   onTranscription:(text:string)=>void;
   onVoiceMessage:(payload:VoicePayload)=>void|Promise<void>;
   textToSpeak?:string;
-  speechRequestId?:number;
+  speechRequestId?:string|number;
   speechLanguage?:"fa"|"ar";
   disabled?:boolean;
   autoGenerateAudio?:boolean;

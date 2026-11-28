@@ -11,7 +11,7 @@ import {
 import { createDurableTaskStore } from "../_shared/durable-task-store.ts";
 import { retrieveFaqCandidates } from "./_shared/faq-retrieval.ts";
 import { recordFaqQuestionSignal } from "./_shared/faq-question-signal.ts";
-import { handlePublicConversation, validatePublicConversation } from "./_shared/public-conversation.ts";
+import { handlePublicConversation, handlePublicConversationHistory, validatePublicConversation } from "./_shared/public-conversation.ts";
 import { buildEnvironmentalDossier } from "./_shared/environmental-dossier.ts";
 
 const corsHeaders = {
@@ -40,12 +40,16 @@ Deno.serve(async (req: Request) => {
 
   const conversationMode = typeof body === "object" && body !== null && !Array.isArray(body) &&
     (body as Record<string, unknown>).mode === "conversation";
+  const conversationHistoryMode = typeof body === "object" && body !== null && !Array.isArray(body) &&
+    (body as Record<string, unknown>).mode === "conversation_history";
   const environmentalDossierMode = typeof body === "object" && body !== null && !Array.isArray(body) &&
     (body as Record<string, unknown>).mode === "environmental_dossier";
   if (conversationMode) {
     if (!validatePublicConversation((body as Record<string, unknown>).messages)) {
       return reply(422, { ok: false, code: "INVALID_CONVERSATION_MESSAGES" });
     }
+  } else if (conversationHistoryMode) {
+    // History retrieval is authenticated and ownership-scoped in the handler.
   } else if (environmentalDossierMode) {
     const request = body as Record<string, unknown>;
     if (typeof request.farm_id !== "string" ||
@@ -89,17 +93,27 @@ Deno.serve(async (req: Request) => {
     return reply(200, { ok: true, dossier });
   }
 
-  if (conversationMode) {
+  if (conversationMode || conversationHistoryMode) {
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     if (!serviceRoleKey) return reply(503, { ok: false, code: "SERVER_CONFIGURATION_ERROR" });
     const serviceClient = createClient(supabaseUrl, serviceRoleKey, {
       auth: { persistSession: false, autoRefreshToken: false },
     });
+    if (conversationHistoryMode) {
+      const result = await handlePublicConversationHistory({ client, serviceClient, authUser: authData.user });
+      return reply(result.status, result.body);
+    }
+    const request = body as Record<string, unknown>;
+    const conversationId = typeof request.conversation_id === "string" ? request.conversation_id : undefined;
+    if (conversationId && !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(conversationId)) {
+      return reply(422, { ok: false, code: "INVALID_CONVERSATION_ID" });
+    }
     const result = await handlePublicConversation({
       client,
       serviceClient,
       authUser: authData.user,
-      messages: (body as Record<string, unknown>).messages as { role: "user" | "assistant"; content: string }[],
+      messages: request.messages as { role: "user" | "assistant"; content: string }[],
+      conversationId,
     });
     return reply(result.status, result.body);
   }

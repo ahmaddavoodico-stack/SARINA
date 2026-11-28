@@ -7,6 +7,8 @@ const MAX_TOTAL_CHARS = 8_000;
 const MAX_OUTPUT_TOKENS = 500;
 
 type ChatMessage = { role: "user" | "assistant"; content: string };
+type StoredMessage = { id: string; sender_type: "user" | "assistant"; message_text: string | null; created_at: string };
+const HISTORY_WINDOW_MS = 24 * 60 * 60 * 1000;
 
 export function validatePublicConversation(value: unknown): value is ChatMessage[] {
   if (!Array.isArray(value) || value.length === 0 || value.length > MAX_MESSAGES) return false;
@@ -31,6 +33,7 @@ export async function handlePublicConversation(input: {
   serviceClient: SupabaseClient;
   authUser: User;
   messages: ChatMessage[];
+  conversationId?: string;
 }) {
   const { client, serviceClient, authUser, messages } = input;
   const { data: profile, error: profileError } = await client
@@ -56,6 +59,49 @@ export async function handlePublicConversation(input: {
   if (adminCheckError) return json(503, { ok: false, code: "ROLE_LOOKUP_FAILED" });
   if (verifiedAdmin === true && !roleCodes.includes("admin")) roleCodes.push("admin");
   if (!roleCodes.length) return json(403, { ok: false, code: "SARINA_ROLE_REQUIRED" });
+
+
+  const cutoff = new Date(Date.now() - HISTORY_WINDOW_MS).toISOString();
+  let conversationId = input.conversationId;
+  let conversation: { id: string } | null = null;
+  if (conversationId) {
+    const { data } = await serviceClient.from("ai_conversations").select("id")
+      .eq("id", conversationId).eq("user_id", profile.id).eq("conversation_type", "general")
+      .eq("status", "active").gte("updated_at", cutoff).maybeSingle();
+    conversation = data;
+  }
+  if (!conversation) {
+    const { data } = await serviceClient.from("ai_conversations").select("id")
+      .eq("user_id", profile.id).eq("conversation_type", "general").eq("status", "active")
+      .gte("updated_at", cutoff).order("updated_at", { ascending: false }).limit(1).maybeSingle();
+    conversation = data;
+  }
+  if (!conversation) {
+    const { data, error } = await serviceClient.from("ai_conversations").insert({
+      user_id: profile.id, conversation_type: "general",
+      language_code: ["fa", "en", "ar"].includes(profile.preferred_language) ? profile.preferred_language : "fa",
+      status: "active", title: "گفت‌وگو با سارینا",
+    }).select("id").single();
+    if (error || !data) return json(503, { ok: false, code: "CHAT_PERSISTENCE_UNAVAILABLE" });
+    conversation = data;
+  }
+  conversationId = conversation.id;
+  const latestUserMessage = messages[messages.length - 1];
+  if (!latestUserMessage || latestUserMessage.role !== "user") return json(422, { ok: false, code: "INVALID_CONVERSATION_MESSAGES" });
+  const { data: previousMessages, error: historyError } = await serviceClient.from("ai_messages")
+    .select("sender_type,message_text").eq("conversation_id", conversationId).gte("created_at", cutoff)
+    .in("sender_type", ["user", "assistant"]).not("message_text", "is", null)
+    .order("created_at", { ascending: false }).limit(7);
+  if (historyError) return json(503, { ok: false, code: "CHAT_HISTORY_UNAVAILABLE" });
+  const history = (previousMessages ?? []).reverse().map((item: { sender_type: string; message_text: string }) => ({
+    role: item.sender_type as "user" | "assistant", content: item.message_text,
+  }));
+  const { data: savedUserMessage, error: saveUserError } = await serviceClient.from("ai_messages")
+    .insert({ conversation_id: conversationId, sender_type: "user", sender_user_id: profile.id, message_text: latestUserMessage.content, status: "complete" })
+    .select("id").single();
+  if (saveUserError || !savedUserMessage) return json(503, { ok: false, code: "CHAT_MESSAGE_SAVE_FAILED" });
+  await serviceClient.from("ai_conversations").update({ updated_at: new Date().toISOString() }).eq("id", conversationId);
+  const modelMessages = [...history, latestUserMessage].slice(-8);
 
   const requestId = crypto.randomUUID();
   const { data: reservation, error: reserveError } = await serviceClient.rpc(
@@ -102,7 +148,7 @@ export async function handlePublicConversation(input: {
       signal: AbortSignal.timeout(45_000),
       body: JSON.stringify({
         model: MODEL,
-        messages: [{ role: "system", content: system }, ...messages],
+        messages: [{ role: "system", content: system }, ...modelMessages],
         temperature: 0.3,
         max_tokens: MAX_OUTPUT_TOKENS,
         stream: false,
@@ -127,9 +173,20 @@ export async function handlePublicConversation(input: {
       await serviceClient.rpc("sarina_finalize_public_chat_unknown_cost", { p_request_id: requestId });
       return json(503, { ok: false, code: "AI_USAGE_SETTLEMENT_FAILED" });
     }
+    const { data: savedAssistantMessage, error: saveAssistantError } = await serviceClient.from("ai_messages")
+      .insert({ conversation_id: conversationId, sender_type: "assistant", message_text: answer.trim(), status: "complete" })
+      .select("id").single();
+    if (saveAssistantError || !savedAssistantMessage) {
+      console.error("SARINA assistant message persistence failed", saveAssistantError?.code ?? "UNKNOWN");
+      return json(503, { ok: false, code: "CHAT_MESSAGE_SAVE_FAILED" });
+    }
+    await serviceClient.from("ai_conversations").update({ updated_at: new Date().toISOString() }).eq("id", conversationId);
     return json(200, {
       ok: true,
       request_id: requestId,
+      conversation_id: conversationId,
+      user_message_id: savedUserMessage.id,
+      assistant_message_id: savedAssistantMessage.id,
       answer: answer.trim(),
       provider: "groq",
       model: MODEL,
@@ -148,4 +205,41 @@ export async function handlePublicConversation(input: {
       code: code === "GROQ_HTTP_429" ? "AI_PROVIDER_RATE_LIMITED" : "AI_PROVIDER_UNAVAILABLE",
     });
   }
+}
+
+export async function handlePublicConversationHistory(input: {
+  client: SupabaseClient;
+  serviceClient: SupabaseClient;
+  authUser: User;
+}) {
+  const { client, serviceClient, authUser } = input;
+  const { data: profile, error: profileError } = await client.from("users")
+    .select("id,account_status").eq("auth_user_id", authUser.id).maybeSingle();
+  if (profileError) return json(503, { ok: false, code: "PROFILE_LOOKUP_FAILED" });
+  if (!profile || profile.account_status !== "active") return json(403, { ok: false, code: "ACTIVE_ACCOUNT_REQUIRED" });
+  const { data: assignments, error: roleError } = await client.from("user_roles")
+    .select("roles(code)").eq("user_id", profile.id);
+  if (roleError) return json(503, { ok: false, code: "ROLE_LOOKUP_FAILED" });
+  const allowed = new Set(["admin", "expert", "farmer", "organization", "livestock_keeper"]);
+  const roleCodes = (assignments ?? []).map((item: any) => item.roles?.code)
+    .filter((code: unknown): code is string => typeof code === "string" && allowed.has(code));
+  const { data: verifiedAdmin, error: adminCheckError } = await client.rpc("is_sarina_admin");
+  if (adminCheckError) return json(503, { ok: false, code: "ROLE_LOOKUP_FAILED" });
+  if (verifiedAdmin !== true && roleCodes.length === 0) return json(403, { ok: false, code: "SARINA_ROLE_REQUIRED" });
+  const cutoff = new Date(Date.now() - HISTORY_WINDOW_MS).toISOString();
+  const { data: conversation, error: conversationError } = await serviceClient.from("ai_conversations")
+    .select("id").eq("user_id", profile.id).eq("conversation_type", "general").eq("status", "active")
+    .gte("updated_at", cutoff).order("updated_at", { ascending: false }).limit(1).maybeSingle();
+  if (conversationError) return json(503, { ok: false, code: "CHAT_HISTORY_UNAVAILABLE" });
+  if (!conversation) return json(200, { ok: true, conversation_id: null, messages: [] });
+  const { data: rows, error: messagesError } = await serviceClient.from("ai_messages")
+    .select("id,sender_type,message_text,created_at").eq("conversation_id", conversation.id)
+    .gte("created_at", cutoff).in("sender_type", ["user", "assistant"])
+    .not("message_text", "is", null).order("created_at", { ascending: true }).limit(12);
+  if (messagesError) return json(503, { ok: false, code: "CHAT_HISTORY_UNAVAILABLE" });
+  const messages = (rows ?? []).map((row: StoredMessage) => ({
+    id: row.id, role: row.sender_type === "user" ? "farmer" : "sarina",
+    text: row.message_text ?? "", created_at: row.created_at,
+  }));
+  return json(200, { ok: true, conversation_id: conversation.id, messages });
 }
