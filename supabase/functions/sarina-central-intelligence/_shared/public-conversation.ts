@@ -97,7 +97,7 @@ export async function handlePublicConversation(input: {
     role: item.sender_type as "user" | "assistant", content: item.message_text,
   }));
   const { data: savedUserMessage, error: saveUserError } = await serviceClient.from("ai_messages")
-    .insert({ conversation_id: conversationId, sender_type: "user", sender_user_id: profile.id, message_text: latestUserMessage.content, status: "complete" })
+    .insert({ conversation_id: conversationId, sender_type: "user", sender_user_id: profile.id, message_text: latestUserMessage.content, status: "complete", first_human_viewed_at: new Date().toISOString(), retention_expires_at: new Date(Date.now() + HISTORY_WINDOW_MS).toISOString() })
     .select("id").single();
   if (saveUserError || !savedUserMessage) return json(503, { ok: false, code: "CHAT_MESSAGE_SAVE_FAILED" });
   await serviceClient.from("ai_conversations").update({ updated_at: new Date().toISOString() }).eq("id", conversationId);
@@ -233,10 +233,17 @@ export async function handlePublicConversationHistory(input: {
   if (conversationError) return json(503, { ok: false, code: "CHAT_HISTORY_UNAVAILABLE" });
   if (!conversation) return json(200, { ok: true, conversation_id: null, messages: [] });
   const { data: rows, error: messagesError } = await serviceClient.from("ai_messages")
-    .select("id,sender_type,message_text,created_at").eq("conversation_id", conversation.id)
-    .gte("created_at", cutoff).in("sender_type", ["user", "assistant"])
+    .select("id,sender_type,message_text,created_at,first_human_viewed_at,retention_expires_at").eq("conversation_id", conversation.id)
+    .or(`retention_expires_at.is.null,retention_expires_at.gt.${new Date().toISOString()}`).in("sender_type", ["user", "assistant"])
     .not("message_text", "is", null).order("created_at", { ascending: true }).limit(12);
   if (messagesError) return json(503, { ok: false, code: "CHAT_HISTORY_UNAVAILABLE" });
+  // Opening history is the recipient's first view; set the expiry once and never reset it.
+  const unreadAssistantIds = (rows ?? []).filter((row: any) => row.sender_type === "assistant" && !row.first_human_viewed_at).map((row: any) => row.id);
+  if (unreadAssistantIds.length) {
+    const viewedAt = new Date().toISOString();
+    await serviceClient.from("ai_messages").update({ first_human_viewed_at: viewedAt, retention_expires_at: new Date(Date.now() + HISTORY_WINDOW_MS).toISOString() })
+      .in("id", unreadAssistantIds).is("first_human_viewed_at", null);
+  }
   const messages = (rows ?? []).map((row: StoredMessage) => ({
     id: row.id, role: row.sender_type === "user" ? "farmer" : "sarina",
     text: row.message_text ?? "", created_at: row.created_at,
