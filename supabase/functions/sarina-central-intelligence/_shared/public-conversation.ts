@@ -122,6 +122,7 @@ export async function handlePublicConversation(input: {
     });
     if (settleError) {
       console.error("SARINA chat usage settlement failed", settleError.code ?? "UNKNOWN");
+      await serviceClient.rpc("sarina_finalize_public_chat_unknown_cost", { p_request_id: requestId });
       return json(503, { ok: false, code: "AI_USAGE_SETTLEMENT_FAILED" });
     }
     return json(200, {
@@ -135,7 +136,9 @@ export async function handlePublicConversation(input: {
       usage: { input_tokens: usage.prompt_tokens, output_tokens: usage.completion_tokens },
     });
   } catch (error) {
-    await serviceClient.rpc("sarina_release_public_chat_budget", { p_request_id: requestId });
+    // The provider may have processed a request before a timeout/network error.
+    // Account the full reservation rather than releasing budget optimistically.
+    await serviceClient.rpc("sarina_finalize_public_chat_unknown_cost", { p_request_id: requestId });
     const code = error instanceof Error ? error.message : "AI_PROVIDER_REQUEST_FAILED";
     console.error("SARINA public chat provider error", code);
     return json(code === "GROQ_HTTP_429" ? 429 : 502, {
