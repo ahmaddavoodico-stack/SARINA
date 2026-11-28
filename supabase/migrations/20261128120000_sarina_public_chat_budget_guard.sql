@@ -234,7 +234,7 @@ begin
   delete from public.sarina_ai_budget_reservations where request_id = p_request_id;
   return true;
 end;
-$;
+$$;
 
 revoke all on function public.sarina_reserve_public_chat_budget(uuid, uuid) from public, anon, authenticated;
 revoke all on function public.sarina_settle_public_chat_budget(uuid, integer, integer, integer) from public, anon, authenticated;
