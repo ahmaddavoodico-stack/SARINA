@@ -24,7 +24,7 @@ export default function SarinaCompanion({isAdmin=false,role="farmer",onNavigate}
  const[drawerOpen,setDrawerOpen]=useState(true);
  const[draft,setDraft]=useState("");
  const[messages,setMessages]=useState<ChatMessage[]>([]);
- const[showNotice,setShowNotice]=useState(false);
+ const showNotice=false;
  const[busy,setBusy]=useState(false);
  const[status,setStatus]=useState("");
  const messagesRef=useRef<ChatMessage[]>([]);
