@@ -48,7 +48,9 @@ Deno.serve(async (req: Request) => {
     if (!validatePublicConversation((body as Record<string, unknown>).messages)) {
       return reply(422, { ok: false, code: "INVALID_CONVERSATION_MESSAGES" });
     }
-  } else if (conversationHistoryMode) {\n    // History retrieval is authenticated and ownership-scoped in the handler.\n  } else if (environmentalDossierMode) {
+  } else if (conversationHistoryMode) {
+    // History retrieval is authenticated and ownership-scoped in the handler.
+  } else if (environmentalDossierMode) {
     const request = body as Record<string, unknown>;
     if (typeof request.farm_id !== "string" ||
         !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(request.farm_id)) {
