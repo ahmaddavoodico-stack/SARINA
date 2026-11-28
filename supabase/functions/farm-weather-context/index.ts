@@ -69,11 +69,14 @@ Deno.serve(async (req: Request) => {
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(farmId)) {
     return reply(422, { ok: false, code: "INVALID_FARM_ID" });
   }
+  // Read-only callers (including the environmental dossier builder) must not
+  // trigger forecast persistence as a side effect.
+  const readOnly = (body as Record<string, unknown>).read_only === true;
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const publishableKey = Deno.env.get("SUPABASE_ANON_KEY") ?? Deno.env.get("SUPABASE_PUBLISHABLE_KEY");
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  if (!supabaseUrl || !publishableKey || !serviceRoleKey) {
+  if (!supabaseUrl || !publishableKey || (!readOnly && !serviceRoleKey)) {
     console.error("Missing Supabase function environment configuration");
     return reply(500, { ok: false, code: "SERVER_CONFIGURATION_ERROR" });
   }
@@ -174,57 +177,63 @@ Deno.serve(async (req: Request) => {
       },
     };
 
-    const admin = createClient(supabaseUrl, serviceRoleKey, {
-      auth: { persistSession: false, autoRefreshToken: false },
-    });
-
-    await persistForecastRecord(admin, {
-      farm_id: farmId,
-      observed_at: currentAt,
-      temperature_c: current.temperature_c,
-      feels_like_c: current.apparent_temperature_c,
-      relative_humidity_pct: current.relative_humidity_pct,
-      precipitation_mm: current.precipitation_mm,
-      wind_speed_m_s: current.wind_speed_m_s,
-      wind_direction_deg: current.wind_direction_deg,
-      data_kind: "forecast",
-      raw_payload: {
-        provider: "open-meteo",
-        provider_data_kind: "current_model_estimate",
-        timezone,
-        latitude,
-        longitude,
-        retrieved_at: retrievedAt,
-        ...current,
-      },
-    });
-
-    for (let index = 0; index < forecast.length; index++) {
-      const day = forecast[index];
-      const dayTimestamp = Number(raw.daily.time[index]);
+    if (!readOnly) {
+      const admin = createClient(supabaseUrl, serviceRoleKey, {
+        auth: { persistSession: false, autoRefreshToken: false },
+      });
+  
       await persistForecastRecord(admin, {
         farm_id: farmId,
-        observed_at: new Date(dayTimestamp * 1000).toISOString(),
-        temperature_c: null,
-        feels_like_c: null,
-        relative_humidity_pct: null,
-        precipitation_mm: day.precipitation_mm,
-        wind_speed_m_s: day.max_wind_speed_m_s,
-        wind_direction_deg: null,
+        observed_at: currentAt,
+        temperature_c: current.temperature_c,
+        feels_like_c: current.apparent_temperature_c,
+        relative_humidity_pct: current.relative_humidity_pct,
+        precipitation_mm: current.precipitation_mm,
+        wind_speed_m_s: current.wind_speed_m_s,
+        wind_direction_deg: current.wind_direction_deg,
         data_kind: "forecast",
         raw_payload: {
           provider: "open-meteo",
-          provider_data_kind: "daily_forecast",
+          provider_data_kind: "current_model_estimate",
           timezone,
           latitude,
           longitude,
           retrieved_at: retrievedAt,
-          ...day,
+          ...current,
         },
       });
+  
+      for (let index = 0; index < forecast.length; index++) {
+        const day = forecast[index];
+        const dayTimestamp = Number(raw.daily.time[index]);
+        await persistForecastRecord(admin, {
+          farm_id: farmId,
+          observed_at: new Date(dayTimestamp * 1000).toISOString(),
+          temperature_c: null,
+          feels_like_c: null,
+          relative_humidity_pct: null,
+          precipitation_mm: day.precipitation_mm,
+          wind_speed_m_s: day.max_wind_speed_m_s,
+          wind_direction_deg: null,
+          data_kind: "forecast",
+          raw_payload: {
+            provider: "open-meteo",
+            provider_data_kind: "daily_forecast",
+            timezone,
+            latitude,
+            longitude,
+            retrieved_at: retrievedAt,
+            ...day,
+          },
+        });
+      }
     }
 
-    return reply(200, { ...context, stored_records: forecast.length + 1 });
+    return reply(200, {
+      ...context,
+      stored_records: readOnly ? 0 : forecast.length + 1,
+      persistence: readOnly ? "not_persisted" : "stored",
+    });
   } catch (error) {
     console.error("Farm weather context failed", error);
     return reply(500, { ok: false, code: "WEATHER_CONTEXT_FAILED" });
