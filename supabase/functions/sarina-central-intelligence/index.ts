@@ -12,6 +12,7 @@ import { createDurableTaskStore } from "../_shared/durable-task-store.ts";
 import { retrieveFaqCandidates } from "./_shared/faq-retrieval.ts";
 import { recordFaqQuestionSignal } from "./_shared/faq-question-signal.ts";
 import { handlePublicConversation, validatePublicConversation } from "./_shared/public-conversation.ts";
+import { buildEnvironmentalDossier } from "./_shared/environmental-dossier.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -39,9 +40,17 @@ Deno.serve(async (req: Request) => {
 
   const conversationMode = typeof body === "object" && body !== null && !Array.isArray(body) &&
     (body as Record<string, unknown>).mode === "conversation";
+  const environmentalDossierMode = typeof body === "object" && body !== null && !Array.isArray(body) &&
+    (body as Record<string, unknown>).mode === "environmental_dossier";
   if (conversationMode) {
     if (!validatePublicConversation((body as Record<string, unknown>).messages)) {
       return reply(422, { ok: false, code: "INVALID_CONVERSATION_MESSAGES" });
+    }
+  } else if (environmentalDossierMode) {
+    const request = body as Record<string, unknown>;
+    if (typeof request.farm_id !== "string" ||
+        !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(request.farm_id)) {
+      return reply(422, { ok: false, code: "INVALID_FARM_ID" });
     }
   } else {
     const issues = validateSciRequest(body);
@@ -60,6 +69,25 @@ Deno.serve(async (req: Request) => {
   });
   const { data: authData, error: authError } = await client.auth.getUser();
   if (authError || !authData.user) return reply(401, { ok: false, code: "INVALID_SESSION" });
+
+  if (environmentalDossierMode) {
+    const farmId = ((body as Record<string, unknown>).farm_id as string).trim();
+    // Resolve farm scope under the caller JWT and RLS before any context function is invoked.
+    const { data: authorizedFarm, error: authorizationError } = await client
+      .from("farms").select("id").eq("id", farmId).maybeSingle();
+    if (authorizationError || !authorizedFarm) {
+      return reply(404, { ok: false, code: "FARM_ACCESS_DENIED" });
+    }
+    const correlationId = crypto.randomUUID();
+    const dossier = await buildEnvironmentalDossier({
+      supabaseUrl,
+      publishableKey,
+      authorization,
+      farmId,
+      correlationId,
+    });
+    return reply(200, { ok: true, dossier });
+  }
 
   if (conversationMode) {
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
