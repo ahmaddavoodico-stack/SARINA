@@ -11,7 +11,7 @@ import {
 import { createDurableTaskStore } from "../_shared/durable-task-store.ts";
 import { retrieveFaqCandidates } from "./_shared/faq-retrieval.ts";
 import { recordFaqQuestionSignal } from "./_shared/faq-question-signal.ts";
-import { handlePublicConversation, handlePublicConversationHistory, validatePublicConversation } from "./_shared/public-conversation.ts";
+import { handlePublicConversation, handlePublicConversationHistory, handlePublicConversationMarkRead, validatePublicConversation } from "./_shared/public-conversation.ts";
 import { buildEnvironmentalDossier } from "./_shared/environmental-dossier.ts";
 
 const corsHeaders = {
@@ -42,14 +42,16 @@ Deno.serve(async (req: Request) => {
     (body as Record<string, unknown>).mode === "conversation";
   const conversationHistoryMode = typeof body === "object" && body !== null && !Array.isArray(body) &&
     (body as Record<string, unknown>).mode === "conversation_history";
+  const conversationMarkReadMode = typeof body === "object" && body !== null && !Array.isArray(body) &&
+    (body as Record<string, unknown>).mode === "conversation_mark_read";
   const environmentalDossierMode = typeof body === "object" && body !== null && !Array.isArray(body) &&
     (body as Record<string, unknown>).mode === "environmental_dossier";
   if (conversationMode) {
     if (!validatePublicConversation((body as Record<string, unknown>).messages)) {
       return reply(422, { ok: false, code: "INVALID_CONVERSATION_MESSAGES" });
     }
-  } else if (conversationHistoryMode) {
-    // History retrieval is authenticated and ownership-scoped in the handler.
+  } else if (conversationHistoryMode || conversationMarkReadMode) {
+    // History retrieval and read receipts are authenticated and ownership-scoped in their handlers.
   } else if (environmentalDossierMode) {
     const request = body as Record<string, unknown>;
     if (typeof request.farm_id !== "string" ||
@@ -93,7 +95,7 @@ Deno.serve(async (req: Request) => {
     return reply(200, { ok: true, dossier });
   }
 
-  if (conversationMode || conversationHistoryMode) {
+  if (conversationMode || conversationHistoryMode || conversationMarkReadMode) {
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     if (!serviceRoleKey) return reply(503, { ok: false, code: "SERVER_CONFIGURATION_ERROR" });
     const serviceClient = createClient(supabaseUrl, serviceRoleKey, {
@@ -101,6 +103,10 @@ Deno.serve(async (req: Request) => {
     });
     if (conversationHistoryMode) {
       const result = await handlePublicConversationHistory({ client, serviceClient, authUser: authData.user });
+      return reply(result.status, result.body);
+    }
+    if (conversationMarkReadMode) {
+      const result = await handlePublicConversationMarkRead({ client, serviceClient, authUser: authData.user });
       return reply(result.status, result.body);
     }
     const request = body as Record<string, unknown>;
