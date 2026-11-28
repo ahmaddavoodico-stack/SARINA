@@ -123,7 +123,7 @@ export default function FarmerSpecialistChatInbox({userId,mode,profileId,verifie
  const loadConversation=useCallback(async(consultationId:string)=>{
   if(!supabase)return;
   setActive(consultationId);setMessages([]);setSarinaMessages([]);setCaseFacts([]);setRecommendations([]);setLoadingMessages(true);setNotice("");
-  const {data,error}=await db.from("expert_consultation_messages").select("id,sender_user_id,message_text,content_parts,created_at,first_human_viewed_at,deleted_at").eq("consultation_id",consultationId).order("created_at",{ascending:false}).limit(50);
+  const {data,error}=await db.from("expert_consultation_messages").select("id,sender_user_id,message_text,content_parts,created_at,first_human_viewed_at,retention_expires_at,deleted_at").eq("consultation_id",consultationId).or(`retention_expires_at.is.null,retention_expires_at.gt.${new Date().toISOString()}`).order("created_at",{ascending:false}).limit(50);
   setLoadingMessages(false);
   if(error){setNotice("دریافت پیام‌ها مجاز نبود یا با خطا روبه‌رو شد: "+error.message);return;}
   let chronological:ChatMessage[]=(data||[]).reverse();
@@ -135,7 +135,7 @@ export default function FarmerSpecialistChatInbox({userId,mode,profileId,verifie
    return data?.signedUrl?[[part.storage_path,data.signedUrl] as const]:[];
   }));
   setAttachmentUrls(current=>({...current,...Object.fromEntries(signed.flat())}));
-  const ai=await db.from("expert_consultation_ai_messages").select("id,message_text,status,created_at").eq("consultation_id",consultationId).order("created_at",{ascending:true}).limit(100);
+  const ai=await db.from("expert_consultation_ai_messages").select("id,message_text,status,created_at").eq("consultation_id",consultationId).or(`retention_expires_at.is.null,retention_expires_at.gt.${new Date().toISOString()}`).order("created_at",{ascending:true}).limit(100);
   if(ai.error)setNotice("پیام‌های سارینا بارگذاری نشد: "+ai.error.message);else setSarinaMessages(ai.data||[]);
   const requestId=threads.find(t=>t.id===consultationId)?.requestId||"";
   const factResult=await db.from("expert_case_conversation_facts").select("id,fact_text,fact_kind,created_at").eq("request_id",requestId).eq("status","approved").order("created_at",{ascending:false}).limit(30);
@@ -198,7 +198,7 @@ export default function FarmerSpecialistChatInbox({userId,mode,profileId,verifie
   if(!active||!messages.length||loadingOlder)return;
   setLoadingOlder(true);
   const oldest=messages[0].created_at;
-  const {data,error}=await db.from("expert_consultation_messages").select("id,sender_user_id,message_text,content_parts,created_at,first_human_viewed_at,deleted_at").eq("consultation_id",active).lt("created_at",oldest).order("created_at",{ascending:false}).limit(50);
+  const {data,error}=await db.from("expert_consultation_messages").select("id,sender_user_id,message_text,content_parts,created_at,first_human_viewed_at,retention_expires_at,deleted_at").eq("consultation_id",active).or(`retention_expires_at.is.null,retention_expires_at.gt.${new Date().toISOString()}`).lt("created_at",oldest).order("created_at",{ascending:false}).limit(50);
   setLoadingOlder(false);
   if(error){setNotice("بارگذاری پیام‌های قدیمی‌تر انجام نشد: "+error.message);return;}
   let batch:ChatMessage[]=(data||[]).reverse() as ChatMessage[];
