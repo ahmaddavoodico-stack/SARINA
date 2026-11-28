@@ -227,7 +227,6 @@ export async function handlePublicConversationHistory(input: {
   const { data: verifiedAdmin, error: adminCheckError } = await client.rpc("is_sarina_admin");
   if (adminCheckError) return json(503, { ok: false, code: "ROLE_LOOKUP_FAILED" });
   if (verifiedAdmin !== true && roleCodes.length === 0) return json(403, { ok: false, code: "SARINA_ROLE_REQUIRED" });
-  const cutoff = new Date(Date.now() - HISTORY_WINDOW_MS).toISOString();
   const { data: conversation, error: conversationError } = await serviceClient.from("ai_conversations")
     .select("id").eq("user_id", profile.id).eq("conversation_type", "general").eq("status", "active")
     .order("updated_at", { ascending: false }).limit(1).maybeSingle();
