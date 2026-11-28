@@ -2,6 +2,7 @@ import {useEffect,useRef,useState} from "react";
 import type {FormEvent} from "react";
 import {ArrowUp,ChevronDown,ChevronLeft,CircleHelp,ClipboardList,Leaf,MessageCircle,PlayCircle,Sparkles,UserRound,X,PanelRightClose,PanelRightOpen} from "lucide-react";
 import {supabase} from "./lib/supabase";
+import {loadChatAudio,moveChatAudio,saveChatAudio} from "./lib/sarina-chat-audio";
 import SarinaCharacter from "./components/SarinaCharacter";
 import PwaInstall from "./PwaInstall";
 import VoiceMessageControls from "./components/VoiceMessageControls";
@@ -42,10 +43,12 @@ export default function SarinaCompanion({isAdmin=false,role="farmer",onNavigate}
     if(error||!data?.ok)throw error||new Error("CHAT_HISTORY_UNAVAILABLE");
     if(!active)return;
     setConversationId(typeof data.conversation_id==="string"?data.conversation_id:null);
-    const restored=Array.isArray(data.messages)?data.messages.map((item:any)=>({
-     id:String(item.id),role:item.role==="farmer"?"farmer":"sarina",
-     text:typeof item.text==="string"?item.text:"",created_at:item.created_at
-    })) as ChatMessage[]:[];
+    const restored=Array.isArray(data.messages)?await Promise.all(data.messages.map(async(item:any)=>{
+     const id=String(item.id);
+     let audioUrl:string|undefined;
+     try{const blob=await loadChatAudio(id);if(blob)audioUrl=URL.createObjectURL(blob);}catch{/* Text history remains available if local audio storage is unavailable. */}
+     return {id,role:item.role==="farmer"?"farmer":"sarina",text:audioUrl&&item.role==="farmer"?"پیام صوتی":typeof item.text==="string"?item.text:"",audioUrl,created_at:item.created_at} as ChatMessage;
+    })):[];
     commitMessages(restored);
    }catch{
     if(active)setStatus("بازیابی تاریخچه گفتگو ممکن نشد؛ پیام تازه را می‌توانید ارسال کنید.");
@@ -70,7 +73,14 @@ export default function SarinaCompanion({isAdmin=false,role="farmer",onNavigate}
    }});
    if(error||!data?.ok||typeof data.answer!=="string")throw new Error(typeof data?.code==="string"?data.code:"SARINA_CHAT_REQUEST_FAILED");
    if(typeof data.conversation_id==="string")setConversationId(data.conversation_id);
-   commitMessages([...messagesRef.current,{id:typeof data.assistant_message_id==="string"?data.assistant_message_id:Date.now()+1,role:"sarina" as const,text:data.answer}].slice(-12));
+   const latestUserMessage=[...nextMessages].reverse().find(message=>message.role==="farmer");
+   if(latestUserMessage&&typeof data.user_message_id==="string"){
+    try{await moveChatAudio(latestUserMessage.id,data.user_message_id);}catch{/* Voice playback cache is optional; text remains persisted. */}
+   }
+   const normalizedMessages=latestUserMessage&&typeof data.user_message_id==="string"
+    ?messagesRef.current.map(message=>message.id===latestUserMessage.id?{...message,id:data.user_message_id}:message)
+    :messagesRef.current;
+   commitMessages([...normalizedMessages,{id:typeof data.assistant_message_id==="string"?data.assistant_message_id:Date.now()+1,role:"sarina" as const,text:data.answer}].slice(-12));
    setStatus("پاسخ سارینا · گفت‌وگوی امن و ثبت مصرف");
   }catch(error){
    const code=error instanceof Error?error.message:"SARINA_CHAT_REQUEST_FAILED";
@@ -87,17 +97,19 @@ export default function SarinaCompanion({isAdmin=false,role="farmer",onNavigate}
  }
  async function send(e:FormEvent){e.preventDefault();await sendText(draft);}
 
- function receiveVoiceMessage(payload:VoicePayload){
+ async function receiveVoiceMessage(payload:VoicePayload){
   const id=Date.now();
+  try{await saveChatAudio(id,payload.audio);}catch{/* Continue with the live voice message if local persistence is unavailable. */}
   const audioUrl=URL.createObjectURL(payload.audio);
   const next=[...messagesRef.current,{id,role:"farmer" as const,text:"پیام صوتی · در حال تبدیل گفتار به متن…",audioUrl}].slice(-12);
   commitMessages(next);
   pendingVoiceIdRef.current=id;
   setStatus("پیام صوتی ضبط شد؛ در حال تبدیل محلی گفتار به متن در سرویس SARINA...");
  }
- function receiveVoiceReplyAudio(payload:VoicePayload){
+ async function receiveVoiceReplyAudio(payload:VoicePayload){
   const latest=[...messagesRef.current].reverse().find(message=>message.role==="sarina");
   if(!latest)return;
+  try{await saveChatAudio(latest.id,payload.audio);}catch{/* Text reply remains persisted if local audio storage is unavailable. */}
   const audioUrl=URL.createObjectURL(payload.audio);
   const next=messagesRef.current.map(message=>message.id===latest.id?{...message,audioUrl}:message);
   commitMessages(next);
