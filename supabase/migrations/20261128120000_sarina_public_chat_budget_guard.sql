@@ -188,6 +188,38 @@ as $$
   select true;
 $$;
 
+create or replace function public.sarina_finalize_public_chat_unknown_cost(p_request_id uuid)
+returns boolean
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $
+declare
+  v_reservation public.sarina_ai_budget_reservations%rowtype;
+  v_policy public.sarina_ai_budget_policy%rowtype;
+begin
+  perform pg_advisory_xact_lock(hashtext('sarina-ai-platform-monthly-budget'));
+  select * into v_reservation from public.sarina_ai_budget_reservations
+    where request_id = p_request_id for update;
+  if not found then return false; end if;
+  select * into v_policy from public.sarina_ai_budget_policy where singleton = true;
+  insert into public.ai_usage_events (
+    request_id, user_id, provider_code, model_code, feature_code,
+    usage_class, status, provider_cost_amount, provider_cost_currency,
+    cost_basis, pricing_version, metadata
+  ) values (
+    p_request_id, v_reservation.user_id, v_policy.provider_code, v_policy.model_code,
+    'public_conversation', 'casual_conversation', 'failed',
+    v_reservation.reserved_usd, 'USD', 'estimated',
+    'groq-gpt-oss-20b-2026-11',
+    jsonb_build_object('budget_month', v_reservation.month_start,
+      'budget_guard', 'hard_limit', 'cost_estimation', 'maximum_reserved_amount')
+  );
+  delete from public.sarina_ai_budget_reservations where request_id = p_request_id;
+  return true;
+end;
+$;
+
 revoke all on function public.sarina_reserve_public_chat_budget(uuid, uuid) from public, anon, authenticated;
 revoke all on function public.sarina_settle_public_chat_budget(uuid, integer, integer, integer) from public, anon, authenticated;
 revoke all on function public.sarina_release_public_chat_budget(uuid) from public, anon, authenticated;
