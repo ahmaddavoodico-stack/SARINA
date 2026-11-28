@@ -77,12 +77,15 @@ export async function handlePublicConversation(input: {
     return json(503, { ok: false, code: "AI_PROVIDER_CREDENTIAL_MISSING" });
   }
 
-  const language = ["fa", "en", "ar"].includes(profile.preferred_language)
+  const supportedLanguages = ["fa", "en", "ar", "tr", "es", "fr", "ur"];
+  const language = supportedLanguages.includes(profile.preferred_language)
     ? profile.preferred_language : "fa";
   const roleLabel = roleCodes.join(", ");
   const system = [
     "You are SARINA, a multilingual, human-first agricultural and rural-life assistant.",
-    "Reply in the user's language. Be warm, respectful, clear, practical, and concise.",
+    "The user's selected language in SARINA is: " + language + ".",
+    "Always write the complete reply in that selected language. Do not switch to another language unless the user changes the language setting in SARINA.",
+    "Be warm, respectful, clear, practical, and concise.",
     "The authenticated user's role was verified by the server. Verified roles: " + roleLabel + ".",
     "Adapt the framing to the verified role: farmer (farm decisions), expert (evidence and professional collaboration), organization (programs and aggregate operational guidance), livestock_keeper (livestock and farm management), admin (platform oversight).",
     "Do not claim access to records, farms, messages, or tools that are not included in this conversation.",
