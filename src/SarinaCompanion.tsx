@@ -2,7 +2,7 @@ import {useEffect,useRef,useState} from "react";
 import type {FormEvent} from "react";
 import {ArrowUp,ChevronDown,ChevronLeft,CircleHelp,ClipboardList,Leaf,MessageCircle,PlayCircle,Sparkles,UserRound,X,PanelRightClose,PanelRightOpen} from "lucide-react";
 import {supabase} from "./lib/supabase";
-import {loadChatAudio,moveChatAudio,saveChatAudio} from "./lib/sarina-chat-audio";
+import {loadChatAudio,moveChatAudio,pruneChatAudio,saveChatAudio} from "./lib/sarina-chat-audio";
 import SarinaCharacter from "./components/SarinaCharacter";
 import PwaInstall from "./PwaInstall";
 import VoiceMessageControls from "./components/VoiceMessageControls";
@@ -37,6 +37,7 @@ export default function SarinaCompanion({isAdmin=false,role="farmer",onNavigate}
  useEffect(()=>{
   let active=true;
   async function restoreHistory(){
+   try{await pruneChatAudio();}catch{/* Chat history text remains available if IndexedDB is unavailable. */}
    if(!supabase){if(active)setHistoryLoaded(true);return;}
    try{
     const{data,error}=await supabase.functions.invoke("sarina-central-intelligence",{body:{mode:"conversation_history"}});
