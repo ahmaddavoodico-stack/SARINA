@@ -7,7 +7,7 @@ import PwaInstall from "./PwaInstall";
 import VoiceMessageControls from "./components/VoiceMessageControls";
 import "./components/sarina-communication-center.css";
 
-type ChatMessage={id:number;role:"farmer"|"sarina";text:string;internalText?:string;audioUrl?:string};
+type ChatMessage={id:string|number;role:"farmer"|"sarina";text:string;internalText?:string;audioUrl?:string;created_at?:string};
 type NavTarget="learning"|"experts"|"expert-chat";
 type SarinaRole="admin"|"expert"|"farmer"|"organization"|"livestock_keeper";
 type SarinaCompanionProps={isAdmin?:boolean;role?:SarinaRole;onNavigate?:(destination:NavTarget)=>void};
@@ -23,7 +23,7 @@ export default function SarinaCompanion({isAdmin=false,role="farmer",onNavigate}
  const[open,setOpen]=useState(false);
  const[drawerOpen,setDrawerOpen]=useState(true);
  const[draft,setDraft]=useState("");
- const[messages,setMessages]=useState<ChatMessage[]>([]);
+ const[messages,setMessages]=useState<ChatMessage[]>([]);\n const[conversationId,setConversationId]=useState<string|null>(null);\n const[historyLoaded,setHistoryLoaded]=useState(false);
  const showNotice=false;
  const[busy,setBusy]=useState(false);
  const[status,setStatus]=useState("");
@@ -31,6 +31,28 @@ export default function SarinaCompanion({isAdmin=false,role="farmer",onNavigate}
  const pendingVoiceIdRef=useRef<number|null>(null);
 
  function commitMessages(next:ChatMessage[]){messagesRef.current=next;setMessages(next);}
+ useEffect(()=>{
+  let active=true;
+  async function restoreHistory(){
+   if(!supabase){if(active)setHistoryLoaded(true);return;}
+   try{
+    const{data,error}=await supabase.functions.invoke("sarina-central-intelligence",{body:{mode:"conversation_history"}});
+    if(error||!data?.ok)throw error||new Error("CHAT_HISTORY_UNAVAILABLE");
+    if(!active)return;
+    setConversationId(typeof data.conversation_id==="string"?data.conversation_id:null);
+    const restored=Array.isArray(data.messages)?data.messages.map((item:any)=>({
+     id:String(item.id),role:item.role==="farmer"?"farmer":"sarina",
+     text:typeof item.text==="string"?item.text:"",created_at:item.created_at
+    })) as ChatMessage[]:[];
+    commitMessages(restored);
+   }catch{
+    if(active)setStatus("بازیابی تاریخچه گفتگو ممکن نشد؛ پیام تازه را می‌توانید ارسال کنید.");
+   }finally{if(active)setHistoryLoaded(true);}
+  }
+  void restoreHistory();
+  return()=>{active=false;};
+ },[]);
+
  useEffect(()=>()=>{for(const message of messagesRef.current){if(message.audioUrl)URL.revokeObjectURL(message.audioUrl);}},[]);
  function closePanel(){setOpen(false);}
  function go(target:NavTarget){closePanel();onNavigate?.(target);}
@@ -44,7 +66,7 @@ export default function SarinaCompanion({isAdmin=false,role="farmer",onNavigate}
     messages:nextMessages.map(message=>({role:message.role==="farmer"?"user":"assistant",content:message.internalText||message.text})).filter(message=>message.content.trim()).slice(-8)
    }});
    if(error||!data?.ok||typeof data.answer!=="string")throw new Error(typeof data?.code==="string"?data.code:"SARINA_CHAT_REQUEST_FAILED");
-   commitMessages([...messagesRef.current,{id:Date.now()+1,role:"sarina" as const,text:data.answer}].slice(-12));
+   if(typeof data.conversation_id==="string")setConversationId(data.conversation_id);\n   commitMessages([...messagesRef.current,{id:typeof data.assistant_message_id==="string"?data.assistant_message_id:Date.now()+1,role:"sarina" as const,text:data.answer}].slice(-12));
    setStatus("پاسخ سارینا · گفت‌وگوی امن و ثبت مصرف");
   }catch(error){
    const code=error instanceof Error?error.message:"SARINA_CHAT_REQUEST_FAILED";
@@ -54,7 +76,7 @@ export default function SarinaCompanion({isAdmin=false,role="farmer",onNavigate}
 
  async function sendText(text:string){
   const normalized=text.trim();
-  if(!normalized||busy)return;
+  if(!normalized||busy||!historyLoaded)return;
   const next=[...messagesRef.current,{id:Date.now(),role:"farmer" as const,text:normalized}].slice(-12);
   commitMessages(next);setDraft("");
   await requestSarinaReply(next);
@@ -111,7 +133,7 @@ export default function SarinaCompanion({isAdmin=false,role="farmer",onNavigate}
      {status&&<div className="sarina-prototype-note" role="status">{status}</div>}
     </div>
     <form className={"sarina-chat-compose"+(isAdmin?" sarina-chat-compose-admin":"")} onSubmit={send}>
-     <VoiceMessageControls onVoiceMessage={receiveVoiceMessage} onTranscription={receiveTranscription} textToSpeak={latestSarinaReplyMessage?.audioUrl?undefined:latestSarinaReply} speechRequestId={latestSarinaReplyMessage?.id} speechLanguage="fa" autoGenerateAudio onVoiceReplyAudio={receiveVoiceReplyAudio} onAudioGenerationComplete={()=>{}} disabled={busy}/>
+     <VoiceMessageControls onVoiceMessage={receiveVoiceMessage} onTranscription={receiveTranscription} textToSpeak={latestSarinaReplyMessage?.audioUrl?undefined:latestSarinaReply} speechRequestId={latestSarinaReplyMessage?.id} speechLanguage="fa" autoGenerateAudio onVoiceReplyAudio={receiveVoiceReplyAudio} onAudioGenerationComplete={()=>{}} disabled={busy||!historyLoaded}/>
      <input value={draft} onChange={e=>setDraft(e.target.value)} placeholder="اینجا برای سارینا بنویس..." aria-label="پیام شما به سارینا" maxLength={2000} disabled={busy}/>
      <button type="submit" disabled={!draft.trim()||busy} aria-label="ارسال پیام">{busy?<span className="sarina-chat-spinner"/>:<ArrowUp size={18}/>}</button>
     </form>
