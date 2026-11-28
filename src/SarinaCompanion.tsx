@@ -35,24 +35,20 @@ export default function SarinaCompanion({isAdmin=false,role="farmer",onNavigate}
  function closePanel(){setOpen(false);}
  function go(target:NavTarget){closePanel();onNavigate?.(target);}
 
- async function requestAdminReply(nextMessages:ChatMessage[]){
-  if(!isAdmin||!supabase)return;
-  setBusy(true);setStatus("در حال دریافت پاسخ آزمایشی از Groq...");
+ async function requestSarinaReply(nextMessages:ChatMessage[]){
+  if(!supabase)return;
+  setBusy(true);setStatus("سارینا در حال آماده‌کردن پاسخ شماست…");
   try{
-   const{data,error}=await supabase.functions.invoke("sarina-admin-chat",{body:{mode:"admin_chat",messages:nextMessages.map(message=>({role:message.role==="farmer"?"user":"assistant",content:message.internalText||message.text})).filter(message=>message.content.trim())}});
-   if(error||!data?.ok||typeof data.answer!=="string")throw new Error(typeof data?.code==="string"?data.code:"ADMIN_CHAT_REQUEST_FAILED");
-   let audioUrl:string|undefined;
-   if(typeof data.audio_base64==="string"&&data.audio_base64.length>0){
-    const binary=atob(data.audio_base64);
-    const bytes=new Uint8Array(binary.length);
-    for(let index=0;index<binary.length;index++)bytes[index]=binary.charCodeAt(index);
-    audioUrl=URL.createObjectURL(new Blob([bytes],{type:typeof data.audio_mime_type==="string"?data.audio_mime_type:"audio/wav"}));
-   }
-   commitMessages([...messagesRef.current,{id:Date.now()+1,role:"sarina" as const,text:data.answer,...(audioUrl?{audioUrl}:{})}].slice(-12));
-   setStatus(`پاسخ آزمایشی از Groq · ${data.model||"مدل تأییدشده"}`);
+   const{data,error}=await supabase.functions.invoke("sarina-central-intelligence",{body:{
+    mode:"conversation",
+    messages:nextMessages.map(message=>({role:message.role==="farmer"?"user":"assistant",content:message.internalText||message.text})).filter(message=>message.content.trim()).slice(-8)
+   }});
+   if(error||!data?.ok||typeof data.answer!=="string")throw new Error(typeof data?.code==="string"?data.code:"SARINA_CHAT_REQUEST_FAILED");
+   commitMessages([...messagesRef.current,{id:Date.now()+1,role:"sarina" as const,text:data.answer}].slice(-12));
+   setStatus("پاسخ سارینا · گفت‌وگوی امن و ثبت مصرف");
   }catch(error){
-    const code=error instanceof Error?error.message:"ADMIN_CHAT_REQUEST_FAILED";
-   setStatus(code.includes("ADMIN_ACCESS_REQUIRED")?"این قابلیت فقط برای مدیر تأییدشده فعال است.":code.includes("GROQ_CHAT_KEY_MISSING")?"کلید Groq در محیط تابع سرور در دسترس نیست.":code.includes("GROQ_CHAT_HTTP_401")?"سرویس Groq کلید را نپذیرفت؛ اعتبار کلید باید بررسی شود.":code.includes("GROQ_CHAT_HTTP_429")?"سهمیه یا محدودیت درخواست Groq مانع پاسخ شد.":"ارتباط با پاسخ‌گوی آزمایشی برقرار نشد. وضعیت تابع سرور و گزارش خطا را بررسی کنید.");
+   const code=error instanceof Error?error.message:"SARINA_CHAT_REQUEST_FAILED";
+   setStatus(code.includes("AI_MONTHLY_BUDGET_EXHAUSTED")?"سقف بودجه ماهانه هوش مصنوعی تکمیل شده است؛ پاسخ‌گویی پس از دوره بعدی دوباره فعال می‌شود.":code.includes("RATE_LIMITED")?"برای حفظ کیفیت و کنترل هزینه، کمی بعد دوباره پیام بدهید.":code.includes("ACTIVE_ACCOUNT_REQUIRED")?"برای گفتگو با سارینا، حساب کاربری باید فعال باشد.": "فعلاً ارتباط با پاسخ‌گوی سارینا برقرار نشد. لطفاً کمی بعد دوباره تلاش کنید.");
   }finally{setBusy(false);}
  }
 
@@ -61,8 +57,7 @@ export default function SarinaCompanion({isAdmin=false,role="farmer",onNavigate}
   if(!normalized||busy)return;
   const next=[...messagesRef.current,{id:Date.now(),role:"farmer" as const,text:normalized}].slice(-12);
   commitMessages(next);setDraft("");
-  if(!isAdmin){setShowNotice(true);return;}
-  await requestAdminReply(next);
+  await requestSarinaReply(next);
  }
  async function send(e:FormEvent){e.preventDefault();await sendText(draft);}
 
@@ -87,7 +82,7 @@ export default function SarinaCompanion({isAdmin=false,role="farmer",onNavigate}
   const next=messagesRef.current.map(message=>message.id===id?{...message,text:"پیام صوتی",internalText:text}:message);
   pendingVoiceIdRef.current=null;
   commitMessages(next);
-  if(isAdmin){setStatus("سارینا در حال آماده‌کردن پاسخ شماست…");void requestAdminReply(next);}else{setShowNotice(true);setStatus("پیام صوتی دریافت شد؛ پاسخ‌گویی هوشمند برای این نقش هنوز فعال نشده است.");}
+  setStatus("سارینا در حال آماده‌کردن پاسخ پیام صوتی شماست…");void requestSarinaReply(next);
  }
 
  const latestSarinaReplyMessage=[...messages].reverse().find(message=>message.role==="sarina");
@@ -120,7 +115,7 @@ export default function SarinaCompanion({isAdmin=false,role="farmer",onNavigate}
      <input value={draft} onChange={e=>setDraft(e.target.value)} placeholder="اینجا برای سارینا بنویس..." aria-label="پیام شما به سارینا" maxLength={2000} disabled={busy}/>
      <button type="submit" disabled={!draft.trim()||busy} aria-label="ارسال پیام">{busy?<span className="sarina-chat-spinner"/>:<ArrowUp size={18}/>}</button>
     </form>
-    <div className="sarina-chat-foot">{isAdmin?"آزمایش محدود Groq · تبدیل گفتار روی سرویس SARINA انجام می‌شود":"راهنمای شروع بدون نیاز به هوش مصنوعی"} <Leaf size={12}/></div>
+    <div className="sarina-chat-foot">{isAdmin?"گفت‌وگوی امن با هوش مرکزی SARINA":"گفت‌وگوی مستقیم با سارینا"} <Leaf size={12}/></div>
    </div>
   </section>}
   <div className="sarina-launcher-wrap">
