@@ -178,6 +178,7 @@ Deno.serve(async (req: Request) => {
     };
 
     if (!readOnly) {
+      if (!serviceRoleKey) return reply(500, { ok: false, code: "SERVER_CONFIGURATION_ERROR" });
       const admin = createClient(supabaseUrl, serviceRoleKey, {
         auth: { persistSession: false, autoRefreshToken: false },
       });
