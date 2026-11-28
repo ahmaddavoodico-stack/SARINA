@@ -226,5 +226,6 @@ revoke all on function public.sarina_release_public_chat_budget(uuid) from publi
 grant execute on function public.sarina_reserve_public_chat_budget(uuid, uuid) to service_role;
 grant execute on function public.sarina_settle_public_chat_budget(uuid, integer, integer, integer) to service_role;
 grant execute on function public.sarina_release_public_chat_budget(uuid) to service_role;
+grant execute on function public.sarina_finalize_public_chat_unknown_cost(uuid) to service_role;
 
 commit;
