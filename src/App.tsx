@@ -145,7 +145,7 @@ function HomePage({session,go}:{session:Session;sarinaUserId:string|null;request
   <div className="welcome-row"><div><span className="eyebrow">امروز، فرصتی تازه برای رشد</span><h1>سلام {first}، خوش آمدید 🌱</h1><p>مزرعه‌ات را ببین، برنامه‌ات را دنبال کن و هر زمان خواستی با سارینا گفتگو کن.</p></div><div className="weather-card"><CloudSun size={25}/><div><strong>آب‌وهوا</strong><span>با تأیید موقعیت مزرعه و دسترسی داده فعال می‌شود</span></div></div></div>
   <FarmerMapFirstHome session={session} onOpenFarms={()=>go("farms")}/>
   <div className="farmer-home-chat-entry"><div><span className="eyebrow">SARINA CONVERSATION</span><h2>گفتگو با سارینا</h2><p>برای بازکردن پنجره گفتگو، دکمه SARINA Chat را در پایین صفحه انتخاب کن. گفتگوی متخصصان همچنان جداگانه در دسترس است.</p></div><MessageCircle size={25}/></div>
-  <SarinaCompanion role="farmer" onNavigate={go}/>
+  {/* The single global SARINA chat launcher is mounted by App below. */}
  </section>;
 }
 
