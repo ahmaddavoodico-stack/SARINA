@@ -73,7 +73,7 @@ export async function handlePublicConversation(input: {
   if (!conversation) {
     const { data } = await serviceClient.from("ai_conversations").select("id")
       .eq("user_id", profile.id).eq("conversation_type", "general").eq("status", "active")
-      .gte("updated_at", cutoff).order("updated_at", { ascending: false }).limit(1).maybeSingle();
+      .order("updated_at", { ascending: false }).limit(1).maybeSingle();
     conversation = data;
   }
   if (!conversation) {
@@ -89,7 +89,8 @@ export async function handlePublicConversation(input: {
   const latestUserMessage = messages[messages.length - 1];
   if (!latestUserMessage || latestUserMessage.role !== "user") return json(422, { ok: false, code: "INVALID_CONVERSATION_MESSAGES" });
   const { data: previousMessages, error: historyError } = await serviceClient.from("ai_messages")
-    .select("sender_type,message_text").eq("conversation_id", conversationId).gte("created_at", cutoff)
+    .select("sender_type,message_text").eq("conversation_id", conversationId)
+    .or(`retention_expires_at.is.null,retention_expires_at.gt.${new Date().toISOString()}`)
     .in("sender_type", ["user", "assistant"]).not("message_text", "is", null)
     .order("created_at", { ascending: false }).limit(7);
   if (historyError) return json(503, { ok: false, code: "CHAT_HISTORY_UNAVAILABLE" });
@@ -229,7 +230,7 @@ export async function handlePublicConversationHistory(input: {
   const cutoff = new Date(Date.now() - HISTORY_WINDOW_MS).toISOString();
   const { data: conversation, error: conversationError } = await serviceClient.from("ai_conversations")
     .select("id").eq("user_id", profile.id).eq("conversation_type", "general").eq("status", "active")
-    .gte("updated_at", cutoff).order("updated_at", { ascending: false }).limit(1).maybeSingle();
+    .order("updated_at", { ascending: false }).limit(1).maybeSingle();
   if (conversationError) return json(503, { ok: false, code: "CHAT_HISTORY_UNAVAILABLE" });
   if (!conversation) return json(200, { ok: true, conversation_id: null, messages: [] });
   const { data: rows, error: messagesError } = await serviceClient.from("ai_messages")
