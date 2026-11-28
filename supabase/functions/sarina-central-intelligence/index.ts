@@ -11,6 +11,7 @@ import {
 import { createDurableTaskStore } from "../_shared/durable-task-store.ts";
 import { retrieveFaqCandidates } from "./_shared/faq-retrieval.ts";
 import { recordFaqQuestionSignal } from "./_shared/faq-question-signal.ts";
+import { handlePublicConversation, validatePublicConversation } from "./_shared/public-conversation.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -36,8 +37,16 @@ Deno.serve(async (req: Request) => {
   try { body = await req.json(); }
   catch { return reply(400, { ok: false, code: "INVALID_JSON" }); }
 
-  const issues = validateSciRequest(body);
-  if (issues.length) return reply(422, { ok: false, code: "INVALID_REQUEST", issues });
+  const conversationMode = typeof body === "object" && body !== null && !Array.isArray(body) &&
+    (body as Record<string, unknown>).mode === "conversation";
+  if (conversationMode) {
+    if (!validatePublicConversation((body as Record<string, unknown>).messages)) {
+      return reply(422, { ok: false, code: "INVALID_CONVERSATION_MESSAGES" });
+    }
+  } else {
+    const issues = validateSciRequest(body);
+    if (issues.length) return reply(422, { ok: false, code: "INVALID_REQUEST", issues });
+  }
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const publishableKey = Deno.env.get("SUPABASE_ANON_KEY") ?? Deno.env.get("SUPABASE_PUBLISHABLE_KEY");
@@ -51,6 +60,21 @@ Deno.serve(async (req: Request) => {
   });
   const { data: authData, error: authError } = await client.auth.getUser();
   if (authError || !authData.user) return reply(401, { ok: false, code: "INVALID_SESSION" });
+
+  if (conversationMode) {
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    if (!serviceRoleKey) return reply(503, { ok: false, code: "SERVER_CONFIGURATION_ERROR" });
+    const serviceClient = createClient(supabaseUrl, serviceRoleKey, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+    const result = await handlePublicConversation({
+      client,
+      serviceClient,
+      authUser: authData.user,
+      messages: (body as Record<string, unknown>).messages as { role: "user" | "assistant"; content: string }[],
+    });
+    return reply(result.status, result.body);
+  }
 
   const farmId = (body as Record<string, unknown>).farm_id as string;
   const { data: farm, error: farmError } = await client
