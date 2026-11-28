@@ -139,25 +139,45 @@ export async function buildEnvironmentalDossier(input: {
   const waterTests = Array.isArray(land?.water_tests) ? land.water_tests : [];
   const farmerReports = Array.isArray(land?.farmer_reports) ? land.farmer_reports : [];
   const landAt = timestamp(land?.retrieved_at);
-  const soilStatus = soilTests.length ? "available" : "needs_on_farm_or_lab_evidence";
-  const waterStatus = waterTests.length ? "available" : "needs_on_farm_or_lab_evidence";
+  const soilLabTests = soilTests.filter((row) => isRecord(row) && row.provenance === "laboratory_record");
+  const soilOtherRecords = soilTests.length - soilLabTests.length;
+  const waterLabTests = waterTests.filter((row) => isRecord(row) && row.provenance === "laboratory_record");
+  const waterOtherRecords = waterTests.length - waterLabTests.length;
   manifest.push(sourceEntry({
-    domain: "soil",
-    status: soilStatus,
-    provider: soilTests.length ? "farm_soil_tests" : null,
-    evidenceClass: "on_farm_measurement",
+    domain: "soil_laboratory_tests",
+    status: soilLabTests.length ? "available" : "needs_lab_evidence",
+    provider: soilLabTests.length ? "farm_soil_tests" : null,
+    evidenceClass: "laboratory_measurement",
     retrievedAt: landAt,
-    itemCount: soilTests.length,
-    limitations: "Only recorded soil tests are counted here; regional model predictions are listed separately.",
+    itemCount: soilLabTests.length,
+    limitations: "Only records explicitly tagged as laboratory records are counted as laboratory evidence.",
   }));
   manifest.push(sourceEntry({
-    domain: "water",
-    status: waterStatus,
-    provider: waterTests.length ? "farm_water_tests" : null,
-    evidenceClass: "on_farm_measurement",
+    domain: "soil_other_records",
+    status: soilOtherRecords ? "available" : "none_recorded",
+    provider: soilOtherRecords ? "farm_soil_tests" : null,
+    evidenceClass: "recorded_source",
     retrievedAt: landAt,
-    itemCount: waterTests.length,
-    limitations: "Only recorded water tests are counted here.",
+    itemCount: soilOtherRecords,
+    limitations: "These records are not confirmed as laboratory measurements.",
+  }));
+  manifest.push(sourceEntry({
+    domain: "water_laboratory_tests",
+    status: waterLabTests.length ? "available" : "needs_lab_evidence",
+    provider: waterLabTests.length ? "farm_water_tests" : null,
+    evidenceClass: "laboratory_measurement",
+    retrievedAt: landAt,
+    itemCount: waterLabTests.length,
+    limitations: "Only records explicitly tagged as laboratory records are counted as laboratory evidence.",
+  }));
+  manifest.push(sourceEntry({
+    domain: "water_other_records",
+    status: waterOtherRecords ? "available" : "none_recorded",
+    provider: waterOtherRecords ? "farm_water_tests" : null,
+    evidenceClass: "recorded_source",
+    retrievedAt: landAt,
+    itemCount: waterOtherRecords,
+    limitations: "These records are not confirmed as laboratory measurements.",
   }));
   manifest.push(sourceEntry({
     domain: "farmer_observations",
@@ -168,10 +188,9 @@ export async function buildEnvironmentalDossier(input: {
     itemCount: farmerReports.length,
     limitations: "Farmer-reported observations are not independently verified.",
   }));
-  if (!soilTests.length) missingDomains.push("soil_laboratory_or_field_measurements");
-  if (!waterTests.length) missingDomains.push("water_laboratory_measurements");
-
-  const regional = land && isRecord(land.regional_context) ? land.regional_context : null;
+  if (!soilLabTests.length) missingDomains.push("soil_laboratory_measurements");
+  if (!waterLabTests.length) missingDomains.push("water_laboratory_measurements");
+    const regional = land && isRecord(land.regional_context) ? land.regional_context : null;
   const soilGrids = regional && isRecord(regional.soilgrids) ? regional.soilgrids : null;
   const regionalStatus = typeof soilGrids?.status === "string" ? soilGrids.status : "not_available";
   manifest.push(sourceEntry({
@@ -272,7 +291,9 @@ export async function buildEnvironmentalDossier(input: {
       missing_domain_count: [...new Set(missingDomains)].length,
       farmer_observation_count: farmerReports.length,
       soil_test_count: soilTests.length,
+      soil_laboratory_test_count: soilLabTests.length,
       water_test_count: waterTests.length,
+      water_laboratory_test_count: waterLabTests.length,
       regional_soil_status: regionalStatus,
       spatial_scope: geometryScope,
       spatial_parcel_accuracy: "not_confirmed_by_current_spatial_adapter",
