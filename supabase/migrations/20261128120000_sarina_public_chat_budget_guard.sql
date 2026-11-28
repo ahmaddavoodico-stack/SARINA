@@ -23,7 +23,7 @@ insert into public.sarina_ai_budget_policy (
   max_input_tokens, max_output_tokens, is_enabled, hard_limit_enabled
 ) values (
   true, 10.00, 'groq', 'openai/gpt-oss-20b',
-  0.075, 0.30, 6000, 500, true, true
+  0.075, 0.30, 12000, 500, true, true
 )
 on conflict (singleton) do update set
   monthly_budget_usd = excluded.monthly_budget_usd,
@@ -91,6 +91,22 @@ begin
   if not found or not v_policy.is_enabled or not v_policy.hard_limit_enabled then
     return query select false, 'BUDGET_POLICY_DISABLED'::text, 0::numeric; return;
   end if;
+
+  -- Expired reservations may represent provider requests whose response was
+  -- lost after billing. Charge their full reserved maximum before removing them.
+  insert into public.ai_usage_events (
+    request_id, user_id, provider_code, model_code, feature_code,
+    usage_class, status, provider_cost_amount, provider_cost_currency,
+    cost_basis, pricing_version, metadata
+  )
+  select request_id, user_id, v_policy.provider_code, v_policy.model_code,
+    'public_conversation', 'casual_conversation', 'failed', reserved_usd, 'USD',
+    'estimated', 'groq-gpt-oss-20b-2026-11',
+    jsonb_build_object('budget_month', month_start, 'budget_guard', 'hard_limit',
+      'cost_estimation', 'expired_reservation_maximum')
+  from public.sarina_ai_budget_reservations
+  where expires_at < now()
+  on conflict (request_id) do nothing;
 
   delete from public.sarina_ai_budget_reservations
     where expires_at < now();
